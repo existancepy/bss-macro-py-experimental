@@ -29,7 +29,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = 1.22
+macrov = 1.23
 if __name__ == '__main__':
     print("Your python version is {}".format(sys.version_info[0]))
     print("Your macro version is {}".format(macrov))
@@ -675,13 +675,21 @@ def startLoop(cf,bpcap,gat,dc):
                         convert()
                         reset.reset()
                     
-   
+def setResolution():
+    wwd = int(pag.size()[0])
+    whd = int(pag.size()[1])
+    dt = loadsettings.load()["display_type"]
+    if dt == "built-in retina display":
+        wwd *=  2
+        whd *= 2
+    with open('save.txt', 'w') as f:
+        f.write('wh:{}\nww:{}'.format(whd,wwd))
+            
 if __name__ == "__main__":
-    
+    setResolution()
     loadSave()
     ww = savedata["ww"]
     wh = savedata["wh"]
-
     root = tk.Tk()
     root.geometry('700x400')
     s = ttk.Style()
@@ -835,8 +843,8 @@ if __name__ == "__main__":
             "ebdetect":ebdetect.get()
 
             }
-        ww = int(wwatextbox.get(1.0,"end").replace("\n",""))
-        wh = int(whatextbox.get(1.0,"end").replace("\n",""))
+        #ww = int(wwatextbox.get(1.0,"end").replace("\n",""))
+        #wh = int(whatextbox.get(1.0,"end").replace("\n",""))
         if setdict["display_type"] == "built-in retina display":
             if ww<2000:
                 pag.alert(text='The resolution is invalid for a built-in retina display. Check it by going to about this mac -> displays', title='Setting error', button='OK')
@@ -873,7 +881,10 @@ if __name__ == "__main__":
                 discord_bot_proc.terminate()
             webhook("Macro Stopped","","dark brown")
         
-
+    def savedisplaytype(event):
+        loadsettings.save("display_type",display_type.get().lower())
+        setResolution()
+        
     def disablews(event):
         if return_to_hive.get().lower() == "whirligig":
             wslotmenu.configure(state="normal")
@@ -962,17 +973,17 @@ if __name__ == "__main__":
     sendss = tkinter.Checkbutton(frame3, text="Send screenshots", variable=send_screenshot, bg = wbgc)
     sendss.place(x=200, y = 85)
     urltextbox.place(x = 500, y=87)
-    tkinter.Label(frame3, text = "Screen Resolution:", bg = wbgc).place(x = 0, y = 120)
-    tkinter.Label(frame3, text = "Width", bg = wbgc).place(x = 150, y = 120)
-    wwatextbox = tkinter.Text(frame3, width = 5, height = 1)
-    wwatextbox.insert("end",wwa)
-    wwatextbox.place(x=200,y=122)
-    tkinter.Label(frame3, text = "Height", bg = wbgc).place(x = 260, y = 120)
-    whatextbox = tkinter.Text(frame3, width = 5, height = 1)
-    whatextbox.insert("end",wha)
-    whatextbox.place(x=310,y=122)
+    tkinter.Label(frame3, text = "Screen Resolution: Currently detected automatically. No need to configure", bg = wbgc).place(x = 0, y = 120)
+    #tkinter.Label(frame3, text = "Width", bg = wbgc).place(x = 150, y = 120)
+    #wwatextbox = tkinter.Text(frame3, width = 5, height = 1)
+    #wwatextbox.insert("end",wwa)
+    #wwatextbox.place(x=200,y=122)
+    #tkinter.Label(frame3, text = "Height", bg = wbgc).place(x = 260, y = 120)
+    #whatextbox = tkinter.Text(frame3, width = 5, height = 1)
+    #whatextbox.insert("end",wha)
+    #whatextbox.place(x=310,y=122)
     tkinter.Label(frame3, text = "Display type", bg = wbgc).place(x = 0, y = 155)
-    dropField = tkinter.OptionMenu(frame3, display_type, *["Built-in retina display","Built-in display"] )
+    dropField = tkinter.OptionMenu(frame3, display_type, command = savedisplaytype, *["Built-in retina display","Built-in display"] )
     dropField.place(width=160,x = 100, y = 155)
     tkinter.Label(frame3, text = "Private Server Link", bg = wbgc).place(x = 0, y = 190)
     linktextbox = tkinter.Text(frame3, width = 24, height = 1)
@@ -1000,6 +1011,7 @@ if __name__ == "__main__":
     
     disablews("1")
     disabledw()
+    disableeb("1")
     root.mainloop()
     
 

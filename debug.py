@@ -24,8 +24,8 @@ pag.moveTo(350,100)
 ww = savedata["ww"]
 wh = savedata["wh"]
 xo = ww//4
-yo = wh//100*90
-xt = xo*2
+yo = wh//4*3
+xt = xo*3
 yt = wh
 time.sleep(2)
 pag.press('esc')
