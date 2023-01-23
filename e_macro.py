@@ -845,10 +845,10 @@ if __name__ == "__main__":
             }
         #ww = int(wwatextbox.get(1.0,"end").replace("\n",""))
         #wh = int(whatextbox.get(1.0,"end").replace("\n",""))
-        if setdict["display_type"] == "built-in retina display":
-            if ww<2000:
-                pag.alert(text='The resolution is invalid for a built-in retina display. Check it by going to about this mac -> displays', title='Setting error', button='OK')
-                return
+        #if setdict["display_type"] == "built-in retina display":
+            #if ww<2000:
+                #pag.alert(text='The resolution is invalid for a built-in retina display. Check it by going to about this mac -> displays', title='Setting error', button='OK')
+                #return
         try:
             a = float(setdict["walkspeed"])
         except:
