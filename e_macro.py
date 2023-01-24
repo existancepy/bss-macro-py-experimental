@@ -21,6 +21,10 @@ import discord
 import update
 import updateexperiment
 from tkinter import messagebox
+import numpy as np
+from PIL import ImageGrab
+try: import cv2
+except: pass
 savedata = {}
 ww = ""
 wh = ""
@@ -29,7 +33,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = 1.23
+macrov = 1.24
 if __name__ == '__main__':
     print("Your python version is {}".format(sys.version_info[0]))
     print("Your macro version is {}".format(macrov))
@@ -297,6 +301,37 @@ def resetMobTimer(cfield):
         elif cfield == "bamboo":
             if checkRespawn("rhinobeetle_bamboo","5m"):  savetimings("rhinobeetle_bamboo")
 
+sat_image = cv2.imread('./images/retina/saturator.png')
+method = cv2.TM_SQDIFF_NORMED
+
+def fieldDriftCompensation():
+    res = loadRes()
+    ww = res["ww"]
+    wh = res["wh"]
+    winUp = wh/2.1
+    winDown = wh/1.8
+    winLeft = ww/2
+    winRight = ww/1.7
+    for _ in range(4):
+        screen = np.array(ImageGrab.grab())
+        screen = cv2.cvtColor(src=screen, code=cv2.COLOR_BGR2RGB)
+        large_image = screen
+        result = cv2.matchTemplate(sat_image, large_image, method)
+        mn,_,mnLoc,_ = cv2.minMaxLoc(result)
+        x,y = mnLoc
+        if mn < 0.08:
+            if x >= winLeft and x <= winRight and y >= winUp and y <= winDown: break
+            if x < winLeft:
+                move.hold("a",0.1)
+            elif x > winRight:
+                move.hold("d",0.1)
+            if y < winUp:
+                move.hold("w",0.1)
+            elif y > winDown:
+                move.hold("s",0.1)
+        else:
+            break
+        
 def background(cf,bpcap,gat,dc):
     savedata = loadRes()
     ww = savedata['ww']
@@ -387,7 +422,7 @@ def rejoin():
     else:
         webbrowser.open('https://www.roblox.com/games/1537690962/Bee-Swarm-Simulator')
         time.sleep(7)
-        _,x,y = imagesearch.find('playbutton.png',0.8)
+        _,x,y,_ = imagesearch.find('playbutton.png',0.8)
         webhook("","Play Button Found","dark brown")
         if setdat['display_type'] == "built-in retina display":
             pag.click(x//2, y//2)
@@ -640,6 +675,8 @@ def startLoop(cf,bpcap,gat,dc):
                 if timespent > setdat["gather_time"]:
                     webhook("Gathering: ended","Time: {:.2f} - Time Limit - Return: {}".format(timespent, setdat["return_to_hive"]),"light green")
                     break
+                if setdat['field_drift_compensation']:
+                    fieldDriftCompensation()
             time.sleep(0.5)
             gat.value = 0
             cf.value = ""
@@ -706,16 +743,19 @@ if __name__ == "__main__":
     frame3 = ttk.Frame(notebook, width=700, height=400,style='frame.TFrame')
     frame4 = ttk.Frame(notebook, width=700, height=400,style='frame.TFrame')
     frame5 = ttk.Frame(notebook, width=700, height=400,style='frame.TFrame')
+    frame6 = ttk.Frame(notebook, width=700, height=400,style='frame.TFrame')
 
     frame1.pack(fill='both', expand=True)
     frame2.pack(fill='both', expand=True)
     frame3.pack(fill='both', expand=True)
     frame4.pack(fill='both', expand=True)
     frame5.pack(fill='both', expand=True)
+    frame6.pack(fill='both', expand=True)
 
     notebook.add(frame1, text='Gather')
     notebook.add(frame2, text='Bug run')
     notebook.add(frame4, text='Collect')
+    notebook.add(frame6, text='Planters')
     notebook.add(frame3, text='Settings')
     notebook.add(frame5, text='Calibration')
 
@@ -755,6 +795,7 @@ if __name__ == "__main__":
     private_server_link = setdat["private_server_link"]
     enable_discord_bot = tk.IntVar(value=setdat["enable_discord_bot"])
     discord_bot_token = setdat['discord_bot_token']
+    field_drift_compensation = tk.IntVar(value=setdat["field_drift_compensation"])
 
     wealthclock = tk.IntVar(value=setdat["wealthclock"])
     blueberrydispenser = tk.IntVar(value=setdat["blueberrydispenser"])
@@ -823,6 +864,7 @@ if __name__ == "__main__":
             "private_server_link":linktextbox.get(1.0,"end").replace("\n",""),
             "enable_discord_bot":enable_discord_bot.get(),
             "discord_bot_token":tokentextbox.get(1.0,"end").replace("\n",""),
+            "field_drift_compensation": field_drift_compensation.get(),
             
             "stump_snail": stump_snail.get(),
             "ladybug": ladybug.get(),
@@ -942,6 +984,9 @@ if __name__ == "__main__":
     wslotmenu = tkinter.OptionMenu(frame1 , whirligig_slot, *[1,2,3,4,5,6,7,"none"])
     wslotmenu.place(width=70,x = 570, y = 155)
 
+    tkinter.Checkbutton(frame1, text="Field Drift Compensation", variable=field_drift_compensation, bg = wbgc).place(x=0, y = 190)
+    
+
     #Tab 2 
     tkinter.Checkbutton(frame2, text="Apply gifted vicious bee hive bonus", variable=gifted_vicious_bee, bg = wbgc).place(x=0, y = 15)
     tkinter.Checkbutton(frame2, text="Stump Snail", variable=stump_snail, bg = wbgc).place(x=0, y = 50)
@@ -959,6 +1004,9 @@ if __name__ == "__main__":
     tkinter.Checkbutton(frame4, text="(Free) Royal Jelly Dispenser", variable=royaljellydispenser, bg = wbgc).place(x=320, y = 50)
     tkinter.Checkbutton(frame4, text="Treat Dispenser", variable=treatdispenser, bg = wbgc).place(x=520, y = 50)
     #Tab 4
+    
+    
+    #Tab 5
     tkinter.Label(frame3, text = "Hive Slot (6-5-4-3-2-1)", bg = wbgc).place(x = 0, y = 15)
     dropField = tkinter.OptionMenu(frame3, hive_number, *[x+1 for x in range(6)] )
     dropField.place(width=60,x = 160, y = 15)
@@ -994,7 +1042,7 @@ if __name__ == "__main__":
     tokentextbox = tkinter.Text(frame3, width = 24, height = 1)
     tokentextbox.insert("end",discord_bot_token)
     tokentextbox.place(x = 300, y=228)
-    #Tab 5
+    #Tab 6
     tkinter.Button(frame5, text = "Calibrate Hive",command = calibratehive, height = 1, width = 7 ).place(x=0,y=15)
     tkinter.Label(frame5, text = "E Button Detection Type", bg = wbgc).place(x = 0, y = 50)
     dropField = tkinter.OptionMenu(frame5, ebdetect, command = disableeb, *["cv2","pyautogui"] )

@@ -49,7 +49,7 @@ def find(img,confi, x1 = 0, y1 = 0, x2 = 0, y2 = 0,fast=0):
     display_type = loadsettings.load()['display_type']
     method = cv2.TM_CCOEFF_NORMED
     if fast:
-        screen = ImageGrab.grab(bbox=(x1,y1,x2,y2))
+        screen = ImageGrab.grab()
     else:
         screen = pag.screenshot(region=(x1,y1,x2,y2))
     screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
