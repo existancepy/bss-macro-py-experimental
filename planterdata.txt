@@ -1,0 +1,2 @@
+['candy', 'blueclay', 'redclay', 'tacky']
+['bamboo', 'pine tree', 'strawberry', 'stump']
