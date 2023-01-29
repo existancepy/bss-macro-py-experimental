@@ -43,34 +43,115 @@ wh = savedata["wh"]
 ms = pag.size()
 mw = ms[0]
 mh = ms[1]
-sat_image = cv2.imread('./images/retina/saturator.png')
-method = cv2.TM_SQDIFF_NORMED
 
-winUp = wh/2.1
-winDown = wh/1.8
-winLeft = ww/2
-winRight = ww/1.7 
-for _ in range(4):
-    screen = np.array(ImageGrab.grab())
-    screen = cv2.cvtColor(src=screen, code=cv2.COLOR_BGR2RGB)
-    large_image = screen
-    result = cv2.matchTemplate(sat_image, large_image, method)
-    mn,_,mnLoc,_ = cv2.minMaxLoc(result)
-    x,y = mnLoc
-    if mn < 0.08:
-        if x >= winLeft and x <= winRight and y >= winUp and y <= winDown: break
 
-        if x < winLeft:
-            move.hold("a",0.1)
-        elif x > winRight:
-            move.hold("d",0.1)
-        if y < winUp:
-            move.hold("w",0.1)
-        elif y > winDown:
-            move.hold("s",0.1)
-    else:
-        break
- #!/usr/bin/env python
+def displayPlanterName(planter):
+    if planter == "redclay":
+        return "Red Clay Planter"
+    elif planter == "blueclay":
+        return "Blue Clay Planter"
+    elif planter  == "heattreated":
+        return "Heat-Treated Planter"
+    elif planter == "plenty":
+        return "The Planter of Plenty"
+    return "{} Planter".format(planter.title())
+    
+def placePlanter(planter):
+    pag.moveTo(315,224)
+    scroll_start = time.time()
+    while True:
+        pag.scroll(100000)
+        if time.time() - scroll_start > 3:
+            break
+    if not imagesearch.find("sprinklermenu.png".format(planter),0.6,0,wh//10,ww//3,wh):
+        pag.moveTo(27,102)
+        pag.click()
+    pag.moveTo(315,224)
+    time.sleep(1)
+    setdat = loadsettings.load()
+    scroll_start = time.time()
+    while True:
+        pag.scroll(-100000)
+        if time.time() - scroll_start > 3:
+            break
+    planter_find_start = time.time()
+    while True:
+        pag.scroll(2400)
+        if time.time()-planter_find_start > 30:
+            webhook("",'Cant Find: {}'.format(displayPlanterName(planter)),"dark brown")
+            break
+        if imagesearch.find("{}planter.png".format(planter),0.6,0,wh//10,ww//3,wh):
+            time.sleep(0.5)
+            r = imagesearch.find("{}planter.png".format(planter),0.6,0,0,ww,wh)
+            webhook("",'Found: {}'.format(displayPlanterName(planter)),"dark brown")
+            trows,tcols = cv2.imread('./images/retina/{}planter.png'.format(planter)).shape[:2]
+            urows,ucols = cv2.imread('./images/retina/yes.png').shape[:2]
+            if setdat['display_type'] == "built-in retina display":
+                print(r[1],r[2])
+                
+                pag.moveTo(r[1]//2+trows//4,r[2]//2+tcols//4)
+                time.sleep(0.5)
+                pag.dragTo(ww//4, wh//4,0.7, button='left')
+                time.sleep(0.5)
+                a = imagesearch.find("yes.png",0.5,0,0,ww,wh)
+                if a:
+                    pag.moveTo(a[1]//2+urows//4,a[2]//2+ucols//4)
+                    pag.click()
+                else:
+                    pag.moveTo(ww//4-70,wh//3.2)
+                    pag.click()
+            else:
+                pag.moveTo(r[1]+trows//2,r[2]+tcols//2)
+                pag.dragTo(ww//2, wh//2,0.8, button='left')
+                pag.moveTo(ww//4-70,wh//3.2)
+                time.sleep(0.5)
+                a = imagesearch.find("yes.png",0.5,0,0,ww,wh)
+                if a:
+                    pag.moveTo(a[1]+urows//2,a[2]+ucols//2)
+                    pag.click()
+                else:
+                    pag.moveTo(ww//2-50,wh//1.6)
+                    pag.click()
+
+            break
+def goToPlanter(field,place=0):
+    exec(open("field_{}.py".format(field)).read())
+    if field == "pine tree":
+        move.hold("d",3)
+        move.hold("s",4)
+        if place: move.hold("w",0.07)
+    elif field == "pumpkin":
+        move.hold("s",3)
+        move.press(",")
+        move.press(",")
+        move.hold("w",4)
+        if place: move.hold("s",0.07)
+    elif field  == "strawberry":
+        move.hold("d",3)
+        move.hold("s",4)
+    elif field == "bamboo":
+        move.hold("s",3)
+        move.press(",")
+        move.press(",")
+        move.hold("w",4)
+        if place: move.hold("s",0.07)
+    elif field  == "pineapple:
+        move.hold("d",3)
+        move.hold("s",4)
+    elif field == "mushroom":
+        move.hold("s",3)
+        move.press(",")
+        move.press(",")
+        move.hold("w",4)
+        if place: move.hold("s",0.07)
+    elif field == "coconut":
+        move.hold("d",5)
+        move.hold("s")
+        
+reset.reset()    
+goToPlanter()
+placePlanter('tacky')
+
 '''
 
 
