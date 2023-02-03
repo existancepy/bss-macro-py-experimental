@@ -33,7 +33,7 @@ blueberrydispenser:0
 strawberrydispenser:0
 royaljellydispenser:0
 treatdispenser:0
-hivethreshold:0.6652711033821106
+hivethreshold:1.0
 ebthreshold:1
 ebdetect:pyautogui
 bploc:[0,0]
