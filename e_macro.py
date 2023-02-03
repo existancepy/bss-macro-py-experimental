@@ -41,7 +41,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.25"
+macrov = "1.25.1"
 planterInfo = loadsettings.planterInfo()
 
 if __name__ == '__main__':
@@ -812,7 +812,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
         if len(planterTypes) < maxPlanters:
             maxPlanters = len(planterTypes)
         if len(planterFields) < maxPlanters:
-            maxPlanters = len(fieldTypes)
+            maxPlanters = len(planterFields)
     
     while True:
         timings = loadtimings()
