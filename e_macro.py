@@ -30,6 +30,7 @@ import sv_ttk
 import math
 import ast
 import calibrate_hive
+import _darwinmouse as mouse
 
 
 savedata = {}
@@ -40,7 +41,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.25.5"
+macrov = "1.25"
 planterInfo = loadsettings.planterInfo()
 
 if __name__ == '__main__':
@@ -50,8 +51,9 @@ if __name__ == '__main__':
         with open("planterdata.txt","r") as f:
             lines = f.read().split("\n")
         f.close()
-        planterTypes_prev = ast.literal_eval(lines[0])
-        planterFields_prev = ast.literal_eval(lines[1])
+        occupiedStuff = ast.literal_eval(lines[0])
+        planterTypes_prev = ast.literal_eval(lines[1])
+        planterFields_prev = ast.literal_eval(lines[2])
     print("Your python version is {}".format(sys.version_info[0]))
     print("Your macro version is {}".format(macrov))
     manager = multiprocessing.Manager()
@@ -165,7 +167,15 @@ def savetimings(m):
     f.close()
 
 def savePlanterTimings(p):
-    tempdict = loadtimings()
+    
+    with open('plantertimings.txt','r') as f:
+        lines = f.read().split('\n')
+    f.close()
+    tempdict = {}
+    for l in lines:
+        if ":" in l:
+            a,b = l.split(":")
+            tempdict[a] = b
     tempdict[p] = time.time()
     templist = []
     
@@ -189,7 +199,7 @@ def ebutton(pagmode=0):
         else:
             r = pag.locateOnScreen("./images/built-in/eb.png",region=(0,0,ww,wh//2))
     else:
-        r = imagesearch.find("eb.png",c,0,0,ww,wh//2)
+        r = imagesearch.find("eb.png",c,ww//3,0,ww//3,wh//2)
     if r:return r
     return
 def canon():
@@ -199,7 +209,7 @@ def canon():
     wh = savedata['wh']
     #Move to canon:
     webhook("","Moving to canon","dark brown")
-    move.hold("w",2)
+    move.hold("w",1.5)
     move.hold("d",0.9*(setdat["hive_number"])+1)
     pag.keyDown("d")
     time.sleep(0.5)
@@ -349,57 +359,113 @@ def displayPlanterName(planter):
     elif planter == "plenty":
         return "The Planter of Plenty"
     return "{} Planter".format(planter.title())
+
+def removeComments(strng):
+    res = ""
+    for c in strng:
+        if c == ";":
+            return res
+        else:
+            res += c
+    return res
+with open ('natro_ba_config.txt','r') as f:
+        readdata = f.read()
+f.close()
+lines = readdata.split('\n')
+nectarInfo = {}
+planterRanks = {}
+currList = ""
+for line in lines:
+    if not line.startswith(";"):
+        if ":=" in line:
+            k,v = line.split(":=")
+            if "Fields" in k:
+                nectarInfo[k] = ast.literal_eval(v)
+            elif "Planters" in k:
+                if currList:
+                    ko,vo = currList.split('=')
+                    vo = ast.literal_eval(vo)
+                    fields = []
+                    for i in vo:
+                        planterName = i[0].lower().replace("planter","")
+                        if planterName == "ofplenty":
+                            planterName = "plenty"
+                        fields.append(planterName)
+                    ko = ko.lower().replace("planters","")
+                    if ko == "blueflower": ko = "blue flower"
+                    elif ko == "mountaintop": ko = "mountain top"
+                    elif ko == "pinetree": ko = "pine tree"
+                    planterRanks[ko] = fields
+                currList = "{}={}".format(k,removeComments(v))
+        elif line.replace("\t","").startswith(','):
+            currList+= removeComments(line).replace("\t","")
+
+    
+def getBestPlanter(field,occus,avils):
+    for i in planterRanks[field]:
+        if i in avils:
+            validPlanter = 1
+            for j in occus:
+                if i == j[0]:
+                    validPlanter = 0
+                    break
+            if validPlanter: return i
     
 def placePlanter(planter):
     res = loadRes()
+    plantdat = loadsettings.planterLoad()
     ww = res['ww']
     wh = res['wh']
-    pag.moveTo(315,224)
-    scroll_start = time.time()
-    while True:
-        pag.scroll(100000)
-        if time.time() - scroll_start > 3:
-            break
-    if not imagesearch.find("sprinklermenu.png".format(planter),0.6,0,wh//10,ww//3,wh):
+    planterSlot = str(plantdat['{}_slot'.format(planter)])
+    if planterSlot != "none":
+        move.press(planterSlot)
+    else:
+        pag.moveTo(315,224)
+        scroll_start = time.time()
+        while True:
+            pag.scroll(100000)
+            if time.time() - scroll_start > 3:
+                break
+        if not imagesearch.find("sprinklermenu.png".format(planter),0.6,0,wh//10,ww//3,wh):
+            pag.moveTo(27,102)
+            pag.click()
+        pag.moveTo(315,224)
+        time.sleep(1)
+        setdat = loadsettings.load()
+        scroll_start = time.time()
+        while True:
+            pag.scroll(-100000)
+            if time.time() - scroll_start > 3:
+                break
+        planter_find_start = time.time()
+        while True:
+            pag.scroll(2400)
+            if time.time()-planter_find_start > 30:
+                webhook("",'Cant Find: {}'.format(displayPlanterName(planter)),"dark brown")
+                break
+            if imagesearch.find("{}planter.png".format(planter),0.7,0,wh//10,ww//3,wh):
+                time.sleep(0.5)
+                r = imagesearch.find("{}planter.png".format(planter),0.7,0,0,ww,wh)
+                webhook("",'Found: {}'.format(displayPlanterName(planter)),"dark brown")
+                trows,tcols = cv2.imread('./images/retina/{}planter.png'.format(planter)).shape[:2]
+                if setdat['display_type'] == "built-in retina display":
+                    
+                    pag.moveTo(r[1]//2+trows//4,r[2]//2+tcols//4)
+                    time.sleep(0.5)
+                    pag.dragTo(ww//4, wh//4,0.7, button='left')
+                    time.sleep(0.5)
+                    clickYes()
+                       
+                else:
+                    pag.moveTo(r[1]+trows//2,r[2]+tcols//2)
+                    pag.dragTo(ww//2, wh//2,0.8, button='left')
+                    pag.moveTo(ww//4-70,wh//3.2)
+                    time.sleep(0.5)
+                    clickYes()
+
+                break
         pag.moveTo(27,102)
         pag.click()
-    pag.moveTo(315,224)
-    time.sleep(1)
-    setdat = loadsettings.load()
-    scroll_start = time.time()
-    while True:
-        pag.scroll(-100000)
-        if time.time() - scroll_start > 3:
-            break
-    planter_find_start = time.time()
-    while True:
-        pag.scroll(2400)
-        if time.time()-planter_find_start > 30:
-            webhook("",'Cant Find: {}'.format(displayPlanterName(planter)),"dark brown")
-            break
-        if imagesearch.find("{}planter.png".format(planter),0.7,0,wh//10,ww//3,wh):
-            time.sleep(0.5)
-            r = imagesearch.find("{}planter.png".format(planter),0.6,0,0,ww,wh)
-            webhook("",'Found: {}'.format(displayPlanterName(planter)),"dark brown")
-            trows,tcols = cv2.imread('./images/retina/{}planter.png'.format(planter)).shape[:2]
-            if setdat['display_type'] == "built-in retina display":
-                
-                pag.moveTo(r[1]//2+trows//4,r[2]//2+tcols//4)
-                time.sleep(0.5)
-                pag.dragTo(ww//4, wh//4,0.7, button='left')
-                time.sleep(0.5)
-                clickYes()
-                   
-            else:
-                pag.moveTo(r[1]+trows//2,r[2]+tcols//2)
-                pag.dragTo(ww//2, wh//2,0.8, button='left')
-                pag.moveTo(ww//4-70,wh//3.2)
-                time.sleep(0.5)
-                clickYes()
-
-            break
-    pag.moveTo(27,102)
-    pag.click()
     savePlanterTimings(planter)
     reset.reset()
 
@@ -459,6 +525,8 @@ def goToPlanter(field,place=0):
     elif field == "coconut":
         move.hold("d",5)
         move.hold("s")
+    else:
+        time.sleep(0.6)
         
 def fieldDriftCompensation():
     res = loadRes()
@@ -475,7 +543,7 @@ def fieldDriftCompensation():
         result = cv2.matchTemplate(sat_image, large_image, method)
         mn,_,mnLoc,_ = cv2.minMaxLoc(result)
         x,y = mnLoc
-        if mn < 0.08:
+        if mn < 0.06:
             if x >= winLeft and x <= winRight and y >= winUp and y <= winDown: break
             if x < winLeft:
                 move.hold("a",0.1)
@@ -515,6 +583,7 @@ def killMob(field,mob,reset):
     webhook("","Traveling: {} ({})".format(mob.title(),field.title()),"dark brown")
     convert()
     canon()
+    time.sleep(3)
     exec(open("field_{}.py".format(field)).read())
     lootMob(field,mob,reset)
     
@@ -524,7 +593,7 @@ def lootMob(field,mob,resetCheck):
     webhook("","Looting: {} ({})".format(mob.title(), field.title()),"bright green")
     while True:
         moblootPattern(1.1,1.4,"none",2)
-        if time.time() - start > 15:
+        if time.time() - start > 18:
             break
     resetMobTimer(field.replace(" ","").lower())
     if resetCheck:
@@ -542,6 +611,12 @@ def collect(name):
         canon()
         webhook("","Traveling: {}".format(dispname),"dark brown")
         exec(open("collect_{}.py".format(usename)).read())
+        if usename == "wealthclock":
+            starttime = time.time()
+            while True:
+                move.hold("w",0.1)
+                if ebutton() or time.time() - starttime > 5:
+                    break
         time.sleep(0.5)
         if ebutton():
             webhook("","Collected: {}".format(dispname),"bright green",1)
@@ -681,7 +756,7 @@ def rejoin():
             starttime = time.time()
             pag.keyDown("d")
             while time.time()-starttime < 10:
-                key.press("e")
+                move.press("e")
             pag.keyUp("d")
             updateHive(6)
         convert()
@@ -728,10 +803,16 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
         with open("planterdata.txt","r") as f:
             lines = f.read().split("\n")
         f.close()
-        planterTypes = ast.literal_eval(lines[0])
-        planterFields = ast.literal_eval(lines[1])
+        occupiedStuff = ast.literal_eval(lines[0])
+        planterTypes = ast.literal_eval(lines[1])
+        planterFields = ast.literal_eval(lines[2])
         if planterTypes == planterTypes_prev and planterFields == planterFields_prev:
             continuePlanters = 1
+        maxPlanters = planterset['planter_count']
+        if len(planterTypes) < maxPlanters:
+            maxPlanters = len(planterTypes)
+        if len(planterFields) < maxPlanters:
+            maxPlanters = len(fieldTypes)
     
     while True:
         timings = loadtimings()
@@ -767,14 +848,21 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
             collect('treat dispenser')
         
         #Planter check
-
+        
         if planterset['enable_planters']:
-            if not continuePlanters:
-                for i in range(planterset['planter_count']):
-                    webhook('',"Traveling: {} ({})".format(displayPlanterName(planterTypes[i]),planterFields[i].title()),"dark brown")
+            if not continuePlanters or not occupiedStuff:
+                occupiedStuff = []
+                for i in range(maxPlanters):
+                    bestPlanter = getBestPlanter(planterFields[i],occupiedStuff,planterTypes)
                     goToPlanter(planterFields[i],1)
-                    placePlanter(planterTypes[i])
+                    webhook('',"Traveling: {} ({})\nObjective: Place Planter".format(displayPlanterName(bestPlanter),planterFields[i].title()),"dark brown")
+                    placePlanter(bestPlanter)
+                    occupiedStuff.append((bestPlanter,planterFields[i]))
                 continuePlanters = 1
+                print(occupiedStuff)
+                with open("planterdata.txt","w") as f:
+                    f.write("{}\n{}\n{}".format(occupiedStuff,planterTypes,planterFields))
+                f.close()
             else:
                 planterTimes = {}
                 with open("plantertimings.txt","r") as f:
@@ -782,25 +870,78 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
                 f.close()
                 planterTimes = {}
                 for i in lines:
-                    p,t = i.split(":")
-                    planterTimes[p] = float(t)
-                    
-                for i in range(planterset['planter_count']):
-                    currPlanter = planterTypes[i]
-                    currField = planterFields[i]
+                    if ":" in i:
+                        p,t = i.split(":")
+                        planterTimes[p] = float(t)
+                cycleFields = planterFields.copy()
+                collectAnyPlanters = 0
+                fieldsToPlace = []
+                removeFromOccupied = []
+                for i in range(maxPlanters):
+                    currPlanter = occupiedStuff[i][0]
+                    currField = occupiedStuff[i][1]
                     if str(planterset['harvest']) == "full":
                         growTime = planterInfo[currPlanter]['grow_time']
                         if currField in planterInfo[currPlanter]['grow_fields']:
                             growTime /= planterInfo[currPlanter]['grow_time_bonus']
                     elif str(planterset['harvest']) == "auto":
-                        pass
+                        growTime = 1
                     else:
                         growTime = planterset['harvest']
-                #cycle lists
-                #
-            break
-                
-                
+                    occupiedFields = []
+                    if time.time() - planterTimes[currPlanter] > growTime*60*60:
+                        collectAnyPlanters += 1
+                        time.sleep(2)
+                        goToPlanter(currField)
+                        webhook('',"Traveling: {} ({})\nObjective: Collect Planter".format(displayPlanterName(currPlanter),currField.title()),"dark brown")
+                        move.press('e')
+                        clickYes()
+                        if currField == "pumpkin":
+                            for _ in range(4):
+                                move.press(",")
+                        elif currField == "pine tree" or currField == "strawberry" or currField == "pineapple":
+                                move.press(".")
+                                move.press(".")
+                        starttime = time.time()
+                        move.apkey("space")
+                        while True:
+                            if time.time() - starttime > 20:
+                                break
+                            moblootPattern(1.1,1.4,"none",2)
+                        reset.reset()
+                        cycleFields.remove(currField)
+                        cycleFields.append(currField)
+                        removeFromOccupied.append((currPlanter,currField))
+                    else:
+                        occupiedFields.append(currField)
+                if collectAnyPlanters > 0 and planterFields == cycleFields:
+                    firstelement = cycleFields[0]
+                    cycleFields.pop(0)
+                    cycleFields.append(firstelement)
+                planterFields = cycleFields.copy()
+                for i in removeFromOccupied:
+                    occupiedStuff.remove(i)
+                print(occupiedStuff)
+                print(occupiedFields)
+                print(planterFields)
+                for _ in range(maxPlanters-len(occupiedStuff)):
+                    for i in planterFields:
+                        if i not in fieldsToPlace and i not in occupiedFields:
+                            fieldsToPlace.append(i)
+                            break
+                    
+                print(fieldsToPlace)
+                for i in fieldsToPlace:
+                    bestPlanter = getBestPlanter(i,occupiedStuff,planterTypes)
+                    goToPlanter(i,1)
+                    webhook('',"Traveling: {} ({})\nObjective: Place Planter".format(displayPlanterName(bestPlanter),i.title()),"dark brown")
+                    placePlanter(bestPlanter)
+                    occupiedStuff.append((bestPlanter,i))
+                    
+                with open("planterdata.txt","w") as f:
+                    f.write("{}\n{}\n{}".format(occupiedStuff,planterTypes,planterFields))
+                f.close()             
+                                                                                        
         #Mob run check
         if setdat['werewolf'] and checkRespawn("werewolf","1h"):
             killMob("pumpkin","werewolf",1)
@@ -868,11 +1009,11 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
             fullTime = 0
             while True:
                 time.sleep(0.05)
-                pag.mouseDown()
+                mouse.press()
                 time.sleep(0.05)
                 exec(open("gather_{}.py".format(gp)).read())
                 time.sleep(0.05)
-                pag.mouseUp()
+                mouse.release()
                 time.sleep(0.05)
                 timespent = (time.perf_counter() - timestart)/60
                 if bpcap.value >= setdat["pack"]:
@@ -933,6 +1074,10 @@ def setResolution():
         whd *= 2
     with open('save.txt', 'w') as f:
         f.write('wh:{}\nww:{}'.format(whd,wwd))
+    if subprocess.call("system_profiler SPDisplaysDataType | grep -i 'retina'", shell=True) == 0:
+        loadsettings.save('display_type', 'built-in retina display')
+    else:
+        loadsettings.save('display_type',"built-in display")
             
 if __name__ == "__main__":
     cmd = 'defaults read -g AppleInterfaceStyle'
@@ -960,6 +1105,7 @@ if __name__ == "__main__":
     root.tk.call('wm','iconphoto', root._w, img)
 
     s.configure('my.TMenubutton', font=('Helvetica', 12))
+    s.configure('smaller.TMenubutton', font=('Helvetica', 10))
     
     # create frames
     frame1 = ttk.Frame(notebook, width=720, height=400)
@@ -1046,31 +1192,39 @@ if __name__ == "__main__":
     petal_planter = tk.IntVar(value=plantdat['petal_planter'])
     plenty_planter = tk.IntVar(value=plantdat['plenty_planter'])
     festive_planter = tk.IntVar(value=plantdat['festive_planter'])
-    '''
-    dandelion_field = tk.IntVar(value=plantdat['dandelion_field'])
-    sunflower_field = tk.IntVar(value=plantdat['sunflower_field'])
-    mushroom_field = tk.IntVar(value=plantdat['mushroom_field'])
-    blue_flower_field = tk.IntVar(value=plantdat['blue_flower_field'])
-    clover_field = tk.IntVar(value=plantdat['clover_field'])
-    spider_field = tk.IntVar(value=plantdat['spider_field'])
-    strawberry_field = tk.IntVar(value=plantdat['strawberry_field'])
-    bamboo_field = tk.IntVar(value=plantdat['bamboo_field'])
-    pineapple_field = tk.IntVar(value=plantdat['pineapple_field'])
-    stump_field = tk.IntVar(value=plantdat['stump_field'])
-    cactus_field = tk.IntVar(value=plantdat['cactus_field'])
-    pine_tree_field = tk.IntVar(value=plantdat['pine_tree_field'])
-    pumpkin_field = tk.IntVar(value=plantdat['pumpkin_field'])
-    rose_field = tk.IntVar(value=plantdat['rose_field'])
-    mountain_top_field = tk.IntVar(value=plantdat['mountain_top_field'])
-    coconut_field = tk.IntVar(value=plantdat['coconut_field'])
-    pepper_field = tk.IntVar(value=plantdat['pepper_field'])
-    '''
+    paper_slot = tk.StringVar(root)
+    paper_slot.set(plantdat['paper_slot'])
+    ticket_slot = tk.StringVar(root)
+    ticket_slot.set(plantdat['ticket_slot'])
+    plastic_slot = tk.StringVar(root)
+    plastic_slot.set(plantdat['plastic_slot'])
+    candy_slot = tk.StringVar(root)
+    candy_slot.set(plantdat['candy_slot'])
+    blueclay_slot = tk.StringVar(root)
+    blueclay_slot.set(plantdat['blueclay_slot'])
+    redclay_slot = tk.StringVar(root)
+    redclay_slot.set(plantdat['redclay_slot'])
+    tacky_slot = tk.StringVar(root)
+    tacky_slot.set(plantdat['tacky_slot'])
+    pesticide_slot = tk.StringVar(root)
+    pesticide_slot.set(plantdat['pesticide_slot'])
+    heattreated_slot = tk.StringVar(root)
+    heattreated_slot.set(plantdat['heattreated_slot'])
+    hydroponic_slot = tk.StringVar(root)
+    hydroponic_slot.set(plantdat['hydroponic_slot'])
+    petal_slot = tk.StringVar(root)
+    petal_slot.set(plantdat['plenty_slot'])
+    plenty_slot = tk.StringVar(root)
+    plenty_slot.set(plantdat['plenty_slot'])
+    festive_slot = tk.StringVar(root)
+    festive_slot.set(plantdat['festive_slot'])
     harvest = plantdat['harvest']
     planter_count = tk.StringVar(root)
     planter_count.set(plantdat['planter_count'])
     harvest_full = tk.IntVar(value=boolToInt(str(harvest)=="full"))
     harvest_auto = tk.IntVar(value=boolToInt(str(harvest)=="auto"))
     harvest_int = plantdat['harvest']
+    slot_options = ["none"]+[x+1 for x in range(7)]
     field_options = tk.Variable(value=[x.split("_")[1][:-3].title() for x in os.listdir("./") if x.startswith("field_")])
     planter_fields =  plantdat['planter_fields']
 
@@ -1081,6 +1235,10 @@ if __name__ == "__main__":
     wha = savedata['wh']
     
     def calibratehive():
+        if subprocess.call("system_profiler SPDisplaysDataType | grep -i 'retina'", shell=True) == 0:
+            loadsettings.save('display_type', 'built-in retina display')
+        else:
+            loadsettings.save('display_type',"built-in display")
         if not calibrate_hive.calibrate():
             loadsettings.save('hivethreshold',1.0)
             cmd = """
@@ -1297,6 +1455,19 @@ if __name__ == "__main__":
             "petal_planter": petal_planter.get(),
             "plenty_planter": plenty_planter.get(),
             "festive_planter": festive_planter.get(),
+            "paper_slot": paper_slot.get(),
+            "ticket_slot": ticket_slot.get(),
+            "plastic_slot": plastic_slot.get(),
+            "candy_slot": candy_slot.get(),
+            "blueclay_slot": blueclay_slot.get(),
+            "redclay_slot": redclay_slot.get(),
+            "tacky_slot": tacky_slot.get(),
+            "pesticide_slot": pesticide_slot.get(),
+            "heattreated_slot": heattreated_slot.get(),
+            "hydroponic_slot": hydroponic_slot.get(),
+            "petal_slot": petal_slot.get(),
+            "plenty_slot":plenty_slot.get(),
+            "festive_slot":festive_slot.get(),
             'planter_fields':planterFields_set,
             "planter_count": planter_count.get(),
             "harvest": harvesttextbox.get(1.0,"end").replace("\n","")
@@ -1352,8 +1523,21 @@ if __name__ == "__main__":
 
             if sorted(planterFields_set) != sorted(planterFields_prev) or sorted(planterTypes_prev) != sorted(planterTypes_set):
                 with open("planterdata.txt","w") as f:
-                    f.write("{}\n{}".format(planterTypes_set,planterFields_set))
+                    f.write("[]\n{}\n{}".format(planterTypes_set,planterFields_set))
                 f.close()
+                with open("plantertimings.txt","r") as f:
+                    lines = f.read().split("\n")
+                f.close()
+                with open("plantertimings.txt","w") as f:
+                    writeStuff = []
+                    for i in lines:
+                        if ":" in i:
+                            k,_ = i.split(':')
+                            writeStuff.append("{}:0".format(k))
+                    print(writeStuff)
+                    f.write('\n'.join(writeStuff))
+                f.close()
+                
                             
             
         if int(setdict['hivethreshold']) == 1:
@@ -1493,7 +1677,7 @@ if __name__ == "__main__":
     tkinter.Checkbutton(frame4, text="(Free) Royal Jelly Dispenser", variable=royaljellydispenser).place(x=320, y = 50)
     tkinter.Checkbutton(frame4, text="Treat Dispenser", variable=treatdispenser).place(x=520, y = 50)
     #Tab 4
-    tkinter.Checkbutton(frame6, text="Enable Planters", variable=enable_planters).place(x=550, y = 5)
+    tkinter.Checkbutton(frame6, text="Enable Planters", variable=enable_planters).place(x=545, y = 20)
     tkinter.Label(frame6, text = "Allowed Planters").place(x = 30, y = 20)
     tkinter.Checkbutton(frame6, text="Paper", variable=paper_planter).place(x=0, y = 65)
     tkinter.Checkbutton(frame6, text="Ticket", variable=ticket_planter).place(x=0, y = 100)
@@ -1502,34 +1686,65 @@ if __name__ == "__main__":
     tkinter.Checkbutton(frame6, text="Blue Clay", variable=blueclay_planter).place(x=0, y = 205)
     tkinter.Checkbutton(frame6, text="Red Clay", variable=redclay_planter).place(x=0, y = 240)
     tkinter.Checkbutton(frame6, text="Tacky", variable=tacky_planter).place(x=0, y = 275)
-    tkinter.Checkbutton(frame6, text="Pesticide", variable=pesticide_planter).place(x=100, y = 65)
-    tkinter.Checkbutton(frame6, text="Heat-Treated", variable=heattreated_planter).place(x=100, y = 100)
-    tkinter.Checkbutton(frame6, text="Hydroponic", variable=hydroponic_planter).place(x=100, y = 135)
-    tkinter.Checkbutton(frame6, text="Petal", variable=petal_planter).place(x=100, y = 170)
-    tkinter.Checkbutton(frame6, text="Planter of Plenty", variable=plenty_planter).place(x=100, y = 205)
-    tkinter.Checkbutton(frame6, text="Festive", variable=festive_planter).place(x=100, y = 240)
-    tkinter.Label(frame6, text = "Allowed Fields\n(select from the list below)").place(x = 270, y = 20)
-    ttk.Separator(frame6,orient="vertical").place(x=240, y=30, width=2, height=260)    
+
+    tkinter.Checkbutton(frame6, text="Pesticide", variable=pesticide_planter).place(x=175, y = 65)
+    tkinter.Checkbutton(frame6, text="Heat-Treated", variable=heattreated_planter).place(x=175, y = 100)
+    tkinter.Checkbutton(frame6, text="Hydroponic", variable=hydroponic_planter).place(x=175, y = 135)
+    tkinter.Checkbutton(frame6, text="Petal", variable=petal_planter).place(x=175, y = 170)
+    tkinter.Checkbutton(frame6, text="Planter of Plenty", variable=plenty_planter).place(x=175, y = 205)
+    tkinter.Checkbutton(frame6, text="Festive", variable=festive_planter).place(x=175, y = 240)
+    
+    dropField = ttk.OptionMenu(frame6, paper_slot,plantdat['paper_slot'], *slot_options,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 90, y = 69,height=20)
+    dropField = ttk.OptionMenu(frame6, ticket_slot,plantdat['ticket_slot'], *slot_options,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 90, y = 69+35,height=20)
+    dropField = ttk.OptionMenu(frame6, plastic_slot,plantdat['plastic_slot'], *slot_options,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 90, y = 69+35*2,height=20)
+    dropField = ttk.OptionMenu(frame6, candy_slot,plantdat['candy_slot'], *slot_options,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 90, y = 69+35*3,height=20)
+    dropField = ttk.OptionMenu(frame6, blueclay_slot,plantdat['blueclay_slot'], *slot_options,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 90, y = 69+35*4,height=20)
+    dropField = ttk.OptionMenu(frame6, redclay_slot,plantdat['redclay_slot'], *slot_options,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 90, y = 69+35*5,height=20)
+    dropField = ttk.OptionMenu(frame6, tacky_slot,plantdat['tacky_slot'], *slot_options,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 90, y = 69+35*6,height=20)
+
+    dropField = ttk.OptionMenu(frame6, pesticide_slot,plantdat['pesticide_slot'], *slot_options,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 290, y = 69,height=20)
+    dropField = ttk.OptionMenu(frame6, heattreated_slot,plantdat['heattreated_slot'], *slot_options,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 290, y = 69+35,height=20)
+    dropField = ttk.OptionMenu(frame6, hydroponic_slot,plantdat['hydroponic_slot'], *slot_options,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 290, y = 69+35*2,height=20)
+    dropField = ttk.OptionMenu(frame6, petal_slot,plantdat['petal_slot'], *slot_options,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 290, y = 69+35*3,height=20)
+    dropField = ttk.OptionMenu(frame6, plenty_slot,plantdat['plenty_slot'], *slot_options,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 290, y = 69+35*4,height=20)
+    dropField = ttk.OptionMenu(frame6, festive_slot,plantdat['festive_slot'], *slot_options,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 290, y = 69+35*5,height=20)
+
+
+    tkinter.Label(frame6, text = "Allowed Fields").place(x = 400, y = 20)
+    ttk.Separator(frame6,orient="vertical").place(x=370, y=30, width=2, height=260)    
     listbox = tk.Listbox(frame6,listvariable=field_options,height=7,selectmode=tk.MULTIPLE)
     scrollbar = ttk.Scrollbar(frame6,orient=tk.VERTICAL,command=listbox.yview)
     listbox['yscrollcommand'] = scrollbar.set
     listbox.configure(font=('Helvetica 14'),width=14)
-    listbox.place(x=295,y=100)
-    scrollbar.place(x=407,y=105,height=110)
+    listbox.place(x=400,y=70)
+    scrollbar.place(x=513,y=75,height=110)
     for i in planter_fields:
         listbox.select_set(field_options.get().index(i.title()))
 
     
     dropField = ttk.OptionMenu(frame6, planter_count,plantdat['planter_count'], *[1,2,3],style='my.TMenubutton' )
-    dropField.place(x = 630, y = 210,height=24,width=60)
-    tkinter.Label(frame6, text = "Max planters").place(x=545,y=210)
-    tkinter.Label(frame6, text = "Harvest Every").place(x=545,y=245)
+    dropField.place(x = 630, y = 70,height=24,width=60)
+    tkinter.Label(frame6, text = "Max planters").place(x=545,y=70)
+    tkinter.Label(frame6, text = "Harvest Every").place(x=545,y=105)
     harvesttextbox = tkinter.Text(frame6, width = 4, height = 1, bg= wbgc)
     harvesttextbox.insert("end",harvest)
-    harvesttextbox.place(x = 637, y=247)
-    tkinter.Label(frame6, text = "Hours").place(x=674,y=245)
-    tkinter.Checkbutton(frame6, text="Full Grown", variable=harvest_full,command=lambda: changeHarvest("full")).place(x=545, y = 280)
-    tkinter.Checkbutton(frame6, text="Auto", variable=harvest_auto,command=lambda: changeHarvest("auto")).place(x=640, y = 280)
+    harvesttextbox.place(x = 637, y=107)
+    tkinter.Label(frame6, text = "Hours").place(x=674,y=105)
+    tkinter.Checkbutton(frame6, text="Full Grown", variable=harvest_full,command=lambda: changeHarvest("full")).place(x=545, y = 140)
+   #tkinter.Checkbutton(frame6, text="Auto", variable=harvest_auto,command=lambda: changeHarvest("auto")).place(x=640, y = 140)
 
     
 

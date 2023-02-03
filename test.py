@@ -19,7 +19,6 @@ from webhook import webhook
 import webbrowser
 import reset
 
-
 cmd = """
 osascript -e 'activate application "Roblox"' 
 """
@@ -43,129 +42,32 @@ wh = savedata["wh"]
 ms = pag.size()
 mw = ms[0]
 mh = ms[1]
+with open('plantertimings.txt','r') as f:
+    lines = f.read().split('\n')
+f.close()
+tempdict = {}
+for l in lines:
+    if ":" in l:
+        print(l)
+        a,b = l.split(":")
+        tempdict[a] = b
+print(tempdict)
 
-
-def displayPlanterName(planter):
-    if planter == "redclay":
-        return "Red Clay Planter"
-    elif planter == "blueclay":
-        return "Blue Clay Planter"
-    elif planter  == "heattreated":
-        return "Heat-Treated Planter"
-    elif planter == "plenty":
-        return "The Planter of Plenty"
-    return "{} Planter".format(planter.title())
-    
-def placePlanter(planter):
-    pag.moveTo(315,224)
-    scroll_start = time.time()
-    while True:
-        pag.scroll(100000)
-        if time.time() - scroll_start > 3:
-            break
-    if not imagesearch.find("sprinklermenu.png".format(planter),0.6,0,wh//10,ww//3,wh):
-        pag.moveTo(27,102)
-        pag.click()
-    pag.moveTo(315,224)
-    time.sleep(1)
-    setdat = loadsettings.load()
-    scroll_start = time.time()
-    while True:
-        pag.scroll(-100000)
-        if time.time() - scroll_start > 3:
-            break
-    planter_find_start = time.time()
-    while True:
-        pag.scroll(2400)
-        if time.time()-planter_find_start > 30:
-            webhook("",'Cant Find: {}'.format(displayPlanterName(planter)),"dark brown")
-            break
-        if imagesearch.find("{}planter.png".format(planter),0.6,0,wh//10,ww//3,wh):
-            time.sleep(0.5)
-            r = imagesearch.find("{}planter.png".format(planter),0.6,0,0,ww,wh)
-            webhook("",'Found: {}'.format(displayPlanterName(planter)),"dark brown")
-            trows,tcols = cv2.imread('./images/retina/{}planter.png'.format(planter)).shape[:2]
-            urows,ucols = cv2.imread('./images/retina/yes.png').shape[:2]
-            if setdat['display_type'] == "built-in retina display":
-                print(r[1],r[2])
-                
-                pag.moveTo(r[1]//2+trows//4,r[2]//2+tcols//4)
-                time.sleep(0.5)
-                pag.dragTo(ww//4, wh//4,0.7, button='left')
-                time.sleep(0.5)
-                a = imagesearch.find("yes.png",0.5,0,0,ww,wh)
-                if a:
-                    pag.moveTo(a[1]//2+urows//4,a[2]//2+ucols//4)
-                    pag.click()
-                else:
-                    pag.moveTo(ww//4-70,wh//3.2)
-                    pag.click()
-            else:
-                pag.moveTo(r[1]+trows//2,r[2]+tcols//2)
-                pag.dragTo(ww//2, wh//2,0.8, button='left')
-                pag.moveTo(ww//4-70,wh//3.2)
-                time.sleep(0.5)
-                a = imagesearch.find("yes.png",0.5,0,0,ww,wh)
-                if a:
-                    pag.moveTo(a[1]+urows//2,a[2]+ucols//2)
-                    pag.click()
-                else:
-                    pag.moveTo(ww//2-50,wh//1.6)
-                    pag.click()
-
-            break
-def goToPlanter(field,place=0):
-    exec(open("field_{}.py".format(field)).read())
-    if field == "pine tree":
-        move.hold("d",3)
-        move.hold("s",4)
-        if place: move.hold("w",0.07)
-    elif field == "pumpkin":
-        move.hold("s",3)
-        move.press(",")
-        move.press(",")
-        move.hold("w",4)
-        if place: move.hold("s",0.07)
-    elif field  == "strawberry":
-        move.hold("d",3)
-        move.hold("s",4)
-    elif field == "bamboo":
-        move.hold("s",3)
-        move.press(",")
-        move.press(",")
-        move.hold("w",4)
-        if place: move.hold("s",0.07)
-    elif field  == "pineapple:
-        move.hold("d",3)
-        move.hold("s",4)
-    elif field == "mushroom":
-        move.hold("s",3)
-        move.press(",")
-        move.press(",")
-        move.hold("w",4)
-        if place: move.hold("s",0.07)
-    elif field == "coconut":
-        move.hold("d",5)
-        move.hold("s")
-        
-reset.reset()    
-goToPlanter()
-placePlanter('tacky')
+'''
+# For both Python 2.7 and Python 3.x
+from PIL import Image
+img_data = b'iVBORw0KGgoAAAANSUhEUgAAAJ8AAAAWAQMAAADkatyzAAAABlBMVEUAAAAbKjWMzP1VAAAAAXRSTlMAQObYZgAAAdlJREFUeAEBzgEx/gD4AAAAAAAAAAAAAAAAAAAAAAAAAAD+BgAAAAAADAAAAAHgDAAAAEAAAAD/BgAAAAB+DAAAAAH+DAAAAEAAAACBhgAAAACCDAAAAAECDAAAAEAAAACBhgAAAAGADAAAAAEDDAAAAEAAAACBhjBAAAGADB8MDAEDDB8MAfAAJgCBBjBB8AEADAGEDAEDDAGP4fD4PAD/BjBCCAEADACECAH+DACMEEEEMAD+BjBCCAEADACGGAHgDACMEEEEIAD/BjBD+AEADB+CEAEADB+MEEH8IACBhjBH/AEADCCCEAEADCCMEEP+IACAhjBGAAGADCCDMAEADCCMEEMAIACAhhBCAAGADCCBIAEADCCMEEEAIACBhhBCAACCDCCB4AEADCCMEEEAIAD/Bg/B8AB+DB+AwAEADB+MEHD4IAD4BgAAAAAADAAAwAEADAAMEAAAIAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAABgAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAAAAAAAAAAFzEPdK0OEUMAAAAAElFTkSuQmCC'
+import base64
+with open("imageToSave.png", "wb") as fh:
+    fh.write(base64.decodebytes(img_data))
+c = Image.open("imageToSave.png")
+d = c.resize((1000,700), resample=Image.BOX)
+d.show()
+'''
 
 '''
 
 
-
-savedata = {}
-def loadSave():
-    with open('save.txt') as f:
-        lines = f.read().split("\n")
-    f.close()
-    for s in lines:
-        l = s.replace(" ","").split(":")
-        if l[1].isdigit():
-            l[1] = int(l[1])
-        savedata[l[0]] = l[1]
         
 def savesettings(dictionary):
     templist = []

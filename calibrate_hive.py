@@ -66,7 +66,7 @@ def calibrate():
     print(vals)
     thresh = (vals[1]+vals[2])/2
     webhook("","Calculated: Threshold\nValue: {}".format(thresh),"dark brown")
-    if thresh == 1.0 or thresh == 0.0:
+    if thresh == 1.0 or thresh == 0.0 or vals[1] == vals[2]:
             loadsettings.save('hivethreshold',1.0)
             return False
 

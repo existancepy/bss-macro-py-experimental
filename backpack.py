@@ -18,10 +18,10 @@ def bpc():
     def rgb_to_hex(r, g, b):
       return ('0x{:X}{:X}{:X}').format(r, g, b)
     X1=mw//2+59+3
-    Y1=6
+    Y1=14
     if dt == "built-in retina display":
-        X1*=2
-        Y1*=2
+        X1=(round((mw/2+60), 0))*2
+        Y1=14*2
         
     pix = pag.pixel(X1,Y1)
     backpackColor = int(rgb_to_hex(pix[0],pix[1],pix[2]),16)
@@ -40,7 +40,7 @@ def bpc():
         perc = 30
     else:
         perc = 0
-    print(perc)
+    print("pixel colour: {}, backpack percentage: {}".format(backpackColor, perc))
     return perc
 
 
