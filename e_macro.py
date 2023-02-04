@@ -408,7 +408,13 @@ for line in lines:
         elif line.replace("\t","").startswith(','):
             currList+= removeComments(line).replace("\t","")
 
-    
+def is_runnning(app):
+    count = int(subprocess.check_output(["osascript",
+                "-e", "tell application \"System Events\"",
+                "-e", "count (every process whose name is \"" + app + "\")",
+                "-e", "end tell"]).strip())
+    return count > 0
+
 def getBestPlanter(field,occus,avils):
     for i in planterRanks[field]:
         if i in avils:
