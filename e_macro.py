@@ -66,7 +66,7 @@ def boolToInt(condition):
     if condition: return 1
     return 0
 def is_runnning(app):
-    return False
+    return True
     '''
     count = int(subprocess.check_output(["osascript",
                 "-e", "tell application \"System Events\"",
