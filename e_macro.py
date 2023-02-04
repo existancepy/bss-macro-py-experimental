@@ -65,6 +65,14 @@ if __name__ == '__main__':
 def boolToInt(condition):
     if condition: return 1
     return 0
+def is_runnning(app):
+    count = int(subprocess.check_output(["osascript",
+                "-e", "tell application \"System Events\"",
+                "-e", "count (every process whose name is \"" + app + "\")",
+                "-e", "end tell"]).strip())
+    return count > 0
+
+
 def discord_bot(dc):
     setdat = loadsettings.load()
     if setdat['enable_discord_bot']:
@@ -215,9 +223,9 @@ def canon():
     time.sleep(0.5)
     move.press("space")
     time.sleep(0.2)
-    st = time.perf_counter()
     r = ""
     pag.keyUp("d")
+    st = time.perf_counter()
     while True:
         move.hold("d",0.15)
         r = ebutton()
@@ -576,6 +584,11 @@ def background(cf,bpcap,gat,dc):
                 webhook("","Unexpected Death","red")
                 dc.value = 0
                 gat.value = 0
+        if not is_running("Roblox") and dc.value == 0:
+            dc.value = 1
+            webhook("","Roblox unexpectedly closed","red")
+            rejoin()
+            dc.value = 0
             
             
 
@@ -585,12 +598,15 @@ def killMob(field,mob,reset):
     canon()
     time.sleep(3)
     exec(open("field_{}.py".format(field)).read())
+    if mob == "spider":
+        for _ in range(4):
+            move.press(",")
     lootMob(field,mob,reset)
     
 def lootMob(field,mob,resetCheck):
-    start = time.time()
     move.apkey("space")
     webhook("","Looting: {} ({})".format(mob.title(), field.title()),"bright green")
+    start = time.time()
     while True:
         moblootPattern(1.1,1.4,"none",2)
         if time.time() - start > 18:
@@ -1772,9 +1788,9 @@ if __name__ == "__main__":
     #whatextbox = tkinter.Text(frame3, width = 5, height = 1)
     #whatextbox.insert("end",wha)
     #whatextbox.place(x=310,y=122)
-    tkinter.Label(frame3, text = "Display type").place(x = 0, y = 155)
-    dropField = ttk.OptionMenu(frame3, display_type, setdat['display_type'], command = savedisplaytype, *["Built-in retina display","Built-in display"],style='my.TMenubutton' )
-    dropField.place(width=160,x = 100, y = 155,height=24)
+    tkinter.Label(frame3, text = "Display type: Detected Automatically").place(x = 0, y = 155)
+    #dropField = ttk.OptionMenu(frame3, display_type, setdat['display_type'], command = savedisplaytype, *["Built-in retina display","Built-in display"],style='my.TMenubutton' )
+    #dropField.place(width=160,x = 100, y = 155,height=24)
     tkinter.Label(frame3, text = "Private Server Link").place(x = 0, y = 190)
     linktextbox = tkinter.Text(frame3, width = 24, height = 1, bg= wbgc)
     linktextbox.insert("end",private_server_link)
