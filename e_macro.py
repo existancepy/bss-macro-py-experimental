@@ -408,13 +408,6 @@ for line in lines:
         elif line.replace("\t","").startswith(','):
             currList+= removeComments(line).replace("\t","")
 
-def is_runnning(app):
-    count = int(subprocess.check_output(["osascript",
-                "-e", "tell application \"System Events\"",
-                "-e", "count (every process whose name is \"" + app + "\")",
-                "-e", "end tell"]).strip())
-    return count > 0
-
 def getBestPlanter(field,occus,avils):
     for i in planterRanks[field]:
         if i in avils:
@@ -590,7 +583,7 @@ def background(cf,bpcap,gat,dc):
                 webhook("","Unexpected Death","red")
                 dc.value = 0
                 gat.value = 0
-        if not is_running("Roblox") and dc.value == 0:
+        if not is_runnning("Roblox") and dc.value == 0:
             dc.value = 1
             webhook("","Roblox unexpectedly closed","red")
             rejoin()
