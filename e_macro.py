@@ -66,11 +66,14 @@ def boolToInt(condition):
     if condition: return 1
     return 0
 def is_runnning(app):
+    return False
+    '''
     count = int(subprocess.check_output(["osascript",
                 "-e", "tell application \"System Events\"",
                 "-e", "count (every process whose name is \"" + app + "\")",
                 "-e", "end tell"]).strip())
     return count > 0
+    '''
 
 
 def discord_bot(dc):
