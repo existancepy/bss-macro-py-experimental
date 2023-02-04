@@ -19,11 +19,12 @@ from webhook import webhook
 import webbrowser
 import reset
 
+'''
 cmd = """
 osascript -e 'activate application "Roblox"' 
 """
 os.system(cmd)
-
+'''
 time.sleep(1)
 savedata = {}
 def loadSave():
@@ -53,6 +54,16 @@ for l in lines:
         tempdict[a] = b
 print(tempdict)
 
+
+def is_running(app):
+
+    count = int(subprocess.check_output(["osascript",
+                "-e", "tell application \"System Events\"",
+                "-e", "count (every process whose name is \"" + app + "\")",
+                "-e", "end tell"]).strip())
+    return count > 0
+
+print(is_running("Roblox"))
 '''
 # For both Python 2.7 and Python 3.x
 from PIL import Image

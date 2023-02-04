@@ -8,7 +8,6 @@ ms = pag.size()
 mw = ms[0]
 mh = ms[1]
 dt = loadsettings.load()['display_type']
-time.sleep(2)
 #0% 7697781
 #31% 8381831
 #52% 8502900
@@ -41,7 +40,6 @@ def bpc():
         perc = 0
     print("pixel colour: {}, backpack percentage: {}".format(backpackColor, perc))
     return perc
-bpc()
 
 
 
