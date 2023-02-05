@@ -21,10 +21,6 @@ def loadSave():
     return info
 
 def calibrate():
-    cmd = """
-        osascript -e 'activate application "Roblox"' 
-    """
-    os.system(cmd)
     time.sleep(1)
     webhook("","Calibrating: Hive","dark brown",1)
     vals = []
