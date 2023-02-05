@@ -41,7 +41,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.26"
+macrov = "1.26.1"
 planterInfo = loadsettings.planterInfo()
 
 if __name__ == '__main__':
