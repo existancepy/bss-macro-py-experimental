@@ -1088,10 +1088,13 @@ def setResolution():
     whd = int(pag.size()[1])
     if subprocess.call("system_profiler SPDisplaysDataType | grep -i 'retina'", shell=True) == 0:
         loadsettings.save('display_type', 'built-in retina display')
+        print("display type: retina")
         wwd *=2
         whd *=2
     else:
         loadsettings.save('display_type',"built-in display")
+        print("display type: built-in")
+    print("Screen coordinates: {}x{}".format(wwd,whd))
     with open('save.txt', 'w') as f:
         f.write('wh:{}\nww:{}'.format(whd,wwd))
             
