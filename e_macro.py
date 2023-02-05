@@ -1086,16 +1086,14 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
 def setResolution():
     wwd = int(pag.size()[0])
     whd = int(pag.size()[1])
-    dt = loadsettings.load()["display_type"]
-    if dt == "built-in retina display":
-        wwd *=  2
-        whd *= 2
-    with open('save.txt', 'w') as f:
-        f.write('wh:{}\nww:{}'.format(whd,wwd))
     if subprocess.call("system_profiler SPDisplaysDataType | grep -i 'retina'", shell=True) == 0:
         loadsettings.save('display_type', 'built-in retina display')
+        wwd *=2
+        whd *=2
     else:
         loadsettings.save('display_type',"built-in display")
+    with open('save.txt', 'w') as f:
+        f.write('wh:{}\nww:{}'.format(whd,wwd))
             
 if __name__ == "__main__":
     cmd = 'defaults read -g AppleInterfaceStyle'
