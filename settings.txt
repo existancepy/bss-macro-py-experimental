@@ -1,4 +1,4 @@
-
+Qq
 hive_number:1
 walkspeed:28
 gifted_vicious_bee:0
@@ -41,7 +41,7 @@ wreath:1
 snow_machine:1
 mondo_buff:0
 lid_art:0
-hivethreshold:0.9496167302131653
+hivethreshold:1.0
 ebthreshold:1
 ebdetect:pyautogui
 bploc:[0,0]
