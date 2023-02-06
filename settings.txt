@@ -2,9 +2,9 @@
 hive_number:1
 walkspeed:28
 gifted_vicious_bee:0
-enable_discord_webhook:0
-discord_webhook_url:
-send_screenshot:0
+enable_discord_webhook:1
+discord_webhook_url:https://discord.com/api/webhooks/1006538045136318555/lYObLY1JTag1dFa0f3tfr6j14m54Lfa8Toakjgh4sEhrbDGlm5iZTjgwYqk7LDbApYNR
+send_screenshot:1
 gather_enable:1
 gather_field:pine tree
 gather_pattern:e_lol
@@ -14,13 +14,13 @@ gather_time:20
 pack:95
 before_gather_turn:right
 turn_times:2
-return_to_hive:walk
+return_to_hive:reset
 whirligig_slot:1
 display_type:built-in retina display
-private_server_link:
+private_server_link:https://www.roblox.com/games/1537690962?privateServerLinkCode=91602415947156172254993136331837
 enable_discord_bot:0
 discord_bot_token:
-field_drift_compensation:0
+field_drift_compensation:1
 stump_snail:0
 continue_after_stump_snail:0
 ladybug:0
@@ -37,11 +37,11 @@ treatdispenser:0
 stockings:1
 feast:1
 samovar:0
-wreath:0
-snow_machine:0
+wreath:1
+snow_machine:1
 mondo_buff:0
 lid_art:0
-hivethreshold:1.0
+hivethreshold:0.9496167302131653
 ebthreshold:1
 ebdetect:pyautogui
 bploc:[0,0]

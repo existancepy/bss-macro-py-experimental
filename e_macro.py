@@ -225,8 +225,7 @@ def canon():
     time.sleep(0.2)
     r = ""
     pag.keyUp("d")
-    st = time.perf_counter()
-    while True:
+    for _ in range(6)
         move.hold("d",0.15)
         r = ebutton()
         timer = time.perf_counter()  - st
@@ -234,9 +233,7 @@ def canon():
         if r:
             webhook("","Canon found","dark brown")
             return
-        if timer > setdat['canon_time']/setdat["walkspeed"]*28:
-            webhook("","Cannon not found, resetting","dark brown",1)
-            break
+    webhook("","Cannon not found, resetting","dark brown",1)
     mouse.move_to(mw//2,mh//5*4)
     for _ in range(20):
         mouse.press()
@@ -1381,7 +1378,6 @@ if __name__ == "__main__":
                 """
         os.system(cmd)
         setdat = loadsettings.load()
-        webhook("","Screenshotting: hive1.png","dark brown",1)
         maxvals = []
         savedata = loadSave()
         pag.moveTo(350,100)
@@ -1417,6 +1413,7 @@ if __name__ == "__main__":
         yo = wh-2
         xt = xo//2
         yt = 2
+        webhook("","Screenshotting: hive1.png","dark brown",1)
         im = pag.screenshot(region = (xo,yo,xt,yt))
         if setdat['display_type'] ==  "built-in retina display":
             im.save('./images/retina/hive1.png')
@@ -1424,21 +1421,26 @@ if __name__ == "__main__":
             im.save('./images/built-in/hive1.png')
             
         
-    def calibratehive():
+    def calibratehive(term=0):
         screenshothive()
         if not calibrate_hive.calibrate():
-            loadsettings.save('hivethreshold',1.0)
             cmd = """
                     osascript -e  'activate application "Terminal"'
                 """
             os.system(cmd)
             window = tk.Toplevel()
-            label = tk.Label(window, text="ERROR calibrating, ensure that:\n\n -Roblox is in fullscreen\n -Terminal has screen recording permissions (System prefences -> security and privacy -> privacy -> screen recording)\n -The correct display type is selected",bg=wbgc)
+            label = tk.Label(window, text="ERROR calibrating, ensure that:\n\n -Roblox is in fullscreen\n -Terminal has screen recording permissions (System prefences -> security and privacy -> privacy -> screen recording)",bg=wbgc)
             button_no = ttk.Button(window, text="Ok", command=window.destroy)
             label.grid(row=0, column=0, columnspan=2)
             button_no.grid(row=1, column=1)
             return False
-        else: return True
+        elif term:
+            cmd = """
+                    osascript -e  'activate application "Terminal"'
+                """
+            os.system(cmd)
+
+        return True
         
             
     def calibratebp():
@@ -1489,7 +1491,7 @@ if __name__ == "__main__":
             break
     def screenshotebutton():
         setdat = loadsettings.load()
-        webhook("","Screenshotting: eb.png","dark brown",1)
+        webhook("","Screenshotting: eb.png","dark brown")
         xo = ww//2.6
         yo = wh//19
         xt = ww//25
@@ -1542,7 +1544,7 @@ if __name__ == "__main__":
             webhook("","E button detect type: cv2".format(thresh),"light blue")
 
     def calibrate():
-        if calibratehive():
+        if calibratehive(1):
             calibrateebutton()
             webhook("","Calibration Complete","light green")
             cmd = """

@@ -19,48 +19,22 @@ from webhook import webhook
 import webbrowser
 import reset
 import _darwinmouse as mouse
+'''
 cmd = """
 osascript -e 'activate application "Roblox"' 
 """
-os.system(cmd)
-
-time.sleep(1)
-savedata = {}
-def loadSave():
-    with open('save.txt') as f:
-        lines = f.read().split("\n")
-    f.close()
-    for s in lines:
-        l = s.replace(" ","").split(":")
-        if l[1].isdigit():
-            l[1] = int(l[1])
-        savedata[l[0]] = l[1]
-loadSave()
-setdat = loadsettings.load()
-ww = savedata["ww"]
-wh = savedata["wh"]
-ms = pag.size()
-mw = ms[0]
-mh = ms[1]
-
-def screenshotebutton():
-    setdat = loadsettings.load()
-    webhook("","Screenshotting: eb.png","dark brown",1)
-    xo = ww//2.6
-    yo = wh//19
-    xt = ww//25
-    yt = wh//30
-    im = pag.screenshot(region = (xo,yo,xt,yt))
-    im.save('eb.png')
-    '''
-    if setdat['display_type'] ==  "built-in retina display":
-        im.save('./images/retina/eb.png')
-    else:
-        im.save('./images/built-in/eb.png')
-    '''
-
-
-screenshotebutton()
+os.system(cmd)'''
+vals = []
+for _ in range(10):
+    st = time.time()
+    pag.keyDown("w")
+    move.press("space")
+    move.press("space")
+    time.sleep(9)
+    pag.keyUp("w")
+    vals.append(time.time()-st)
+print(vals)
+print(sum(vals)/len(vals))
 '''
 # For both Python 2.7 and Python 3.x
 from PIL import Image
