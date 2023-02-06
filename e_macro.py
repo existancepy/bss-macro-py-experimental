@@ -225,7 +225,7 @@ def canon():
     time.sleep(0.2)
     r = ""
     pag.keyUp("d")
-    for _ in range(6)
+    for _ in range(6):
         move.hold("d",0.15)
         r = ebutton()
         timer = time.perf_counter()  - st
