@@ -228,8 +228,6 @@ def canon():
     for _ in range(6):
         move.hold("d",0.15)
         r = ebutton()
-        timer = time.perf_counter()  - st
-        print(timer)
         if r:
             webhook("","Canon found","dark brown")
             return
