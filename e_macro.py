@@ -42,7 +42,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.27"
+macrov = "1.28"
 planterInfo = loadsettings.planterInfo()
 
 if __name__ == '__main__':
@@ -492,6 +492,7 @@ def placePlanter(planter):
     ww = res['ww']
     wh = res['wh']
     planterSlot = str(plantdat['{}_slot'.format(planter)])
+    print(planterSlot)
     if planterSlot != "none":
         move.press(planterSlot)
     else:
@@ -542,6 +543,7 @@ def placePlanter(planter):
         pag.moveTo(27,102)
         pag.click()
     savePlanterTimings(planter)
+    webhook("","Placed Planter: {}".format(displayPlanterName(planter)),"bright green",1)
     reset.reset()
 
 urows,ucols = cv2.imread('./images/retina/yes.png').shape[:2]
@@ -601,7 +603,7 @@ def goToPlanter(field,place=0):
         move.hold("d",5)
         move.hold("s")
     else:
-        time.sleep(0.6)
+        time.sleep(1)
         
 def fieldDriftCompensation():
     res = loadRes()
@@ -695,7 +697,7 @@ def collect(name,beesmas=0):
         canon()
         webhook("","Traveling: {}".format(dispname),"dark brown")
         exec(open("collect_{}.py".format(usename)).read())
-        if usename == "wealthclock":
+        if usename == "wealthclock" or usename == "samovar":
             for _ in range(7):
                 move.hold("w",0.1)
                 if ebutton():
@@ -981,8 +983,9 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
                 occupiedStuff = []
                 for i in range(maxPlanters):
                     bestPlanter = getBestPlanter(planterFields[i],occupiedStuff,planterTypes)
-                    goToPlanter(planterFields[i],1)
                     webhook('',"Traveling: {} ({})\nObjective: Place Planter".format(displayPlanterName(bestPlanter),planterFields[i].title()),"dark brown")
+                    goToPlanter(planterFields[i],1)
+    
                     placePlanter(bestPlanter)
                     occupiedStuff.append((bestPlanter,planterFields[i]))
                 continuePlanters = 1
@@ -1060,8 +1063,8 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
                 print(fieldsToPlace)
                 for i in fieldsToPlace:
                     bestPlanter = getBestPlanter(i,occupiedStuff,planterTypes)
-                    goToPlanter(i,1)
                     webhook('',"Traveling: {} ({})\nObjective: Place Planter".format(displayPlanterName(bestPlanter),i.title()),"dark brown")
+                    goToPlanter(i,1) 
                     placePlanter(bestPlanter)
                     occupiedStuff.append((bestPlanter,i))
                     
@@ -1399,7 +1402,7 @@ if __name__ == "__main__":
         for _ in range(6):
             pag.press('o')
         for _ in range(2):
-            r = imagesearch.find("hive1.png",0, xo, yo, xt, yt)
+            r = imagesearch.find("hive0.png",0, xo, yo, xt, yt)
             maxvals.append(r[3])
             for _ in range(4):
                 pag.press(",")
@@ -1409,7 +1412,7 @@ if __name__ == "__main__":
                 pag.press(",")
         xo = ww//4
         yo = wh-2
-        xt = xo//2
+        xt = ww//8
         yt = 2
         webhook("","Screenshotting: hive1.png","dark brown",1)
         im = pag.screenshot(region = (xo,yo,xt,yt))
@@ -1895,7 +1898,8 @@ if __name__ == "__main__":
     tkinter.Checkbutton(frame4, text="Honey Wreath", variable=wreath).place(x=470, y = 85)
     #Tab 4
     tkinter.Checkbutton(frame6, text="Enable Planters", variable=enable_planters).place(x=545, y = 20)
-    tkinter.Label(frame6, text = "Allowed Planters").place(x = 30, y = 20)
+    tkinter.Label(frame6, text = "Allowed Planters").place(x = 120, y = 15)
+    tkinter.Label(frame6, text = "slot").place(x = 105, y = 40)
     tkinter.Checkbutton(frame6, text="Paper", variable=paper_planter).place(x=0, y = 65)
     tkinter.Checkbutton(frame6, text="Ticket", variable=ticket_planter).place(x=0, y = 100)
     tkinter.Checkbutton(frame6, text="Plastic", variable=plastic_planter).place(x=0, y = 135)
@@ -1940,7 +1944,7 @@ if __name__ == "__main__":
     dropField.place(width=65,x = 290, y = 69+35*5,height=20)
 
 
-    tkinter.Label(frame6, text = "Allowed Fields").place(x = 400, y = 20)
+    tkinter.Label(frame6, text = "Allowed Fields").place(x = 400, y = 15)
     ttk.Separator(frame6,orient="vertical").place(x=370, y=30, width=2, height=260)    
     listbox = tk.Listbox(frame6,listvariable=field_options,height=7,selectmode=tk.MULTIPLE)
     scrollbar = ttk.Scrollbar(frame6,orient=tk.VERTICAL,command=listbox.yview)

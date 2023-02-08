@@ -24,17 +24,22 @@ cmd = """
 osascript -e 'activate application "Roblox"' 
 """
 os.system(cmd)'''
-vals = []
+
+times = []
+start = time.time()
 for _ in range(10):
-    st = time.time()
+    start = time.time()
+    move.press(",")
+    move.press("e")
+    time.sleep(0.8)
     pag.keyDown("w")
     move.press("space")
     move.press("space")
     time.sleep(9)
     pag.keyUp("w")
-    vals.append(time.time()-st)
-print(vals)
-print(sum(vals)/len(vals))
+    move.press("space")
+    times.append(time.time()-start)
+print(sum(times)/len(times))
 '''
 # For both Python 2.7 and Python 3.x
 from PIL import Image

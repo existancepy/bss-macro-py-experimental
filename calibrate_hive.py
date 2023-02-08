@@ -46,17 +46,17 @@ def calibrate():
         time.sleep(0.1)
         for _ in range(6):
             pag.press('o')
-        #im = pag.screenshot(region = (xo,yo,xt,yt))
-        #im.save('a.png')
 
         time.sleep(0.4)
-        for _ in range(4):
+        for i in range(4):
             r = imagesearch.find("hive1.png",0, xo, yo, xt, yt)
             vals.append(r[3])
             for _ in range(4):
                 pag.press(",")
             
             time.sleep(0.5)
+            #im = pag.screenshot(region = (xo,yo,xt,yt))
+            #im.save("hives {}.png".format(i))
         time.sleep(1)
     vals = sorted(vals,reverse=True)
     print(vals)

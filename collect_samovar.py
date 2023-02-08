@@ -46,6 +46,5 @@ jump()
 move.press('.')
 move.press('.')
 jump()
-acchold("w",0.4)
 
     
