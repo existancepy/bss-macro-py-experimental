@@ -1,4 +1,4 @@
-Qq
+
 hive_number:1
 walkspeed:28
 gifted_vicious_bee:0
