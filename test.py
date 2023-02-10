@@ -19,15 +19,25 @@ from webhook import webhook
 import webbrowser
 import reset
 import _darwinmouse as mouse
+import ast
+import getHaste
+
+def roblox():
+    cmd = """
+    osascript -e 'activate application "Roblox"' 
+    """
+    os.system(cmd)
+    time.sleep(1)
+
+with open("haste.txt","w") as f:
+    f.write(str(28))
+f.close()
+
 '''
-cmd = """
-osascript -e 'activate application "Roblox"' 
-"""
-os.system(cmd)'''
 
 times = []
 start = time.time()
-for _ in range(10):
+for _ in range(5):
     start = time.time()
     move.press(",")
     move.press("e")
@@ -40,6 +50,8 @@ for _ in range(10):
     move.press("space")
     times.append(time.time()-start)
 print(sum(times)/len(times))
+'''
+
 '''
 # For both Python 2.7 and Python 3.x
 from PIL import Image

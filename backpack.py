@@ -19,7 +19,6 @@ def bpc():
     X1=mw//2+63
     Y1=8
     if dt == "built-in retina display":
-        print(X1,Y1)
         X1= (mw//2+63)*2 #(round((mw/2+60), 0))*2
         Y1= 8*2 #14*2
         

@@ -32,6 +32,7 @@ import ast
 import calibrate_hive
 import _darwinmouse as mouse
 from datetime import datetime
+from getHaste import getHaste
 
 
 savedata = {}
@@ -42,7 +43,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.28"
+macrov = "1.28.1"
 planterInfo = loadsettings.planterInfo()
 
 if __name__ == '__main__':
@@ -341,19 +342,17 @@ def walk_to_hive():
     setdat = loadsettings.load()
     webhook("","Going back to hive: {}".format(setdat['gather_field']),"dark brown")
     exec(open("walk_{}.py".format(setdat['gather_field'])).read())
-    st = time.perf_counter()
-    while True:
+    for _ in range(23):
         pag.keyDown("a")
         time.sleep(0.15)
         pag.keyUp("a")
         r = ebutton()
         if r:
             convert()
-            break
-        if time.perf_counter()  - st > 30/28*setdat["walkspeed"]:
-            webhook("","Cant find hive, resetting","dark brown",1)
             reset.reset()
-            break
+            return
+        
+    webhook("","Cant find hive, resetting","dark brown",1)
     reset.reset()
 def checkRespawn(m,t):
     timing = float(loadtimings()[m])
@@ -637,6 +636,7 @@ def background(cf,bpcap,gat,dc):
     savedata = loadRes()
     ww = savedata['ww']
     wh = savedata['wh']
+    setdat = loadsettings.load()
     while True:
         r = imagesearch.find('disconnect.png',0.8,ww//3,wh//2.8,ww//2.3,wh//2.5)
         if r:
@@ -658,6 +658,8 @@ def background(cf,bpcap,gat,dc):
             webhook("","Roblox unexpectedly closed","red")
             rejoin()
             dc.value = 0
+        if setdat['haste_compensation']:
+            getHaste()
             
             
 
@@ -762,50 +764,56 @@ def rejoin():
                 time.sleep(6)
                 
         time.sleep(50*(i+1))
+        cmd = """
+            osascript -e 'activate application "Roblox"' 
+        """
+        
+        os.system(cmd)
+        time.sleep(2)
         move.hold("w",5)
         move.hold("s",0.55)
         foundHive = 0
         move.apkey('space')
-        webhook("","Finding Hive", "dark brown")
+        webhook("","Finding Hive", "dark brown",1)
         if setdat['hive_number'] == 3:
             if ebutton():
                 move.press('e')
                 foundHive = 1
-                webhook("","Hive Found","dark brown")
+                webhook("","Hive Found","dark brown",1)
         elif setdat['hive_number'] == 2:
             move.hold('d',1.2)
             if ebutton():
                     move.press('e')
                     foundHive = 1
-                    webhook("","Hive Found","dark brown")
+                    webhook("","Hive Found","dark brown",1)
         elif setdat['hive_number'] == 1:
-            move.hold('d',2.3)
+            move.hold('d',1.9)
             if ebutton():
                 move.press('e')
                 foundHive = 1
-                webhook("","Hive Found","dark brown")
+                webhook("","Hive Found","dark brown",1)
         elif setdat['hive_number'] == 4:
             move.hold('a',1.1)
             if ebutton():
                     move.press('e')
                     foundHive = 1
-                    webhook("","Hive Found","dark brown")
+                    webhook("","Hive Found","dark brown",1)
         elif setdat['hive_number'] == 5:
             move.hold('a',2.3)
             if ebutton():
                 move.press('e')
                 foundHive = 1
-                webhook("","Hive Found","dark brown")
+                webhook("","Hive Found","dark brown",1)
         else:
             move.hold('a',3.3)
             if ebutton():
                     move.press('e')
                     foundHive = 1
-                    webhook("","Hive Found","dark brown")
+                    webhook("","Hive Found","dark brown",1)
         while True:   
             if not foundHive:
                 move.hold("d",12)
-                webhook("","Hive already claimed, finding new hive","dark brown")
+                webhook("","Hive already claimed, finding new hive","dark brown",1)
                 move.hold('a',1)
                 if ebutton():
                     move.press('e')
@@ -877,7 +885,23 @@ updateSave("ww",ww)
 updateSave("wh",wh)
 '''
             
-    
+
+def placeSprinkler():
+    sprinklerCount = {
+        "basic":1,
+        "silver":2,
+        "golden":3,
+        "diamond":4,
+        "saturator":1
+
+        }
+    setdat = loadsettings.load()
+    move.press(str(setdat['sprinkler_slot']))
+    for _ in range(sprinklerCount[setdat['sprinkler_type']]):
+        move.apkey("space")
+        time.sleep(0.05)
+        move.press(str(setdat['sprinkler_slot']))
+        time.sleep(0.5)
 def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
         
     val = validateSettings()
@@ -886,11 +910,10 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
         print(val)
         sys.exit()
     cmd = """
-    osascript -e 'activate application "Roblox"' 
-    """
-    
+            osascript -e 'activate application "Roblox"' 
+        """
+        
     os.system(cmd)
-    
     reset.reset()
     convert()
     savedata = loadRes()
@@ -914,6 +937,11 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
             maxPlanters = len(planterFields)
     
     while True:
+        cmd = """
+        osascript -e 'activate application "Roblox"' 
+        """
+        
+        os.system(cmd)
         timings = loadtimings()
         setdat = loadsettings.load()
         #Stump snail check
@@ -922,7 +950,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
             webhook("","Traveling: Stump snail (stump) ","brown")
             exec(open("field_stump.py").read())
             time.sleep(0.2)
-            move.press("1")
+            move.press(setdat['sprinkler_slot'])
             pag.click()
             webhook("","Starting stump snail","brown")
             while True:
@@ -1128,7 +1156,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
                 for _ in range(setdat["turn_times"]):
                     move.press(".")
             time.sleep(0.2)
-            move.press("1")
+            placeSprinkler()
             pag.click()
             gp = setdat["gather_pattern"].lower()
             webhook("Gathering: {}".format(setdat['gather_field']),"Limit: {}.00 - {} - Backpack: {}%".format(setdat["gather_time"],setdat["gather_pattern"],setdat["pack"]),"light green")
@@ -1296,8 +1324,13 @@ if __name__ == "__main__":
     display_type.set(setdat["display_type"].capitalize())
     private_server_link = setdat["private_server_link"]
     enable_discord_bot = tk.IntVar(value=setdat["enable_discord_bot"])
+    sprinkler_slot = tk.StringVar(root)
+    sprinkler_slot.set(setdat["sprinkler_slot"])
+    sprinkler_type = tk.StringVar(root)
+    sprinkler_type.set(setdat["sprinkler_type"].title())
     discord_bot_token = setdat['discord_bot_token']
     field_drift_compensation = tk.IntVar(value=setdat["field_drift_compensation"])
+    haste_compensation = tk.IntVar(value=setdat["haste_compensation"])
 
     wealthclock = tk.IntVar(value=setdat["wealthclock"])
     blueberrydispenser = tk.IntVar(value=setdat["blueberrydispenser"])
@@ -1422,7 +1455,7 @@ if __name__ == "__main__":
             im.save('./images/built-in/hive1.png')
             
         
-    def calibratehive(term=0):
+    def calibratehive(term=1):
         screenshothive()
         if not calibrate_hive.calibrate():
             cmd = """
@@ -1455,7 +1488,7 @@ if __name__ == "__main__":
         time.sleep(1)
         webhook("Gathering: {}".format(setdat['gather_field']),"Limit: {}.00 - {} - Backpack: {}%".format(setdat["gather_time"],setdat["gather_pattern"],setdat["pack"]),"light green")
         move.apkey("space")
-        move.press("1")
+        placeSprinkler()
         time.sleep(0.2)
         if setdat["before_gather_turn"] == "left":
             for _ in range(setdat["turn_times"]):
@@ -1545,7 +1578,7 @@ if __name__ == "__main__":
             webhook("","E button detect type: cv2".format(thresh),"light blue")
 
     def calibrate():
-        if calibratehive(1):
+        if calibratehive(0):
             calibrateebutton()
             webhook("","Calibration Complete","light green")
             cmd = """
@@ -1600,6 +1633,15 @@ if __name__ == "__main__":
             "enable_discord_webhook": enable_discord_webhook.get(),
             "discord_webhook_url": urltextbox.get(1.0,"end").replace("\n",""),
             "send_screenshot": send_screenshot.get(),
+            "sprinkler_slot": sprinkler_slot.get(),
+            "sprinkler_type": sprinkler_type.get(),
+            "display_type": display_type.get().lower(),
+            "private_server_link":linktextbox.get(1.0,"end").replace("\n",""),
+            "enable_discord_bot":enable_discord_bot.get(),
+            "discord_bot_token":tokentextbox.get(1.0,"end").replace("\n",""),
+            "field_drift_compensation": field_drift_compensation.get(),
+            "haste_compensation": haste_compensation.get(),
+
             
             "gather_enable": gather_enable.get(),
             "gather_field": gather_field.get(),
@@ -1612,12 +1654,7 @@ if __name__ == "__main__":
             "turn_times": turn_times.get(),
             "return_to_hive": return_to_hive.get(),
             "whirligig_slot": whirligig_slot.get(),
-            "display_type": display_type.get().lower(),
-            "private_server_link":linktextbox.get(1.0,"end").replace("\n",""),
-            "enable_discord_bot":enable_discord_bot.get(),
-            "discord_bot_token":tokentextbox.get(1.0,"end").replace("\n",""),
-            "field_drift_compensation": field_drift_compensation.get(),
-            
+                
             "stump_snail": stump_snail.get(),
             "continue_after_stump_snail": continue_after_stump_snail.get(),
             "ladybug": ladybug.get(),
@@ -1719,9 +1756,14 @@ if __name__ == "__main__":
         with open('save.txt', 'w') as f:
             f.write('wh:{}\nww:{}'.format(wh,ww))
         f.close()
+        
         savesettings(setdict,"settings.txt")
         savesettings(planterdict,"plantersettings.txt")
-
+        
+        with open("haste.txt","w") as a:
+            a.write(setdict["walkspeed"])
+            print(setdict["walkspeed"])
+        a.close()
         if str(planterdict['enable_planters']) == "1":
             planterTypes_set = []
             for s in planterdict:
@@ -1984,7 +2026,15 @@ if __name__ == "__main__":
     sendss = tkinter.Checkbutton(frame3, text="Send screenshots", variable=send_screenshot)
     sendss.place(x=200, y = 85)
     urltextbox.place(x = 500, y=87)
-    tkinter.Label(frame3, text = "Screen Resolution: Currently detected automatically. No need to configure").place(x = 0, y = 120)
+
+    tkinter.Label(frame3, text = "Sprinkler Type").place(x = 0, y = 120)
+    dropField = ttk.OptionMenu(frame3, sprinkler_type, setdat['sprinkler_type'], *["Basic","Silver","Golden","Diamond","Saturator"],style='my.TMenubutton' )
+    dropField.place(width=90,x = 100, y = 120,height=24)
+
+    tkinter.Label(frame3, text = "Slot").place(x = 205, y = 120)
+    dropField = ttk.OptionMenu(frame3, sprinkler_slot, setdat['sprinkler_slot'], *[x+1 for x in range(6)],style='my.TMenubutton' )
+    dropField.place(width=60,x = 245, y = 120,height=24)
+
     #tkinter.Label(frame3, text = "Width", bg = wbgc).place(x = 150, y = 120)
     #wwatextbox = tkinter.Text(frame3, width = 5, height = 1)
     #wwatextbox.insert("end",wwa)
@@ -1993,13 +2043,13 @@ if __name__ == "__main__":
     #whatextbox = tkinter.Text(frame3, width = 5, height = 1)
     #whatextbox.insert("end",wha)
     #whatextbox.place(x=310,y=122)
-    tkinter.Label(frame3, text = "Display type: Detected Automatically").place(x = 0, y = 155)
+    tkinter.Checkbutton(frame3, text="Enable Haste Compensation", variable=haste_compensation).place(x=0, y = 155)
     #dropField = ttk.OptionMenu(frame3, display_type, setdat['display_type'], command = savedisplaytype, *["Built-in retina display","Built-in display"],style='my.TMenubutton' )
     #dropField.place(width=160,x = 100, y = 155,height=24)
-    tkinter.Label(frame3, text = "Private Server Link").place(x = 0, y = 190)
+    tkinter.Label(frame3, text = "Private Server Link (optional)").place(x = 0, y = 190)
     linktextbox = tkinter.Text(frame3, width = 24, height = 1, bg= wbgc)
     linktextbox.insert("end",private_server_link)
-    linktextbox.place(x=150,y=192)
+    linktextbox.place(x=190,y=192)
     tkinter.Checkbutton(frame3, text="Enable Discord Bot", variable=enable_discord_bot).place(x=0, y = 225)
     tkinter.Label(frame3, text = "Discord Bot Token").place(x = 170, y = 226)
     tokentextbox = tkinter.Text(frame3, width = 24, height = 1, bg= wbgc)

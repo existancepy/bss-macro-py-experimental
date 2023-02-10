@@ -39,6 +39,7 @@ for _ in range(4):
 time.sleep(0.1)
 for _ in range(6):
     pag.press('o')
+time.sleep(0.5)
 for _ in range(4):
     pag.press(".")
 im = pag.screenshot(region = (xo,yo,xt,yt))
