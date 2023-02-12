@@ -11,7 +11,6 @@ import queue
 import loadsettings
 
 q = queue.Queue()
-savedata = pag.size()
 method = cv.TM_CCOEFF_NORMED #cv.TM_SQDIFF_NORMED
 hasteimgs = []
 vals = []
@@ -64,5 +63,26 @@ def getHaste():
         f.write(str(ws*haste))
     f.close()
 
+def getHastelp():
+    global vals, ww,wh, REGION
+    ws = loadsettings.load()["walkspeed"]
+    savedat = loadRes()
+    ww = savedat['ww']
+    wh = savedat['wh']
+    hasteFound = 0
+    REGION = (0,wh//30,ww//2,wh//8)
+    vals = []
+    i = 0
+    for x in range(5):
+        threading.Thread(target=fastimgsearch, daemon=True).start()
+        for y in range(2):
+            i += 1
+            q.put(i)
+        q.join()
+    vals = sorted(vals,reverse=True)
+    haste = vals[0][1]
+    with open("haste.txt","w") as f:
+        f.write(str(ws*haste))
+    f.close()
     
 

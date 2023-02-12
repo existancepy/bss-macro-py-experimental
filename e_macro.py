@@ -32,7 +32,7 @@ import ast
 import calibrate_hive
 import _darwinmouse as mouse
 from datetime import datetime
-from getHaste import getHaste
+from getHaste import getHaste, getHastelp
 
 
 savedata = {}
@@ -43,7 +43,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.28.1"
+macrov = "1.29"
 planterInfo = loadsettings.planterInfo()
 
 if __name__ == '__main__':
@@ -198,13 +198,13 @@ def ebutton(pagmode=0):
     ww = savedata['ww']
     wh = savedata['wh']
     setdat = loadsettings.load()
- 
     if setdat['ebdetect'] == "pyautogui" or pagmode:
         if setdat['display_type'] == "built-in retina display":
             r = pag.locateOnScreen("./images/retina/eb.png",region=(0,0,ww,wh//2))
         else:
             r = pag.locateOnScreen("./images/built-in/eb.png",region=(0,0,ww,wh//2))
     else:
+        print("ebutton threshold: {}".format(c))
         r = imagesearch.find("eb.png",c,ww//3,0,ww//3,wh//2)
     if r:return r
     return
@@ -619,7 +619,7 @@ def fieldDriftCompensation():
         result = cv2.matchTemplate(sat_image, large_image, method)
         mn,_,mnLoc,_ = cv2.minMaxLoc(result)
         x,y = mnLoc
-        if mn < 0.06:
+        if mn < 0.08:
             if x >= winLeft and x <= winRight and y >= winUp and y <= winDown: break
             if x < winLeft:
                 move.hold("a",0.1)
@@ -659,7 +659,10 @@ def background(cf,bpcap,gat,dc):
             rejoin()
             dc.value = 0
         if setdat['haste_compensation']:
-            getHaste()
+            if setdat['low_performance_haste_compensation']:
+                getHastelp()
+            else:
+                getHaste()
             
             
 
@@ -704,7 +707,7 @@ def collect(name,beesmas=0):
                 move.hold("w",0.1)
                 if ebutton():
                     break
-        elif usename == "lid_art":
+        elif usename == "lid_art" or usename == "feast":
             for _ in range(7):
                 move.hold("s",0.1)
                 if ebutton():
@@ -1249,7 +1252,7 @@ if __name__ == "__main__":
     ww = savedata["ww"]
     wh = savedata["wh"]
     root = tk.Tk(className='exih_macro')
-    root.geometry('720x400')
+    root.geometry('780x400')
     s = ttk.Style()
     if p:
         sv_ttk.set_theme("dark")
@@ -1267,12 +1270,12 @@ if __name__ == "__main__":
     s.configure('smaller.TMenubutton', font=('Helvetica', 10))
     
     # create frames
-    frame1 = ttk.Frame(notebook, width=720, height=400)
-    frame2 = ttk.Frame(notebook, width=720, height=400)
-    frame3 = ttk.Frame(notebook, width=720, height=400)
-    frame4 = ttk.Frame(notebook, width=720, height=400)
-    frame5 = ttk.Frame(notebook, width=720, height=400)
-    frame6 = ttk.Frame(notebook, width=720, height=400)
+    frame1 = ttk.Frame(notebook, width=780, height=400)
+    frame2 = ttk.Frame(notebook, width=780, height=400)
+    frame3 = ttk.Frame(notebook, width=780, height=400)
+    frame4 = ttk.Frame(notebook, width=780, height=400)
+    frame5 = ttk.Frame(notebook, width=780, height=400)
+    frame6 = ttk.Frame(notebook, width=780, height=400)
 
     frame1.pack(fill='both', expand=True)
     frame2.pack(fill='both', expand=True)
@@ -1331,6 +1334,7 @@ if __name__ == "__main__":
     discord_bot_token = setdat['discord_bot_token']
     field_drift_compensation = tk.IntVar(value=setdat["field_drift_compensation"])
     haste_compensation = tk.IntVar(value=setdat["haste_compensation"])
+    low_performance_haste_compensation = tk.IntVar(value=setdat["low_performance_haste_compensation"])
 
     wealthclock = tk.IntVar(value=setdat["wealthclock"])
     blueberrydispenser = tk.IntVar(value=setdat["blueberrydispenser"])
@@ -1349,6 +1353,7 @@ if __name__ == "__main__":
     ebdetect = tk.StringVar(root)
     ebdetect.set(setdat["ebdetect"])
     canon_time = setdat['canon_time']
+    reverse_hive_direction = tk.IntVar(value=setdat['reverse_hive_direction'])
 
     enable_planters = tk.IntVar(value=plantdat['enable_planters'])
     paper_planter = tk.IntVar(value=plantdat['paper_planter'])
@@ -1456,14 +1461,18 @@ if __name__ == "__main__":
             
         
     def calibratehive(term=1):
-        screenshothive()
+        cmd = """
+                    osascript -e  'activate application "Roblox"'
+                """
+        os.system(cmd)
+        #screenshothive()
         if not calibrate_hive.calibrate():
             cmd = """
                     osascript -e  'activate application "Terminal"'
                 """
             os.system(cmd)
             window = tk.Toplevel()
-            label = tk.Label(window, text="ERROR calibrating, ensure that:\n\n -Roblox is in fullscreen\n -Terminal has screen recording permissions (System prefences -> security and privacy -> privacy -> screen recording)",bg=wbgc)
+            label = tk.Label(window, text="ERROR calibrating, ensure that:\n\n -Roblox is in fullscreen\n -Terminal has screen recording permissions (System prefences -> security and privacy -> privacy -> screen recording)\n\nIf the issue still persists, go to calibration tab -> calibrate hive.",bg=wbgc)
             button_no = ttk.Button(window, text="Ok", command=window.destroy)
             label.grid(row=0, column=0, columnspan=2)
             button_no.grid(row=1, column=1)
@@ -1560,22 +1569,30 @@ if __name__ == "__main__":
             
         vals = sorted(vals,reverse=True)
         print(vals)
-        thresh = math.ceil((vals[0]*100)/100)
+        gap = vals[0] - 0.05
+        truemin = 0
+        for i in range(len(vals)):
+            if vals[i] > gap:
+                truemin = vals[i]
+            else:
+                break
+        thresh = math.floor(truemin*100)/100
         webhook("","Calculated: Threshold\nValue: {}".format(thresh),"dark brown")
-        webhook("","Determining e button detect type","dark brown")
-        loadsettings.save("ebthreshold",thresh)
-        loadsettings.save("ebdetect","cv2")
-        reset.reset()
-        canon()
-        screenshotebutton()
-        r=imagesearch.find("eb.png",0,0,0,ww,wh//2)[3]
-        thresh = math.ceil((r*100)/100)
-        loadsettings.save("ebthreshold",thresh)
-        if ebutton(1):
-            loadsettings.save("ebdetect","pyautogui")
-            webhook("","E button detect type: pyautogui".format(thresh),"light blue")
-        else:
-            webhook("","E button detect type: cv2".format(thresh),"light blue")
+        if thresh == 1.0:
+            webhook("","Determining e button detect type","dark brown")
+            loadsettings.save("ebthreshold",thresh)
+            loadsettings.save("ebdetect","cv2")
+            reset.reset()
+            canon()
+            #screenshotebutton()
+            #r=imagesearch.find("eb.png",0,0,0,ww,wh//2)[3]
+            #thresh = math.ceil((r*100)/100)
+            #loadsettings.save("ebthreshold",thresh)
+            if ebutton(1):
+                loadsettings.save("ebdetect","pyautogui")
+                webhook("","E button detect type: pyautogui".format(thresh),"light blue")
+            else:
+                webhook("","E button detect type: cv2".format(thresh),"light blue")
 
     def calibrate():
         if calibratehive(0):
@@ -1641,6 +1658,7 @@ if __name__ == "__main__":
             "discord_bot_token":tokentextbox.get(1.0,"end").replace("\n",""),
             "field_drift_compensation": field_drift_compensation.get(),
             "haste_compensation": haste_compensation.get(),
+            "low_performance_haste_compensation": low_performance_haste_compensation.get(),
 
             
             "gather_enable": gather_enable.get(),
@@ -1682,6 +1700,7 @@ if __name__ == "__main__":
             "ebdetect":ebdetect.get(),
             "bploc":setdat['bploc'],
             "canon_time":cttextbox.get(1.0,"end").replace("\n",""),
+            "reverse_hive_direction": reverse_hive_direction.get()
 
 
         }
@@ -1762,7 +1781,6 @@ if __name__ == "__main__":
         
         with open("haste.txt","w") as a:
             a.write(setdict["walkspeed"])
-            print(setdict["walkspeed"])
         a.close()
         if str(planterdict['enable_planters']) == "1":
             planterTypes_set = []
@@ -2044,6 +2062,7 @@ if __name__ == "__main__":
     #whatextbox.insert("end",wha)
     #whatextbox.place(x=310,y=122)
     tkinter.Checkbutton(frame3, text="Enable Haste Compensation", variable=haste_compensation).place(x=0, y = 155)
+    tkinter.Checkbutton(frame3, text="Low Performance Haste Compensation", variable=low_performance_haste_compensation).place(x=210, y = 155)
     #dropField = ttk.OptionMenu(frame3, display_type, setdat['display_type'], command = savedisplaytype, *["Built-in retina display","Built-in display"],style='my.TMenubutton' )
     #dropField.place(width=160,x = 100, y = 155,height=24)
     tkinter.Label(frame3, text = "Private Server Link (optional)").place(x = 0, y = 190)
@@ -2056,7 +2075,8 @@ if __name__ == "__main__":
     tokentextbox.insert("end",discord_bot_token)
     tokentextbox.place(x = 300, y=228)
     #Tab 6
-    ttk.Button(frame5, text = "Calibrate Hive", command = calibratehive, width = 10).place(x=0,y=15)
+    ttk.Button(frame5, text = "Calibrate Hive", command = calibratehive, width = 10).place(x=0,y=13)
+    tkinter.Checkbutton(frame5, text="Reverse Hive Direction", variable=reverse_hive_direction).place(x=140, y = 15)
     tkinter.Label(frame5, text = "E Button Detection Type").place(x = 0, y = 50)
     dropField = ttk.OptionMenu(frame5, ebdetect,setdat['ebdetect'], command = disableeb, *["cv2","pyautogui"],style='my.TMenubutton' )
     dropField.place(width=130,x = 158, y = 51,height=24)
@@ -2064,11 +2084,10 @@ if __name__ == "__main__":
     ebtextbox = tkinter.Text(frame5, width = 4, height = 1, bg= wbgc)
     ebtextbox.insert("end",ebthreshold)
     ebtextbox.place(x=380,y=53)
-    tkinter.Label(frame5, text = "Move for a maximum of").place(x = 0, y = 85)
+    tkinter.Label(frame5, text = "Flight Multiplier").place(x = 0, y = 85)
     cttextbox = tkinter.Text(frame5, width = 4, height = 1, bg= wbgc)
     cttextbox.insert("end",canon_time)
-    cttextbox.place(x=155,y=88)
-    tkinter.Label(frame5, text = "seconds at canon before resetting").place(x = 193, y = 85)
+    cttextbox.place(x=110,y=88)
     #Root
     ttk.Button(root, text = "Start", command = startGo, width = 7 ).place(x=10,y=360)
     ttk.Button(root, text = "Update",command = updateFiles, width = 9,).place(x=150,y=360)
