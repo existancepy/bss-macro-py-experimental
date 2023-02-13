@@ -53,10 +53,13 @@ def getHaste():
     hasteFound = 0
     REGION = (0,wh//30,ww//2,wh//8)
     vals = []
-    threading.Thread(target=fastimgsearch, daemon=True).start()
-    for i in range(10):
-        q.put(i)
-    q.join()
+    i = -1
+    for _ in range(2):
+        threading.Thread(target=fastimgsearch, daemon=True).start()
+        for _ in range(5):
+            i+=1
+            q.put(i)
+        q.join()
     vals = sorted(vals,reverse=True)
     haste = vals[0][1]
     with open("haste.txt","w") as f:
@@ -72,7 +75,7 @@ def getHastelp():
     hasteFound = 0
     REGION = (0,wh//30,ww//2,wh//8)
     vals = []
-    i = 0
+    i = -1
     for x in range(5):
         threading.Thread(target=fastimgsearch, daemon=True).start()
         for y in range(2):
@@ -85,4 +88,3 @@ def getHastelp():
         f.write(str(ws*haste))
     f.close()
     
-
