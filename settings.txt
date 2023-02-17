@@ -1,8 +1,8 @@
 
-hive_number:4
+hive_number:3
 walkspeed:28
 gifted_vicious_bee:0
-enable_discord_webhook:0
+enable_discord_webhook:1
 discord_webhook_url:
 send_screenshot:1
 sprinkler_slot:1
@@ -11,19 +11,19 @@ display_type:built-in retina display
 private_server_link:
 enable_discord_bot:0
 discord_bot_token:
-field_drift_compensation:0
+field_drift_compensation:1
 haste_compensation:0
-low_performance_haste_compensation:0
-gather_enable:0
-gather_field:Pine Tree
-gather_pattern:e_lol
-gather_size:S
+low_performance_haste_compensation:1
+gather_enable:1
+gather_field:['Blue Flower', 'Bamboo', 'none']
+gather_pattern:stationary
+gather_size:s
 gather_width:2
-gather_time:20
+gather_time:0
 pack:95
-before_gather_turn:Right
+before_gather_turn:none
 turn_times:2
-return_to_hive:Reset
+return_to_hive:reset
 whirligig_slot:1
 stump_snail:0
 continue_after_stump_snail:0
@@ -48,6 +48,9 @@ lid_art:0
 hivethreshold:1.0
 ebthreshold:0.98
 ebdetect:pyautogui
-bploc:[0,0]
+bploc:[0, 0]
 canon_time:1.0
 reverse_hive_direction:0
+rejoin_every_enabled:0
+rejoin_every:0
+rejoin_delay:50

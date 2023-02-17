@@ -23,7 +23,7 @@ def apu(k):
 exec(open("field_blue flower.py").read())
 move.apkey("space")
 move.hold("s",3)
-move.hold("a",4)
+move.hold("a",5)
 move.hold("w",1.5)
 move.hold('d',0.1)
 move.press(",")

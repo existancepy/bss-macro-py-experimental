@@ -38,6 +38,7 @@ move.press(",")
 move.press(",")
 move.press(".")
 move.press(".")
+sleep(0.2)
 pag.keyUp("w")
 move.press("space")
 

@@ -1,4 +1,9 @@
-import pyautogui as pag
+try:
+    import pyautogui as pag
+except Exception as e:
+    print(e)
+    print("There is an import error here! This is most likely caused by an incorrect installation process. Ensure that you have done the 'pip3 install' steps")
+    quit()
 import time
 import os
 import tkinter
@@ -24,8 +29,12 @@ from tkinter import messagebox
 import numpy as np
 from PIL import ImageGrab
 import subprocess
-try: import cv2
-except: pass
+try:
+    import cv2
+except Exception as e:
+    print(e)
+    print("There is a import error here! Check out ImportError: dlopen in the discord server")
+    quit()
 import sv_ttk
 import math
 import ast
@@ -43,7 +52,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.29"
+macrov = "1.30"
 planterInfo = loadsettings.planterInfo()
 
 if __name__ == '__main__':
@@ -56,8 +65,6 @@ if __name__ == '__main__':
         occupiedStuff = ast.literal_eval(lines[0])
         planterTypes_prev = ast.literal_eval(lines[1])
         planterFields_prev = ast.literal_eval(lines[2])
-    print("Your python version is {}".format(sys.version_info[0]))
-    print("Your macro version is {}".format(macrov))
     manager = multiprocessing.Manager()
     currentfield = manager.Value(ctypes.c_wchar_p, "")
     bpc = multiprocessing.Value('i', 0)
@@ -120,8 +127,8 @@ def validateSettings():
         msg += "\nInvalid gather time"
     if s['pack'] < 0 or s['pack'] > 100:
         msg += "\nInvalid pack, it must be between 1-100 (inclusive)"
-    if not s['gather_field'] in validfield:
-        msg += ("Invalid gather_field")
+    #if not s['gather_field'] in validfield:
+        #msg += ("Invalid gather_field")
     if not s['gather_enable'] == 1 and not s['gather_enable'] == 0:
         msg += ("Invalid gather_enable. Use either 'yes' or 'no'")
     return msg
@@ -200,12 +207,12 @@ def ebutton(pagmode=0):
     setdat = loadsettings.load()
     if setdat['ebdetect'] == "pyautogui" or pagmode:
         if setdat['display_type'] == "built-in retina display":
-            r = pag.locateOnScreen("./images/retina/eb.png",region=(0,0,ww,wh//2))
+            r = pag.locateOnScreen("./images/retina/eb.png",confidence = 0.99,region=(0,0,ww,wh//2))
         else:
-            r = pag.locateOnScreen("./images/built-in/eb.png",region=(0,0,ww,wh//2))
+            r = pag.locateOnScreen("./images/built-in/eb.png",confidence = 0.99,region=(0,0,ww,wh//2))
     else:
         print("ebutton threshold: {}".format(c))
-        r = imagesearch.find("eb.png",c,ww//3,0,ww//3,wh//2)
+        r = imagesearch.find("eb.png",c,0,0,ww,wh//2)
     if r:return r
     return
 
@@ -663,8 +670,14 @@ def background(cf,bpcap,gat,dc):
                 getHastelp()
             else:
                 getHaste()
-            
-            
+        if setdat['rejoin_every_enabled']:
+            with open('timings.txt', 'r') as f:
+                prevTime = float([x for x in f.read().split('\n') if x.startswith('rejoin_every')][0].split(":")[1])
+            if (time.time() - prevTime)/3600 > setdat['rejoin_every']:
+                dc.value = 1
+                rejoin()
+                dc.value = 0
+                savetimings('rejoin_every')
 
 def killMob(field,mob,reset):
     webhook("","Traveling: {} ({})".format(mob.title(),field.title()),"dark brown")
@@ -766,7 +779,7 @@ def rejoin():
                 webbrowser.open('https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129')
                 time.sleep(6)
                 
-        time.sleep(50*(i+1))
+        time.sleep(setdat['rejoin_delay']*(i+1))
         cmd = """
             osascript -e 'activate application "Roblox"' 
         """
@@ -915,7 +928,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
     cmd = """
             osascript -e 'activate application "Roblox"' 
         """
-        
+    savetimings('rejoin_every')
     os.system(cmd)
     reset.reset()
     convert()
@@ -923,6 +936,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
     planterset = loadsettings.planterLoad()
     ww = savedata['ww']
     wh = savedata['wh']
+    gfid = 0
     continuePlanters = 0
     if planterset['enable_planters']:
         with open("planterdata.txt","r") as f:
@@ -1148,9 +1162,9 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
         #gather check
         if setdat['gather_enable']:
             canon()
-            webhook("","Traveling: {}".format(setdat['gather_field']),"dark brown")
-            exec(open("field_{}.py".format(setdat['gather_field'])).read())
-            cf.value = setdat['gather_field'].replace(" ","").lower()
+            webhook("","Traveling: {}".format(setdat['gather_field'][gfid]),"dark brown")
+            exec(open("field_{}.py".format(setdat['gather_field'][gfid])).read())
+            cf.value = setdat['gather_field'][gfid].replace(" ","").lower()
             time.sleep(0.2)
             if setdat["before_gather_turn"] == "left":
                 for _ in range(setdat["turn_times"]):
@@ -1162,7 +1176,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
             placeSprinkler()
             pag.click()
             gp = setdat["gather_pattern"].lower()
-            webhook("Gathering: {}".format(setdat['gather_field']),"Limit: {}.00 - {} - Backpack: {}%".format(setdat["gather_time"],setdat["gather_pattern"],setdat["pack"]),"light green")
+            webhook("Gathering: {}".format(setdat['gather_field'][gfid]),"Limit: {}.00 - {} - Backpack: {}%".format(setdat["gather_time"],setdat["gather_pattern"],setdat["pack"]),"light green")
             move.apkey("space")
             time.sleep(0.2)
             timestart = time.perf_counter()
@@ -1194,6 +1208,13 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
             time.sleep(0.5)
             gat.value = 0
             cf.value = ""
+            gfid += 1
+            while True:
+                if gfid >= len(setdat['gather_field']):
+                    gfid = 0
+                if setdat["gather_field"][gfid].lower() == "none":
+                    gfid += 1
+                else: break
             if setdat["before_gather_turn"] == "left":
                 for _ in range(setdat["turn_times"]):
                     move.press(".")
@@ -1245,7 +1266,9 @@ if __name__ == "__main__":
     cmd = 'defaults read -g AppleInterfaceStyle'
     p = bool(subprocess.Popen(cmd, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, shell=True).communicate()[0])
-    
+    print("\n\nTo launch the macro manually, enter the following 2 commands in terminal:\ncd path/to/macro-folder\npython3 e_macro.py\n\nTo stop the macro, \ntab out of roblox, make sure terminal is in focus and press ctrl c\nor,\nright click the macro app in the dock and force quit")
+    print("\n\nYour python version is {}".format(sys.version_info[0]))
+    print("Your macro version is {}\n\n".format(macrov))
     setResolution()
     loadSave()
     plantdat = loadsettings.planterLoad()
@@ -1293,8 +1316,12 @@ if __name__ == "__main__":
 
     #get variables
     gather_enable = tk.IntVar(value=setdat["gather_enable"])
-    gather_field = tk.StringVar(root)
-    gather_field.set(setdat["gather_field"].title())
+    gather_field_one = tk.StringVar(root)
+    gather_field_one.set(setdat["gather_field"][0].title())
+    gather_field_two = tk.StringVar(root)
+    gather_field_two.set(setdat["gather_field"][1].title())
+    gather_field_three = tk.StringVar(root)
+    gather_field_three.set(setdat["gather_field"][2].title())
     return_to_hive = tk.StringVar(root)
     return_to_hive.set(setdat["return_to_hive"].title())
     gather_pattern = tk.StringVar(root)
@@ -1335,7 +1362,10 @@ if __name__ == "__main__":
     field_drift_compensation = tk.IntVar(value=setdat["field_drift_compensation"])
     haste_compensation = tk.IntVar(value=setdat["haste_compensation"])
     low_performance_haste_compensation = tk.IntVar(value=setdat["low_performance_haste_compensation"])
-
+    rejoin_every_enabled = tk.IntVar(value=setdat["rejoin_every_enabled"])
+    rejoin_every = setdat['rejoin_every']
+    rejoin_delay = setdat['rejoin_delay']
+    
     wealthclock = tk.IntVar(value=setdat["wealthclock"])
     blueberrydispenser = tk.IntVar(value=setdat["blueberrydispenser"])
     strawberrydispenser = tk.IntVar(value=setdat["strawberrydispenser"])
@@ -1402,6 +1432,8 @@ if __name__ == "__main__":
     harvest_auto = tk.IntVar(value=boolToInt(str(harvest)=="auto"))
     harvest_int = plantdat['harvest']
     slot_options = ["none"]+[x+1 for x in range(7)]
+    gather_fields = [x.split("_")[1][:-3].title() for x in os.listdir("./") if x.startswith("field_")]
+    gather_fields.insert(0,"None")
     field_options = tk.Variable(value=[x.split("_")[1][:-3].title() for x in os.listdir("./") if x.startswith("field_")])
     planter_fields =  plantdat['planter_fields']
 
@@ -1461,11 +1493,10 @@ if __name__ == "__main__":
             
         
     def calibratehive(term=1):
-        cmd = """
-                    osascript -e  'activate application "Roblox"'
-                """
-        os.system(cmd)
-        #screenshothive()
+        if subprocess.call("system_profiler SPDisplaysDataType | grep -i 'retina'", shell=True) == 0:
+            loadsettings.save('display_type', 'built-in retina display')
+        else:
+            loadsettings.save('display_type',"built-in display")
         if not calibrate_hive.calibrate():
             cmd = """
                     osascript -e  'activate application "Terminal"'
@@ -1577,22 +1608,21 @@ if __name__ == "__main__":
             else:
                 break
         thresh = math.floor(truemin*100)/100
-        webhook("","Calculated: Threshold\nValue: {}".format(thresh),"dark brown")
-        if thresh == 1.0:
-            webhook("","Determining e button detect type","dark brown")
-            loadsettings.save("ebthreshold",thresh)
-            loadsettings.save("ebdetect","cv2")
-            reset.reset()
-            canon()
-            #screenshotebutton()
-            #r=imagesearch.find("eb.png",0,0,0,ww,wh//2)[3]
-            #thresh = math.ceil((r*100)/100)
-            #loadsettings.save("ebthreshold",thresh)
-            if ebutton(1):
-                loadsettings.save("ebdetect","pyautogui")
-                webhook("","E button detect type: pyautogui".format(thresh),"light blue")
-            else:
-                webhook("","E button detect type: cv2".format(thresh),"light blue")
+        webhook("","Calculated: E Button Threshold\nValue: {}".format(thresh),"dark brown")
+        webhook("","Determining e button detect type","dark brown")
+        loadsettings.save("ebthreshold",thresh)
+        loadsettings.save("ebdetect","cv2")
+        reset.reset()
+        canon()
+        #screenshotebutton()
+        #r=imagesearch.find("eb.png",0,0,0,ww,wh//2)[3]
+        #thresh = math.ceil((r*100)/100)
+        #loadsettings.save("ebthreshold",thresh)
+        if ebutton(1):
+            loadsettings.save("ebdetect","pyautogui")
+            webhook("","E button detect type: pyautogui".format(thresh),"light blue")
+        else:
+            webhook("","E button detect type: cv2".format(thresh),"light blue")
 
     def calibrate():
         if calibratehive(0):
@@ -1659,10 +1689,12 @@ if __name__ == "__main__":
             "field_drift_compensation": field_drift_compensation.get(),
             "haste_compensation": haste_compensation.get(),
             "low_performance_haste_compensation": low_performance_haste_compensation.get(),
-
+            "rejoin_every_enabled": rejoin_every_enabled.get(),
+            "rejoin_every": rejoinetextbox.get(1.0,"end").replace("\n",""),
+            "rejoin_delay": rejoindelaytextbox.get(1.0,"end").replace("\n",""),
             
             "gather_enable": gather_enable.get(),
-            "gather_field": gather_field.get(),
+            "gather_field": [gather_field_one.get(),gather_field_two.get(),gather_field_three.get()],
             "gather_pattern": gather_pattern.get(),
             "gather_size": gather_size.get(),
             "gather_width": gather_width.get(),
@@ -1893,9 +1925,13 @@ if __name__ == "__main__":
             
     #Tab 1
     tkinter.Checkbutton(frame1, text="Enable Gathering", variable=gather_enable).place(x=0, y = 15)
-    dropField = ttk.OptionMenu(frame1, gather_field,setdat['gather_field'].title(), *[x.split("_")[1][:-3].title() for x in os.listdir("./") if x.startswith("field_")],style='my.TMenubutton' )
+    dropField = ttk.OptionMenu(frame1, gather_field_one,setdat['gather_field'][0].title(), *gather_fields[1:],style='my.TMenubutton' )
     dropField.place(x = 120, y = 50,height=24,width=120)
-    tkinter.Label(frame1, text = "Gathering Field").place(x = 0, y = 50)
+    dropField = ttk.OptionMenu(frame1, gather_field_two,setdat['gather_field'][1].title(), *gather_fields,style='my.TMenubutton' )
+    dropField.place(x = 260, y = 50,height=24,width=120)
+    dropField = ttk.OptionMenu(frame1, gather_field_three,setdat['gather_field'][2].title(), *gather_fields,style='my.TMenubutton' )
+    dropField.place(x = 400, y = 50,height=24,width=120)
+    tkinter.Label(frame1, text = "Gathering Fields").place(x = 0, y = 50)
 
     tkinter.Label(frame1, text = "Gathering Pattern").place(x = 0, y = 85)
     dropField = ttk.OptionMenu(frame1, gather_pattern,setdat['gather_pattern'], *[x.split("_",1)[1][:-3] for x in os.listdir("./") if x.startswith("gather_")],style='my.TMenubutton')
@@ -2052,6 +2088,7 @@ if __name__ == "__main__":
     tkinter.Label(frame3, text = "Slot").place(x = 205, y = 120)
     dropField = ttk.OptionMenu(frame3, sprinkler_slot, setdat['sprinkler_slot'], *[x+1 for x in range(6)],style='my.TMenubutton' )
     dropField.place(width=60,x = 245, y = 120,height=24)
+    
 
     #tkinter.Label(frame3, text = "Width", bg = wbgc).place(x = 150, y = 120)
     #wwatextbox = tkinter.Text(frame3, width = 5, height = 1)
@@ -2069,11 +2106,29 @@ if __name__ == "__main__":
     linktextbox = tkinter.Text(frame3, width = 24, height = 1, bg= wbgc)
     linktextbox.insert("end",private_server_link)
     linktextbox.place(x=190,y=192)
+    
     tkinter.Checkbutton(frame3, text="Enable Discord Bot", variable=enable_discord_bot).place(x=0, y = 225)
     tkinter.Label(frame3, text = "Discord Bot Token").place(x = 170, y = 226)
     tokentextbox = tkinter.Text(frame3, width = 24, height = 1, bg= wbgc)
     tokentextbox.insert("end",discord_bot_token)
     tokentextbox.place(x = 300, y=228)
+    
+    tkinter.Label(frame3, text = "Slot").place(x = 205, y = 120)
+    dropField = ttk.OptionMenu(frame3, sprinkler_slot, setdat['sprinkler_slot'], *[x+1 for x in range(6)],style='my.TMenubutton' )
+    dropField.place(width=60,x = 245, y = 120,height=24)
+
+    tkinter.Checkbutton(frame3, text="Rejoin every", variable=rejoin_every_enabled).place(x=0, y = 260)
+    rejoinetextbox = tkinter.Text(frame3, width = 4, height = 1, bg= wbgc)
+    rejoinetextbox.insert("end",rejoin_every)
+    rejoinetextbox.place(x=104,y=263)
+    tkinter.Label(frame3, text = "hours").place(x = 140, y = 260)
+
+    tkinter.Label(frame3, text = "Wait for").place(x = 0, y = 290)
+    rejoindelaytextbox = tkinter.Text(frame3, width = 4, height = 1, bg= wbgc)
+    rejoindelaytextbox.insert("end",rejoin_delay)
+    rejoindelaytextbox.place(x=55,y=293)
+    tkinter.Label(frame3, text = "secs when rejoining").place(x = 90, y = 290)
+    
     #Tab 6
     ttk.Button(frame5, text = "Calibrate Hive", command = calibratehive, width = 10).place(x=0,y=13)
     tkinter.Checkbutton(frame5, text="Reverse Hive Direction", variable=reverse_hive_direction).place(x=140, y = 15)

@@ -28,10 +28,25 @@ def roblox():
     """
     os.system(cmd)
     time.sleep(1)
+def loadRes():
+    outdict =  {}
+    with open('save.txt') as f:
+        lines = f.read().split("\n")
+    f.close()
+    for s in lines:
+        l = s.replace(" ","").split(":")
+        if l[1].isdigit():
+            l[1] = int(l[1])
+        outdict[l[0]] = l[1]
+    return outdict
 
-with open("haste.txt","w") as f:
-    f.write(str(28))
-f.close()
+roblox()
+savedata = loadRes()
+ww = savedata['ww']
+wh = savedata['wh']
+im = pag.screenshot(region=(ww//3,wh//2.8,ww//2.3,wh//2.5))
+im.save('test.png')
+
 
 '''
 

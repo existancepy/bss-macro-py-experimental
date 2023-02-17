@@ -1,26 +1,8 @@
-
-import pyautogui as pag
-import time
-import os
-import tkinter
-import loadsettings
-import move
-from webhook import webhook
-import imagesearch
-
-def loadSave():
-    info = {}
-    with open('save.txt') as f:
-        lines = f.read().split("\n")
-    f.close()
-    for s in lines:
-        l = s.replace(" ","").split(":")
-        if l[1].isdigit():
-            l[1] = int(l[1])
-        info[l[0]] = l[1]
-    return info
-
 def calibrate():
+    cmd = """
+        osascript -e 'activate application "Roblox"' 
+    """
+    os.system(cmd)
     time.sleep(1)
     webhook("","Calibrating: Hive","dark brown",1)
     vals = []
@@ -46,22 +28,22 @@ def calibrate():
         time.sleep(0.1)
         for _ in range(6):
             pag.press('o')
+        #im = pag.screenshot(region = (xo,yo,xt,yt))
+        #im.save('a.png')
 
         time.sleep(0.4)
-        for i in range(4):
+        for _ in range(4):
             r = imagesearch.find("hive1.png",0, xo, yo, xt, yt)
             vals.append(r[3])
             for _ in range(4):
                 pag.press(",")
             
             time.sleep(0.5)
-            #im = pag.screenshot(region = (xo,yo,xt,yt))
-            #im.save("hives {}.png".format(i))
         time.sleep(1)
     vals = sorted(vals,reverse=True)
     print(vals)
     thresh = (vals[1]+vals[2])/2
-    webhook("","Calculated: Threshold\nValue: {}".format(thresh),"dark brown")
+    webhook("","Calculated: Hive Threshold\nValue: {}".format(thresh),"dark brown")
     if thresh == 1.0 or thresh == 0.0 or vals[1] == vals[2]:
             loadsettings.save('hivethreshold',1.0)
             return False
