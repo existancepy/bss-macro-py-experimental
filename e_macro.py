@@ -342,13 +342,13 @@ def convert():
         else:
             time.sleep(0.25)
     return
-def walk_to_hive():
+def walk_to_hive(gfid):
     savedata = loadRes()
     ww = savedata['ww']
     wh = savedata['wh']
     setdat = loadsettings.load()
-    webhook("","Going back to hive: {}".format(setdat['gather_field']),"dark brown")
-    exec(open("walk_{}.py".format(setdat['gather_field'])).read())
+    webhook("","Going back to hive: {}".format(setdat['gather_field'][gfid]),"dark brown")
+    exec(open("walk_{}.py".format(setdat['gather_field'][gfid])).read())
     for _ in range(23):
         pag.keyDown("a")
         time.sleep(0.15)
@@ -1223,7 +1223,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
                     move.press(",")
                     
             if setdat['return_to_hive'] == "walk":
-                walk_to_hive()
+                walk_to_hive(gfid)
             elif setdat['return_to_hive'] == "reset":
                 reset.reset()
                 convert()
@@ -1235,7 +1235,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev):
                 webhook("","Activating whirligig","dark brown")
                 if setdat['whirligig_slot'] == "none":
                     webhook("Notice","Whirligig option selected but no whirligig slot given, walking back","red")
-                    walk_to_hive()
+                    walk_to_hive(gfid)
                 else:
                     move.press(str(setdat['whirligig_slot']))
                     time.sleep(1)
