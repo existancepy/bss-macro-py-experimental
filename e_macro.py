@@ -2,7 +2,7 @@ try:
     import pyautogui as pag
 except Exception as e:
     print(e)
-    print("There is an import error here! This is most likely caused by an incorrect installation process. Ensure that you have done the 'pip3 install' steps")
+    print("There is an import error here! This is most likely caused by an incorrect installation process. Ensure that you have done the 'pip3 install...' steps")
     quit()
 import time
 import os
@@ -33,7 +33,7 @@ try:
     import cv2
 except Exception as e:
     print(e)
-    print("There is a import error here! Check out ImportError: dlopen in the discord server")
+    print("There is a import error here! Check out ImportError: dlopen in #common-fixes in the discord server or 'bugs and fixes' section in the github")
     quit()
 import sv_ttk
 import math
