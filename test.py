@@ -21,6 +21,7 @@ import reset
 import _darwinmouse as mouse
 import ast
 import getHaste
+import pytesseract
 
 def roblox():
     cmd = """
@@ -44,10 +45,37 @@ roblox()
 savedata = loadRes()
 ww = savedata['ww']
 wh = savedata['wh']
-im = pag.screenshot(region=(ww//3,0,ww//3,wh//3))
+
+def imToString(m):
+    savedata = loadRes()
+    ww = savedata['ww']
+    wh = savedata['wh']
+    # Path of tesseract executable
+    #pytesseract.pytesseract.tesseract_cmd ='**Path to tesseract executable**'
+    # ImageGrab-To capture the screen image in a loop. 
+    # Bbox used to capture a specific area.
+    if m == "bee bear":
+        cap = pag.screenshot(region=(ww//3,wh//20,ww//3,wh//7))
+    elif m == "egg shop":
+        cap = pag.screenshot(region=(ww//1.2,wh//3,ww-ww//1.2,wh//5))
+    elif m == "ebutton":
+        cap = pag.screenshot(region=(ww//2.65,wh//20,ww//21,wh//17))
+        img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
+        img = cv2.resize(img, None, fx=2, fy=2)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        config = '--oem 3 --psm %d' % 10
+        tesstr = pytesseract.image_to_string(img, config = config, lang ='eng')
+        print(tesstr)
+        return tesstr
+
+    # Converted the image to monochrome for it to be easily 
+    # read by the OCR and obtained the output String.
+    tesstr = pytesseract.image_to_string(cv2.cvtColor(np.array(cap), cv2.COLOR_BGR2GRAY), lang ='eng')
+    return tesstr
+
+print(imToString('ebutton') == "E")
+im = pag.screenshot(region=(ww//2.65,wh//20,ww//21,wh//17))
 im.save('test.png')
-
-
 '''
 
 times = []

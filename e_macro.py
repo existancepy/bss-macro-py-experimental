@@ -29,6 +29,7 @@ from tkinter import messagebox
 import numpy as np
 from PIL import ImageGrab
 import subprocess
+
 try:
     import cv2
 except Exception as e:
@@ -40,6 +41,7 @@ import math
 import ast
 import calibrate_hive
 import _darwinmouse as mouse
+import pytesseract
 from datetime import datetime
 from getHaste import getHaste, getHastelp
 
@@ -52,7 +54,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.30.1"
+macrov = "1.32"
 planterInfo = loadsettings.planterInfo()
 
 if __name__ == '__main__':
@@ -197,8 +199,45 @@ def savePlanterTimings(p):
     with open('plantertimings.txt','w') as f:
         f.writelines(templist)
     f.close()
+
+def imToString(m):
+    savedata = loadRes()
+    ww = savedata['ww']
+    wh = savedata['wh']
+    # Path of tesseract executable
+    #pytesseract.pytesseract.tesseract_cmd ='**Path to tesseract executable**'
+    # ImageGrab-To capture the screen image in a loop. 
+    # Bbox used to capture a specific area.
+    if m == "bee bear":
+        cap = pag.screenshot(region=(ww//3,wh//20,ww//3,wh//7))
+    elif m == "egg shop":
+        cap = pag.screenshot(region=(ww//1.2,wh//3,ww-ww//1.2,wh//5))
+    elif m == "ebutton":
+        cap = pag.screenshot(region=(ww//2.65,wh//20,ww//21,wh//17))
+        img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
+        img = cv2.resize(img, None, fx=2, fy=2)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        config = '--oem 3 --psm %d' % 10
+        tesstr = pytesseract.image_to_string(img, config = config, lang ='eng')
+        return tesstr
+
+    # Converted the image to monochrome for it to be easily 
+    # read by the OCR and obtained the output String.
+    tesstr = pytesseract.image_to_string(cv2.cvtColor(np.array(cap), cv2.COLOR_BGR2GRAY), lang ='eng')
+    return tesstr
+
+def checkwithOCR(m):
+    text = imToString(m).lower()
+    if m == "bee bear":
+        if "bee bear" in text:
+            return True
+    elif m == "egg shop":
+        if "bee egg" in text or "basic bee" in text:
+            return True
+    return False
     
 def ebutton(pagmode=0):
+    '''
     r =  []
     savedata = loadRes()
     c = loadsettings.load()['ebthreshold']
@@ -215,6 +254,8 @@ def ebutton(pagmode=0):
         r = imagesearch.find("eb.png",c,ww//3,0,ww//3,wh//3)
     if r:return r
     return
+    '''
+    return imToString('ebutton').strip() == "E"
 
 
 
@@ -237,16 +278,24 @@ def canon():
         move.hold("d",0.15)
         r = ebutton()
         if r:
-            webhook("","Canon found","dark brown")
+            if checkwithOCR('bee bear'):
+                webhook("","Bee Bear detected","dark brown")
+                reset.reset()   
+                canon()
+            else:
+                webhook("","Canon found","dark brown")
             return
-    webhook("","Cannon not found, resetting","dark brown",1)
     mouse.move_to(mw//2,mh//5*4)
-    for _ in range(20):
-        mouse.press()
-        sleep(0.25)
-        mouse.release()
+    webhook("","Cannon not found, resetting","dark brown",1)
     reset.reset()   
     canon()
+    '''
+        for _ in range(20):
+            mouse.press()
+            sleep(0.25)
+            mouse.release()
+    '''
+        
 
 def sleep(duration, get_now=time.perf_counter):
     now = get_now()
@@ -678,6 +727,14 @@ def background(cf,bpcap,gat,dc):
                 rejoin()
                 dc.value = 0
                 savetimings('rejoin_every')
+        if checkwithOCR('egg shop'):
+            dc.value = 1
+            webhook("","Egg Shop detected","red")
+            if ebutton():
+                move.press('e')
+            else:
+                rejoin()
+            dc.value = 0
 
 def killMob(field,mob,reset):
     webhook("","Traveling: {} ({})".format(mob.title(),field.title()),"dark brown")
@@ -736,7 +793,8 @@ def collect(name,beesmas=0):
     move.press('e')
     time.sleep(0.5)
     if claimLoot and beesmas:
-        sleep(4)
+        if name != "stockings":
+            sleep(4)
         move.apkey("space")
         exec(open("claim_{}.py".format(usename)).read())
     reset.reset()

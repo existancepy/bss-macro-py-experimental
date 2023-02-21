@@ -14,16 +14,19 @@ discord_bot_token:
 field_drift_compensation:1
 haste_compensation:0
 low_performance_haste_compensation:1
+rejoin_every_enabled:0
+rejoin_every:0
+rejoin_delay:50
 gather_enable:1
-gather_field:['Blue Flower', 'Bamboo', 'none']
+gather_field:['Pine Tree', 'Mountain Top', 'None']
 gather_pattern:stationary
-gather_size:s
+gather_size:S
 gather_width:2
 gather_time:0
 pack:95
-before_gather_turn:none
+before_gather_turn:None
 turn_times:2
-return_to_hive:reset
+return_to_hive:Walk
 whirligig_slot:1
 stump_snail:0
 continue_after_stump_snail:0
@@ -33,13 +36,13 @@ spider:0
 scorpion:0
 werewolf:0
 mantis:0
-wealthclock:0
-blueberrydispenser:0
+wealthclock:1
+blueberrydispenser:1
 strawberrydispenser:0
 royaljellydispenser:0
 treatdispenser:0
 stockings:0
-feast:0
+feast:1
 samovar:0
 wreath:0
 snow_machine:0
@@ -51,6 +54,3 @@ ebdetect:pyautogui
 bploc:[0, 0]
 canon_time:1.0
 reverse_hive_direction:0
-rejoin_every_enabled:0
-rejoin_every:0
-rejoin_delay:50

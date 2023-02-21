@@ -7,6 +7,7 @@ from webhook import webhook
 import loadsettings
 
 savedata = {}
+mw,mh = pag.size()
 def loadSave():
     with open('save.txt') as f:
         lines = f.read().split("\n")
@@ -25,7 +26,7 @@ def reset():
     loadSave()
     for _ in range(2):
         webhook("","Resetting character","dark brown")
-        pag.moveTo(350,100)
+        pag.moveTo(mw/4.11,mh/9)
         ww = savedata["ww"]
         wh = savedata["wh"]
         xo = ww//4
@@ -71,7 +72,6 @@ def reset():
     vals = []
     for _ in range(1):
         webhook("","Obtaining values","dark brown")
-        pag.moveTo(350,100)
         time.sleep(2)
         pag.press('esc')
         time.sleep(0.1)
@@ -102,7 +102,6 @@ def reset():
     webhook("","threshold calculated. Value of {}".format(thresh),"dark brown")
     webhook("","Now attempting to find hive","dark brown")
     for _ in range(1):
-        pag.moveTo(350,100)
         time.sleep(2)
         pag.press('esc')
         time.sleep(0.1)
@@ -146,7 +145,7 @@ def resetCheck():
     loadSave()
     for _ in range(2):
         webhook("","Resetting character","dark brown")
-        pag.moveTo(350,100)
+        pag.moveTo(mw/4.11,mh/9)
         ww = savedata["ww"]
         wh = savedata["wh"]
         xo = ww//4
