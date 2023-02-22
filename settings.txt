@@ -2,15 +2,15 @@
 hive_number:4
 walkspeed:28
 gifted_vicious_bee:0
-enable_discord_webhook:1
-discord_webhook_url:https://discord.com/api/webhooks/1006538045136318555/lYObLY1JTag1dFa0f3tfr6j14m54Lfa8Toakjgh4sEhrbDGlm5iZTjgwYqk7LDbApYNR
+enable_discord_webhook:0
+discord_webhook_url:
 send_screenshot:1
 sprinkler_slot:1
 sprinkler_type:saturator
 display_type:built-in retina display
-private_server_link:https://www.roblox.com/games/1537690962?privateServerLinkCode=91602415947156172254993136331837
-enable_discord_bot:1
-discord_bot_token:MTA2NTIwNjQ3OTUyNDczNzA2NA.GBWvBz.YWOZFzMO6cAaOUzQGCvppqh_as3ofytNvzb3iQ
+private_server_link:
+enable_discord_bot:0
+discord_bot_token:
 field_drift_compensation:1
 haste_compensation:0
 low_performance_haste_compensation:1
@@ -48,7 +48,7 @@ wreath:0
 snow_machine:0
 mondo_buff:0
 lid_art:0
-hivethreshold:0.6690882444381714
+hivethreshold:1.0
 start_honey:
 prev_honey:
 start_time:1677036908.849546
