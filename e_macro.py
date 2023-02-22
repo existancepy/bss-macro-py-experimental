@@ -2,39 +2,26 @@ try:
     import pyautogui as pag
 except Exception as e:
     print(e)
-    print("There is an import error here! This is most likely caused by an incorrect installation process. Ensure that you have done the 'pip3 install...' steps")
+    print("\033[0;31mThere is an import error here! This is most likely caused by an incorrect installation process. Ensure that you have done the 'pip3 install...' steps\033[00m")
     quit()
-import time
-import os
+import time, os, ctypes, tty
 import tkinter
 import tkinter as tk
 from tkinter import ttk
-import move
-import loadsettings
-import reset
-import backpack
-import sys
-import imagesearch
-import webbrowser
-import multiprocessing
+import backpack, reset, loadsettings, move,update,updateexperiment
+import multiprocessing, webbrowser, imagesearch, sys, discord, subprocess
 from webhook import webhook
-import ctypes
-import tty
 global savedata
 global setdat
-import discord
-import update
-import updateexperiment
 from tkinter import messagebox
 import numpy as np
 from PIL import ImageGrab
-import subprocess
 
 try:
     import cv2
 except Exception as e:
     print(e)
-    print("There is a import error here! Check out ImportError: dlopen in #common-fixes in the discord server or 'bugs and fixes' section in the github")
+    print("\033[0;31mThere is a import error here! Check out ImportError: dlopen in #common-fixes in the discord server or 'bugs and fixes' section in the github\033[00m")
     quit()
 import sv_ttk
 import math
@@ -45,7 +32,6 @@ import pytesseract
 from datetime import datetime
 from getHaste import getHaste, getHastelp
 
-
 savedata = {}
 ww = ""
 wh = ""
@@ -54,7 +40,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.32"
+macrov = "1.33.1"
 planterInfo = loadsettings.planterInfo()
 
 if __name__ == '__main__':
@@ -70,6 +56,7 @@ if __name__ == '__main__':
     manager = multiprocessing.Manager()
     currentfield = manager.Value(ctypes.c_wchar_p, "")
     bpc = multiprocessing.Value('i', 0)
+    rejoinval = multiprocessing.Value('i', 0)
     gather = multiprocessing.Value('i', 0)
     disconnected = multiprocessing.Value('i', 0)
 
@@ -80,7 +67,7 @@ def is_running(app):
     tmp = os.popen("ps -Af").read()
     return app in tmp[:]
 
-def discord_bot(dc):
+def discord_bot(dc,rejoinval):
     setdat = loadsettings.load()
     if setdat['enable_discord_bot']:
         intents = discord.Intents.default()
@@ -102,9 +89,7 @@ def discord_bot(dc):
                 cmd = args[0].lower()
                 if cmd == "rejoin":
                     await message.channel.send("Now attempting to rejoin")
-                    dc.value = 1
-                    rejoin()
-                    dc.value = 0
+                    rejoinval.value = 1
                 elif cmd == "screenshot":
                     await message.channel.send("Sending a screenshot via webhook")
                     webhook("User Requested: Screenshot","","light blue",1)
@@ -204,21 +189,32 @@ def imToString(m):
     savedata = loadRes()
     ww = savedata['ww']
     wh = savedata['wh']
+    ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
+    xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
     # Path of tesseract executable
     #pytesseract.pytesseract.tesseract_cmd ='**Path to tesseract executable**'
     # ImageGrab-To capture the screen image in a loop. 
     # Bbox used to capture a specific area.
     if m == "bee bear":
-        cap = pag.screenshot(region=(ww//3,wh//20,ww//3,wh//7))
+        cap = pag.screenshot(region=(ww//(3*xsm),wh//(20*ysm),ww//3,wh//7))
     elif m == "egg shop":
-        cap = pag.screenshot(region=(ww//1.2,wh//3,ww-ww//1.2,wh//5))
+        cap = pag.screenshot(region=(ww//(1.2*xsm),wh//(3*ysm),ww-ww//1.2,wh//5))
     elif m == "ebutton":
-        cap = pag.screenshot(region=(ww//2.65,wh//20,ww//21,wh//17))
+        cap = pag.screenshot(region=(ww//(2.65*xsm),wh//(20*ysm),ww//21,wh//17))
         img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
         img = cv2.resize(img, None, fx=2, fy=2)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         config = '--oem 3 --psm %d' % 10
         tesstr = pytesseract.image_to_string(img, config = config, lang ='eng')
+        return tesstr
+    elif m == "honey":
+        cap = pag.screenshot(region=(ww//(3*xsm),0,ww//6.5,wh//25))
+        img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
+        img = cv2.resize(img, None, fx=1.3, fy=1.3)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        config = '--oem 3 --psm %d' % 13
+        tesstr = pytesseract.image_to_string(img, config = config)
+        tesstr = ''.join([x for x in tesstr if x.isdigit()])
         return tesstr
 
     # Converted the image to monochrome for it to be easily 
@@ -232,7 +228,7 @@ def checkwithOCR(m):
         if "bee bear" in text:
             return True
     elif m == "egg shop":
-        if "bee egg" in text or "basic bee" in text:
+        if "bee egg" in text or "basic bee" in text or "small bag" in text:
             return True
     return False
     
@@ -257,7 +253,18 @@ def ebutton(pagmode=0):
     '''
     return imToString('ebutton').strip() == "E"
 
-
+def hourlyReport(hourly=1):
+    setdat = loadsettings.load()
+    session_time = time.time() - setdat['start_time']
+    currHoney = imToString('honey')
+    session_honey = currHoney - setdat['start_honey']
+    hourly_honey = currHoney - setdat['prev_honey']
+    with open('honey_history.txt','r') as f:
+        honeyHist = ast.literal_eval(f.read())
+    f.close()
+    if hourly:
+        loadsettings.save('prev_honey',currHoney)
+    honeyHist = [currHoney - x for x in honeyHist]
 
 def canon():
     savedata = loadRes()
@@ -283,7 +290,7 @@ def canon():
                 reset.reset()   
                 canon()
             else:
-                webhook("","Canon found","dark brown")
+                webhook("","Canon found","dark brown",1)
             return
     mouse.move_to(mw//2,mh//5*4)
     webhook("","Cannon not found, resetting","dark brown",1)
@@ -373,7 +380,6 @@ def convert():
     for _ in range(2):
         r = ebutton()
         if r:
-            target = r[3]-0.01
             move.press("e")
             webhook("","Starting convert","brown",1)
             st = time.perf_counter()
@@ -687,19 +693,28 @@ def fieldDriftCompensation():
                 move.hold("s",0.1)
         else:
             break
-        
-def background(cf,bpcap,gat,dc):
+
+def savehoney_history(saveinfo):
+    with open("honey_history.txt","w") as f:
+        f.write(str(saveinfo))
+    f.close()
+    
+def background(cf,bpcap,gat,dc, rejoinval):
     savedata = loadRes()
     ww = savedata['ww']
     wh = savedata['wh']
     setdat = loadsettings.load()
+    prevHour = datetime.now().hour
+    prevMin = datetime.now().minute
+    honeyHist = []
     while True:
         r = imagesearch.find('disconnect.png',0.8,ww//3,wh//2.8,ww//2.3,wh//2.5)
-        if r:
+        if r or rejoinval.value:
             dc.value = 1
             webhook("","Disconnected","red")
             rejoin()
             dc.value = 0
+            rejoinval.value = 0
         
         if gat.value:
             bpcap.value = backpack.bpc()
@@ -735,6 +750,20 @@ def background(cf,bpcap,gat,dc):
             else:
                 rejoin()
             dc.value = 0
+        if setdat['enable_discord_webhook']:
+            sysTime = datetime.now()
+            sysHour = sysTime.hour
+            sysMin = sysTime.minute
+
+            if sysMin != prevMin:
+                prevMin = sysMin
+                honeyHist.append(int(imToString('honey')))
+                savehoney_history(honeyHist)
+            if sysMin == 0 and sysHour != prevHour:
+                #call the hourly report
+                honeyHist = []
+                savehoney_history(honeyHist)
+                
 
 def killMob(field,mob,reset):
     webhook("","Traveling: {} ({})".format(mob.title(),field.title()),"dark brown")
@@ -821,6 +850,12 @@ def rejoin():
         wh = savedata['wh']
         webhook("","Rejoining","dark brown")
         time.sleep(3)
+        if is_running("roblox"):
+                cmd = """
+                    osascript -e 'tell application "Roblox" to quit' 
+                    """
+                os.system(cmd)
+                time.sleep(3)
         if setdat["private_server_link"]:
             webbrowser.open(setdat['private_server_link'])
         else:
@@ -1309,6 +1344,10 @@ def setResolution():
     wwd = int(pag.size()[0])
     whd = int(pag.size()[1])
     if subprocess.call("system_profiler SPDisplaysDataType | grep -i 'retina'", shell=True) == 0:
+        retout = subprocess.check_output("system_profiler SPDisplaysDataType | grep -i 'retina'",shell=True)
+        retout = retout.decode().split("\n")[1].strip().split("x")
+        nww = ''.join([x for x in retout[0] if x.isdigit()])
+        nwh = ''.join([x for x in retout[1] if x.isdigit()])
         loadsettings.save('display_type', 'built-in retina display')
         print("display type: retina")
         wwd *=2
@@ -1316,15 +1355,32 @@ def setResolution():
     else:
         loadsettings.save('display_type',"built-in display")
         print("display type: built-in")
+        nww = wwd
+        nwh = whd
     print("Screen coordinates: {}x{}".format(wwd,whd))
     with open('save.txt', 'w') as f:
-        f.write('wh:{}\nww:{}'.format(whd,wwd))
+        f.write('wh:{}\nww:{}\nnww:{}\nnwh:{}'.format(whd,wwd,nww,nwh))
+    ndisplay = "{}x{}".format(wwd,whd)
+
+    multiInfo = {
+        "2880x1800": [1,1],
+        "2940x1912": [2/3,1],
+        "1920x1080": [2/3,2/3],
+        "1440x900": [1,1],
+
+        }
+    if ndisplay in multiInfo:
+        loadsettings.save("y_screenshot_multiplier",multiInfo[ndisplay][0],"multipliers.txt")
+        loadsettings.save("x_screenshot_multiplier",multiInfo[ndisplay][1],"multipliers.txt")
             
 if __name__ == "__main__":
     cmd = 'defaults read -g AppleInterfaceStyle'
     p = bool(subprocess.Popen(cmd, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, shell=True).communicate()[0])
-    print("\n\nTo launch the macro manually, enter the following 2 commands in terminal:\ncd path/to/macro-folder\npython3 e_macro.py\n\nTo stop the macro, \ntab out of roblox, make sure terminal is in focus and press ctrl c\nor,\nright click the macro app in the dock and force quit")
+    print("\033[0;32m\n\nTo launch the macro manually, enter the following 2 commands in terminal:\033[00m")
+    print("cd path/to/macro-folder\npython3 e_macro.py\n")
+    print("\033[0;32mTo stop the macro\033[00m")
+    print("tab out of roblox, make sure terminal is in focus and press ctrl c\nor,\nright click the macro app in the dock and force quit")
     print("\n\nYour python version is {}".format(sys.version_info[0]))
     print("Your macro version is {}\n\n".format(macrov))
     setResolution()
@@ -1437,9 +1493,6 @@ if __name__ == "__main__":
     mondo_buff = tk.IntVar(value=setdat["mondo_buff"])
     lid_art = tk.IntVar(value=setdat["lid_art"])
     
-    ebthreshold = setdat['ebthreshold']
-    ebdetect = tk.StringVar(root)
-    ebdetect.set(setdat["ebdetect"])
     canon_time = setdat['canon_time']
     reverse_hive_direction = tk.IntVar(value=setdat['reverse_hive_direction'])
 
@@ -1494,6 +1547,8 @@ if __name__ == "__main__":
     gather_fields.insert(0,"None")
     field_options = tk.Variable(value=[x.split("_")[1][:-3].title() for x in os.listdir("./") if x.startswith("field_")])
     planter_fields =  plantdat['planter_fields']
+
+    multipliers = loadsettings.load('multipliers.txt')
 
 
 
@@ -1684,7 +1739,7 @@ if __name__ == "__main__":
 
     def calibrate():
         if calibratehive(0):
-            calibrateebutton()
+            #calibrateebutton()
             webhook("","Calibration Complete","light green")
             cmd = """
                     osascript -e  'activate application "Terminal"'
@@ -1728,6 +1783,8 @@ if __name__ == "__main__":
     def startGo():
         global setdat, stop, planterTypes_prev, planterFields_prev
         setdat = loadsettings.load()
+        currHoney = imToString('honey')
+        print(currHoney)
         planterFields_set = []
         for i in listbox.curselection():
             planterFields_set.append(listbox.get(i).lower())
@@ -1786,9 +1843,9 @@ if __name__ == "__main__":
             "lid_art":lid_art.get(),
 
             "hivethreshold":setdat['hivethreshold'],
-            "ebthreshold":ebtextbox.get(1.0,"end").replace("\n",""),
-            "ebdetect":ebdetect.get(),
-            "bploc":setdat['bploc'],
+            "start_honey":currHoney,
+            "prev_honey":currHoney,
+            "start_time":time.time(),
             "canon_time":cttextbox.get(1.0,"end").replace("\n",""),
             "reverse_hive_direction": reverse_hive_direction.get()
 
@@ -1829,6 +1886,7 @@ if __name__ == "__main__":
             "harvest": harvesttextbox.get(1.0,"end").replace("\n","")
         
             }
+
                 
 
         
@@ -1862,13 +1920,9 @@ if __name__ == "__main__":
         except:
             pag.alert(text="The walkspeed of {} is not a valid number/decimal".format(setdict['walkspeed']),title="Invalid setting",button="OK")
             return
-        with open('save.txt', 'w') as f:
-            f.write('wh:{}\nww:{}'.format(wh,ww))
-        f.close()
         
         savesettings(setdict,"settings.txt")
         savesettings(planterdict,"plantersettings.txt")
-        
         with open("haste.txt","w") as a:
             a.write(setdict["walkspeed"])
         a.close()
@@ -1917,11 +1971,14 @@ if __name__ == "__main__":
         setdat = loadsettings.load()
         if not is_running("roblox"):
             rejoin()
+        currHoney = imToString('honey')
+        loadsettings.save('start_honey',currHoney)
+        loadsettings.save('prev_honey',currHoney)
         startLoop_proc = multiprocessing.Process(target=startLoop,args=(currentfield,bpc,gather,disconnected,planterTypes_prev, planterFields_prev))
         startLoop_proc.start()
-        background_proc = multiprocessing.Process(target=background,args=(currentfield,bpc,gather,disconnected))
+        background_proc = multiprocessing.Process(target=background,args=(currentfield,bpc,gather,disconnected,rejoinval))
         background_proc.start()
-        discord_bot_proc = multiprocessing.Process(target=discord_bot,args=(disconnected,))
+        discord_bot_proc = multiprocessing.Process(target=discord_bot,args=(disconnected,rejoinval))
         discord_bot_proc.start()
         try:
             while True:
@@ -1948,11 +2005,13 @@ if __name__ == "__main__":
         else:
             wslotmenu.configure(state="disable")
     def disableeb(event):
+        pass
+        '''
         if ebdetect.get().lower() == "pyautogui":
             ebtextbox.configure(state="disable")
         else:
             ebtextbox.configure(state="normal")
-
+        '''
     def disabledw():
         if str(enable_discord_webhook.get()) == "1":
             sendss.configure(state="normal")
@@ -2190,13 +2249,13 @@ if __name__ == "__main__":
     #Tab 6
     ttk.Button(frame5, text = "Calibrate Hive", command = calibratehive, width = 10).place(x=0,y=13)
     tkinter.Checkbutton(frame5, text="Reverse Hive Direction", variable=reverse_hive_direction).place(x=140, y = 15)
-    tkinter.Label(frame5, text = "E Button Detection Type").place(x = 0, y = 50)
-    dropField = ttk.OptionMenu(frame5, ebdetect,setdat['ebdetect'], command = disableeb, *["cv2","pyautogui"],style='my.TMenubutton' )
-    dropField.place(width=130,x = 158, y = 51,height=24)
-    tkinter.Label(frame5, text = " Threshold").place(x = 300, y = 50)
-    ebtextbox = tkinter.Text(frame5, width = 4, height = 1, bg= wbgc)
-    ebtextbox.insert("end",ebthreshold)
-    ebtextbox.place(x=380,y=53)
+    tkinter.Label(frame5, text = "Screenshot multiplier").place(x = 0, y = 50)
+    #dropField = ttk.OptionMenu(frame5, ebdetect,setdat['ebdetect'], command = disableeb, *["cv2","pyautogui"],style='my.TMenubutton' )
+    #dropField.place(width=130,x = 158, y = 51,height=24)
+    #tkinter.Label(frame5, text = " Threshold").place(x = 300, y = 50)
+    #smtextbox = tkinter.Text(frame5, width = 4, height = 1, bg= wbgc)
+    #smtextbox.insert("end",multipliers['screenshot_multiplier'])
+    #smtextbox.place(x=158,y=53)
     tkinter.Label(frame5, text = "Flight Multiplier").place(x = 0, y = 85)
     cttextbox = tkinter.Text(frame5, width = 4, height = 1, bg= wbgc)
     cttextbox.insert("end",canon_time)

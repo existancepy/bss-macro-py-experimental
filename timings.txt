@@ -24,4 +24,4 @@ wreath:1675917406.804852
 snow_machine:1675514363.3701508
 mondo_buff:0
 lid_art:0
-rejoin_every:1676937300.73277
+rejoin_every:1677036914.3174882

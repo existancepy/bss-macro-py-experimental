@@ -22,11 +22,13 @@ def reset():
     setdat = loadsettings.load()
     ths = setdat["hivethreshold"]
     rhd = setdat["reverse_hive_direction"]
+    ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
+    xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
     print("ths is {}".format(ths))
     loadSave()
-    for _ in range(2):
-        webhook("","Resetting character","dark brown")
-        pag.moveTo(mw/4.11,mh/9)
+    for i in range(2):
+        webhook("","Resetting character, Attempt: {}".format(i+1),"dark brown")
+        pag.moveTo(mw/(xsm*4.11),mh/(9*ysm))
         ww = savedata["ww"]
         wh = savedata["wh"]
         xo = ww//4
@@ -143,9 +145,11 @@ def reset():
 def resetCheck():
     ths = loadsettings.load()["hivethreshold"]
     loadSave()
+    ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
+    xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
     for _ in range(2):
         webhook("","Resetting character","dark brown")
-        pag.moveTo(mw/4.11,mh/9)
+        pag.moveTo(mw/(4.11*xsm),mh/(9*ysm))
         ww = savedata["ww"]
         wh = savedata["wh"]
         xo = ww//4

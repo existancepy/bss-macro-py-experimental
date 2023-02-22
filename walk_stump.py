@@ -5,24 +5,17 @@ import os
 import tkinter
 import loadsettings
 import move
+import pytesseract
 ws = loadsettings.load()["walkspeed"]
 def ebutton(pagmode=0):
-    r =  []
-    savedata = loadRes()
-    c = loadsettings.load()['ebthreshold']
-    ww = savedata['ww']
-    wh = savedata['wh']
-    setdat = loadsettings.load()
-    if setdat['ebdetect'] == "pyautogui" or pagmode:
-        if setdat['display_type'] == "built-in retina display":
-            r = pag.locateOnScreen("./images/retina/eb.png",confidence = 0.99,region=(ww//3,0,ww//3,wh//3))
-        else:
-            r = pag.locateOnScreen("./images/built-in/eb.png",confidence = 0.99,region=(ww//3,0,ww//3,wh//3))
-    else:
-        print("ebutton threshold: {}".format(c))
-        r = imagesearch.find("eb.png",c,ww//3,0,ww//3,wh//3)
-    if r:return r
-    return
+    cap = pag.screenshot(region=(ww//3,0,ww//6.5,wh//25))
+    img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
+    img = cv2.resize(img, None, fx=1.3, fy=1.3)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    config = '--oem 3 --psm %d' % 13
+    tesstr = pytesseract.image_to_string(img, config = config)
+    tesstr = ''.join([x for x in tesstr if x.isdigit()])
+    return tesstr
 
 def apd(k):
     cmd = """

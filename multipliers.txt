@@ -1,0 +1,3 @@
+
+y_screenshot_multiplier:1
+x_screenshot_multiplier:1

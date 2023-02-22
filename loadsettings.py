@@ -4,9 +4,9 @@ import os
 import tkinter
 import ast
 
-def load():
+def load(filename = "settings.txt"):
     info = {}
-    with open('settings.txt',"r") as f:
+    with open(filename,"r") as f:
         lines = f.read().split("\n")
     f.close()
     for s in lines:
@@ -55,13 +55,13 @@ def planterLoad():
             info[l[0]] = l[1]
     return info
     
-def save(setting,value):
-    info = load()
+def save(setting,value,filename = "settings.txt"):
+    info = load(filename)
     info[setting] = value
     out = ''
     for i in info:
         out += '\n{}:{}'.format(i,info[i])
-    with open('settings.txt',"w") as f:
+    with open(filename,"w") as f:
         lines = f.write(out)
     f.close()
 

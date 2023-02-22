@@ -22,7 +22,6 @@ import _darwinmouse as mouse
 import ast
 import getHaste
 import pytesseract
-import matplotlib.pyplot as plt
 
 def roblox():
     cmd = """
@@ -42,11 +41,9 @@ def loadRes():
         outdict[l[0]] = l[1]
     return outdict
 
-roblox()
 savedata = loadRes()
 ww = savedata['ww']
 wh = savedata['wh']
-
 def imToString(m):
     savedata = loadRes()
     ww = savedata['ww']
@@ -73,10 +70,15 @@ def imToString(m):
     # read by the OCR and obtained the output String.
     tesstr = pytesseract.image_to_string(cv2.cvtColor(np.array(cap), cv2.COLOR_BGR2GRAY), lang ='eng')
     return tesstr
-
-print(imToString('ebutton') == "E")
-im = pag.screenshot(region=(ww//2.65,wh//20,ww//21,wh//17))
+mx = float(input("input x multiplier: "))
+my = float(input("input y multiplier: "))
+roblox()
+im = pag.screenshot(region=(ww//(2.65*mx),wh//(20*my),ww//21,wh//17))
 im.save('test.png')
+cmd = """
+    osascript -e 'activate application "Terminal"' 
+    """
+os.system(cmd)
 '''
 
 times = []

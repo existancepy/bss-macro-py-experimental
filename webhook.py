@@ -5,7 +5,7 @@ from discord_webhook import DiscordWebhook, DiscordEmbed
 import pyautogui
 import PIL
 from io import BytesIO
-def webhook(title,desc,colour,ss=0):
+def webhook(title,desc,colour,ss=0,hr=0):
     dwurl = loadsettings.load()["discord_webhook_url"]
     sendscreenshot = loadsettings.load()['send_screenshot']
     enable = loadsettings.load()["enable_discord_webhook"]

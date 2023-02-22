@@ -1,16 +1,16 @@
 
-hive_number:3
+hive_number:4
 walkspeed:28
 gifted_vicious_bee:0
-enable_discord_webhook:0
-discord_webhook_url:
-send_screenshot:0
+enable_discord_webhook:1
+discord_webhook_url:https://discord.com/api/webhooks/1006538045136318555/lYObLY1JTag1dFa0f3tfr6j14m54Lfa8Toakjgh4sEhrbDGlm5iZTjgwYqk7LDbApYNR
+send_screenshot:1
 sprinkler_slot:1
 sprinkler_type:saturator
 display_type:built-in retina display
-private_server_link:
-enable_discord_bot:0
-discord_bot_token:
+private_server_link:https://www.roblox.com/games/1537690962?privateServerLinkCode=91602415947156172254993136331837
+enable_discord_bot:1
+discord_bot_token:MTA2NTIwNjQ3OTUyNDczNzA2NA.GBWvBz.YWOZFzMO6cAaOUzQGCvppqh_as3ofytNvzb3iQ
 field_drift_compensation:1
 haste_compensation:0
 low_performance_haste_compensation:1
@@ -18,15 +18,15 @@ rejoin_every_enabled:0
 rejoin_every:0
 rejoin_delay:50
 gather_enable:1
-gather_field:['Pine Tree', 'Mountain Top', 'None']
+gather_field:['Mushroom', 'None', 'None']
 gather_pattern:stationary
-gather_size:S
+gather_size:s
 gather_width:2
 gather_time:0
 pack:95
-before_gather_turn:None
+before_gather_turn:none
 turn_times:2
-return_to_hive:Walk
+return_to_hive:walk
 whirligig_slot:1
 stump_snail:0
 continue_after_stump_snail:0
@@ -36,21 +36,21 @@ spider:0
 scorpion:0
 werewolf:0
 mantis:0
-wealthclock:1
-blueberrydispenser:1
+wealthclock:0
+blueberrydispenser:0
 strawberrydispenser:0
 royaljellydispenser:0
 treatdispenser:0
 stockings:0
-feast:1
+feast:0
 samovar:0
 wreath:0
 snow_machine:0
 mondo_buff:0
 lid_art:0
-hivethreshold:1.0
-ebthreshold:0.98
-ebdetect:pyautogui
-bploc:[0, 0]
+hivethreshold:0.6690882444381714
+start_honey:
+prev_honey:
+start_time:1677036908.849546
 canon_time:1.0
 reverse_hive_direction:0
