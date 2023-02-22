@@ -22,7 +22,11 @@ import _darwinmouse as mouse
 import ast
 import getHaste
 import pytesseract
+from datetime import datetime
 import matplotlib.pyplot as plt
+import random
+from matplotlib.colors import from_levels_and_colors
+from matplotlib.collections import LineCollection
 
 def roblox():
     cmd = """
@@ -42,7 +46,7 @@ def loadRes():
         outdict[l[0]] = l[1]
     return outdict
 
-roblox()
+#roblox()
 savedata = loadRes()
 ww = savedata['ww']
 wh = savedata['wh']
@@ -66,7 +70,15 @@ def imToString(m):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         config = '--oem 3 --psm %d' % 10
         tesstr = pytesseract.image_to_string(img, config = config, lang ='eng')
-        print(tesstr)
+        return tesstr
+    elif m == "honey":
+        cap = pag.screenshot(region=(ww//3,0,ww//6.5,wh//25))
+        img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
+        img = cv2.resize(img, None, fx=2, fy=2)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        config = '--oem 3 --psm %d' % 13
+        tesstr = pytesseract.image_to_string(img, config = config)
+        #tesstr = ''.join([x for x in tesstr if x.isdigit()])
         return tesstr
 
     # Converted the image to monochrome for it to be easily 
@@ -74,9 +86,36 @@ def imToString(m):
     tesstr = pytesseract.image_to_string(cv2.cvtColor(np.array(cap), cv2.COLOR_BGR2GRAY), lang ='eng')
     return tesstr
 
-print(imToString('ebutton') == "E")
-im = pag.screenshot(region=(ww//2.65,wh//20,ww//21,wh//17))
-im.save('test.png')
+
+yvals = [random.randint(0,1000) for _ in range(60)]
+xvals = [x+1 for x in range(len(yvals))]
+
+
+fig = plt.figure(figsize=(6,6), dpi=100,constrained_layout=True)
+gs = fig.add_gridspec(12,12)
+#fig.patch.set_facecolor('#121212')
+
+axText = fig.add_subplot(gs[0:12, 8:12])
+axText.get_xaxis().set_visible(False)
+axText.get_yaxis().set_visible(False)
+axText.patch.set_facecolor('#121212')
+axText.text(1,2,"hi")
+
+ax1 = fig.add_subplot(gs[0:4, 0:7])
+ax1.set_xticks(np.arange(0,max(xvals)+1, 10))
+ax1.set_yticks(np.arange(0, max(yvals)+1, max(yvals)/4))
+ax1.set_title('Honey/min',color='white')
+ax1.patch.set_facecolor('#121212')
+ax1.spines['bottom'].set_color('white')
+ax1.spines['top'].set_color('white')
+ax1.spines['left'].set_color('white')
+ax1.spines['right'].set_color('white')
+ax1.tick_params(axis='x', colors='white')
+ax1.tick_params(axis='y', colors='white')
+ax1.fill_between(xvals, 0, yvals)
+plt.grid(alpha=0.06)
+plt.show()
+
 '''
 
 times = []
