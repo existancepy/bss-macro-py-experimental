@@ -28,7 +28,7 @@ def webhook(title,desc,colour,ss=0,hr=0):
         embed = DiscordEmbed(title="[{}] {}".format(current_time,title), description=desc, color=colours[colour])
     else:
         embed = DiscordEmbed(title=title, description="[{}] {}".format(current_time,desc), color=colours[colour])
-    if ss and set:
+    if ss and sendscreenshot:
         screenshot = PIL.ImageGrab.grab()
         screenshot.convert('RGB').save("screenshot.jpg")
         with open("screenshot.jpg", "rb") as f:
@@ -36,6 +36,12 @@ def webhook(title,desc,colour,ss=0,hr=0):
         f.close()
         embed.set_image(url='attachment://screenshot.jpg')
         os.remove('screenshot.jpg')
+    if hr:
+        with open("hourlyReport-resized.png", "rb") as f:
+            webhook.add_file(file=f.read(), filename='hourlyReport-resized.png')
+        f.close()
+        embed.set_image(url='attachment://hourlyReport-resized.png')
+        #os.remove('hourlyReport.png')
     webhook.add_embed(embed)
     try:
         response = webhook.execute()

@@ -1,19 +1,52 @@
+
 import pyautogui as pag
 import time
 import os
 import tkinter
 import move
+import sys
+import cv2
+from PIL import ImageGrab
+import numpy as np
+import imagesearch
 import loadsettings
-import Quartz.CoreGraphics as CG
+import subprocess
+import tkinter as tk
+import tty
+from tkinter import ttk
+import backpack
+from webhook import webhook
+import webbrowser
+import reset
+import _darwinmouse as mouse
+import ast
+import getHaste
+import pytesseract
+from PIL import Image
+import time
 import struct
-ms = pag.size()
-mw = ms[0]
-mh = ms[1]
-#0% 7697781
-#31% 8381831
-#52% 8502900
-#84% 11231045
-#100% 14889259
+
+import Quartz.CoreGraphics as CG
+
+def roblox():
+    cmd = """
+    osascript -e 'activate application "Roblox"' 
+    """
+    os.system(cmd)
+    time.sleep(1)
+mw=pag.size()[0]
+def loadRes():
+    outdict =  {}
+    with open('save.txt') as f:
+        lines = f.read().split("\n")
+    f.close()
+    for s in lines:
+        l = s.replace(" ","").split(":")
+        if l[1].isdigit():
+            l[1] = int(l[1])
+        outdict[l[0]] = l[1]
+    return outdict
+
 class ScreenPixel(object):
     """Captures the screen using CoreGraphics, and provides access to
     the pixel values.
@@ -79,6 +112,7 @@ class ScreenPixel(object):
         return (r, g, b, a)
 
 
+roblox()
 def rgb_to_hex(r, g, b):
       return ('0x{:X}{:X}{:X}').format(r, g, b)
 def bpc():
@@ -107,7 +141,12 @@ def bpc():
         perc = 30
     else:
         perc = 0
-    print("Pixel Colour: {}, Backpack Percentage: {}.".format(backpackColor, perc))
+    print("pixel colour: {}, backpack percentage: {}".format(backpackColor, perc))
     return perc
+
+
+
+bpc()
+
 
 

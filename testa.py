@@ -75,10 +75,13 @@ my = float(input("input y multiplier: "))
 roblox()
 im = pag.screenshot(region=(ww//(2.65*mx),wh//(20*my),ww//21,wh//17))
 im.save('test.png')
+loadsettings.save("y_screenshot_multiplier",my,"multipliers.txt")
+loadsettings.save("x_screenshot_multiplier",mx,"multipliers.txt")
 cmd = """
     osascript -e 'activate application "Terminal"' 
     """
 os.system(cmd)
+
 '''
 
 times = []

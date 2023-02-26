@@ -43,6 +43,7 @@ def fastimgsearch():
         min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
         vals.append((max_val,1+(i*0.1)))
         q.task_done()
+        return
 
 def getHaste():
     global vals, ww,wh, REGION

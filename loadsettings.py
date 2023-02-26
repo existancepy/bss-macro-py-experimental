@@ -14,7 +14,7 @@ def load(filename = "settings.txt"):
             l = s.strip().split(":",1)
             if l[1].isdigit():
                 l[1] = int(l[1])
-            elif l[1].replace(".","").isdigit():
+            elif l[1].replace(".","").isdigit() and len(l[1].split(".")) == 2:
                 l[1] = float(l[1])
             elif l[1].lower() == "yes":
                 l[1] = 1
