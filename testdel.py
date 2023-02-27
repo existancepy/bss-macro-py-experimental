@@ -22,6 +22,15 @@ import _darwinmouse as mouse
 import ast
 import getHaste
 import pytesseract
+import math
+
+def millify(n):
+    millnames = ['',' K',' M',' B',' T', 'Qd']
+    n = float(n)
+    millidx = max(0,min(len(millnames)-1,
+                        int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
+
+    return '{:.2f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
 
 def roblox():
     cmd = """
@@ -50,23 +59,19 @@ def imToString(m):
     wh = savedata['wh']
     ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
     xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
+    print("ym: {}, xm: {}".format(ysm,xsm))
     # Path of tesseract executable
     #pytesseract.pytesseract.tesseract_cmd ='**Path to tesseract executable**'
     # ImageGrab-To capture the screen image in a loop. 
     # Bbox used to capture a specific area.
     if m == "bee bear":
         cap = pag.screenshot(region=(ww//(3*xsm),wh//(20*ysm),ww//3,wh//7))
-        cap.save("bear.png")
-        img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
-        img = cv2.resize(img, None, fx=2, fy=2)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        config = '--oem 3 --psm %d' % 12
-        tesstr = pytesseract.image_to_string(img, config = config, lang ='eng')
-        return tesstr
     elif m == "egg shop":
         cap = pag.screenshot(region=(ww//(1.2*xsm),wh//(3*ysm),ww-ww//1.2,wh//5))
+        cap.save("shoptest.png")
     elif m == "ebutton":
         cap = pag.screenshot(region=(ww//(2.65*xsm),wh//(20*ysm),ww//21,wh//17))
+        cap.save("ebtest.png")
         img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
         img = cv2.resize(img, None, fx=2, fy=2)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -75,6 +80,7 @@ def imToString(m):
         return tesstr
     elif m == "honey":
         cap = pag.screenshot(region=(ww//(3*xsm),0,ww//6.5,wh//25))
+        cap.save("honey.png")
         img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
         gry = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         (h, w) = gry.shape[:2]
@@ -89,14 +95,11 @@ def imToString(m):
                 break
         print(millify(int(tessout)))
         return tessout
-    elif m == "disconnect":
-        cap = pag.screenshot(region=(ww//3,wh//2.8,ww//2.3,wh//2.5))
-        
     # Converted the image to monochrome for it to be easily 
     # read by the OCR and obtained the output String.
     tesstr = pytesseract.image_to_string(cv2.cvtColor(np.array(cap), cv2.COLOR_BGR2GRAY), lang ='eng')
     return tesstr
 roblox()
-print("test1")
-print(imToString("disconnect"))
-
+print(imToString("ebutton"))
+print(imToString("honey"))
+print(imToString("egg shop"))

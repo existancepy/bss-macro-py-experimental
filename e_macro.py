@@ -15,7 +15,10 @@ global savedata
 global setdat
 from tkinter import messagebox
 import numpy as np
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except Exception as e:
+    print("\033[0;31mThere is an import error here! Enter `pip3 install matplotlib` in terminal'\033[00m")
 from PIL import ImageGrab, Image
 
 try:
@@ -41,7 +44,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.33.2"
+macrov = "1.33.25"
 planterInfo = loadsettings.planterInfo()
 
 if __name__ == '__main__':
@@ -95,6 +98,7 @@ def discord_bot(dc,rejoinval):
                     await message.channel.send("Sending a screenshot via webhook")
                     webhook("User Requested: Screenshot","","light blue",1)
                 elif cmd == "report":
+                    await message.channel.send("Sending Hourly Report")
                     hourlyReport(0)
                     
                     #honeyHist = []
@@ -233,7 +237,7 @@ def imToString(m):
                 tessout += i
             elif i == "(" or i == "[" or i == "{":
                 break
-        print(millify(int(tessout)))
+        print(millify(tessout))
         return tessout
     elif m == "disconnect":
         cap = pag.screenshot(region=(ww//3,wh//2.8,ww//2.3,wh//2.5))
@@ -276,9 +280,11 @@ def ebutton(pagmode=0):
     return
     '''
     ocrval = ''.join([x for x in list(imToString('ebutton').strip()) if x.isalpha()])
-    return ocrval == "E"
+    
+    return "E" in ocrval
 
 def millify(n):
+    if not n: return 0
     millnames = ['',' K',' M',' B',' T', 'Qd']
     n = float(n)
     millidx = max(0,min(len(millnames)-1,
@@ -287,17 +293,22 @@ def millify(n):
     return '{:.2f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
 
 def hourlyReport(hourly=1):
-    setdat = loadsettings.load()
     with open('honey_history.txt','r') as f:
         honeyHist = ast.literal_eval(f.read())
     f.close()
+    
+    setdat = loadsettings.load()
+    if hourly == 0:
+        setdat['prev_honey'] = honeyHist[-1]
     if honeyHist.count(honeyHist[0]) != len(honeyHist):
         for i, e in reversed(list(enumerate(honeyHist[:]))):
             if e != setdat['prev_honey']:
                 break
             else:
                 honeyHist.pop(i)
+    print(setdat['prev_honey'])
     print(honeyHist)
+    
     while True:
         compList = [x for x in honeyHist if x]
         sortedHoney = sorted(compList)
@@ -896,7 +907,7 @@ def background(cf,bpcap,gat,dc, rejoinval):
             sysTime = datetime.now()
             sysHour = sysTime.hour
             sysMin = sysTime.minute
-
+            print(sysMin, sysHour, prevHour)
             if sysMin != prevMin:
                 prevMin = sysMin
                 honeyHist[sysMin] = int(imToString('honey'))
@@ -1548,6 +1559,7 @@ def setResolution():
         "2940x1912": [0.666666666666666,1],
         "1920x1080": [1.3,0.94],
         "1440x900": [1,1],
+        "4096x2304": [1.5,0.93]
 
         }
     if ndisplay in multiInfo:

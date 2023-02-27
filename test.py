@@ -119,18 +119,16 @@ def millify(n):
 
 def hourlyReport(hourly=1):
     setdat = loadsettings.load()
-    with open('honey_history.txt','r') as f:
-        honeyHist = ast.literal_eval(f.read())
-    f.close()
+    honeyHist =  [24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503, 24789012503]
     if honeyHist.count(honeyHist[0]) != len(honeyHist):
         for i, e in reversed(list(enumerate(honeyHist[:]))):
             if e != setdat['prev_honey']:
                 break
             else:
                 honeyHist.pop(i)
-    print(honeyHist)
+    print([millify(x) for x in honeyHist])
     while True:
-        #print([millify(x) for x in honeyHist])
+        print([millify(x) for x in honeyHist])
         compList = honeyHist.copy()
         sortedHoney = sorted(compList)
         if sortedHoney == compList:

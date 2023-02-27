@@ -48,6 +48,7 @@ def imToString(m):
     savedata = loadRes()
     ww = savedata['ww']
     wh = savedata['wh']
+    print("Screen Coordinates: {}x{}".format(ww,wh))
     # Path of tesseract executable
     #pytesseract.pytesseract.tesseract_cmd ='**Path to tesseract executable**'
     # ImageGrab-To capture the screen image in a loop. 
