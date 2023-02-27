@@ -45,15 +45,8 @@ move.hold("a",0.1)
 pag.keyDown("s")
 time.sleep(0.1)
 move.press("space")
-time.sleep(0.15*28/ws)
+time.sleep(0.1*28/ws)
 pag.keyUp("s")
-for _ in range(5):
-    pag.keyDown("s")
-    time.sleep(0.15)
-    pag.keyUp("s")
-    r = ebutton()
-    if r:
-        break
 time.sleep(2.5)
 move.press("e")
 move.hold("w",4)

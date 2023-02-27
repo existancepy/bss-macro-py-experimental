@@ -93,7 +93,10 @@ def discord_bot(dc,rejoinval):
                 cmd = args[0].lower()
                 if cmd == "rejoin":
                     await message.channel.send("Now attempting to rejoin")
-                    rejoinval.value = 1
+                    #rejoinval.value = 1
+                    dc.value = 1
+                    rejoin()
+                    dc.value = 0
                 elif cmd == "screenshot":
                     await message.channel.send("Sending a screenshot via webhook")
                     webhook("User Requested: Screenshot","","light blue",1)
@@ -200,13 +203,14 @@ def imToString(m):
     wh = savedata['wh']
     ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
     xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
+    ylm = loadsettings.load('multipliers.txt')['y_length_multiplier']
+    xlm = loadsettings.load('multipliers.txt')['x_length_multiplier']
     # Path of tesseract executable
     #pytesseract.pytesseract.tesseract_cmd ='**Path to tesseract executable**'
     # ImageGrab-To capture the screen image in a loop. 
     # Bbox used to capture a specific area.
     if m == "bee bear":
-        cap = pag.screenshot(region=(ww//(3*xsm),wh//(20*ysm),ww//3,wh//7))
-        cap.save("bear.png")
+        cap = pag.screenshot(region=(ww//(3*xsm),wh//(20*ysm),ww//(3*xlm),wh//(7*ylm)))
         img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
         img = cv2.resize(img, None, fx=2, fy=2)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -216,7 +220,7 @@ def imToString(m):
     elif m == "egg shop":
         cap = pag.screenshot(region=(ww//(1.2*xsm),wh//(3*ysm),ww-ww//1.2,wh//5))
     elif m == "ebutton":
-        cap = pag.screenshot(region=(ww//(2.65*xsm),wh//(20*ysm),ww//21,wh//17))
+        cap = pag.screenshot(region=(ww//(2.65*xsm),wh//(20*ysm),ww//(21*xlm),wh//(17*ylm)))
         img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
         img = cv2.resize(img, None, fx=2, fy=2)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -224,7 +228,7 @@ def imToString(m):
         tesstr = pytesseract.image_to_string(img, config = config, lang ='eng')
         return tesstr
     elif m == "honey":
-        cap = pag.screenshot(region=(ww//(3*xsm),0,ww//6.5,wh//25))
+        cap = pag.screenshot(region=(ww//(3*xsm),0,ww//(6.5*xlm),wh//(ylm*25)))
         img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
         gry = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         (h, w) = gry.shape[:2]
@@ -241,6 +245,12 @@ def imToString(m):
         return tessout
     elif m == "disconnect":
         cap = pag.screenshot(region=(ww//3,wh//2.8,ww//2.3,wh//2.5))
+        img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
+        img = cv2.resize(img, None, fx=1.5, fy=1.5)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        config = '--oem 3 --psm %d' % 12
+        tesstr = pytesseract.image_to_string(img, config = config, lang ='eng')
+        return tesstr
         
     # Converted the image to monochrome for it to be easily 
     # read by the OCR and obtained the output String.
@@ -280,7 +290,7 @@ def ebutton(pagmode=0):
     return
     '''
     ocrval = ''.join([x for x in list(imToString('ebutton').strip()) if x.isalpha()])
-    
+    print(ocrval)
     return "E" in ocrval
 
 def millify(n):
@@ -862,7 +872,8 @@ def background(cf,bpcap,gat,dc, rejoinval):
     honeyHist = [setdat['prev_honey']]*60
     print(honeyHist)
     while True:
-        if checkwithOCR("disconnect"):
+        r = imagesearch.find('disconnect.png',0.8,ww//3,wh//2.8,ww//2.3,wh//2.5)
+        if checkwithOCR("disconnect") or r:
             dc.value = 1
             webhook("","Disconnected","red")
             rejoin()
@@ -910,7 +921,11 @@ def background(cf,bpcap,gat,dc, rejoinval):
             print(sysMin, sysHour, prevHour)
             if sysMin != prevMin:
                 prevMin = sysMin
-                honeyHist[sysMin] = int(imToString('honey'))
+                ch = imToString('honey')
+                if ch:
+                    honeyHist[sysMin] = int(ch)
+                else:
+                    honeyHist[sysMin] = honeyHist[sysMin-1]
                 print(honeyHist)
                 savehoney_history(honeyHist)
             if sysMin == 0 and sysHour != prevHour:
@@ -1555,16 +1570,18 @@ def setResolution():
     ndisplay = "{}x{}".format(wwd,whd)
 
     multiInfo = {
-        "2880x1800": [1,1],
-        "2940x1912": [0.666666666666666,1],
-        "1920x1080": [1.3,0.94],
-        "1440x900": [1,1],
-        "4096x2304": [1.5,0.93]
+        "2880x1800": [1,1,1,1],
+        "2940x1912": [0.666666666666666,1,1,1],
+        "1920x1080": [1.3,0.94,1,1],
+        "1440x900": [1,1,1,1],
+        "4096x2304": [1.45,0.91,1.32,1.5]
 
         }
     if ndisplay in multiInfo:
         loadsettings.save("y_screenshot_multiplier",multiInfo[ndisplay][0],"multipliers.txt")
         loadsettings.save("x_screenshot_multiplier",multiInfo[ndisplay][1],"multipliers.txt")
+        loadsettings.save("y_length_multiplier",multiInfo[ndisplay][2],"multipliers.txt")
+        loadsettings.save("x_length_multiplier",multiInfo[ndisplay][3],"multipliers.txt")
             
 if __name__ == "__main__":
     cmd = 'defaults read -g AppleInterfaceStyle'

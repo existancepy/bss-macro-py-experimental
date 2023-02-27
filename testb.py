@@ -22,6 +22,7 @@ import _darwinmouse as mouse
 import ast
 import getHaste
 import pytesseract
+import math
 
 def millify(n):
     millnames = ['',' K',' M',' B',' T', 'Qd']
@@ -58,19 +59,27 @@ def imToString(m):
     wh = savedata['wh']
     ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
     xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
-    print("ym: {}, xm: {}".format(ysm,xsm))
+    ylm = loadsettings.load('multipliers.txt')['y_length_multiplier']
+    xlm = loadsettings.load('multipliers.txt')['x_length_multiplier']
     # Path of tesseract executable
     #pytesseract.pytesseract.tesseract_cmd ='**Path to tesseract executable**'
     # ImageGrab-To capture the screen image in a loop. 
     # Bbox used to capture a specific area.
     if m == "bee bear":
-        cap = pag.screenshot(region=(ww//(3*xsm),wh//(20*ysm),ww//3,wh//7))
+        cap = pag.screenshot(region=(ww//(3*xsm),wh//(20*ysm),ww//(3*xlm),wh//(7*ylm)))
+        cap.save("bear.png")
+        img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
+        img = cv2.resize(img, None, fx=2, fy=2)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        config = '--oem 3 --psm %d' % 12
+        tesstr = pytesseract.image_to_string(img, config = config, lang ='eng')
+        return tesstr
     elif m == "egg shop":
         cap = pag.screenshot(region=(ww//(1.2*xsm),wh//(3*ysm),ww-ww//1.2,wh//5))
-        cap.save("shoptest.png")
+        cap.save("shop.png")
     elif m == "ebutton":
-        cap = pag.screenshot(region=(ww//(2.65*xsm),wh//(20*ysm),ww//21,wh//17))
-        cap.save("ebtest.png")
+        cap = pag.screenshot(region=(ww//(2.65*xsm),wh//(20*ysm),ww//(21*xlm),wh//(17*ylm)))
+        cap.save("eb.png")
         img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
         img = cv2.resize(img, None, fx=2, fy=2)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -78,7 +87,7 @@ def imToString(m):
         tesstr = pytesseract.image_to_string(img, config = config, lang ='eng')
         return tesstr
     elif m == "honey":
-        cap = pag.screenshot(region=(ww//(3*xsm),0,ww//6.5,wh//25))
+        cap = pag.screenshot(region=(ww//(3*xsm),0,ww//(6.5*xlm),wh//(ylm*25)))
         cap.save("honey.png")
         img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
         gry = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -92,8 +101,11 @@ def imToString(m):
                 tessout += i
             elif i == "(" or i == "[" or i == "{":
                 break
-        print(millify(int(tessout)))
+        print(millify(tessout))
         return tessout
+    elif m == "disconnect":
+        cap = pag.screenshot(region=(ww//3,wh//2.8,ww//2.3,wh//2.5))
+        
     # Converted the image to monochrome for it to be easily 
     # read by the OCR and obtained the output String.
     tesstr = pytesseract.image_to_string(cv2.cvtColor(np.array(cap), cv2.COLOR_BGR2GRAY), lang ='eng')

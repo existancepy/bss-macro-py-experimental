@@ -71,13 +71,17 @@ def imToString(m):
     # read by the OCR and obtained the output String.
     tesstr = pytesseract.image_to_string(cv2.cvtColor(np.array(cap), cv2.COLOR_BGR2GRAY), lang ='eng')
     return tesstr
-mx = float(input("input x multiplier: "))
-my = float(input("input y multiplier: "))
+mx = float(input("input x screenshot multiplier: "))
+my = float(input("input y screenshot multiplier: "))
+lx = float(input("input x length multiplier: "))
+ly = float(input("input y length multiplier: "))
 roblox()
-im = pag.screenshot(region=(ww//(2.65*mx),wh//(20*my),ww//21,wh//17))
+im = pag.screenshot(region=(ww//(2.65*mx),wh//(20*my),ww//(21*lx),wh//(17*ly)))
 im.save('test.png')
 loadsettings.save("y_screenshot_multiplier",my,"multipliers.txt")
 loadsettings.save("x_screenshot_multiplier",mx,"multipliers.txt")
+loadsettings.save("y_length_multiplier",ly,"multipliers.txt")
+loadsettings.save("x_length_multiplier",lx,"multipliers.txt")
 cmd = """
     osascript -e 'activate application "Terminal"' 
     """
