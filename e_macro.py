@@ -74,40 +74,39 @@ def is_running(app):
 
 def discord_bot(dc,rejoinval):
     setdat = loadsettings.load()
-    if setdat['enable_discord_bot']:
-        intents = discord.Intents.default()
-        intents.message_content = True
+    intents = discord.Intents.default()
+    intents.message_content = True
 
-        client = discord.Client(intents=intents)
+    client = discord.Client(intents=intents)
 
-        @client.event
-        async def on_ready():
-            print(f'We have logged in as {client.user}')
+    @client.event
+    async def on_ready():
+        print(f'Logged in as {client.user}')
 
-        @client.event
-        async def on_message(message):
-            if message.author == client.user:
-                return
+    @client.event
+    async def on_message(message):
+        if message.author == client.user:
+            return
 
-            if message.content.startswith('!b'):
-                args = message.content.split(" ")[1:]
-                cmd = args[0].lower()
-                if cmd == "rejoin":
-                    await message.channel.send("Now attempting to rejoin")
-                    dc.value = 1
-                    await asyncRejoin()
-                    dc.value = 0
-                elif cmd == "screenshot":
-                    await message.channel.send("Sending a screenshot via webhook")
-                    webhook("User Requested: Screenshot","","light blue",1)
-                elif cmd == "report":
-                    await message.channel.send("Sending Hourly Report")
-                    hourlyReport(0)
-                    
-                    #honeyHist = []
-                    #savehoney_history(honeyHist)
+        if message.content.startswith('!b'):
+            args = message.content.split(" ")[1:]
+            cmd = args[0].lower()
+            if cmd == "rejoin":
+                await message.channel.send("Now attempting to rejoin")
+                dc.value = 1
+                await asyncRejoin()
+                dc.value = 0
+            elif cmd == "screenshot":
+                await message.channel.send("Sending a screenshot via webhook")
+                webhook("User Requested: Screenshot","","light blue",1)
+            elif cmd == "report":
+                await message.channel.send("Sending Hourly Report")
+                hourlyReport(0)
+                
+                #honeyHist = []
+                #savehoney_history(honeyHist)
 
-        client.run(setdat['discord_bot_token'])
+    client.run(setdat['discord_bot_token'])
     
 def validateSettings():
     msg = ""
@@ -843,7 +842,7 @@ def fieldDriftCompensation():
         result = cv2.matchTemplate(sat_image, large_image, method)
         mn,_,mnLoc,_ = cv2.minMaxLoc(result)
         x,y = mnLoc
-        if mn < 0.08:
+        if mn < 0.06:
             if x >= winLeft and x <= winRight and y >= winUp and y <= winDown: break
             if x < winLeft:
                 move.hold("a",0.1)
@@ -1439,7 +1438,7 @@ def rejoin():
             updateHive(6)
         convert()
         
-        if resetCheck:
+        if reset.resetCheck():
             webhook("","Rejoin successful","dark brown")
             break
         webhook("",'Rejoin unsuccessful, attempt 2','dark brown')
@@ -1842,7 +1841,8 @@ def setResolution():
         loadsettings.save("x_screenshot_multiplier",multiInfo[ndisplay][1],"multipliers.txt")
         loadsettings.save("y_length_multiplier",multiInfo[ndisplay][2],"multipliers.txt")
         loadsettings.save("x_length_multiplier",multiInfo[ndisplay][3],"multipliers.txt")
-            
+    else:
+        print("Resolution not found in supported list")
 if __name__ == "__main__":
     cmd = 'defaults read -g AppleInterfaceStyle'
     p = bool(subprocess.Popen(cmd, stdout=subprocess.PIPE,
@@ -2449,9 +2449,10 @@ if __name__ == "__main__":
         startLoop_proc = multiprocessing.Process(target=startLoop,args=(currentfield,bpc,gather,disconnected,planterTypes_prev, planterFields_prev,1))
         startLoop_proc.start()
         background_proc = multiprocessing.Process(target=background,args=(currentfield,bpc,gather,disconnected,rejoinval))
-        background_proc.start()
         discord_bot_proc = multiprocessing.Process(target=discord_bot,args=(disconnected,rejoinval))
-        discord_bot_proc.start()
+        background_proc.start()
+        if setdat['enable_discord_bot']:
+            discord_bot_proc.start()
         try:
             while True:
                 if disconnected.value:
