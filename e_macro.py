@@ -1404,7 +1404,7 @@ def rejoin():
                         updateHive(4)
                         break
                 if foundHive: break
-                move.hold('a',0.7a)
+                move.hold('a',0.7)
                 for _ in range(3):
                     move.hold('a',0.1)
                     if ebutton():
