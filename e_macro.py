@@ -15,6 +15,7 @@ global savedata
 global setdat
 from tkinter import messagebox
 import numpy as np
+import asyncio
 try:
     import matplotlib.pyplot as plt
 except Exception as e:
@@ -44,7 +45,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.33.25"
+macrov = "1.33.27"
 planterInfo = loadsettings.planterInfo()
 
 if __name__ == '__main__':
@@ -93,9 +94,8 @@ def discord_bot(dc,rejoinval):
                 cmd = args[0].lower()
                 if cmd == "rejoin":
                     await message.channel.send("Now attempting to rejoin")
-                    #rejoinval.value = 1
                     dc.value = 1
-                    rejoin()
+                    await asyncRejoin()
                     dc.value = 0
                 elif cmd == "screenshot":
                     await message.channel.send("Sending a screenshot via webhook")
@@ -1016,8 +1016,8 @@ def updateHive(h):
     global setdat
     webhook("","Found Hive: {}".format(h),"bright green")
     loadsettings.save('hive_number',h)
-    
-def rejoin():
+
+async def asyncRejoin():
     setdat = loadsettings.load()
     for i in range(2):
         cmd = """
@@ -1028,126 +1028,168 @@ def rejoin():
         ww = savedata['ww']
         wh = savedata['wh']
         webhook("","Rejoining","dark brown")
-        time.sleep(3)
+        await asyncio.sleep(5)
         if is_running("roblox"):
                 cmd = """
                     osascript -e 'tell application "Roblox" to quit' 
                     """
                 os.system(cmd)
-                time.sleep(3)
+                await asyncio.sleep(3)
         if setdat["private_server_link"]:
             webbrowser.open(setdat['private_server_link'])
         else:
-            if i == 0:
-                webbrowser.open('https://www.roblox.com/games/1537690962/Bee-Swarm-Simulator')
-                time.sleep(7)
-                _,x,y,_ = imagesearch.find('playbutton.png',0.8)
-                webhook("","Play Button Found","dark brown")
-                if setdat['display_type'] == "built-in retina display":
-                    pag.click(x//2, y//2)
-                else:
-                    pag.click(x, y)
-            else:
-                webbrowser.open('https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129')
-                time.sleep(6)
+            webbrowser.open('https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129')
+            await asyncio.sleep(10)
                 
-        time.sleep(setdat['rejoin_delay']*(i+1))
+        await asyncio.sleep(setdat['rejoin_delay']*(i+1))
         cmd = """
             osascript -e 'activate application "Roblox"' 
         """
         
         os.system(cmd)
-        time.sleep(2)
-        move.hold("w",5)
-        move.hold("s",0.55)
+        await asyncio.sleep(2)
+        pag.keyDown("w")
+        await asyncio.sleep(5)
+        pag.keyUp("w")
+        pag.keyDown("s")
+        await asyncio.sleep(0.55)
+        pag.keyUp("s")
         foundHive = 0
         move.apkey('space')
-        time.sleep(0.5)
+        await asyncio.sleep(0.5)
         webhook("","Finding Hive", "dark brown",1)
         if setdat['hive_number'] == 3:
             if ebutton():
                 move.press('e')
                 foundHive = 1
                 webhook("","Hive Found: 3","dark brown",1)
+                break
         elif setdat['hive_number'] == 2:
-            move.hold('d',0.8)
+            pag.keyDown("d")
+            await asyncio.sleep(0.8)
+            pag.keyUp("d")
             for _ in range(4):
-                move.hold('d',0.1)
+                pag.keyDown("d")
+                await asyncio.sleep(0.1)
+                pag.keyUp("d")
                 if ebutton():
                     move.press('e')
                     foundHive = 1
                     webhook("","Hive Found: 2","dark brown",1)
+                    break
         elif setdat['hive_number'] == 1:
-            move.hold('d',2)
+            pag.keyDown("d")
+            await asyncio.sleep(2)
+            pag.keyUp("d")
             for _ in range(4):
-                move.hold('d',0.1)
+                pag.keyDown("d")
+                await asyncio.sleep(0.1)
+                pag.keyUp("d")
                 if ebutton():
                     move.press('e')
                     foundHive = 1
                     webhook("","Hive Found: 1","dark brown",1)
+                    break
         elif setdat['hive_number'] == 4:
-            move.hold('a',0.4)
+            pag.keyDown("a")
+            await asyncio.sleep(0.4)
+            pag.keyUp("a")
             for _ in range(4):
-                move.hold('a',0.1)
+                pag.keyDown("a")
+                await asyncio.sleep(0.1)
+                pag.keyUp("a")
                 if ebutton():
                     move.press('e')
                     foundHive = 1
                     webhook("","Hive Found: 4","dark brown",1)
+                    break
         elif setdat['hive_number'] == 5:
-            move.hold('a',1.7)
+            pag.keyDown("a")
+            await asyncio.sleep(1.7)
+            pag.keyUp("a")
             for _ in range(4):
-                move.hold('a',0.1)
+                pag.keyDown("a")
+                await asyncio.sleep(0.1)
+                pag.keyUp("a")
                 if ebutton():
                     move.press('e')
                     foundHive = 1
                     webhook("","Hive Found: 5","dark brown",1)
+                    break
         else:
-            move.hold('a',3.3)
+            pag.keyDown("a")
+            await asyncio.sleep(3.3)
+            pag.keyUp("a")
             if ebutton():
                     move.press('e')
                     foundHive = 1
                     webhook("","Hive Found: 6","dark brown",1)
+                    break
         while True:   
             if not foundHive:
-                move.hold("d",12)
+                pag.keyDown("d")
+                await asyncio.sleep(12)
+                pag.keyUp("d")
                 webhook("","Hive already claimed, finding new hive","dark brown",1)
-                move.hold('a',0.2)
+                pag.keyDown("a")
+                await asyncio.sleep(0.2)
+                pag.keyUp("a")
                 for _ in range(3):
-                    move.hold('a',0.1)
+                    pag.keyDown("a")
+                    await asyncio.sleep(0.1)
+                    pag.keyUp("a")
                     if ebutton():
                         move.press('e')
                         foundHive = 1
                         updateHive(1)
                         break
                 if foundHive: break
-                move.hold('a',0.7)
+                pag.keyDown("a")
+                await asyncio.sleep(0.4)
+                pag.keyUp("a")
                 for _ in range(3):
-                    move.hold('a',0.1)
+                    pag.keyDown("a")
+                    await asyncio.sleep(0.1)
+                    pag.keyUp("a")
                     if ebutton():
                         move.press('e')
                         foundHive = 1
                         updateHive(2)
                         break
                 if foundHive: break
-                move.hold("a",0.7)
+                pag.keyDown("a")
+                await asyncio.sleep(0.5)
+                pag.keyUp("a")
                 for _ in range(3):
-                    move.hold('a',0.1)
+                    pag.keyDown("a")
+                    await asyncio.sleep(0.1)
+                    pag.keyUp("a")
                     if ebutton():
                         move.press('e')
                         foundHive = 1
                         updateHive(3)
                         break
                 if foundHive: break
-                move.hold('a',0.8)
+                pag.keyDown("a")
+                await asyncio.sleep(0.7)
+                pag.keyUp("a")
                 for _ in range(3):
+                    pag.keyDown("a")
+                    await asyncio.sleep(0.1)
+                    pag.keyUp("a")
                     if ebutton():
                         move.press('e')
                         foundHive = 1
                         updateHive(4)
                         break
                 if foundHive: break
-                move.hold('a',0.9)
+                pag.keyDown("a")
+                await asyncio.sleep(0.7)
+                pag.keyUp("a")
                 for _ in range(3):
+                    pag.keyDown("a")
+                    await asyncio.sleep(0.1)
+                    pag.keyUp("a")
                     if ebutton():
                         move.press('e')
                         foundHive = 1
@@ -1178,8 +1220,226 @@ def rejoin():
             pag.keyUp("d")
             updateHive(6)
         convert()
+        resetCheck = 0
+        ths = loadsettings.load()["hivethreshold"]
+        loadSave()
+        ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
+        xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
+        for _ in range(2):
+            webhook("","Reset Check","dark brown")
+            pag.moveTo(mw/(4.11*xsm),mh/(9*ysm))
+            ww = savedata["ww"]
+            wh = savedata["wh"]
+            xo = ww//4
+            yo = wh//100*90
+            xt = xo*2
+            yt = wh//100*20
+            time.sleep(2)
+            pag.press('esc')
+            await asyncio.sleep(0.1)
+            pag.press('r')
+            await asyncio.sleep(0.2)
+            pag.press('enter')
+            await asyncio.sleep(8)
+            for _ in range(4):
+                pag.press('pgup')
+            time.sleep(0.1)
+            for _ in range(6):
+                pag.press('o')
+            #im = pag.screenshot(region = (xo,yo,xt,yt))
+            #im.save('a.png')
+
+            await asyncio.sleep(0.4)
+            for _ in range(4):
+                r = imagesearch.find("hive1.png",ths, xo, yo, xt, yt)
+                if r:
+                    time.sleep(0.1)
+                    for _ in range(4):
+                        pag.press(".")
+
+                    time.sleep(0.1)
+                    for _ in range(4):
+                        pag.press('pgdn')
+                    resetCheck = 1
+                    break
+                for _ in range(4):
+                    pag.press(",")
+                    
+                time.sleep(0.5)
+            await asyncio.sleep(1)
+        for _ in range(4):
+            pag.press(",")
+        webhook("Notice","Hive not found.","red",1)
+        if resetCheck:
+            webhook("","Rejoin successful","dark brown")
+            break
+        webhook("",'Rejoin unsuccessful, attempt 2','dark brown')
+    
+
+
+    
+def rejoin():
+    setdat = loadsettings.load()
+    for i in range(2):
+        cmd = """
+            osascript -e 'tell application "Roblox" to quit' 
+            """
+        os.system(cmd)
+        savedata = loadRes()
+        ww = savedata['ww']
+        wh = savedata['wh']
+        webhook("","Rejoining","dark brown")
+        time.sleep(3)
+        if is_running("roblox"):
+                cmd = """
+                    osascript -e 'tell application "Roblox" to quit' 
+                    """
+                os.system(cmd)
+                time.sleep(3)
+        if setdat["private_server_link"]:
+            webbrowser.open(setdat['private_server_link'])
+        else:
+            webbrowser.open('https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129')
+            time.sleep(10)
+                
+        time.sleep(setdat['rejoin_delay']*(i+1))
+        cmd = """
+            osascript -e 'activate application "Roblox"' 
+        """
         
-        if reset.resetCheck():
+        os.system(cmd)
+        time.sleep(2)
+        move.hold("w",5)
+        move.hold("s",0.55)
+        foundHive = 0
+        move.apkey('space')
+        time.sleep(0.5)
+        webhook("","Finding Hive", "dark brown",1)
+        if setdat['hive_number'] == 3:
+            if ebutton():
+                move.press('e')
+                foundHive = 1
+                webhook("","Hive Found: 3","dark brown",1)
+                break
+        elif setdat['hive_number'] == 2:
+            move.hold('d',0.8)
+            for _ in range(4):
+                move.hold('d',0.1)
+                if ebutton():
+                    move.press('e')
+                    foundHive = 1
+                    webhook("","Hive Found: 2","dark brown",1)
+                    break
+        elif setdat['hive_number'] == 1:
+            move.hold('d',2)
+            for _ in range(4):
+                move.hold('d',0.1)
+                if ebutton():
+                    move.press('e')
+                    foundHive = 1
+                    webhook("","Hive Found: 1","dark brown",1)
+                    break
+        elif setdat['hive_number'] == 4:
+            move.hold('a',0.4)
+            for _ in range(4):
+                move.hold('a',0.1)
+                if ebutton():
+                    move.press('e')
+                    foundHive = 1
+                    webhook("","Hive Found: 4","dark brown",1)
+                    break
+        elif setdat['hive_number'] == 5:
+            move.hold('a',1.7)
+            for _ in range(4):
+                move.hold('a',0.1)
+                if ebutton():
+                    move.press('e')
+                    foundHive = 1
+                    webhook("","Hive Found: 5","dark brown",1)
+                    break
+        else:
+            move.hold('a',3.3)
+            if ebutton():
+                    move.press('e')
+                    foundHive = 1
+                    webhook("","Hive Found: 6","dark brown",1)
+                    break
+        while True:   
+            if not foundHive:
+                move.hold("d",12)
+                webhook("","Hive already claimed, finding new hive","dark brown",1)
+                move.hold('a',0.2)
+                for _ in range(3):
+                    move.hold('a',0.1)
+                    if ebutton():
+                        move.press('e')
+                        foundHive = 1
+                        updateHive(1)
+                        break
+                if foundHive: break
+                move.hold('a',0.4)
+                for _ in range(3):
+                    move.hold('a',0.1)
+                    if ebutton():
+                        move.press('e')
+                        foundHive = 1
+                        updateHive(2)
+                        break
+                if foundHive: break
+                move.hold("a",0.5)
+                for _ in range(3):
+                    move.hold('a',0.1)
+                    if ebutton():
+                        move.press('e')
+                        foundHive = 1
+                        updateHive(3)
+                        break
+                if foundHive: break
+                move.hold('a',0.7)
+                for _ in range(3):
+                    move.hold('a',0.1)
+                    if ebutton():
+                        move.press('e')
+                        foundHive = 1
+                        updateHive(4)
+                        break
+                if foundHive: break
+                move.hold('a',0.7a)
+                for _ in range(3):
+                    move.hold('a',0.1)
+                    if ebutton():
+                        move.press('e')
+                        foundHive = 1
+                        updateHive(5)
+                        break
+                if foundHive: break
+                move.hold('a',0.7)
+                for _ in range(3):
+                    move.hold('a',0.1)
+                    if ebutton():
+                        move.press('e')
+                        foundHive = 1
+                        updateHive(6)
+                        break
+                break
+            else: break
+        if not foundHive:
+            rawreset()
+            webhook("","Unable to claim hive, using final resort method","dark brown",1)
+            move.hold("w",5)
+            move.hold("s",0.55)
+            move.hold('d',4)
+            starttime = time.time()
+            for _ in range(4):
+                move.press(",")
+            pag.keyDown("d")
+            while time.time()-starttime < 10:
+                move.press("e")
+            pag.keyUp("d")
+            updateHive(6)
+        convert()
+        
+        if resetCheck:
             webhook("","Rejoin successful","dark brown")
             break
         webhook("",'Rejoin unsuccessful, attempt 2','dark brown')
@@ -2201,6 +2461,7 @@ if __name__ == "__main__":
                     startLoop_proc = multiprocessing.Process(target=startLoop,args=(currentfield,bpc,gather,disconnected,planterTypes_prev, planterFields_prev,0))
                     startLoop_proc.start()
                 if rejoinval.value:
+                    print("rejoin received")
                     startLoop_proc.terminate()
                     rejoin()
                     startLoop_proc = multiprocessing.Process(target=startLoop,args=(currentfield,bpc,gather,disconnected,planterTypes_prev, planterFields_prev,0))
