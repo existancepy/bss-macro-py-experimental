@@ -6,6 +6,7 @@ import move
 import loadsettings
 import Quartz.CoreGraphics as CG
 import struct
+from logpy import log
 ms = pag.size()
 mw = ms[0]
 mh = ms[1]
@@ -86,7 +87,6 @@ def bpc():
     X1=mw//2+63
     Y1=8
     if dt == "built-in retina display":
-        print("retina")
         X1= (mw//2+63)*2 #(round((mw/2+60), 0))*2
         Y1= 8*2 #14*2
     sp = ScreenPixel()
@@ -108,6 +108,7 @@ def bpc():
     else:
         perc = 0
     print("Pixel Colour: {}, Backpack Percentage: {}.".format(backpackColor, perc))
+    log("Pixel Colour: {}, Backpack Percentage: {}.".format(backpackColor, perc))
     return perc
 
 

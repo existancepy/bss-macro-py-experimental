@@ -5,7 +5,7 @@ import tkinter
 import imagesearch
 from webhook import webhook
 import loadsettings
-
+from delay import sleep
 savedata = {}
 mw,mh = pag.size()
 def loadSave():
@@ -41,7 +41,7 @@ def reset():
         pag.press('r')
         time.sleep(0.2)
         pag.press('enter')
-        time.sleep(8)
+        sleep(8.5)
         for _ in range(4):
             pag.press('pgup')
         time.sleep(0.1)
@@ -80,7 +80,7 @@ def reset():
         pag.press('r')
         time.sleep(0.2)
         pag.press('enter')
-        time.sleep(8)
+        sleep(8)
         for _ in range(4):
             pag.press('pgup')
         time.sleep(0.1)
@@ -110,7 +110,7 @@ def reset():
         pag.press('r')
         time.sleep(0.2)
         pag.press('enter')
-        time.sleep(8)
+        sleep(8.5)
         for _ in range(4):
             pag.press('pgup')
         time.sleep(0.1)
@@ -162,7 +162,7 @@ def resetCheck():
         pag.press('r')
         time.sleep(0.2)
         pag.press('enter')
-        time.sleep(8)
+        sleep(8.5)
         for _ in range(4):
             pag.press('pgup')
         time.sleep(0.1)

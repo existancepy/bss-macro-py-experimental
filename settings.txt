@@ -1,16 +1,16 @@
 
-hive_number:3
+hive_number:6
 walkspeed:28
 gifted_vicious_bee:0
-enable_discord_webhook:0
-discord_webhook_url:
+enable_discord_webhook:1
+discord_webhook_url:https://discord.com/api/webhooks/1066139883321700412/KSrUH-y3AkTYWBBrDVzp6zVw3N76eAfW2IOZZYi3ZILyFBEjyHtSK3zIDeJKTGfIR02a
 send_screenshot:1
 sprinkler_slot:1
 sprinkler_type:saturator
 display_type:built-in retina display
-private_server_link:
-enable_discord_bot:0
-discord_bot_token:
+private_server_link:https://www.roblox.com/games/1537690962?privateServerLinkCode=45143236329861267907550212152794
+enable_discord_bot:1
+discord_bot_token:MTA2NTIwNjQ3OTUyNDczNzA2NA.Gu9cec.awKn6BUxIC1Ke3BWv70BBnHR5hMpwR3triJn6k
 field_drift_compensation:1
 haste_compensation:0
 low_performance_haste_compensation:0
@@ -19,15 +19,17 @@ rejoin_every:0
 rejoin_delay:50
 gather_enable:1
 gather_field:['Pine Tree', 'None', 'None']
-gather_pattern:snake
+gather_pattern:e_lol
 gather_size:m
-gather_width:2
+gather_width:3
 gather_time:15
 pack:95
 before_gather_turn:right
 turn_times:2
 return_to_hive:reset
 whirligig_slot:1
+start_location:lower right
+distance_from_center:3
 stump_snail:0
 continue_after_stump_snail:0
 ladybug:0
@@ -36,7 +38,7 @@ spider:0
 scorpion:0
 werewolf:0
 mantis:0
-wealthclock:1
+wealthclock:0
 blueberrydispenser:0
 strawberrydispenser:0
 royaljellydispenser:0
@@ -50,8 +52,8 @@ mondo_buff:0
 lid_art:0
 candles:0
 hivethreshold:0.6690882444381714
-start_honey:2346455223717
-prev_honey:2426384056410
-start_time:1677389752.2435331
+start_honey:2772176967100
+prev_honey:2772176967100
+start_time:1677924773.17571
 canon_time:1.0
 reverse_hive_direction:0

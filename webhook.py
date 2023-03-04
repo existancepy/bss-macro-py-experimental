@@ -5,6 +5,7 @@ from discord_webhook import DiscordWebhook, DiscordEmbed
 import pyautogui
 import PIL
 from io import BytesIO
+from logpy import log
 def webhook(title,desc,colour,ss=0,hr=0):
     dwurl = loadsettings.load()["discord_webhook_url"]
     sendscreenshot = loadsettings.load()['send_screenshot']
@@ -21,6 +22,7 @@ def webhook(title,desc,colour,ss=0,hr=0):
     t = time.localtime()
     current_time = time.strftime("%H:%M:%S", t)
     print("[{}] {} - {}".format(current_time,title,desc))
+    log("[{}] {} - {}".format(current_time,title,desc))
     if not enable: return
     webhook = DiscordWebhook(url=dwurl,rate_limit_retry=True)
     # you can set the color as a decimal (color=242424) or hex (color='03b2f8') number
@@ -46,5 +48,6 @@ def webhook(title,desc,colour,ss=0,hr=0):
     try:
         response = webhook.execute()
     except Exception as e: print(e)
+    
         
 

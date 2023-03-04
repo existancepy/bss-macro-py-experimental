@@ -16,6 +16,10 @@ global setdat
 from tkinter import messagebox
 import numpy as np
 import asyncio
+from logpy import log
+import logging
+from pynput import keyboard
+from pynput.keyboard import Key, Controller
 try:
     import matplotlib.pyplot as plt
 except Exception as e:
@@ -28,12 +32,18 @@ except Exception as e:
     print(e)
     print("\033[0;31mThere is a import error here! Check out ImportError: dlopen in #common-fixes in the discord server or 'bugs and fixes' section in the github\033[00m")
     quit()
+
+try:
+    import easyocr
+except Exception as e:
+    print(e)
+    print("\033[0;31mEasyocr is most likely not installed. Run pip3 install easyocr to install it\033[00m")
+    quit()
 import sv_ttk
 import math
 import ast
 import calibrate_hive
 import _darwinmouse as mouse
-import pytesseract
 from datetime import datetime
 from getHaste import getHaste, getHastelp
 
@@ -45,8 +55,9 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.33.27"
+macrov = "1.34"
 planterInfo = loadsettings.planterInfo()
+reader = easyocr.Reader(['en'])
 
 if __name__ == '__main__':
     planterTypes_prev = []
@@ -105,8 +116,8 @@ def discord_bot(dc,rejoinval):
                 
                 #honeyHist = []
                 #savehoney_history(honeyHist)
-
-    client.run(setdat['discord_bot_token'])
+    handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+    client.run(setdat['discord_bot_token'], log_handler=handler)
     
 def validateSettings():
     msg = ""
@@ -210,51 +221,40 @@ def imToString(m):
     # Bbox used to capture a specific area.
     if m == "bee bear":
         cap = pag.screenshot(region=(ww//(3*xsm),wh//(20*ysm),ww//(3*xlm),wh//(7*ylm)))
-        img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
-        img = cv2.resize(img, None, fx=2, fy=2)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        config = '--oem 3 --psm %d' % 12
-        tesstr = pytesseract.image_to_string(img, config = config, lang ='eng')
-        return tesstr
     elif m == "egg shop":
         cap = pag.screenshot(region=(ww//(1.2*xsm),wh//(3*ysm),ww-ww//1.2,wh//5))
     elif m == "ebutton":
         cap = pag.screenshot(region=(ww//(2.65*xsm),wh//(20*ysm),ww//(21*xlm),wh//(17*ylm)))
-        img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
-        img = cv2.resize(img, None, fx=2, fy=2)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        config = '--oem 3 --psm %d' % 10
-        tesstr = pytesseract.image_to_string(img, config = config, lang ='eng')
-        return tesstr
+        result = reader.readtext(np.array(cap))
+        result = sorted(result, key = lambda x: x[2], reverse = True)
+        try:
+            return result[0][1]
+        except:
+            return ""
     elif m == "honey":
         cap = pag.screenshot(region=(ww//(3*xsm),0,ww//(6.5*xlm),wh//(ylm*25)))
-        img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
-        gry = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        (h, w) = gry.shape[:2]
-        gry = cv2.resize(gry, (w * 2, h * 2))
-        (T, threshInv) = cv2.threshold(gry, 0, 255,cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-        tesstr = pytesseract.image_to_string(threshInv, config = "digits")
-        tessout = ""
-        for i in tesstr:
-            if i.isdigit():
-                tessout += i
-            elif i == "(" or i == "[" or i == "{":
+        result = [x[1] for x in reader.readtext(np.array(cap))]
+        honey = 0
+        for i in result:
+            if i[0].isdigit():
+                honey = i
                 break
-        print(millify(tessout))
-        return tessout
+        try:
+            honey = int(''.join([x for x in honey if x.isdigit()]))
+            log(millify(honey))
+        except:
+            print(honey)
+        return honey
     elif m == "disconnect":
         cap = pag.screenshot(region=(ww//3,wh//2.8,ww//2.3,wh//2.5))
-        img = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
-        img = cv2.resize(img, None, fx=1.5, fy=1.5)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        config = '--oem 3 --psm %d' % 12
-        tesstr = pytesseract.image_to_string(img, config = config, lang ='eng')
-        return tesstr
+    elif m == "dialog":
+        cap = pag.screenshot(region=(ww//(3*xsm),wh//(1.6*ysm),ww//(8*xlm),wh//(ylm*15)))
         
-    # Converted the image to monochrome for it to be easily 
-    # read by the OCR and obtained the output String.
-    tesstr = pytesseract.image_to_string(cv2.cvtColor(np.array(cap), cv2.COLOR_BGR2GRAY), lang ='eng')
-    return tesstr
+    result = reader.readtext(np.array(cap))
+    result = sorted(result, key = lambda x: x[2], reverse = True)
+    out = ''.join([x[1] for x in result])
+    log("OCR for {}\n\n{}".format(m,out))
+    return out
 
 def checkwithOCR(m):
     text = imToString(m).lower()
@@ -265,7 +265,10 @@ def checkwithOCR(m):
         if "bee egg" in text or "basic bee" in text or "small bag" in text or ("blue" in text and "bubble" in text):
             return True
     elif m == "disconnect":
-        if "disconnected" in text.lower():
+        if "disconnected" in text or "join error" in text:
+            return True
+    elif m == "dialog":
+        if "bear" in text:
             return True
     return False
     
@@ -289,8 +292,9 @@ def ebutton(pagmode=0):
     return
     '''
     ocrval = ''.join([x for x in list(imToString('ebutton').strip()) if x.isalpha()])
+    log(ocrval)
     print(ocrval)
-    return "E" in ocrval
+    return ocrval == "E"
 
 def millify(n):
     if not n: return 0
@@ -315,8 +319,8 @@ def hourlyReport(hourly=1):
                 break
             else:
                 honeyHist.pop(i)
-    print(setdat['prev_honey'])
-    print(honeyHist)
+    log('prev honey: {}'.format(setdat['prev_honey']))
+    log(honeyHist)
     
     while True:
         compList = [x for x in honeyHist if x]
@@ -326,7 +330,7 @@ def hourlyReport(hourly=1):
         else:
             removeELE = sortedHoney[-1]
             honeyHist.remove(removeELE)
-    print(honeyHist)
+    log(honeyHist)
     currHoney = honeyHist[-1]
     session_honey = currHoney - setdat['start_honey']
     hourly_honey = currHoney - setdat['prev_honey']
@@ -373,6 +377,8 @@ def hourlyReport(hourly=1):
     plt.text(0,0.85,"Honey/Hr: {}".format(millify(hourly_honey)), fontsize=15,color="white")
 
     ax1 = fig.add_subplot(gs[0:3, 0:7])
+    if not yvals:
+        yvals = honeyHist.copy()
     if max(yvals) == 0:
         yticks = [0]
     else:
@@ -411,7 +417,7 @@ def hourlyReport(hourly=1):
     ax2.plot(xvals, honeyHist[1:],color="#BB86FC")
     #ax2.fill_between(xvals, setdat['start_honey'], honeyHist[1:])
     '''
-    print(honeyHist)
+    log(honeyHist)
     plt.grid(alpha=0.08)
     plt.savefig("hourlyReport.png", bbox_inches='tight')    
     c = Image.open("hourlyReport.png")
@@ -440,20 +446,31 @@ def canon():
     time.sleep(0.2)
     r = ""
     pag.keyUp("d")
-    for _ in range(6):
-        move.hold("d",0.15)
+    move.hold("d",0.4)
+    for _ in range(4):
+        move.hold("d",0.2)
+        time.sleep(0.05)
         r = ebutton()
         if r:
             if checkwithOCR('bee bear'):
                 webhook("","Bee Bear detected","dark brown")
-                reset.reset()   
-                canon()
+                break
             else:
-                webhook("","Canon found","dark brown",1)
-            return
-        time.sleep(0.05)
+                webhook("","Canon found","dark brown")
+                with open('canonfails.txt', 'w') as f:
+                    f.write('0')
+                f.close()
+                return
     mouse.move_to(mw//2,mh//5*4)
     webhook("","Cannon not found, resetting","dark brown",1)
+    with open('canonfails.txt','r') as f:
+        cfCount = int(f.read())
+        cfCount += 1
+    f.close()
+    with open('canonfails.txt','w') as f:
+        f.write(str(cfCount))
+    f.close()
+        
     reset.reset()   
     canon()
     '''
@@ -608,14 +625,14 @@ def moblootPattern(f,s,r,t):
             move.press(",")
     for i in range(2):
         move.hold("w", 0.72*f)
-        move.hold("a", 0.1*s)
+        move.hold("a", 0.25*s)
         move.hold("s", 0.72*f)
-        move.hold("a", 0.1*s)
+        move.hold("a", 0.25*s)
     for i in range(2):
         move.hold("w", 0.72*f)
-        move.hold("d", 0.1*s)
+        move.hold("d", 0.25*s)
         move.hold("s", 0.72*f)
-        move.hold("d", 0.1*s)
+        move.hold("d", 0.25*s)
     
 def resetMobTimer(cfield):
     if cfield:
@@ -706,15 +723,14 @@ def getBestPlanter(field,occus,avils):
                 if i == j[0]:
                     validPlanter = 0
                     break
-            if validPlanter: return i
-    
+            if validPlanter: return i   
 def placePlanter(planter):
     res = loadRes()
     plantdat = loadsettings.planterLoad()
     ww = res['ww']
     wh = res['wh']
     planterSlot = str(plantdat['{}_slot'.format(planter)])
-    print(planterSlot)
+    log(planterSlot)
     if planterSlot != "none":
         move.press(planterSlot)
     else:
@@ -845,13 +861,13 @@ def fieldDriftCompensation():
         if mn < 0.06:
             if x >= winLeft and x <= winRight and y >= winUp and y <= winDown: break
             if x < winLeft:
-                move.hold("a",0.1)
+                move.hold("a",0.2)
             elif x > winRight:
-                move.hold("d",0.1)
+                move.hold("d",0.2)
             if y < winUp:
-                move.hold("w",0.1)
+                move.hold("w",0.2)
             elif y > winDown:
-                move.hold("s",0.1)
+                move.hold("s",0.2)
         else:
             break
 
@@ -869,8 +885,9 @@ def background(cf,bpcap,gat,dc, rejoinval):
     prevHour = datetime.now().hour
     prevMin = datetime.now().minute
     honeyHist = [setdat['prev_honey']]*60
-    print(honeyHist)
+    log(honeyHist)
     while True:
+        start_time = time.time()
         r = imagesearch.find('disconnect.png',0.8,ww//3,wh//2.8,ww//2.3,wh//2.5)
         if checkwithOCR("disconnect") or r:
             dc.value = 1
@@ -899,7 +916,7 @@ def background(cf,bpcap,gat,dc, rejoinval):
         if setdat['rejoin_every_enabled']:
             with open('timings.txt', 'r') as f:
                 prevTime = float([x for x in f.read().split('\n') if x.startswith('rejoin_every')][0].split(":")[1])
-            print("{}, {}".format((time.time() - prevTime)/3600, setdat['rejoin_every']))
+            log("{}, {}".format((time.time() - prevTime)/3600, setdat['rejoin_every']))
             if (time.time() - prevTime)/3600 > setdat['rejoin_every']:
                 dc.value = 1
                 rejoin()
@@ -913,11 +930,31 @@ def background(cf,bpcap,gat,dc, rejoinval):
             else:
                 rejoin()
             dc.value = 0
+        if checkwithOCR("dialog"):
+            webhook("","Stuck in dialog","red")
+            dc.value = 1
+            move.hold("w",1)
+            mouse.move_to(mw//2,mh//5*4)
+            for _ in range(20):
+                mouse.press()
+                sleep(0.25)
+                mouse.release()
+            dc.value = 0
+        with open('canonfails.txt', 'r') as f:
+            cfCount = int(f.read())
+        f.close()
+        if cfCount == 3:
+            with open('canonfails.txt', 'w') as f:
+                f.write('0')
+            f.close()
+            dc.value = 1
+            webhook("","Canon failed too many times, rejoining","red")
+            rejoin()
+            dc.value = 0
         if setdat['enable_discord_webhook']:
             sysTime = datetime.now()
             sysHour = sysTime.hour
             sysMin = sysTime.minute
-            print(sysMin, sysHour, prevHour)
             if sysMin != prevMin:
                 prevMin = sysMin
                 ch = imToString('honey')
@@ -925,7 +962,7 @@ def background(cf,bpcap,gat,dc, rejoinval):
                     honeyHist[sysMin] = int(ch)
                 else:
                     honeyHist[sysMin] = honeyHist[sysMin-1]
-                print(honeyHist)
+                log(honeyHist)
                 savehoney_history(honeyHist)
             if sysMin == 0 and sysHour != prevHour:
                 hourlyReport()
@@ -933,6 +970,7 @@ def background(cf,bpcap,gat,dc, rejoinval):
                 honeyHist = [prev_honey]*60
                 prevHour = sysHour
                 #savehoney_history(honeyHist)
+        print(time.time()-start_time)
                 
 
 def killMob(field,mob,reset):
@@ -971,14 +1009,19 @@ def collect(name,beesmas=0):
         canon()
         webhook("","Traveling: {}".format(dispname),"dark brown")
         exec(open("collect_{}.py".format(usename)).read())
-        if usename == "wealthclock" or usename == "samovar" or usename == "candles":
-            for _ in range(7):
-                move.hold("w",0.1)
+        if usename == "wealthclock" or usename == "samovar":
+            for _ in range(6):
+                move.hold("w",0.2)
                 if ebutton():
                     break
+        elif usename == "candles":
+            for _ in range(7):
+                    move.hold("w",0.2)
+                    if ebutton():
+                        break
         elif usename == "lid_art" or usename == "feast":
             for _ in range(7):
-                move.hold("s",0.1)
+                move.hold("s",0.2)
                 if ebutton():
                     break
         time.sleep(0.5)
@@ -1017,6 +1060,7 @@ def updateHive(h):
     loadsettings.save('hive_number',h)
 
 async def asyncRejoin():
+    print('a')
     setdat = loadsettings.load()
     for i in range(2):
         cmd = """
@@ -1309,7 +1353,7 @@ def rejoin():
         os.system(cmd)
         time.sleep(2)
         move.hold("w",5)
-        move.hold("s",0.55)
+        move.hold("s",0.6)
         foundHive = 0
         move.apkey('space')
         time.sleep(0.5)
@@ -1321,7 +1365,7 @@ def rejoin():
                 webhook("","Hive Found: 3","dark brown",1)
                 break
         elif setdat['hive_number'] == 2:
-            move.hold('d',0.8)
+            move.hold('d',1)
             for _ in range(4):
                 move.hold('d',0.1)
                 if ebutton():
@@ -1339,7 +1383,7 @@ def rejoin():
                     webhook("","Hive Found: 1","dark brown",1)
                     break
         elif setdat['hive_number'] == 4:
-            move.hold('a',0.4)
+            move.hold('a',0.6)
             for _ in range(4):
                 move.hold('a',0.1)
                 if ebutton():
@@ -1348,7 +1392,7 @@ def rejoin():
                     webhook("","Hive Found: 4","dark brown",1)
                     break
         elif setdat['hive_number'] == 5:
-            move.hold('a',1.7)
+            move.hold('a',1.9)
             for _ in range(4):
                 move.hold('a',0.1)
                 if ebutton():
@@ -1376,7 +1420,7 @@ def rejoin():
                         updateHive(1)
                         break
                 if foundHive: break
-                move.hold('a',0.4)
+                move.hold('a',0.9)
                 for _ in range(3):
                     move.hold('a',0.1)
                     if ebutton():
@@ -1385,7 +1429,7 @@ def rejoin():
                         updateHive(2)
                         break
                 if foundHive: break
-                move.hold("a",0.5)
+                move.hold("a",0.9)
                 for _ in range(3):
                     move.hold('a',0.1)
                     if ebutton():
@@ -1394,7 +1438,7 @@ def rejoin():
                         updateHive(3)
                         break
                 if foundHive: break
-                move.hold('a',0.7)
+                move.hold('a',0.8)
                 for _ in range(3):
                     move.hold('a',0.1)
                     if ebutton():
@@ -1403,7 +1447,7 @@ def rejoin():
                         updateHive(4)
                         break
                 if foundHive: break
-                move.hold('a',0.7)
+                move.hold('a',0.9)
                 for _ in range(3):
                     move.hold('a',0.1)
                     if ebutton():
@@ -1412,7 +1456,7 @@ def rejoin():
                         updateHive(5)
                         break
                 if foundHive: break
-                move.hold('a',0.7)
+                move.hold('a',0.9)
                 for _ in range(3):
                     move.hold('a',0.1)
                     if ebutton():
@@ -1472,10 +1516,13 @@ def placeSprinkler():
         move.press(str(setdat['sprinkler_slot']))
         time.sleep(0.3)
         move.apkey("space")
-        time.sleep(0.1)
+        time.sleep(0.13)
 def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_start):
         
     val = validateSettings()
+    with open('canonfails.txt', 'w') as f:
+        f.write('0')
+    f.close()
     if val:
         pag.alert(text='Your settings are incorrect! Check the terminal to see what is wrong.', title='Invalid settings', button='OK')
         print(val)
@@ -1486,7 +1533,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
     savetimings('rejoin_every')
     os.system(cmd)
     if session_start:
-        print("Session Start")
+        log("Session Start")
         rawreset()
         currHoney = imToString('honey')
         loadsettings.save('start_honey',currHoney)
@@ -1518,7 +1565,6 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
         cmd = """
         osascript -e 'activate application "Roblox"' 
         """
-        
         os.system(cmd)
         timings = loadtimings()
         setdat = loadsettings.load()
@@ -1599,7 +1645,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
                     placePlanter(bestPlanter)
                     occupiedStuff.append((bestPlanter,planterFields[i]))
                 continuePlanters = 1
-                print(occupiedStuff)
+                log(occupiedStuff)
                 with open("planterdata.txt","w") as f:
                     f.write("{}\n{}\n{}".format(occupiedStuff,planterTypes,planterFields))
                 f.close()
@@ -1661,16 +1707,16 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
                 planterFields = cycleFields.copy()
                 for i in removeFromOccupied:
                     occupiedStuff.remove(i)
-                print(occupiedStuff)
-                print(occupiedFields)
-                print(planterFields)
+                log(occupiedStuff)
+                log(occupiedFields)
+                log(planterFields)
                 for _ in range(maxPlanters-len(occupiedStuff)):
                     for i in planterFields:
                         if i not in fieldsToPlace and i not in occupiedFields:
                             fieldsToPlace.append(i)
                             break
                     
-                print(fieldsToPlace)
+                log(fieldsToPlace)
                 for i in fieldsToPlace:
                     bestPlanter = getBestPlanter(i,occupiedStuff,planterTypes)
                     webhook('',"Traveling: {} ({})\nObjective: Place Planter".format(displayPlanterName(bestPlanter),i.title()),"dark brown")
@@ -1731,6 +1777,37 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
             exec(open("field_{}.py".format(setdat['gather_field'][gfid])).read())
             cf.value = setdat['gather_field'][gfid].replace(" ","").lower()
             time.sleep(0.2)
+            s_l = setdat['start_location'].lower()
+            rotTowards = []
+            rotBack = []
+            if s_l != 'center':
+                if s_l == "upper right":
+                    rotTowards = ["."]
+                elif s_l == "right":
+                    rotTowards = ["."]*2
+                elif s_l == "lower right":
+                    rotTowards = ["."]*3
+                elif s_l == "bottom":
+                    rotTowards = ["."]*4
+                elif s_l == "lower left":
+                    rotTowards = [","]*3
+                elif s_l == "left":
+                    rotTowards = [","]*2
+                elif s_l == "upper left":
+                    rotTowards = [","]
+                for i in rotTowards:
+                    move.press(i)
+                    if i == ".":
+                        rotBack.append(",")
+                    elif i:
+                        rotBack.append(".")
+                
+                move.hold("w",setdat['distance_from_center']/2.5)
+                
+                for i in rotBack:
+                    move.press(i)
+
+                
             if setdat["before_gather_turn"] == "left":
                 for _ in range(setdat["turn_times"]):
                     move.press(",")
@@ -1805,7 +1882,11 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
                 if setdat["gather_field"][gfid].lower() == "none":
                     gfid += 1
                 else: break
-                    
+                
+
+            
+
+    keyboard.Listener(on_press=on_press).start()
 def setResolution():
     wwd = int(pag.size()[0])
     whd = int(pag.size()[1])
@@ -1816,14 +1897,17 @@ def setResolution():
         nwh = ''.join([x for x in retout[1] if x.isdigit()])
         loadsettings.save('display_type', 'built-in retina display')
         print("display type: retina")
+        log("display type: retina")
         wwd *=2
         whd *=2
     else:
         loadsettings.save('display_type',"built-in display")
         print("display type: built-in")
+        log("display type: built-in")
         nww = wwd
         nwh = whd
     print("Screen coordinates: {}x{}".format(wwd,whd))
+    log("Screen coordinates: {}x{}".format(wwd,whd))
     with open('save.txt', 'w') as f:
         f.write('wh:{}\nww:{}\nnww:{}\nnwh:{}'.format(whd,wwd,nww,nwh))
     ndisplay = "{}x{}".format(wwd,whd)
@@ -1844,6 +1928,8 @@ def setResolution():
     else:
         print("Resolution not found in supported list")
 if __name__ == "__main__":
+    with open('macroLogs.log', 'w'):
+        pass
     cmd = 'defaults read -g AppleInterfaceStyle'
     p = bool(subprocess.Popen(cmd, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, shell=True).communicate()[0])
@@ -1853,6 +1939,7 @@ if __name__ == "__main__":
     print("tab out of roblox, make sure terminal is in focus and press ctrl c\nor,\nright click the macro app in the dock and force quit")
     print("\n\nYour python version is {}".format(sys.version_info[0]))
     print("Your macro version is {}\n\n".format(macrov))
+    log("Your macro version is {}\n\n".format(macrov))
     setResolution()
     loadSave()
     plantdat = loadsettings.planterLoad()
@@ -1918,6 +2005,10 @@ if __name__ == "__main__":
     before_gather_turn = tk.StringVar(root)
     before_gather_turn.set(setdat["before_gather_turn"])
     turn_times = tk.IntVar(value=setdat["turn_times"])
+    start_location = tk.StringVar(root)
+    start_location.set(setdat["start_location"].title())
+    distance_from_center = tk.StringVar(root)
+    distance_from_center.set(setdat["distance_from_center"])
     whirligig_slot = tk.StringVar(root)
     whirligig_slot.set(setdat["whirligig_slot"])
     stump_snail = tk.IntVar(value=setdat["stump_snail"])
@@ -2183,7 +2274,7 @@ if __name__ == "__main__":
         webhook("","Done obtaining vals","dark brown")
             
         vals = sorted(vals,reverse=True)
-        print(vals)
+        log(vals)
         gap = vals[0] - 0.05
         truemin = 0
         for i in range(len(vals)):
@@ -2288,6 +2379,8 @@ if __name__ == "__main__":
             "turn_times": turn_times.get(),
             "return_to_hive": return_to_hive.get(),
             "whirligig_slot": whirligig_slot.get(),
+            "start_location": start_location.get(),
+            "distance_from_center": distance_from_center.get(),
                 
             "stump_snail": stump_snail.get(),
             "continue_after_stump_snail": continue_after_stump_snail.get(),
@@ -2435,7 +2528,7 @@ if __name__ == "__main__":
         else:
             macro()
             pass
-
+    
     def macro():
         webhook("Macro started","exih_macro {}".format(macrov),"dark brown")
         setdat = loadsettings.load()
@@ -2468,6 +2561,8 @@ if __name__ == "__main__":
                     startLoop_proc = multiprocessing.Process(target=startLoop,args=(currentfield,bpc,gather,disconnected,planterTypes_prev, planterFields_prev,0))
                     startLoop_proc.start()
                     rejoinval.value = 0
+                #if keyboard.is_pressed('q'):
+                    #raise KeyboardInterrupt
 
                     
         except KeyboardInterrupt:
@@ -2563,7 +2658,14 @@ if __name__ == "__main__":
     wslotmenu = ttk.OptionMenu(frame1 , whirligig_slot,setdat['whirligig_slot'], *[1,2,3,4,5,6,7,"none"],style='my.TMenubutton')
     wslotmenu.place(width=70,x = 570, y = 155,height=24)
 
-    tkinter.Checkbutton(frame1, text="Field Drift Compensation", variable=field_drift_compensation).place(x=0, y = 190)
+    tkinter.Label(frame1, text = "Start Location").place(x = 0, y = 190)
+    dropField = ttk.OptionMenu(frame1, start_location,setdat['start_location'].title(), *["Center","Upper Right","Right","Lower Right","Bottom","Lower Left","Left","Upper Left","Top"],style='my.TMenubutton' )
+    dropField.place(width=100,x = 100, y = 190,height=24)
+    tkinter.Label(frame1, text = "Distance From Center").place(x = 210, y = 190)
+    dropField = ttk.OptionMenu(frame1, distance_from_center,setdat['distance_from_center'], *[(x+1) for x in range(10)],style='my.TMenubutton' )
+    dropField.place(width=50,x = 360, y = 190,height=24)
+
+    tkinter.Checkbutton(frame1, text="Field Drift Compensation", variable=field_drift_compensation).place(x=0, y = 225)
     
 
     #Tab 2 
