@@ -1,5 +1,5 @@
 
-hive_number:6
+hive_number:3
 walkspeed:28
 gifted_vicious_bee:0
 enable_discord_webhook:1
