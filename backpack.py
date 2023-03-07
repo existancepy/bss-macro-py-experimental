@@ -107,7 +107,7 @@ def bpc():
         perc = 30
     else:
         perc = 0
-    print("Pixel Colour: {}, Backpack Percentage: {}.".format(backpackColor, perc))
+    #print("Pixel Colour: {}, Backpack Percentage: {}.".format(backpackColor, perc))
     log("Pixel Colour: {}, Backpack Percentage: {}.".format(backpackColor, perc))
     return perc
 

@@ -18,8 +18,10 @@ import numpy as np
 import asyncio
 from logpy import log
 import logging
-from pynput import keyboard
-from pynput.keyboard import Key, Controller
+import pynput
+from pynput.keyboard import Key
+from pynput.mouse import Button, Controller
+import pynput.mouse
 try:
     import matplotlib.pyplot as plt
 except Exception as e:
@@ -43,7 +45,6 @@ import sv_ttk
 import math
 import ast
 import calibrate_hive
-import _darwinmouse as mouse
 from datetime import datetime
 from getHaste import getHaste, getHastelp
 
@@ -55,9 +56,11 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.34"
+macrov = "1.35"
 planterInfo = loadsettings.planterInfo()
 reader = easyocr.Reader(['en'])
+mouse = Controller()
+keyboard = pynput.keyboard.Controller()
 
 if __name__ == '__main__':
     planterTypes_prev = []
@@ -82,7 +85,16 @@ def boolToInt(condition):
 def is_running(app):
     tmp = os.popen("ps -Af").read()
     return app in tmp[:]
-
+def fullscreen():
+    keyboard.press(Key.cmd)
+    time.sleep(0.05)
+    keyboard.press(Key.ctrl)
+    time.sleep(0.05)
+    keyboard.press("f")
+    time.sleep(0.1)
+    keyboard.release(Key.cmd)
+    keyboard.release(Key.ctrl)
+    keyboard.release("f")
 def discord_bot(dc,rejoinval):
     setdat = loadsettings.load()
     intents = discord.Intents.default()
@@ -293,7 +305,6 @@ def ebutton(pagmode=0):
     '''
     ocrval = ''.join([x for x in list(imToString('ebutton').strip()) if x.isalpha()])
     log(ocrval)
-    print(ocrval)
     return ocrval == "E"
 
 def millify(n):
@@ -306,125 +317,128 @@ def millify(n):
     return '{:.2f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
 
 def hourlyReport(hourly=1):
-    with open('honey_history.txt','r') as f:
-        honeyHist = ast.literal_eval(f.read())
-    f.close()
-    
-    setdat = loadsettings.load()
-    if hourly == 0:
-        setdat['prev_honey'] = honeyHist[-1]
-    if honeyHist.count(honeyHist[0]) != len(honeyHist):
-        for i, e in reversed(list(enumerate(honeyHist[:]))):
-            if e != setdat['prev_honey']:
+    try:
+        with open('honey_history.txt','r') as f:
+            honeyHist = ast.literal_eval(f.read())
+        f.close()
+        
+        setdat = loadsettings.load()
+        if hourly == 0:
+            setdat['prev_honey'] = honeyHist[-1]
+        if honeyHist.count(honeyHist[0]) != len(honeyHist):
+            for i, e in reversed(list(enumerate(honeyHist[:]))):
+                if e != setdat['prev_honey']:
+                    break
+                else:
+                    honeyHist.pop(i)
+        log('prev honey: {}'.format(setdat['prev_honey']))
+        log(honeyHist)
+        
+        while True:
+            compList = [x for x in honeyHist if x]
+            sortedHoney = sorted(compList)
+            if sortedHoney == compList:
                 break
             else:
-                honeyHist.pop(i)
-    log('prev honey: {}'.format(setdat['prev_honey']))
-    log(honeyHist)
-    
-    while True:
-        compList = [x for x in honeyHist if x]
-        sortedHoney = sorted(compList)
-        if sortedHoney == compList:
-            break
+                removeELE = sortedHoney[-1]
+                honeyHist.remove(removeELE)
+        log(honeyHist)
+        currHoney = honeyHist[-1]
+        session_honey = currHoney - setdat['start_honey']
+        hourly_honey = currHoney - setdat['prev_honey']
+        if hourly:
+            loadsettings.save('prev_honey',currHoney)
+            timehour = int(datetime.now().hour) - 1
         else:
-            removeELE = sortedHoney[-1]
-            honeyHist.remove(removeELE)
-    log(honeyHist)
-    currHoney = honeyHist[-1]
-    session_honey = currHoney - setdat['start_honey']
-    hourly_honey = currHoney - setdat['prev_honey']
-    if hourly:
-        loadsettings.save('prev_honey',currHoney)
-        timehour = int(datetime.now().hour) - 1
-    else:
-        timehour = int(datetime.now().hour)
-        
-    stime = time.time() - setdat['start_time']
-    day = stime // (24 * 3600)
-    stime = stime % (24 * 3600)
-    hour = stime // 3600
-    stime %= 3600
-    minutes = stime // 60
-    stime %= 60
-    seconds = round(stime)
-    session_time = "{}d {}h {}m".format(round(day),round(hour),round(minutes))
-    yvals = []
-    for i in range(len(honeyHist)):
-        if i != 0:
-            hf, hb = honeyHist[i], honeyHist[i-1]
-            yvals.append(int(hf) - int(hb))
-    #yvals = [1,2,3,4,5,6,7,8]
-    xvals = [x+1 for x in range(len(yvals))]
+            timehour = int(datetime.now().hour)
+            
+        stime = time.time() - setdat['start_time']
+        day = stime // (24 * 3600)
+        stime = stime % (24 * 3600)
+        hour = stime // 3600
+        stime %= 3600
+        minutes = stime // 60
+        stime %= 60
+        seconds = round(stime)
+        session_time = "{}d {}h {}m".format(round(day),round(hour),round(minutes))
+        yvals = []
+        for i in range(len(honeyHist)):
+            if i != 0:
+                hf, hb = honeyHist[i], honeyHist[i-1]
+                yvals.append(int(hf) - int(hb))
+        #yvals = [1,2,3,4,5,6,7,8]
+        xvals = [x+1 for x in range(len(yvals))]
 
 
-    fig = plt.figure(figsize=(12,12), dpi=60,constrained_layout=True)
-    gs = fig.add_gridspec(12,12)
-    fig.patch.set_facecolor('#121212')
+        fig = plt.figure(figsize=(12,12), dpi=60,constrained_layout=True)
+        gs = fig.add_gridspec(12,12)
+        fig.patch.set_facecolor('#121212')
 
-    axText = fig.add_subplot(gs[0:12, 8:12])
-    axText.get_xaxis().set_visible(False)
-    axText.get_yaxis().set_visible(False)
-    axText.patch.set_facecolor('#121212')
-    axText.spines['bottom'].set_color('#121212')
-    axText.spines['top'].set_color('#121212')
-    axText.spines['left'].set_color('#121212')
-    axText.spines['right'].set_color('#121212')
+        axText = fig.add_subplot(gs[0:12, 8:12])
+        axText.get_xaxis().set_visible(False)
+        axText.get_yaxis().set_visible(False)
+        axText.patch.set_facecolor('#121212')
+        axText.spines['bottom'].set_color('#121212')
+        axText.spines['top'].set_color('#121212')
+        axText.spines['left'].set_color('#121212')
+        axText.spines['right'].set_color('#121212')
 
-    plt.text(0.3,1,"Report", fontsize=20,color="white")
-    plt.text(0,0.95,"Session Time: {}".format(session_time), fontsize=15,color="white")
-    plt.text(0,0.90,"Session Honey: {}".format(millify(session_honey)), fontsize=15,color="white")
-    plt.text(0,0.85,"Honey/Hr: {}".format(millify(hourly_honey)), fontsize=15,color="white")
+        plt.text(0.3,1,"Report", fontsize=20,color="white")
+        plt.text(0,0.95,"Session Time: {}".format(session_time), fontsize=15,color="white")
+        plt.text(0,0.90,"Session Honey: {}".format(millify(session_honey)), fontsize=15,color="white")
+        plt.text(0,0.85,"Honey/Hr: {}".format(millify(hourly_honey)), fontsize=15,color="white")
 
-    ax1 = fig.add_subplot(gs[0:3, 0:7])
-    if not yvals:
-        yvals = honeyHist.copy()
-    if max(yvals) == 0:
-        yticks = [0]
-    else:
-        yticks = np.arange(0, max(yvals)+1, max(yvals)/4)
-    yticksDisplay = [millify(x) if x else x for x in yticks]
+        ax1 = fig.add_subplot(gs[0:3, 0:7])
+        if not yvals:
+            yvals = honeyHist.copy()
+        if max(yvals) == 0:
+            yticks = [0]
+        else:
+            yticks = np.arange(0, max(yvals)+1, max(yvals)/4)
+        yticksDisplay = [millify(x) if x else x for x in yticks]
 
-    xticks = np.arange(0,max(xvals)+1, 10)
-    xticksDisplay = ["{}:{}".format(timehour,x) if x else "{}:00".format(timehour) for x in xticks]
+        xticks = np.arange(0,max(xvals)+1, 10)
+        xticksDisplay = ["{}:{}".format(timehour,x) if x else "{}:00".format(timehour) for x in xticks]
 
-    ax1.set_yticks(yticks,yticksDisplay,fontsize=16)
-    ax1.set_xticks(xticks,xticksDisplay,fontsize=16)
-    ax1.set_title('Honey/min',color='white',fontsize=19)
-    ax1.patch.set_facecolor('#121212')
-    ax1.spines['bottom'].set_color('white')
-    ax1.spines['top'].set_color('white')
-    ax1.spines['left'].set_color('white')
-    ax1.spines['right'].set_color('white')
-    ax1.tick_params(axis='x', colors='white')
-    ax1.tick_params(axis='y', colors='white')
-    ax1.plot(xvals, yvals,color="#BB86FC")
-    #ax1.fill_between(xvals, 0, yvals)
-    '''
-    ax2 = fig.add_subplot(gs[4:7, 0:7])
-    y2ticks = np.linspace(setdat['start_honey'], max(honeyHist), num = 4)
-    y2ticksDisplay = [millify(x) if x else x for x in y2ticks]
-    ax2.set_xticks(xticks,xticksDisplay,fontsize=16)
-    ax2.set_yticks(y2ticks,y2ticksDisplay,fontsize=16)
-    ax2.set_title('Session honey',color='white',fontsize=19)
-    ax2.patch.set_facecolor('#121212')
-    ax2.spines['bottom'].set_color('white')
-    ax2.spines['top'].set_color('white')
-    ax2.spines['left'].set_color('white')
-    ax2.spines['right'].set_color('white')
-    ax2.tick_params(axis='x', colors='black')
-    ax2.tick_params(axis='y', colors='white')
-    ax2.plot(xvals, honeyHist[1:],color="#BB86FC")
-    #ax2.fill_between(xvals, setdat['start_honey'], honeyHist[1:])
-    '''
-    log(honeyHist)
-    plt.grid(alpha=0.08)
-    plt.savefig("hourlyReport.png", bbox_inches='tight')    
-    c = Image.open("hourlyReport.png")
-    d = c.resize((1452,1452),resample = Image.BOX)
-    d.save("hourlyReport-resized.png")
-    webhook("**Hourly Report**","","light blue",0,1)
-
+        ax1.set_yticks(yticks,yticksDisplay,fontsize=16)
+        ax1.set_xticks(xticks,xticksDisplay,fontsize=16)
+        ax1.set_title('Honey/min',color='white',fontsize=19)
+        ax1.patch.set_facecolor('#121212')
+        ax1.spines['bottom'].set_color('white')
+        ax1.spines['top'].set_color('white')
+        ax1.spines['left'].set_color('white')
+        ax1.spines['right'].set_color('white')
+        ax1.tick_params(axis='x', colors='white')
+        ax1.tick_params(axis='y', colors='white')
+        ax1.plot(xvals, yvals,color="#BB86FC")
+        #ax1.fill_between(xvals, 0, yvals)
+        '''
+        ax2 = fig.add_subplot(gs[4:7, 0:7])
+        y2ticks = np.linspace(setdat['start_honey'], max(honeyHist), num = 4)
+        y2ticksDisplay = [millify(x) if x else x for x in y2ticks]
+        ax2.set_xticks(xticks,xticksDisplay,fontsize=16)
+        ax2.set_yticks(y2ticks,y2ticksDisplay,fontsize=16)
+        ax2.set_title('Session honey',color='white',fontsize=19)
+        ax2.patch.set_facecolor('#121212')
+        ax2.spines['bottom'].set_color('white')
+        ax2.spines['top'].set_color('white')
+        ax2.spines['left'].set_color('white')
+        ax2.spines['right'].set_color('white')
+        ax2.tick_params(axis='x', colors='black')
+        ax2.tick_params(axis='y', colors='white')
+        ax2.plot(xvals, honeyHist[1:],color="#BB86FC")
+        #ax2.fill_between(xvals, setdat['start_honey'], honeyHist[1:])
+        '''
+        log(honeyHist)
+        plt.grid(alpha=0.08)
+        plt.savefig("hourlyReport.png", bbox_inches='tight')    
+        c = Image.open("hourlyReport.png")
+        d = c.resize((1452,1452),resample = Image.BOX)
+        d.save("hourlyReport-resized.png")
+        webhook("**Hourly Report**","","light blue",0,1)
+    except Exception as e:
+        log(e)
+        webhook("","Hourly Report has an error that has been caught. The error can be found in macroLogs.log","red")
 
 
         
@@ -446,7 +460,7 @@ def canon():
     time.sleep(0.2)
     r = ""
     pag.keyUp("d")
-    move.hold("d",0.4)
+    move.hold("d",0.3)
     for _ in range(4):
         move.hold("d",0.2)
         time.sleep(0.05)
@@ -461,7 +475,7 @@ def canon():
                     f.write('0')
                 f.close()
                 return
-    mouse.move_to(mw//2,mh//5*4)
+    mouse.position = (mw//2,mh//5*4)
     webhook("","Cannon not found, resetting","dark brown",1)
     with open('canonfails.txt','r') as f:
         cfCount = int(f.read())
@@ -778,8 +792,8 @@ def placePlanter(planter):
                     clickYes()
 
                 break
-        pag.moveTo(27,102)
-        pag.click()
+        mouse.click(27,102)
+        mouse.click(Button.left, 2)
     savePlanterTimings(planter)
     webhook("","Placed Planter: {}".format(displayPlanterName(planter)),"bright green",1)
     reset.reset()
@@ -793,18 +807,18 @@ def clickYes():
     a = imagesearch.find("yes.png",0.5,0,0,ww,wh)
     if setdat['display_type'] == "built-in retina display":
         if a:
-            pag.moveTo(a[1]//2+urows//4,a[2]//2+ucols//4)
-            pag.click()
+            mouse.position = (a[1]//2+urows//4,a[2]//2+ucols//4)
+            mouse.click(Button.left, 1)
         else:
-            pag.moveTo(ww//4-70,wh//3.2)
-            pag.click()
+            mouse.position = (ww//4-70,wh//3.2)
+            mouse.click(Button.left, 1)
     else:
         if a:
-            pag.moveTo(a[1]+urows//2,a[2]+ucols//2)
-            pag.click()
+            mouse.position = (a[1]+urows//2,a[2]+ucols//2)
+            mouse.click(Button.left, 1)
         else:
-            pag.moveTo(ww//2-50,wh//1.6)
-            pag.click()
+            mouse.position= (ww//2-50,wh//1.6)
+            mouse.click(Button.left, 1)
     
 def goToPlanter(field,place=0):
     canon()
@@ -812,13 +826,13 @@ def goToPlanter(field,place=0):
     if field == "pine tree":
         move.hold("d",3)
         move.hold("s",4)
-        if place: move.hold("w",0.07)
+        move.hold("w",0.25)
     elif field == "pumpkin":
         move.hold("s",3)
         move.press(",")
         move.press(",")
         move.hold("w",4)
-        if place: move.hold("s",0.07)
+        move.hold("s",0.25)
     elif field  == "strawberry":
         move.hold("d",3)
         move.hold("s",4)
@@ -827,7 +841,7 @@ def goToPlanter(field,place=0):
         move.press(",")
         move.press(",")
         move.hold("w",4)
-        if place: move.hold("s",0.07)
+        move.hold("s",0.25)
     elif field  == "pineapple":
         move.hold("d",3)
         move.hold("s",4)
@@ -836,12 +850,13 @@ def goToPlanter(field,place=0):
         move.press(",")
         move.press(",")
         move.hold("w",4)
-        if place: move.hold("s",0.07)
+        move.hold("s",0.25)
     elif field == "coconut":
         move.hold("d",5)
         move.hold("s")
     else:
-        time.sleep(1)
+        time.sleep(0.8)
+    time.sleep(0.2)
         
 def fieldDriftCompensation():
     res = loadRes()
@@ -858,7 +873,7 @@ def fieldDriftCompensation():
         result = cv2.matchTemplate(sat_image, large_image, method)
         mn,_,mnLoc,_ = cv2.minMaxLoc(result)
         x,y = mnLoc
-        if mn < 0.06:
+        if mn < 0.07:
             if x >= winLeft and x <= winRight and y >= winUp and y <= winDown: break
             if x < winLeft:
                 move.hold("a",0.2)
@@ -886,8 +901,12 @@ def background(cf,bpcap,gat,dc, rejoinval):
     prevMin = datetime.now().minute
     honeyHist = [setdat['prev_honey']]*60
     log(honeyHist)
+    invalid_prev_honey = 0
+    if honeyHist[0] == 0:
+        invalid_prev_honey = 1
     while True:
         start_time = time.time()
+        
         r = imagesearch.find('disconnect.png',0.8,ww//3,wh//2.8,ww//2.3,wh//2.5)
         if checkwithOCR("disconnect") or r:
             dc.value = 1
@@ -910,9 +929,11 @@ def background(cf,bpcap,gat,dc, rejoinval):
             dc.value = 0
         if setdat['haste_compensation']:
             if setdat['low_performance_haste_compensation']:
-                getHastelp()
+                #getHastelp()
+                pass
             else:
-                getHaste()
+                #getHaste()
+                pass
         if setdat['rejoin_every_enabled']:
             with open('timings.txt', 'r') as f:
                 prevTime = float([x for x in f.read().split('\n') if x.startswith('rejoin_every')][0].split(":")[1])
@@ -922,6 +943,7 @@ def background(cf,bpcap,gat,dc, rejoinval):
                 rejoin()
                 dc.value = 0
                 savetimings('rejoin_every')
+        '''
         if checkwithOCR('egg shop'):
             dc.value = 1
             webhook("","Shop detected","red")
@@ -940,10 +962,11 @@ def background(cf,bpcap,gat,dc, rejoinval):
                 sleep(0.25)
                 mouse.release()
             dc.value = 0
+        '''
         with open('canonfails.txt', 'r') as f:
             cfCount = int(f.read())
         f.close()
-        if cfCount == 3:
+        if cfCount >= 3:
             with open('canonfails.txt', 'w') as f:
                 f.write('0')
             f.close()
@@ -958,20 +981,24 @@ def background(cf,bpcap,gat,dc, rejoinval):
             if sysMin != prevMin:
                 prevMin = sysMin
                 ch = imToString('honey')
-                if ch:
-                    honeyHist[sysMin] = int(ch)
+                if invalid_prev_honey and ch:
+                    invalid_prev_honey = 0
+                    honeyHist = [ch]*60
                 else:
-                    honeyHist[sysMin] = honeyHist[sysMin-1]
-                log(honeyHist)
+                    if ch:
+                        honeyHist[sysMin] = int(ch)
+                    else:
+                        honeyHist[sysMin] = honeyHist[sysMin-1]
+                log(ch)
                 savehoney_history(honeyHist)
             if sysMin == 0 and sysHour != prevHour:
+                
                 hourlyReport()
                 prev_honey = loadsettings.load()['prev_honey']
                 honeyHist = [prev_honey]*60
                 prevHour = sysHour
                 #savehoney_history(honeyHist)
         print(time.time()-start_time)
-                
 
 def killMob(field,mob,reset):
     webhook("","Traveling: {} ({})".format(mob.title(),field.title()),"dark brown")
@@ -1060,7 +1087,6 @@ def updateHive(h):
     loadsettings.save('hive_number',h)
 
 async def asyncRejoin():
-    print('a')
     setdat = loadsettings.load()
     for i in range(2):
         cmd = """
@@ -1088,8 +1114,19 @@ async def asyncRejoin():
         cmd = """
             osascript -e 'activate application "Roblox"' 
         """
-        
         os.system(cmd)
+        '''
+        await asyncio.sleep(0.5)
+        keyboard.press(Key.cmd)
+        await asyncio.sleep(0.05)
+        keyboard.press(Key.ctrl)
+        await asyncio.sleep(0.05)
+        keyboard.press("f")
+        await asyncio.sleep(0.1)
+        keyboard.release(Key.cmd)
+        keyboard.release(Key.ctrl)
+        keyboard.release("f")
+        '''
         await asyncio.sleep(2)
         pag.keyDown("w")
         await asyncio.sleep(5)
@@ -1270,14 +1307,14 @@ async def asyncRejoin():
         xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
         for _ in range(2):
             webhook("","Reset Check","dark brown")
-            pag.moveTo(mw/(4.11*xsm),mh/(9*ysm))
+            mouse.position = (mw/(4.11*xsm),mh/(9*ysm))
             ww = savedata["ww"]
             wh = savedata["wh"]
             xo = ww//4
             yo = wh//100*90
             xt = xo*2
             yt = wh//100*20
-            time.sleep(2)
+            await asyncio.sleep(2)
             pag.press('esc')
             await asyncio.sleep(0.1)
             pag.press('r')
@@ -1286,7 +1323,7 @@ async def asyncRejoin():
             await asyncio.sleep(8)
             for _ in range(4):
                 pag.press('pgup')
-            time.sleep(0.1)
+            await asyncio.sleep(0.1)
             for _ in range(6):
                 pag.press('o')
             #im = pag.screenshot(region = (xo,yo,xt,yt))
@@ -1296,11 +1333,11 @@ async def asyncRejoin():
             for _ in range(4):
                 r = imagesearch.find("hive1.png",ths, xo, yo, xt, yt)
                 if r:
-                    time.sleep(0.1)
+                    await asyncio.sleep(0.1)
                     for _ in range(4):
                         pag.press(".")
 
-                    time.sleep(0.1)
+                    await asyncio.sleep(0.1)
                     for _ in range(4):
                         pag.press('pgdn')
                     resetCheck = 1
@@ -1308,7 +1345,7 @@ async def asyncRejoin():
                 for _ in range(4):
                     pag.press(",")
                     
-                time.sleep(0.5)
+                await asyncio.sleep(0.5)
             await asyncio.sleep(1)
         for _ in range(4):
             pag.press(",")
@@ -1331,7 +1368,7 @@ def rejoin():
         savedata = loadRes()
         ww = savedata['ww']
         wh = savedata['wh']
-        webhook("","Rejoining","dark brown")
+        webhook("","Rejoining","dark brown",1)
         time.sleep(3)
         if is_running("roblox"):
                 cmd = """
@@ -1351,6 +1388,8 @@ def rejoin():
         """
         
         os.system(cmd)
+        time.sleep(1)
+        #fullscreen()
         time.sleep(2)
         move.hold("w",5)
         move.hold("s",0.6)
@@ -1551,6 +1590,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
             lines = f.read().split("\n")
         f.close()
         occupiedStuff = ast.literal_eval(lines[0])
+        print(occupiedStuff)
         planterTypes = ast.literal_eval(lines[1])
         planterFields = ast.literal_eval(lines[2])
         if planterTypes == planterTypes_prev and planterFields == planterFields_prev:
@@ -1584,7 +1624,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
                     savetimings("stump_snail")
                     if setdat['continue_after_stump_snail']:break
             webhook("","Stump snail killed, keeping amulet","bright green")
-            pag.moveTo(mw//2-30,mh//100*60)
+            mouse.move(mw//2-30,mh//100*60)
             pag.click()
             reset.reset()
         #Collect check
@@ -1636,6 +1676,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
         
         if planterset['enable_planters']:
             if not continuePlanters or not occupiedStuff:
+                
                 occupiedStuff = []
                 for i in range(maxPlanters):
                     bestPlanter = getBestPlanter(planterFields[i],occupiedStuff,planterTypes)
@@ -1678,26 +1719,31 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
                     if time.time() - planterTimes[currPlanter] > growTime*60*60:
                         collectAnyPlanters += 1
                         time.sleep(2)
-                        goToPlanter(currField)
-                        webhook('',"Traveling: {} ({})\nObjective: Collect Planter".format(displayPlanterName(currPlanter),currField.title()),"dark brown")
-                        move.press('e')
-                        clickYes()
-                        if currField == "pumpkin":
-                            for _ in range(4):
-                                move.press(",")
-                        elif currField == "pine tree" or currField == "strawberry" or currField == "pineapple":
-                                move.press(".")
-                                move.press(".")
-                        starttime = time.time()
-                        move.apkey("space")
-                        while True:
-                            if time.time() - starttime > 20:
+                        for i in range(3):
+                            goToPlanter(currField)
+                            webhook('',"Traveling: {} ({})\nObjective: Collect Planter, Attempt: {}".format(displayPlanterName(currPlanter),currField.title(),i+1),"dark brown")
+                            if ebutton():
+                                move.press('e')
+                                clickYes()
+                                if currField == "pumpkin":
+                                    for _ in range(4):
+                                        move.press(",")
+                                elif currField == "pine tree" or currField == "strawberry" or currField == "pineapple":
+                                        move.press(".")
+                                        move.press(".")
+                                starttime = time.time()
+                                move.apkey("space")
+                                while True:
+                                    if time.time() - starttime > 20:
+                                        break
+                                    moblootPattern(1.1,1.4,"none",2)
+                                reset.reset()
+                                cycleFields.remove(currField)
+                                cycleFields.append(currField)
+                                removeFromOccupied.append((currPlanter,currField))
                                 break
-                            moblootPattern(1.1,1.4,"none",2)
-                        reset.reset()
-                        cycleFields.remove(currField)
-                        cycleFields.append(currField)
-                        removeFromOccupied.append((currPlanter,currField))
+                            else:
+                                webhook("","Cant find Planter","red",1)
                     else:
                         occupiedFields.append(currField)
                 if collectAnyPlanters > 0 and planterFields == cycleFields:
@@ -1825,11 +1871,10 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
             fullTime = 0
             while True:
                 time.sleep(0.05)
-                mouse.press()
+                mouse.press(Button.left)
                 time.sleep(0.05)
                 exec(open("gather_{}.py".format(gp)).read())
                 time.sleep(0.05)
-                mouse.release()
                 time.sleep(0.05)
                 timespent = (time.perf_counter() - timestart)/60
                 if bpcap.value >= setdat["pack"]:
@@ -1841,6 +1886,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
                     break
                 if setdat['field_drift_compensation']:
                     fieldDriftCompensation()
+                mouse.release(Button.left)
             time.sleep(0.5)
             gat.value = 0
             cf.value = ""
@@ -1970,6 +2016,7 @@ if __name__ == "__main__":
     frame4 = ttk.Frame(notebook, width=780, height=400)
     frame5 = ttk.Frame(notebook, width=780, height=400)
     frame6 = ttk.Frame(notebook, width=780, height=400)
+    frame7 = ttk.Frame(notebook, width=780, height=400)
 
     frame1.pack(fill='both', expand=True)
     frame2.pack(fill='both', expand=True)
@@ -1977,12 +2024,14 @@ if __name__ == "__main__":
     frame4.pack(fill='both', expand=True)
     frame5.pack(fill='both', expand=True)
     frame6.pack(fill='both', expand=True)
+    frame7.pack(fill='both', expand=True)
 
     notebook.add(frame1, text='Gather')
     notebook.add(frame2, text='Bug run')
     notebook.add(frame4, text='Collect')
     notebook.add(frame6, text='Planters')
-    notebook.add(frame3, text='Settings')
+    notebook.add(frame3, text='In Game Settings')
+    notebook.add(frame7, text='Other Settings')
     notebook.add(frame5, text='Calibration')
 
     #get variables
@@ -2214,11 +2263,10 @@ if __name__ == "__main__":
         timestart = time.perf_counter()
         while True:
             time.sleep(0.05)
-            pag.mouseDown()
+            mouse.press(Button.left)
             time.sleep(0.05)
             exec(open("gather_{}.py".format(setdat['gather_pattern'])).read())
             time.sleep(0.05)
-            pag.mouseUp()
             time.sleep(0.05)
             timespent = (time.perf_counter() - timestart)/60
             if timespent > 20:
@@ -2226,6 +2274,7 @@ if __name__ == "__main__":
                 break
             if setdat['field_drift_compensation'] and setdat['gather_pattern'] != "stationary":
                 fieldDriftCompensation()
+            mouse.release(Button.left)
         time.sleep(0.5)
         webhook("","Finding coordinates of backpack","dark brown")
         for x in range(ww//2+50,ww//2+200):
@@ -2499,21 +2548,23 @@ if __name__ == "__main__":
                         planterTypes_set.append(info)
 
             if sorted(planterFields_set) != sorted(planterFields_prev) or sorted(planterTypes_prev) != sorted(planterTypes_set):
-                with open("planterdata.txt","w") as f:
-                    f.write("[]\n{}\n{}".format(planterTypes_set,planterFields_set))
-                f.close()
-                with open("plantertimings.txt","r") as f:
-                    lines = f.read().split("\n")
-                f.close()
-                with open("plantertimings.txt","w") as f:
+                
+                with open("planterdata.txt","w") as a:
+                    a.write("[]\n{}\n{}".format(planterTypes_set,planterFields_set))
+                a.close()
+                with open("plantertimings.txt","r") as b:
+                    lines = b.read().split("\n")
+                b.close()
+                with open("plantertimings.txt","w") as c:
                     writeStuff = []
                     for i in lines:
                         if ":" in i:
                             k,_ = i.split(':')
                             writeStuff.append("{}:0".format(k))
                     print(writeStuff)
-                    f.write('\n'.join(writeStuff))
-                f.close()
+                    c.write('\n'.join(writeStuff))
+                c.close()
+                planterTypes_prev, planterFields_prev = planterTypes_set, planterFields_set
                 
                             
             
@@ -2538,6 +2589,9 @@ if __name__ == "__main__":
             osascript -e 'activate application "Roblox"' 
         """
         os.system(cmd)
+        time.sleep(0.5)
+        #fullscreen()
+        gather.value = 0
         time.sleep(0.5)
         startLoop_proc = multiprocessing.Process(target=startLoop,args=(currentfield,bpc,gather,disconnected,planterTypes_prev, planterFields_prev,1))
         startLoop_proc.start()
@@ -2774,63 +2828,53 @@ if __name__ == "__main__":
     speedtextbox = tkinter.Text(frame3, width = 4, height = 1, bg= wbgc)
     speedtextbox.insert("end",walkspeed)
     speedtextbox.place(x = 185, y=52)
-    tkinter.Checkbutton(frame3, text="Enable Discord Webhook", command = disabledw,variable=enable_discord_webhook).place(x=0, y = 85)
-    tkinter.Label(frame3, text = "Discord Webhook Link").place(x = 350, y = 85)
-    urltextbox = tkinter.Text(frame3, width = 24, height = 1, yscrollcommand = True, bg= wbgc)
-    urltextbox.insert("end",discord_webhook_url)
-    sendss = tkinter.Checkbutton(frame3, text="Send screenshots", variable=send_screenshot)
-    sendss.place(x=200, y = 85)
-    urltextbox.place(x = 500, y=87)
 
-    tkinter.Label(frame3, text = "Sprinkler Type").place(x = 0, y = 120)
+    tkinter.Label(frame3, text = "Sprinkler Type").place(x = 0, y = 85)
     dropField = ttk.OptionMenu(frame3, sprinkler_type, setdat['sprinkler_type'], *["Basic","Silver","Golden","Diamond","Saturator"],style='my.TMenubutton' )
-    dropField.place(width=90,x = 100, y = 120,height=24)
+    dropField.place(width=90,x = 100, y = 85,height=24)
 
-    tkinter.Label(frame3, text = "Slot").place(x = 205, y = 120)
+    tkinter.Label(frame3, text = "Slot").place(x = 205, y = 85)
     dropField = ttk.OptionMenu(frame3, sprinkler_slot, setdat['sprinkler_slot'], *[x+1 for x in range(6)],style='my.TMenubutton' )
-    dropField.place(width=60,x = 245, y = 120,height=24)
-    
+    dropField.place(width=60,x = 245, y = 85,height=24)
 
-    #tkinter.Label(frame3, text = "Width", bg = wbgc).place(x = 150, y = 120)
-    #wwatextbox = tkinter.Text(frame3, width = 5, height = 1)
-    #wwatextbox.insert("end",wwa)
-    #wwatextbox.place(x=200,y=122)
-    #tkinter.Label(frame3, text = "Height", bg = wbgc).place(x = 260, y = 120)
-    #whatextbox = tkinter.Text(frame3, width = 5, height = 1)
-    #whatextbox.insert("end",wha)
-    #whatextbox.place(x=310,y=122)
-    tkinter.Checkbutton(frame3, text="Enable Haste Compensation", variable=haste_compensation).place(x=0, y = 155)
-    tkinter.Checkbutton(frame3, text="Low Performance Haste Compensation", variable=low_performance_haste_compensation).place(x=210, y = 155)
-    #dropField = ttk.OptionMenu(frame3, display_type, setdat['display_type'], command = savedisplaytype, *["Built-in retina display","Built-in display"],style='my.TMenubutton' )
-    #dropField.place(width=160,x = 100, y = 155,height=24)
-    tkinter.Label(frame3, text = "Private Server Link (optional)").place(x = 0, y = 190)
-    linktextbox = tkinter.Text(frame3, width = 24, height = 1, bg= wbgc)
-    linktextbox.insert("end",private_server_link)
-    linktextbox.place(x=190,y=192)
-    
-    tkinter.Checkbutton(frame3, text="Enable Discord Bot", variable=enable_discord_bot).place(x=0, y = 225)
-    tkinter.Label(frame3, text = "Discord Bot Token").place(x = 170, y = 226)
-    tokentextbox = tkinter.Text(frame3, width = 24, height = 1, bg= wbgc)
-    tokentextbox.insert("end",discord_bot_token)
-    tokentextbox.place(x = 300, y=228)
-    
-    tkinter.Label(frame3, text = "Slot").place(x = 205, y = 120)
-    dropField = ttk.OptionMenu(frame3, sprinkler_slot, setdat['sprinkler_slot'], *[x+1 for x in range(6)],style='my.TMenubutton' )
-    dropField.place(width=60,x = 245, y = 120,height=24)
+    tkinter.Checkbutton(frame3, text="Enable Haste Compensation", variable=haste_compensation).place(x=0, y = 120)
+    tkinter.Checkbutton(frame3, text="Low Performance Haste Compensation", variable=low_performance_haste_compensation).place(x=210, y = 120)
 
-    tkinter.Checkbutton(frame3, text="Rejoin every", variable=rejoin_every_enabled).place(x=0, y = 260)
-    rejoinetextbox = tkinter.Text(frame3, width = 4, height = 1, bg= wbgc)
-    rejoinetextbox.insert("end",rejoin_every)
-    rejoinetextbox.place(x=104,y=263)
-    tkinter.Label(frame3, text = "hours").place(x = 140, y = 260)
 
-    tkinter.Label(frame3, text = "Wait for").place(x = 0, y = 290)
-    rejoindelaytextbox = tkinter.Text(frame3, width = 4, height = 1, bg= wbgc)
-    rejoindelaytextbox.insert("end",rejoin_delay)
-    rejoindelaytextbox.place(x=55,y=293)
-    tkinter.Label(frame3, text = "secs when rejoining").place(x = 90, y = 290)
-    
     #Tab 6
+    tkinter.Checkbutton(frame7, text="Enable Discord Webhook", command = disabledw,variable=enable_discord_webhook).place(x=0, y = 15)
+    tkinter.Label(frame7, text = "Discord Webhook Link").place(x = 350, y = 15)
+    urltextbox = tkinter.Text(frame7, width = 24, height = 1, yscrollcommand = True, bg= wbgc)
+    urltextbox.insert("end",discord_webhook_url)
+    sendss = tkinter.Checkbutton(frame7, text="Send screenshots", variable=send_screenshot)
+    sendss.place(x=200, y = 15)
+    urltextbox.place(x = 500, y=17)
+    
+    tkinter.Label(frame7, text = "Private Server Link (optional)").place(x = 0, y = 85)
+    linktextbox = tkinter.Text(frame7, width = 24, height = 1, bg= wbgc)
+    linktextbox.insert("end",private_server_link)
+    linktextbox.place(x=190,y=87)
+    
+    tkinter.Checkbutton(frame7, text="Enable Discord Bot", variable=enable_discord_bot).place(x=0, y = 50)
+    tkinter.Label(frame7, text = "Discord Bot Token").place(x = 170, y = 50)
+    tokentextbox = tkinter.Text(frame7, width = 24, height = 1, bg= wbgc)
+    tokentextbox.insert("end",discord_bot_token)
+    tokentextbox.place(x = 300, y=52)
+    
+
+    tkinter.Checkbutton(frame7, text="Rejoin every", variable=rejoin_every_enabled).place(x=0, y = 120)
+    rejoinetextbox = tkinter.Text(frame7, width = 4, height = 1, bg= wbgc)
+    rejoinetextbox.insert("end",rejoin_every)
+    rejoinetextbox.place(x=104,y=123)
+    tkinter.Label(frame7, text = "hours").place(x = 140, y = 120)
+
+    tkinter.Label(frame7, text = "Wait for").place(x = 0, y = 155)
+    rejoindelaytextbox = tkinter.Text(frame7, width = 4, height = 1, bg= wbgc)
+    rejoindelaytextbox.insert("end",rejoin_delay)
+    rejoindelaytextbox.place(x=55,y=158)
+    tkinter.Label(frame7, text = "secs when rejoining").place(x = 90, y = 155)
+    
+    #Tab 7
     ttk.Button(frame5, text = "Calibrate Hive", command = calibratehive, width = 10).place(x=0,y=13)
     tkinter.Checkbutton(frame5, text="Reverse Hive Direction", variable=reverse_hive_direction).place(x=140, y = 15)
     tkinter.Label(frame5, text = "Screenshot multiplier").place(x = 0, y = 50)

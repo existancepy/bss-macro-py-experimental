@@ -6,6 +6,11 @@ import imagesearch
 from webhook import webhook
 import loadsettings
 from delay import sleep
+from pynput.mouse import Button, Controller
+from pynput.keyboard import Key
+import pynput.keyboard
+keyboard = pynput.keyboard.Controller()
+mouse = Controller()
 savedata = {}
 mw,mh = pag.size()
 def loadSave():
@@ -28,46 +33,51 @@ def reset():
     loadSave()
     for i in range(2):
         webhook("","Resetting character, Attempt: {}".format(i+1),"dark brown")
-        pag.moveTo(mw/(xsm*4.11),mh/(9*ysm))
+        mouse.position = (mw/(xsm*4.11),mh/(9*ysm))
         ww = savedata["ww"]
         wh = savedata["wh"]
         xo = ww//4
         yo = wh//4*3
         xt = xo*3-xo
         yt = wh-yo
-        time.sleep(2)
+        time.sleep(0.5)
         pag.press('esc')
+        keyboard.press('r')
+        keyboard.release('r')
         time.sleep(0.1)
-        pag.press('r')
-        time.sleep(0.2)
         pag.press('enter')
         sleep(8.5)
         for _ in range(4):
-            pag.press('pgup')
+            keyboard.press(Key.page_up)
+            keyboard.release(Key.page_up)
         time.sleep(0.1)
         for _ in range(6):
-            pag.press('o')
+            keyboard.press('o')
+            keyboard.release('o')
+            time.sleep(0.03)
         #im = pag.screenshot(region = (xo,yo,xt,yt))
         #im.save('a.png')
-
-        time.sleep(0.4)
         for _ in range(4):
             r = imagesearch.find("hive1.png",ths, xo, yo, xt, yt)
             if r:
                 time.sleep(0.1)
                 if not rhd:
                     for _ in range(4):
-                        pag.press(".")
+                        keyboard.press(',')
+                        keyboard.release(',')
 
                 time.sleep(0.1)
                 for _ in range(4):
-                    pag.press('pgdn')
+                    keyboard.press(Key.page_down)
+                    keyboard.release(Key.page_down)
                 return
             for _ in range(4):
-                pag.press(",")
+                keyboard.press(',')
+                keyboard.release(',')
             
             time.sleep(0.5)
         time.sleep(1)
+    '''
     for _ in range(4):
         pag.press(",")
     webhook("","Cannot find hive. Now undergoing threshold method.","dark brown",1)
@@ -139,6 +149,7 @@ def reset():
         time.sleep(1)
     for _ in range(4):
         pag.press(",")
+    '''
     return False
     webhook("Notice","Hive not found. Assume that player is facing the right direction","red",1)
 

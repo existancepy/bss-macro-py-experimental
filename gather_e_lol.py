@@ -17,19 +17,19 @@ else:
     size = 2
 
 
-move.hold("w",0.5*size)
-move.hold("a",abs(0.05*(width)*width*2))
-for _ in range(width):
-    move.hold("s",0.5*size)
-    move.hold("d",0.05*(width))
-    move.hold("w",0.5*size)
-    move.hold("d",0.05*(width))
 move.hold("s",0.5*size)
 move.hold("a",abs(0.05*(width)*width*2))
 for _ in range(width):
     move.hold("w",0.5*size)
     move.hold("d",0.05*(width))
     move.hold("s",0.5*size)
+    move.hold("d",0.05*(width))
+move.hold("w",0.5*size)
+move.hold("a",abs(0.05*(width)*width*2))
+for _ in range(width):
+    move.hold("s",0.5*size)
+    move.hold("d",0.05*(width))
+    move.hold("w",0.5*size)
     move.hold("d",0.05*(width))
 
 
