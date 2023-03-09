@@ -28,7 +28,9 @@ import random
 from matplotlib.colors import from_levels_and_colors
 from matplotlib.collections import LineCollection
 import math
-import easyocr
+from pynput.keyboard import Key, Controller
+keyboard = Controller()
+#import easyocr
 def roblox():
     cmd = """
     osascript -e 'activate application "Roblox"' 
@@ -47,28 +49,19 @@ def loadRes():
         outdict[l[0]] = l[1]
     return outdict
 
-roblox()
+#roblox()
 savedata = loadRes()
 ww = savedata['ww']
 wh = savedata['wh']
 
 setdat = loadsettings.load()
-sizeword = setdat["gather_size"]
-width = setdat["gather_width"]/2
-size = 0
-if sizeword.lower() == "s":
-    size = 0.5
-elif sizeword.lower() == "m":
-    size =1
-else:
-    size = 1.5
-
-for i in range(3):
-    move.hold("w",0.4*(size+i/1.5))
-    move.hold("d",0.4*(size+i/1.5))
-    move.hold("s",0.4*(size+i/1.5))
-    move.hold("a",0.4*(size+i/1.5))
-
+webbrowser.open("https://docs.python.org/3/library/webbrowser.html", autoraise=True)
+time.sleep(3)
+with keyboard.pressed(Key.cmd):
+    keyboard.press('t')
+    keyboard.release('t')
+keyboard.type('https://www.roblox.com/games/1537690962?privateServerLinkCode=64535321583315094153619383608105')
+keyboard.press(Key.enter)
 '''
 
 times = []

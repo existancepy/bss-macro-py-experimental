@@ -57,3 +57,4 @@ prev_honey:2772176967100
 start_time:1677924773.17571
 canon_time:1.0
 reverse_hive_direction:0
+manual_fullscreen:0

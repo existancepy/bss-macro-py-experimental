@@ -2,9 +2,9 @@
 paper:0
 ticket:0
 plastic:0
-candy:1678082356.974588
-blueclay:1678082260.238803
-redclay:1678082303.951953
+candy:0
+blueclay:0
+redclay:0
 tacky:0
 pesticide:0
 heattreated:0

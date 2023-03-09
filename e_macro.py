@@ -35,12 +35,7 @@ except Exception as e:
     print("\033[0;31mThere is a import error here! Check out ImportError: dlopen in #common-fixes in the discord server or 'bugs and fixes' section in the github\033[00m")
     quit()
 
-try:
-    import easyocr
-except Exception as e:
-    print(e)
-    print("\033[0;31mEasyocr is most likely not installed. Run pip3 install easyocr to install it\033[00m")
-    quit()
+from ocrpy import imToString
 import sv_ttk
 import math
 import ast
@@ -56,9 +51,8 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.35"
+macrov = "1.36"
 planterInfo = loadsettings.planterInfo()
-reader = easyocr.Reader(['en'])
 mouse = Controller()
 keyboard = pynput.keyboard.Controller()
 
@@ -219,54 +213,7 @@ def savePlanterTimings(p):
         f.writelines(templist)
     f.close()
 
-def imToString(m):
-    savedata = loadRes()
-    ww = savedata['ww']
-    wh = savedata['wh']
-    ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
-    xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
-    ylm = loadsettings.load('multipliers.txt')['y_length_multiplier']
-    xlm = loadsettings.load('multipliers.txt')['x_length_multiplier']
-    # Path of tesseract executable
-    #pytesseract.pytesseract.tesseract_cmd ='**Path to tesseract executable**'
-    # ImageGrab-To capture the screen image in a loop. 
-    # Bbox used to capture a specific area.
-    if m == "bee bear":
-        cap = pag.screenshot(region=(ww//(3*xsm),wh//(20*ysm),ww//(3*xlm),wh//(7*ylm)))
-    elif m == "egg shop":
-        cap = pag.screenshot(region=(ww//(1.2*xsm),wh//(3*ysm),ww-ww//1.2,wh//5))
-    elif m == "ebutton":
-        cap = pag.screenshot(region=(ww//(2.65*xsm),wh//(20*ysm),ww//(21*xlm),wh//(17*ylm)))
-        result = reader.readtext(np.array(cap))
-        result = sorted(result, key = lambda x: x[2], reverse = True)
-        try:
-            return result[0][1]
-        except:
-            return ""
-    elif m == "honey":
-        cap = pag.screenshot(region=(ww//(3*xsm),0,ww//(6.5*xlm),wh//(ylm*25)))
-        result = [x[1] for x in reader.readtext(np.array(cap))]
-        honey = 0
-        for i in result:
-            if i[0].isdigit():
-                honey = i
-                break
-        try:
-            honey = int(''.join([x for x in honey if x.isdigit()]))
-            log(millify(honey))
-        except:
-            print(honey)
-        return honey
-    elif m == "disconnect":
-        cap = pag.screenshot(region=(ww//3,wh//2.8,ww//2.3,wh//2.5))
-    elif m == "dialog":
-        cap = pag.screenshot(region=(ww//(3*xsm),wh//(1.6*ysm),ww//(8*xlm),wh//(ylm*15)))
-        
-    result = reader.readtext(np.array(cap))
-    result = sorted(result, key = lambda x: x[2], reverse = True)
-    out = ''.join([x[1] for x in result])
-    log("OCR for {}\n\n{}".format(m,out))
-    return out
+
 
 def checkwithOCR(m):
     text = imToString(m).lower()
@@ -323,6 +270,7 @@ def hourlyReport(hourly=1):
         f.close()
         
         setdat = loadsettings.load()
+        log(honeyHist)
         if hourly == 0:
             setdat['prev_honey'] = honeyHist[-1]
         if honeyHist.count(honeyHist[0]) != len(honeyHist):
@@ -1059,10 +1007,12 @@ def collect(name,beesmas=0):
                 move.apkey("space")
                 time.sleep(1.5)
                 pag.keyUp("w")
-        if ebutton():
-            webhook("","Collected: {}".format(dispname),"bright green",1)
-            claimLoot =  1
-            break
+        for _ in range(2):
+            if ebutton():
+                webhook("","Collected: {}".format(dispname),"bright green",1)
+                claimLoot =  1
+                break
+        if claimLoot: break
         webhook("","Unable To Collect: {}".format(dispname),"dark brown",1)
         reset.reset()
     savetimings(usename)
@@ -1104,18 +1054,27 @@ async def asyncRejoin():
                     """
                 os.system(cmd)
                 await asyncio.sleep(3)
+        link  = ""
         if setdat["private_server_link"]:
-            webbrowser.open(setdat['private_server_link'])
+            link = setdat['private_server_link']
         else:
-            webbrowser.open('https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129')
+            link = 'https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129'
+
+        webbrowser.open("https://docs.python.org/3/library/webbrowser.html", autoraise=True)
+        await asyncio.sleep(1)
+        with keyboard.pressed(Key.cmd):
+            keyboard.press('t')
+            keyboard.release('t')
+        keyboard.type(link)
+        keyboard.press(Key.enter)
+        if not setdat['private_server_link']:
             await asyncio.sleep(10)
-                
         await asyncio.sleep(setdat['rejoin_delay']*(i+1))
         cmd = """
             osascript -e 'activate application "Roblox"' 
         """
         os.system(cmd)
-        '''
+        
         await asyncio.sleep(0.5)
         keyboard.press(Key.cmd)
         await asyncio.sleep(0.05)
@@ -1126,7 +1085,7 @@ async def asyncRejoin():
         keyboard.release(Key.cmd)
         keyboard.release(Key.ctrl)
         keyboard.release("f")
-        '''
+        
         await asyncio.sleep(2)
         pag.keyDown("w")
         await asyncio.sleep(5)
@@ -1356,7 +1315,14 @@ async def asyncRejoin():
         webhook("",'Rejoin unsuccessful, attempt 2','dark brown')
     
 
-
+def openRoblox(link):
+    webbrowser.open("https://docs.python.org/3/library/webbrowser.html", autoraise=True)
+    time.sleep(3)
+    with keyboard.pressed(Key.cmd):
+        keyboard.press('t')
+        keyboard.release('t')
+    keyboard.type(link)
+    keyboard.press(Key.enter)
     
 def rejoin():
     setdat = loadsettings.load()
@@ -1377,9 +1343,9 @@ def rejoin():
                 os.system(cmd)
                 time.sleep(3)
         if setdat["private_server_link"]:
-            webbrowser.open(setdat['private_server_link'])
+            openRoblox(setdat["private_server_link"])
         else:
-            webbrowser.open('https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129')
+            openRoblox('https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129')
             time.sleep(10)
                 
         time.sleep(setdat['rejoin_delay']*(i+1))
@@ -1389,7 +1355,8 @@ def rejoin():
         
         os.system(cmd)
         time.sleep(1)
-        #fullscreen()
+        if setdat['manual_fullscreen']:
+            fullscreen()
         time.sleep(2)
         move.hold("w",5)
         move.hold("s",0.6)
@@ -1571,12 +1538,14 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
         """
     savetimings('rejoin_every')
     os.system(cmd)
+    continuePlanters = 0
     if session_start:
         log("Session Start")
         rawreset()
         currHoney = imToString('honey')
         loadsettings.save('start_honey',currHoney)
         loadsettings.save('prev_honey',currHoney)
+        continuePlanters = 1
     reset.reset()
     convert()
     savedata = loadRes()
@@ -1584,7 +1553,6 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
     ww = savedata['ww']
     wh = savedata['wh']
     gfid = 0
-    continuePlanters = 0
     if planterset['enable_planters']:
         with open("planterdata.txt","r") as f:
             lines = f.read().split("\n")
@@ -1593,8 +1561,8 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
         print(occupiedStuff)
         planterTypes = ast.literal_eval(lines[1])
         planterFields = ast.literal_eval(lines[2])
-        if planterTypes == planterTypes_prev and planterFields == planterFields_prev:
-            continuePlanters = 1
+        #if planterTypes == planterTypes_prev and planterFields == planterFields_prev:
+            #continuePlanters = 1
         maxPlanters = planterset['planter_count']
         if len(planterTypes) < maxPlanters:
             maxPlanters = len(planterTypes)
@@ -1719,7 +1687,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
                     if time.time() - planterTimes[currPlanter] > growTime*60*60:
                         collectAnyPlanters += 1
                         time.sleep(2)
-                        for i in range(3):
+                        for i in range(2):
                             goToPlanter(currField)
                             webhook('',"Traveling: {} ({})\nObjective: Collect Planter, Attempt: {}".format(displayPlanterName(currPlanter),currField.title(),i+1),"dark brown")
                             if ebutton():
@@ -1744,6 +1712,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
                                 break
                             else:
                                 webhook("","Cant find Planter","red",1)
+                                reset.reset()
                     else:
                         occupiedFields.append(currField)
                 if collectAnyPlanters > 0 and planterFields == cycleFields:
@@ -1889,6 +1858,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
                 mouse.release(Button.left)
             time.sleep(0.5)
             gat.value = 0
+            bpcap.value = 0
             cf.value = ""
             if setdat["before_gather_turn"] == "left":
                 for _ in range(setdat["turn_times"]):
@@ -2089,6 +2059,7 @@ if __name__ == "__main__":
     rejoin_every_enabled = tk.IntVar(value=setdat["rejoin_every_enabled"])
     rejoin_every = setdat['rejoin_every']
     rejoin_delay = setdat['rejoin_delay']
+    manual_fullscreen = tk.IntVar(value=setdat['manual_fullscreen'])
     
     wealthclock = tk.IntVar(value=setdat["wealthclock"])
     blueberrydispenser = tk.IntVar(value=setdat["blueberrydispenser"])
@@ -2416,6 +2387,7 @@ if __name__ == "__main__":
             "rejoin_every_enabled": rejoin_every_enabled.get(),
             "rejoin_every": rejoinetextbox.get(1.0,"end").replace("\n",""),
             "rejoin_delay": rejoindelaytextbox.get(1.0,"end").replace("\n",""),
+            "manual_fullscreen": manual_fullscreen.get(),
             
             "gather_enable": gather_enable.get(),
             "gather_field": [gather_field_one.get(),gather_field_two.get(),gather_field_three.get()],
@@ -2873,6 +2845,7 @@ if __name__ == "__main__":
     rejoindelaytextbox.insert("end",rejoin_delay)
     rejoindelaytextbox.place(x=55,y=158)
     tkinter.Label(frame7, text = "secs when rejoining").place(x = 90, y = 155)
+    tkinter.Checkbutton(frame7, text="Manually fullscreen when rejoining (Enable when roblox doesnt launch in fullscreen)", variable=rejoin_every_enabled).place(x=0, y = 190)
     
     #Tab 7
     ttk.Button(frame5, text = "Calibrate Hive", command = calibratehive, width = 10).place(x=0,y=13)

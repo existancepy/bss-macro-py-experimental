@@ -1,5 +1,5 @@
 
-enable_planters:0
+enable_planters:1
 paper_planter:0
 ticket_planter:0
 plastic_planter:0
@@ -26,6 +26,6 @@ hydroponic_slot:None
 petal_slot:None
 plenty_slot:None
 festive_slot:None
-planter_fields:['bamboo', 'dandelion', 'mushroom', 'clover', 'pine tree', 'pepper', 'pineapple', 'spider', 'strawberry', 'coconut', 'stump', 'pumpkin', 'cactus']
+planter_fields:['bamboo', 'pine tree', 'stump']
 planter_count:3
-harvest:full
+harvest:1

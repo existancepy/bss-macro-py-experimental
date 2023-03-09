@@ -42,6 +42,7 @@ def reset():
         yt = wh-yo
         time.sleep(0.5)
         pag.press('esc')
+        time.sleep(0.1)
         keyboard.press('r')
         keyboard.release('r')
         time.sleep(0.1)
@@ -53,8 +54,8 @@ def reset():
         time.sleep(0.1)
         for _ in range(6):
             keyboard.press('o')
+            time.sleep(0.08)
             keyboard.release('o')
-            time.sleep(0.03)
         #im = pag.screenshot(region = (xo,yo,xt,yt))
         #im.save('a.png')
         for _ in range(4):
