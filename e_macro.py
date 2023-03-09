@@ -20,8 +20,7 @@ from logpy import log
 import logging
 import pynput
 from pynput.keyboard import Key
-from pynput.mouse import Button, Controller
-import pynput.mouse
+from pynput.mouse import Button
 try:
     import matplotlib.pyplot as plt
 except Exception as e:
@@ -51,9 +50,9 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.36"
+macrov = "1.36.1"
 planterInfo = loadsettings.planterInfo()
-mouse = Controller()
+mouse = pynput.mouse.Controller()
 keyboard = pynput.keyboard.Controller()
 
 if __name__ == '__main__':
@@ -752,7 +751,7 @@ def clickYes():
     ww = res['ww']
     wh = res['wh']
     setdat = loadsettings.load()
-    a = imagesearch.find("yes.png",0.5,0,0,ww,wh)
+    a = imagesearch.find("yes.png",0.2,0,0,ww,wh)
     if setdat['display_type'] == "built-in retina display":
         if a:
             mouse.position = (a[1]//2+urows//4,a[2]//2+ucols//4)
@@ -1538,14 +1537,14 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
         """
     savetimings('rejoin_every')
     os.system(cmd)
-    continuePlanters = 0
+    continuePlanters = 1
     if session_start:
         log("Session Start")
         rawreset()
         currHoney = imToString('honey')
         loadsettings.save('start_honey',currHoney)
         loadsettings.save('prev_honey',currHoney)
-        continuePlanters = 1
+        continuePlanters = 0
     reset.reset()
     convert()
     savedata = loadRes()
