@@ -9,10 +9,14 @@ from delay import sleep
 from pynput.mouse import Button, Controller
 from pynput.keyboard import Key
 import pynput.keyboard
+from pixelcolour import getPixelColor
+from logpy import log
 keyboard = pynput.keyboard.Controller()
 mouse = Controller()
 savedata = {}
 mw,mh = pag.size()
+tar =  (127, 108, 41)
+var = 20
 def loadSave():
     with open('save.txt') as f:
         lines = f.read().split("\n")
@@ -25,11 +29,11 @@ def loadSave():
 
 def reset():
     setdat = loadsettings.load()
-    ths = setdat["hivethreshold"]
+   
     rhd = setdat["reverse_hive_direction"]
     ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
     xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
-    print("ths is {}".format(ths))
+    
     loadSave()
     for i in range(2):
         webhook("","Resetting character, Attempt: {}".format(i+1),"dark brown")
@@ -59,8 +63,18 @@ def reset():
         #im = pag.screenshot(region = (xo,yo,xt,yt))
         #im.save('a.png')
         for _ in range(4):
-            r = imagesearch.find("hive1.png",ths, xo, yo, xt, yt)
-            if r:
+            #r = imagesearch.find("hive1.png",ths, xo, yo, xt, yt)
+            r = getPixelColor(ww//2,wh-2)
+            log(r)
+            passed = 1
+            for i in range(len(r)):
+                if tar[i]-var <= r[i] <= tar[i]+var:
+                    pass
+                else:
+                    passed = 0
+                    break
+                
+            if passed:
                 time.sleep(0.1)
                 if not rhd:
                     for _ in range(4):
@@ -155,7 +169,7 @@ def reset():
     webhook("Notice","Hive not found. Assume that player is facing the right direction","red",1)
 
 def resetCheck():
-    ths = loadsettings.load()["hivethreshold"]
+    
     loadSave()
     ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
     xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
@@ -185,8 +199,16 @@ def resetCheck():
 
         time.sleep(0.4)
         for _ in range(4):
-            r = imagesearch.find("hive1.png",ths, xo, yo, xt, yt)
-            if r:
+            r = getPixelColor(ww//2,wh-2)
+            passed = 1
+            for i in range(len(r)):
+                if tar[i]-var <= r[i] <= tar[i]+var:
+                    pass
+                else:
+                    passed = 0
+                    break
+                
+            if passed:
                 time.sleep(0.1)
                 for _ in range(4):
                     pag.press(".")

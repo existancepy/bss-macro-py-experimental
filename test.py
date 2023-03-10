@@ -21,7 +21,6 @@ import reset
 import _darwinmouse as mouse
 import ast
 import getHaste
-import pytesseract
 from datetime import datetime
 import matplotlib.pyplot as plt
 import random
@@ -29,7 +28,14 @@ from matplotlib.colors import from_levels_and_colors
 from matplotlib.collections import LineCollection
 import math
 from pynput.keyboard import Key, Controller
+import pynput
+from pynput.mouse import Button
+import Quartz.CoreGraphics as CG
+import struct
+import reset
+from ocrpy import customOCR
 keyboard = Controller()
+mouse = pynput.mouse.Controller()
 #import easyocr
 def roblox():
     cmd = """
@@ -49,19 +55,69 @@ def loadRes():
         outdict[l[0]] = l[1]
     return outdict
 
-#roblox()
+roblox()
 savedata = loadRes()
 ww = savedata['ww']
 wh = savedata['wh']
 
-setdat = loadsettings.load()
-webbrowser.open("https://docs.python.org/3/library/webbrowser.html", autoraise=True)
-time.sleep(3)
-with keyboard.pressed(Key.cmd):
-    keyboard.press('t')
-    keyboard.release('t')
-keyboard.type('https://www.roblox.com/games/1537690962?privateServerLinkCode=64535321583315094153619383608105')
-keyboard.press(Key.enter)
+
+def openSettings():
+    savedat = loadRes()
+    mw, mh = pag.size()
+    ww = savedat['ww']
+    wh = savedat['wh']
+    ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
+    xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
+    
+    promoCode = ''.join([x[1] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
+    if not "code" in promoCode:
+        mouse.position = (mw/5.5*xsm, mh/8.4*ysm)
+        mouse.click(Button.left, 1)
+        promoCode = ''.join([x[1] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
+        if not "code" in promoCode:
+            mouse.click(Button.left, 1)
+    mouse.position = (mw/5, mh/3)
+    time.sleep(1)
+    for _ in range(5):
+        pag.scroll(-10000)
+    time.sleep(0.5)
+    for _ in range(2):
+        pag.scroll(200)
+    pag.scroll(100)
+    for _ in range(10):
+        statData = customOCR(0,wh/7,ww/7,wh/2)
+        statNames = ''.join([x[1] for x in statData]).lower()
+        if 'speed'in statNames:
+            break
+        pag.scroll(200)
+    else:
+        return
+    time.sleep(1)
+    check = customOCR(0,0,ww/7,wh)
+    for i, e in enumerate(check):
+        if 'speed' in e[1]:
+            movespeedInfo = e
+    print(movespeedInfo)
+    coords = movespeedInfo[0]
+    start,_,end,_ = coords
+    x,y, = start[0],start[1]-20
+    h = end[1] - y+40
+    
+    im = pag.screenshot(region=(ww/8,y,ww/8,h))
+    im.save('test.png')
+    loadsettings.save("msh",h,"multipliers.txt")
+    loadsettings.save("msy",y,"multipliers.txt")
+
+def getHaste():
+    msh = loadsettings.load('multipliers.txt')['msh']
+    msy = loadsettings.load('multipliers.txt')['msy']
+    text = ''.join(x[1] for x in customOCR(ww/8,msy,ww/8,msh))
+    print(text)
+    
+openSettings()
+getHaste()
+#im = pag.screenshot(region=(0,wh/7,ww/7,wh/1.3))
+#im.save('test.png')
 '''
 
 times = []

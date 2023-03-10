@@ -34,7 +34,7 @@ except Exception as e:
     print("\033[0;31mThere is a import error here! Check out ImportError: dlopen in #common-fixes in the discord server or 'bugs and fixes' section in the github\033[00m")
     quit()
 
-from ocrpy import imToString
+from ocrpy import imToString,customOCR
 import sv_ttk
 import math
 import ast
@@ -50,7 +50,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.36.1"
+macrov = "1.36.2"
 planterInfo = loadsettings.planterInfo()
 mouse = pynput.mouse.Controller()
 keyboard = pynput.keyboard.Controller()
@@ -272,6 +272,10 @@ def hourlyReport(hourly=1):
         log(honeyHist)
         if hourly == 0:
             setdat['prev_honey'] = honeyHist[-1]
+        digitCounts = []
+        for i, e in enumerate(honeyHist[:]):
+            if len(str(e)) <= 4:
+                honeyHist.pop(i)
         if honeyHist.count(honeyHist[0]) != len(honeyHist):
             for i, e in reversed(list(enumerate(honeyHist[:]))):
                 if e != setdat['prev_honey']:
@@ -376,7 +380,6 @@ def hourlyReport(hourly=1):
         ax2.plot(xvals, honeyHist[1:],color="#BB86FC")
         #ax2.fill_between(xvals, setdat['start_honey'], honeyHist[1:])
         '''
-        log(honeyHist)
         plt.grid(alpha=0.08)
         plt.savefig("hourlyReport.png", bbox_inches='tight')    
         c = Image.open("hourlyReport.png")
@@ -820,16 +823,16 @@ def fieldDriftCompensation():
         result = cv2.matchTemplate(sat_image, large_image, method)
         mn,_,mnLoc,_ = cv2.minMaxLoc(result)
         x,y = mnLoc
-        if mn < 0.07:
+        if mn < 0.075:
             if x >= winLeft and x <= winRight and y >= winUp and y <= winDown: break
             if x < winLeft:
-                move.hold("a",0.2)
+                move.hold("a",0.25)
             elif x > winRight:
-                move.hold("d",0.2)
+                move.hold("d",0.25)
             if y < winUp:
-                move.hold("w",0.2)
+                move.hold("w",0.25)
             elif y > winDown:
-                move.hold("s",0.2)
+                move.hold("s",0.25)
         else:
             break
 
@@ -1058,14 +1061,17 @@ async def asyncRejoin():
             link = setdat['private_server_link']
         else:
             link = 'https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129'
-
-        webbrowser.open("https://docs.python.org/3/library/webbrowser.html", autoraise=True)
-        await asyncio.sleep(1)
-        with keyboard.pressed(Key.cmd):
-            keyboard.press('t')
-            keyboard.release('t')
-        keyboard.type(link)
-        keyboard.press(Key.enter)
+        rm = loadsettings.load()['rejoin_method']
+        if rm == "new tab":
+            webbrowser.open("https://docs.python.org/3/library/webbrowser.html", autoraise=True)
+            await asyncio.sleep(1)
+            with keyboard.pressed(Key.cmd):
+                keyboard.press('t')
+                keyboard.release('t')
+            keyboard.type(link)
+            keyboard.press(Key.enter)
+        else:
+            webbrowser.open(link)
         if not setdat['private_server_link']:
             await asyncio.sleep(10)
         await asyncio.sleep(setdat['rejoin_delay']*(i+1))
@@ -1315,13 +1321,17 @@ async def asyncRejoin():
     
 
 def openRoblox(link):
-    webbrowser.open("https://docs.python.org/3/library/webbrowser.html", autoraise=True)
-    time.sleep(3)
-    with keyboard.pressed(Key.cmd):
-        keyboard.press('t')
-        keyboard.release('t')
-    keyboard.type(link)
-    keyboard.press(Key.enter)
+    rm = loadsettings.load()['rejoin_method']
+    if rm == "new tab":
+        webbrowser.open("https://docs.python.org/3/library/webbrowser.html", autoraise=True)
+        time.sleep(3)
+        with keyboard.pressed(Key.cmd):
+            keyboard.press('t')
+            keyboard.release('t')
+        keyboard.type(link)
+        keyboard.press(Key.enter)
+    else:
+        webbrowser.open(link)
     
 def rejoin():
     setdat = loadsettings.load()
@@ -1538,13 +1548,19 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
     savetimings('rejoin_every')
     os.system(cmd)
     continuePlanters = 1
+    with open('firstRun.txt', 'r') as f:
+        if int(f.read()) == 1:
+            continuePlanters = 0
+    f.close()
+    with open('firstRun.txt', 'w') as f:
+        f.write("0")
+    f.close()
     if session_start:
         log("Session Start")
         rawreset()
         currHoney = imToString('honey')
         loadsettings.save('start_honey',currHoney)
         loadsettings.save('prev_honey',currHoney)
-        continuePlanters = 0
     reset.reset()
     convert()
     savedata = loadRes()
@@ -1897,7 +1913,9 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
                 if setdat["gather_field"][gfid].lower() == "none":
                     gfid += 1
                 else: break
-                
+        else:
+            mouse.click(Button.left, 1)
+        
 
             
 
@@ -1945,6 +1963,9 @@ def setResolution():
 if __name__ == "__main__":
     with open('macroLogs.log', 'w'):
         pass
+    with open('firstRun.txt', 'w') as f:
+        f.write("1")
+    f.close()
     cmd = 'defaults read -g AppleInterfaceStyle'
     p = bool(subprocess.Popen(cmd, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, shell=True).communicate()[0])
@@ -1958,6 +1979,7 @@ if __name__ == "__main__":
     setResolution()
     loadSave()
     plantdat = loadsettings.planterLoad()
+    firstRun = 1
     ww = savedata["ww"]
     wh = savedata["wh"]
     root = tk.Tk(className='exih_macro')
@@ -2058,6 +2080,8 @@ if __name__ == "__main__":
     rejoin_every_enabled = tk.IntVar(value=setdat["rejoin_every_enabled"])
     rejoin_every = setdat['rejoin_every']
     rejoin_delay = setdat['rejoin_delay']
+    rejoin_method = tk.StringVar(root)
+    rejoin_method.set(setdat['rejoin_method'])
     manual_fullscreen = tk.IntVar(value=setdat['manual_fullscreen'])
     
     wealthclock = tk.IntVar(value=setdat["wealthclock"])
@@ -2386,6 +2410,7 @@ if __name__ == "__main__":
             "rejoin_every_enabled": rejoin_every_enabled.get(),
             "rejoin_every": rejoinetextbox.get(1.0,"end").replace("\n",""),
             "rejoin_delay": rejoindelaytextbox.get(1.0,"end").replace("\n",""),
+            "rejoin_method": rejoin_method.get(),
             "manual_fullscreen": manual_fullscreen.get(),
             
             "gather_enable": gather_enable.get(),
@@ -2425,7 +2450,6 @@ if __name__ == "__main__":
             "lid_art":lid_art.get(),
             "candles": candles.get(),
 
-            "hivethreshold":setdat['hivethreshold'],
             "start_honey":0,
             "prev_honey":0,
             "start_time":time.time(),
@@ -2538,7 +2562,7 @@ if __name__ == "__main__":
                 planterTypes_prev, planterFields_prev = planterTypes_set, planterFields_set
                 
                             
-            
+        '''
         if int(setdict['hivethreshold']) == 1:
             window = tk.Toplevel() 
             label = tk.Label(window,text="You have not calibrated your macro yet. Do you want to calibrate it automatically?")
@@ -2547,9 +2571,10 @@ if __name__ == "__main__":
             label.grid(row=0, column=0, columnspan=2)
             button_yes.grid(row=1, column=0)
             button_no.grid(row=1, column=1)
+        
         else:
-            macro()
-            pass
+        '''
+        macro()
     
     def macro():
         webhook("Macro started","exih_macro {}".format(macrov),"dark brown")
@@ -2845,6 +2870,9 @@ if __name__ == "__main__":
     rejoindelaytextbox.place(x=55,y=158)
     tkinter.Label(frame7, text = "secs when rejoining").place(x = 90, y = 155)
     tkinter.Checkbutton(frame7, text="Manually fullscreen when rejoining (Enable when roblox doesnt launch in fullscreen)", variable=rejoin_every_enabled).place(x=0, y = 190)
+    tkinter.Label(frame7, text = "Rejoin method").place(x = 250, y = 155)
+    dropField = ttk.OptionMenu(frame7, rejoin_method, setdat['rejoin_method'], *["New Tab","Type In Link"],style='my.TMenubutton' )
+    dropField.place(width=90,x = 360, y = 155,height=24)
     
     #Tab 7
     ttk.Button(frame5, text = "Calibrate Hive", command = calibratehive, width = 10).place(x=0,y=13)

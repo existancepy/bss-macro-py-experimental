@@ -64,3 +64,12 @@ def imToString(m):
     out = ''.join([x[1] for x in result])
     log("OCR for {}\n\n{}".format(m,out))
     return out
+def customOCR(X1,Y1,W1,H1):
+    ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
+    xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
+    ylm = loadsettings.load('multipliers.txt')['y_length_multiplier']
+    xlm = loadsettings.load('multipliers.txt')['x_length_multiplier']
+    cap = pag.screenshot(region=(X1*xsm,Y1*ysm,W1*xlm,H1*ylm))
+    out = reader.readtext(np.array(cap))
+    log("OCR for Custom\n{}".format(out))
+    return out
