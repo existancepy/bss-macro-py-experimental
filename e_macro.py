@@ -40,7 +40,6 @@ import math
 import ast
 import calibrate_hive
 from datetime import datetime
-from getHaste import getHaste, getHastelp
 
 savedata = {}
 ww = ""
@@ -78,6 +77,10 @@ def boolToInt(condition):
 def is_running(app):
     tmp = os.popen("ps -Af").read()
     return app in tmp[:]
+def pagmove(k,t):
+    pag.keyDown(k)
+    time.sleep(t)
+    pag.keyUp(k)
 def fullscreen():
     keyboard.press(Key.cmd)
     time.sleep(0.05)
@@ -157,6 +160,7 @@ def loadSave():
         if l[1].isdigit():
             l[1] = int(l[1])
         savedata[l[0]] = l[1]
+
 def loadRes():
     outdict =  {}
     with open('save.txt') as f:
@@ -252,6 +256,28 @@ def ebutton(pagmode=0):
     ocrval = ''.join([x for x in list(imToString('ebutton').strip()) if x.isalpha()])
     log(ocrval)
     return ocrval == "E"
+def detectNight():
+    savedat = loadRes()
+    ww = savedat['ww']
+    wh = savedat['wh']
+    ylm = loadsettings.load('multipliers.txt')['y_length_multiplier']
+    xlm = loadsettings.load('multipliers.txt')['x_length_multiplier']
+    screen = np.array(pag.screenshot(region=(0,0,round((ww/3.4)*xlm),round((wh/25)*ylm))))
+    w,h = screen.shape[:2]
+    rgb = screen[0,0][:3]
+    for x in range(w):
+        for y in range(h):
+            if list(screen[x,y][:3]) == [0,0,0]:
+                success = True
+                for x1 in range(5):
+                    for y1 in range(5):
+                        if not x1 < w and y1 < h:
+                            if screen[x1,y1][:3] != (0,0,0):
+                                success = False
+                if success:
+                    webhook("","Night Detected","green")
+                    return True
+    return False
 
 def millify(n):
     if not n: return 0
@@ -588,15 +614,15 @@ def moblootPattern(f,s,r,t):
         for _ in range(t):
             move.press(",")
     for i in range(2):
-        move.hold("w", 0.72*f)
-        move.hold("a", 0.25*s)
-        move.hold("s", 0.72*f)
-        move.hold("a", 0.25*s)
+        pagmove("w", 0.72*f)
+        pagmove("a", 0.1*s)
+        pagmove("s", 0.72*f)
+        pagmove("a", 0.1*s)
     for i in range(2):
-        move.hold("w", 0.72*f)
-        move.hold("d", 0.25*s)
-        move.hold("s", 0.72*f)
-        move.hold("d", 0.25*s)
+        pagmove("w", 0.72*f)
+        pagmove("d", 0.1*s)
+        pagmove("s", 0.72*f)
+        pagmove("d", 0.1*s)
     
 def resetMobTimer(cfield):
     if cfield:
@@ -814,8 +840,8 @@ def fieldDriftCompensation():
     wh = res["wh"]
     winUp = wh/2.1
     winDown = wh/1.8
-    winLeft = ww/2
-    winRight = ww/1.7
+    winLeft = ww/2.05
+    winRight = ww/1.8
     for _ in range(4):
         screen = np.array(ImageGrab.grab())
         screen = cv2.cvtColor(src=screen, code=cv2.COLOR_BGR2RGB)
@@ -826,13 +852,13 @@ def fieldDriftCompensation():
         if mn < 0.075:
             if x >= winLeft and x <= winRight and y >= winUp and y <= winDown: break
             if x < winLeft:
-                move.hold("a",0.25)
+                move.hold("a",0.32)
             elif x > winRight:
-                move.hold("d",0.25)
+                move.hold("d",0.32)
             if y < winUp:
-                move.hold("w",0.25)
+                move.hold("w",0.32)
             elif y > winDown:
-                move.hold("s",0.25)
+                move.hold("s",0.32)
         else:
             break
 
@@ -857,8 +883,8 @@ def background(cf,bpcap,gat,dc, rejoinval):
     while True:
         start_time = time.time()
         
-        r = imagesearch.find('disconnect.png',0.8,ww//3,wh//2.8,ww//2.3,wh//2.5)
-        if checkwithOCR("disconnect") or r:
+        #r = imagesearch.find('disconnect.png',0.7,ww//3,wh//2.8,ww//2.3,wh//2.5)
+        if checkwithOCR("disconnect"):
             dc.value = 1
             webhook("","Disconnected","red")
             rejoin()
@@ -867,23 +893,20 @@ def background(cf,bpcap,gat,dc, rejoinval):
         if gat.value:
             bpcap.value = backpack.bpc()
             resetMobTimer(cf.value.lower())
+            '''
             if imagesearch.find('died.png',0.8,ww//2,wh//2,ww,wh,1):
                 dc.value = 1
                 webhook("","Unexpected Death","red")
                 dc.value = 0
                 gat.value = 0
+            '''
+        '''
         if not is_running("Roblox") and dc.value == 0 and rejoinval == 0:
             dc.value = 1
             webhook("","Roblox unexpectedly closed","red")
             rejoin()
             dc.value = 0
-        if setdat['haste_compensation']:
-            if setdat['low_performance_haste_compensation']:
-                #getHastelp()
-                pass
-            else:
-                #getHaste()
-                pass
+        '''
         if setdat['rejoin_every_enabled']:
             with open('timings.txt', 'r') as f:
                 prevTime = float([x for x in f.read().split('\n') if x.startswith('rejoin_every')][0].split(":")[1])
@@ -948,6 +971,8 @@ def background(cf,bpcap,gat,dc, rejoinval):
                 honeyHist = [prev_honey]*60
                 prevHour = sysHour
                 #savehoney_history(honeyHist)
+        if setdat['enable_discord_webhook']:
+            detectNight()
         print(time.time()-start_time)
 
 def killMob(field,mob,reset):
@@ -1037,7 +1062,87 @@ def updateHive(h):
     global setdat
     webhook("","Found Hive: {}".format(h),"bright green")
     loadsettings.save('hive_number',h)
+    
+def openSettings():
+    savedat = loadRes()
+    mw, mh = pag.size()
+    ww = savedat['ww']
+    wh = savedat['wh']
+    ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
+    xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
+    webhook('','Opening Stats',"brown")
+    
+    promoCode = ''.join([x[1] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
+    if not "code" in promoCode:
+        mouse.position = (mw/5.5*xsm, mh/8.4*ysm)
+        mouse.click(Button.left, 1)
+        promoCode = ''.join([x[1] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
+        if not "code" in promoCode:
+            mouse.click(Button.left, 1)
+    mouse.position = (mw/5, mh/3)
+    time.sleep(1)
+    for _ in range(5):
+        pag.scroll(-10000)
+    time.sleep(0.5)
+    for _ in range(2):
+        pag.scroll(200)
+    pag.scroll(100)
+    for _ in range(10):
+        statData = customOCR(0,wh/7,ww/7,wh/2)
+        statNames = ''.join([x[1] for x in statData]).lower()
+        if 'speed'in statNames:
+            break
+        pag.scroll(200)
+    else:
+        return
+    time.sleep(1)
+    check = customOCR(0,0,ww/7,wh)
+    for i, e in enumerate(check):
+        if 'speed' in e[1]:
+            movespeedInfo = e
+    print(movespeedInfo)
+    coords = movespeedInfo[0]
+    start,_,end,_ = coords
+    x,y, = start[0],start[1]-20
+    h = end[1] - y+20
+    
+    im = pag.screenshot(region=(ww/8,y,ww/10,h))
+    im.save('test.png')
+    loadsettings.save("msh",h,"multipliers.txt")
+    loadsettings.save("msy",y,"multipliers.txt")
 
+
+def getHaste():
+    ws = float(loadsettings.load()['walkspeed'])
+    msh = loadsettings.load('multipliers.txt')['msh']
+    msy = loadsettings.load('multipliers.txt')['msy']
+    ww = loadRes()['ww']
+    ocr = customOCR(ww/8,msy,ww/10,msh)
+    print(ocr)
+    if not ocr:return
+    filtered = [x for x in ocr if "." in x[1] or x[1].replace("_","").replace(" ","").isdigit()]
+    if not filtered:return
+    text = filtered[0][1].replace(" ","")
+    if not text:return
+    num = ""
+    currms = ws
+    for i in text:
+        if i == "." or i.isdigit():
+            num += i
+    try:
+        num = float(num)
+        if num > ws:
+            with open("haste.txt","w") as f:
+                f.write(str(num))
+            f.close()
+            return
+    except Exception as e:
+        print(e)
+        pass
+    with open("haste.txt","w") as f:
+        f.write(str(ws))
+    f.close()
+    
 async def asyncRejoin():
     setdat = loadsettings.load()
     for i in range(2):
@@ -1323,15 +1428,17 @@ async def asyncRejoin():
 def openRoblox(link):
     rm = loadsettings.load()['rejoin_method']
     if rm == "new tab":
+        webbrowser.open(link)
+    else:
         webbrowser.open("https://docs.python.org/3/library/webbrowser.html", autoraise=True)
         time.sleep(3)
         with keyboard.pressed(Key.cmd):
             keyboard.press('t')
             keyboard.release('t')
+        time.sleep(1)
         keyboard.type(link)
+        time.sleep(0.5)
         keyboard.press(Key.enter)
-    else:
-        webbrowser.open(link)
     
 def rejoin():
     setdat = loadsettings.load()
@@ -1499,8 +1606,10 @@ def rejoin():
         
         if reset.resetCheck():
             webhook("","Rejoin successful","dark brown")
+            openSettings()
             break
         webhook("",'Rejoin unsuccessful, attempt 2','dark brown')
+        
     
 
     
@@ -1515,6 +1624,8 @@ updateSave("ww",ww)
 updateSave("wh",wh)
 '''
             
+    
+
 
 def placeSprinkler():
     sprinklerCount = {
@@ -1561,6 +1672,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
         currHoney = imToString('honey')
         loadsettings.save('start_honey',currHoney)
         loadsettings.save('prev_honey',currHoney)
+        openSettings()
     reset.reset()
     convert()
     savedata = loadRes()
@@ -1919,7 +2031,11 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
 
             
 
-    keyboard.Listener(on_press=on_press).start()
+def haste_comp():
+    while True:
+        getHaste()
+        time.sleep(1)
+        print('a')
 def setResolution():
     wwd = int(pag.size()[0])
     whd = int(pag.size()[1])
@@ -2575,7 +2691,6 @@ if __name__ == "__main__":
         else:
         '''
         macro()
-    
     def macro():
         webhook("Macro started","exih_macro {}".format(macrov),"dark brown")
         setdat = loadsettings.load()
@@ -2611,6 +2726,9 @@ if __name__ == "__main__":
                     startLoop_proc = multiprocessing.Process(target=startLoop,args=(currentfield,bpc,gather,disconnected,planterTypes_prev, planterFields_prev,0))
                     startLoop_proc.start()
                     rejoinval.value = 0
+                if setdat['haste_compensation']:
+                    getHaste()
+                    time.sleep(0.1)
                 #if keyboard.is_pressed('q'):
                     #raise KeyboardInterrupt
 
@@ -2869,9 +2987,9 @@ if __name__ == "__main__":
     rejoindelaytextbox.insert("end",rejoin_delay)
     rejoindelaytextbox.place(x=55,y=158)
     tkinter.Label(frame7, text = "secs when rejoining").place(x = 90, y = 155)
-    tkinter.Checkbutton(frame7, text="Manually fullscreen when rejoining (Enable when roblox doesnt launch in fullscreen)", variable=rejoin_every_enabled).place(x=0, y = 190)
+    tkinter.Checkbutton(frame7, text="Manually fullscreen when rejoining (Enable when roblox doesnt launch in fullscreen)", variable=manual_fullscreen).place(x=0, y = 190)
     tkinter.Label(frame7, text = "Rejoin method").place(x = 250, y = 155)
-    dropField = ttk.OptionMenu(frame7, rejoin_method, setdat['rejoin_method'], *["New Tab","Type In Link"],style='my.TMenubutton' )
+    dropField = ttk.OptionMenu(frame7, rejoin_method, setdat['rejoin_method'].title(), *["New Tab","Type In Link"],style='my.TMenubutton' )
     dropField.place(width=90,x = 360, y = 155,height=24)
     
     #Tab 7

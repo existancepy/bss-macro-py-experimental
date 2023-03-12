@@ -32,7 +32,7 @@ def acchold(key, duration):
 
 sideTime = 0
 frontTime = 0.45
-move.press(",")
+#move.press(",")
 acchold('a',0.3)
 for i in range(3):
     acchold("w", frontTime)

@@ -12,26 +12,26 @@ private_server_link:
 enable_discord_bot:0
 discord_bot_token:
 field_drift_compensation:1
-haste_compensation:0
+haste_compensation:1
 low_performance_haste_compensation:0
 rejoin_every_enabled:0
 rejoin_every:0
 rejoin_delay:50
-rejoin_method:New Tab
+rejoin_method:new tab
 manual_fullscreen:0
 gather_enable:1
 gather_field:['Pine Tree', 'None', 'None']
 gather_pattern:e_lol
-gather_size:M
+gather_size:m
 gather_width:3
 gather_time:15
 pack:95
-before_gather_turn:Right
+before_gather_turn:right
 turn_times:2
-return_to_hive:Reset
+return_to_hive:reset
 whirligig_slot:1
-start_location:Lower Right
-distance_from_center:2
+start_location:lower right
+distance_from_center:3
 stump_snail:0
 continue_after_stump_snail:0
 ladybug:0
@@ -45,16 +45,16 @@ blueberrydispenser:0
 strawberrydispenser:0
 royaljellydispenser:0
 treatdispenser:0
-stockings:1
+stockings:0
 feast:0
-samovar:1
+samovar:0
 wreath:0
 snow_machine:0
 mondo_buff:0
 lid_art:0
 candles:0
-start_honey:0
-prev_honey:0
-start_time:1678487175.976414
+start_honey:8022751155040
+prev_honey:8115109520026
+start_time:1678527882.004333
 canon_time:1.0
 reverse_hive_direction:0

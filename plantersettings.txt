@@ -1,5 +1,5 @@
 
-enable_planters:1
+enable_planters:0
 paper_planter:0
 ticket_planter:0
 plastic_planter:0

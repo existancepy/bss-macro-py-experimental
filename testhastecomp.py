@@ -33,7 +33,7 @@ from pynput.mouse import Button
 import Quartz.CoreGraphics as CG
 import struct
 import reset
-from pixelcolour import getPixelColor
+from ocrpy import customOCR
 keyboard = Controller()
 mouse = pynput.mouse.Controller()
 #import easyocr
@@ -60,59 +60,63 @@ savedata = loadRes()
 ww = savedata['ww']
 wh = savedata['wh']
 
-    
-roblox()
 
-def detectNight():
+def openSettings():
     savedat = loadRes()
+    mw, mh = pag.size()
     ww = savedat['ww']
     wh = savedat['wh']
-    ylm = loadsettings.load('multipliers.txt')['y_length_multiplier']
-    xlm = loadsettings.load('multipliers.txt')['x_length_multiplier']
-    screen = np.array(pag.screenshot(region=(0,0,round((ww/3.4)*xlm),round((wh/25)*ylm))))
-    w,h = screen.shape[:2]
-    rgb = screen[0,0][:3]
-    for x in range(w):
-        for y in range(h):
-            if list(screen[x,y][:3]) == [0,0,0]:
-                success = True
-                for x1 in range(5):
-                    for y1 in range(5):
-                        if not x1 < w and y1 < h:
-                            if screen[x1,y1][:3] != (0,0,0):
-                                success = False
-                if success:
-                    print("night detected")
-                    return
-                
-                    
-    '''
-    screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
-    small_image = cv2.imread('./images/general/nightsky.png')
-    large_image = screen
-    res = cv2.matchTemplate(small_image, large_image, method)
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    x,y = max_loc
-    print("Trying to find night sky. max_val is {} ".format(max_val))
-    MPx,MPy = min_loc
+    ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
+    xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
     
-    print(MPx,MPy)
-    pag.moveTo(MPx//2,MPy//2)
-    # Step 2: Get the size of the template. This is the same size as the match.
-    trows,tcols = small_image.shape[:2]
-    # Step 3: Draw the rectangle on large_image
-    cv2.rectangle(large_image, (MPx,MPy),(MPx+tcols,MPy+trows),(0,0,255),2)
-    # Display the original image with the rectangle around the match.
-    cv2.imshow('output',large_image)
-    # The image is only displayed if we call this
-    cv2.waitKey(0)
+    promoCode = ''.join([x[1] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
+    if not "code" in promoCode:
+        mouse.position = (mw/5.5*xsm, mh/8.4*ysm)
+        mouse.click(Button.left, 1)
+        promoCode = ''.join([x[1] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
+        if not "code" in promoCode:
+            mouse.click(Button.left, 1)
+    mouse.position = (mw/5, mh/3)
+    time.sleep(1)
+    for _ in range(5):
+        pag.scroll(-10000)
+    time.sleep(0.5)
+    for _ in range(2):
+        pag.scroll(200)
+    pag.scroll(100)
+    for _ in range(10):
+        statData = customOCR(0,wh/7,ww/7,wh/2)
+        statNames = ''.join([x[1] for x in statData]).lower()
+        if 'speed'in statNames:
+            break
+        pag.scroll(200)
+    else:
+        return
+    time.sleep(1)
+    check = customOCR(0,0,ww/7,wh)
+    for i, e in enumerate(check):
+        if 'speed' in e[1]:
+            movespeedInfo = e
+    print(movespeedInfo)
+    coords = movespeedInfo[0]
+    start,_,end,_ = coords
+    x,y, = start[0],start[1]-20
+    h = end[1] - y+40
+    
+    im = pag.screenshot(region=(ww/8,y,ww/10,h))
+    im.save('test.png')
+    loadsettings.save("msh",h,"multipliers.txt")
+    loadsettings.save("msy",y,"multipliers.txt")
 
-    if max_val >= 0.5:
-        return [1,x,y,max_val]
-    return
-    '''
-while True:  
-    detectNight()
+def getHaste():
+    msh = loadsettings.load('multipliers.txt')['msh']
+    msy = loadsettings.load('multipliers.txt')['msy']
+    text = customOCR(ww/8,msy,ww/10,msh)
+    print(text)
+    
+roblox()
+#im = pag.screenshot(region=(0,wh/7,ww/7,wh/1.3))
+#im.save('test.png')
 '''
 
 times = []

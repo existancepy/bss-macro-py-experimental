@@ -55,7 +55,7 @@ def imToString(m):
             print(honey)
         return honey
     elif m == "disconnect":
-        cap = pag.screenshot(region=(ww//3,wh//2.8,ww//2.3,wh//2.5))
+        cap = pag.screenshot(region=(ww//3,wh//2.8,ww//2.3,wh//5))
     elif m == "dialog":
         cap = pag.screenshot(region=(ww//(3*xsm),wh//(1.6*ysm),ww//(8*xlm),wh//(ylm*15)))
         

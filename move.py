@@ -61,8 +61,9 @@ def hold(k,t):
     except Exception as e:
         print(e)
         ws = loadsettings.load()['walkspeed']
+    print(ws)
     keyboard.press(k)
-    sleep(t*ws/28)
+    sleep(t*28/ws)
     keyboard.release(k)
 
 def press(k):
