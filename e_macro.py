@@ -544,31 +544,26 @@ def convert():
     savedata = loadRes()
     ww = savedata['ww']
     wh = savedata['wh']
-    setdat = loadsettings.load()
-    r = False
     for _ in range(2):
         r = ebutton()
-        if r: break
-        time.sleep(0.25)
-    if not r: return
-    move.press("e")
-    if setdat['stinger']:
-        move.press(",")
-    webhook("","Starting convert","brown",1)
-    st = time.perf_counter()
-    while True:
-        if stingerHunt(): return
-        c = ebutton()
-        if not c:
-            webhook("","Convert done","brown")
-            time.sleep(3)
+        if r:
+            move.press("e")
+            webhook("","Starting convert","brown",1)
+            st = time.perf_counter()
+            while True:
+                c = ebutton()
+                if not c:
+                    webhook("","Convert done","brown")
+                    time.sleep(3)
+                    break
+                if time.perf_counter()  - st > 600:
+                    webhook("","Converting took too long, moving on","brown")
+                    break
+            
             break
-        if time.perf_counter()  - st > 600:
-            webhook("","Converting took too long, moving on","brown")
-            break
-    if setdat['stinger']:
-        move.press(".")
-        
+        else:
+            time.sleep(0.25)
+    return
 def walk_to_hive(gfid):
     savedata = loadRes()
     ww = savedata['ww']
@@ -655,11 +650,7 @@ def resetMobTimer(cfield):
             if checkRespawn("rhinobeetle_blueflower","5m"):  savetimings("rhinobeetle_blueflower")
         elif cfield == "bamboo":
             if checkRespawn("rhinobeetle_bamboo","5m"):  savetimings("rhinobeetle_bamboo")
-def stingerHunt():
-    setdat = loadsettings.load()
-    if not setdat['stinger']: return False
-    if not detectNight(): return False
-            
+
 sat_image = cv2.imread('./images/retina/saturator.png')
 method = cv2.TM_SQDIFF_NORMED
 def displayPlanterName(planter):
@@ -984,10 +975,10 @@ def background(cf,bpcap,gat,dc, rejoinval):
             if setdat['enable_discord_webhook']:
                 detectNight()
             print(time.time()-start_time)
-        except Exception as err:
-            webhook("","An error has been caught in the background process. It can be found in either the terminal or the macroLogs.log file","red")
-            log(err)
-            print(err)
+        except Exception as e:
+            print(e)
+            log(e)
+
 def killMob(field,mob,reset):
     webhook("","Traveling: {} ({})".format(mob.title(),field.title()),"dark brown")
     convert()
@@ -2188,7 +2179,6 @@ if __name__ == "__main__":
     scorpion = tk.IntVar(value=setdat["scorpion"])
     spider = tk.IntVar(value=setdat["spider"])
     mantis = tk.IntVar(value=setdat["mantis"])
-    stinger = tk.IntVar(value=setdat["stinger"])
     gifted_vicious_bee = tk.IntVar(value=setdat["gifted_vicious_bee"])
     enable_discord_webhook = tk.IntVar(value=setdat["enable_discord_webhook"])
     discord_webhook_url= setdat["discord_webhook_url"]
@@ -2565,7 +2555,6 @@ if __name__ == "__main__":
             "scorpion": scorpion.get(),
             "werewolf": werewolf.get(),
             "mantis": mantis.get(),
-            "stinger": stinger.get(),
 
             "wealthclock": wealthclock.get(),
             "blueberrydispenser": blueberrydispenser.get(),
@@ -3035,7 +3024,6 @@ if __name__ == "__main__":
 
 
         
-
 
 
 
