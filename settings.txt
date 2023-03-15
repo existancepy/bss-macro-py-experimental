@@ -36,11 +36,11 @@ stump_snail:0
 continue_after_stump_snail:0
 ladybug:0
 rhinobeetle:0
-spider:1
+spider:0
 scorpion:0
 werewolf:0
 mantis:0
-wealthclock:1
+wealthclock:0
 blueberrydispenser:0
 strawberrydispenser:0
 royaljellydispenser:0
