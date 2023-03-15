@@ -1087,11 +1087,12 @@ def openSettings():
     
     promoCode = ''.join([x[1] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
     if not "code" in promoCode:
-        pag.write("\\")
-        for _ in range(15):
+        pag.typewrite("\\")
+        for _ in range(30):
             keyboard.press(Key.right)
             time.sleep(0.05)
             keyboard.release(Key.right)
+            time.sleep(0.1)
         for _ in range(15):
             keyboard.press(Key.left)
             time.sleep(0.05)
@@ -1121,13 +1122,13 @@ def openSettings():
         statData = customOCR(0,wh/7,ww/7,wh/2)
         statNames = ''.join([x[1] for x in statData]).lower()
         if 'speed'in statNames:
-            pag.write("\\")
+            pag.typewrite("\\")
             break
         keyboard.press(Key.page_up)
         time.sleep(0.02)
         keyboard.release(Key.page_up)
     else:
-        pag.write("\\")
+        pag.typewrite("\\")
         return
     time.sleep(0.3)
     check = customOCR(0,0,ww/7,wh)
