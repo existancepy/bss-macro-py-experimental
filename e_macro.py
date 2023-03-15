@@ -49,7 +49,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.36.4"
+macrov = "1.36.5"
 planterInfo = loadsettings.planterInfo()
 mouse = pynput.mouse.Controller()
 keyboard = pynput.keyboard.Controller()
@@ -544,26 +544,31 @@ def convert():
     savedata = loadRes()
     ww = savedata['ww']
     wh = savedata['wh']
+    setdat = loadsettings.load()
+    r = False
     for _ in range(2):
         r = ebutton()
-        if r:
-            move.press("e")
-            webhook("","Starting convert","brown",1)
-            st = time.perf_counter()
-            while True:
-                c = ebutton()
-                if not c:
-                    webhook("","Convert done","brown")
-                    time.sleep(3)
-                    break
-                if time.perf_counter()  - st > 600:
-                    webhook("","Converting took too long, moving on","brown")
-                    break
-            
+        if r: break
+        time.sleep(0.25)
+    if not r: return
+    move.press("e")
+    if setdat['stinger']:
+        move.press(",")
+    webhook("","Starting convert","brown",1)
+    st = time.perf_counter()
+    while True:
+        if stingerHunt(): return
+        c = ebutton()
+        if not c:
+            webhook("","Convert done","brown")
+            time.sleep(3)
             break
-        else:
-            time.sleep(0.25)
-    return
+        if time.perf_counter()  - st > 600:
+            webhook("","Converting took too long, moving on","brown")
+            break
+    if setdat['stinger']:
+        move.press(".")
+        
 def walk_to_hive(gfid):
     savedata = loadRes()
     ww = savedata['ww']
@@ -650,7 +655,11 @@ def resetMobTimer(cfield):
             if checkRespawn("rhinobeetle_blueflower","5m"):  savetimings("rhinobeetle_blueflower")
         elif cfield == "bamboo":
             if checkRespawn("rhinobeetle_bamboo","5m"):  savetimings("rhinobeetle_bamboo")
-
+def stingerHunt():
+    setdat = loadsettings.load()
+    if not setdat['stinger']: return False
+    if not detectNight(): return False
+            
 sat_image = cv2.imread('./images/retina/saturator.png')
 method = cv2.TM_SQDIFF_NORMED
 def displayPlanterName(planter):
@@ -974,11 +983,11 @@ def background(cf,bpcap,gat,dc, rejoinval):
                     #savehoney_history(honeyHist)
             if setdat['enable_discord_webhook']:
                 detectNight()
-            print(time.time()-start_time)
-        except Exception as e:
-            print(e)
-            log(e)
-
+           #print(time.time()-start_time)
+        except Exception as err:
+            webhook("","An error has been caught in the background process. It can be found in either the terminal or the macroLogs.log file","red")
+            log(err)
+            print(err)
 def killMob(field,mob,reset):
     webhook("","Traveling: {} ({})".format(mob.title(),field.title()),"dark brown")
     convert()
@@ -1066,7 +1075,7 @@ def updateHive(h):
     global setdat
     webhook("","Found Hive: {}".format(h),"bright green")
     loadsettings.save('hive_number',h)
-    
+
 def openSettings():
     savedat = loadRes()
     mw, mh = pag.size()
@@ -1078,28 +1087,49 @@ def openSettings():
     
     promoCode = ''.join([x[1] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
     if not "code" in promoCode:
-        mouse.position = (mw/5.5*xsm, mh/8.4*ysm)
-        mouse.click(Button.left, 1)
+        pag.write("\\")
+        for _ in range(15):
+            keyboard.press(Key.right)
+            time.sleep(0.05)
+            keyboard.release(Key.right)
+        for _ in range(15):
+            keyboard.press(Key.left)
+            time.sleep(0.05)
+            keyboard.release(Key.left)
+        for _ in range(4):
+            keyboard.press(Key.right)
+            time.sleep(0.05)
+            keyboard.release(Key.right)
+        move.press('enter')
         promoCode = ''.join([x[1] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
         if not "code" in promoCode:
-            mouse.click(Button.left, 1)
-    mouse.position = (mw/5, mh/3)
-    time.sleep(1)
-    for _ in range(5):
-        pag.scroll(-10000)
+            move.press('enter')
+    keyboard.press(Key.down)
+    time.sleep(0.05)
+    keyboard.release(Key.down)
+    for _ in range(20):
+        keyboard.press(Key.page_down)
+        time.sleep(0.02)
+        keyboard.release(Key.page_down)
     time.sleep(0.5)
-    for _ in range(2):
-        pag.scroll(200)
+    for _ in range(5):
+        keyboard.press(Key.page_up)
+        time.sleep(0.02)
+        keyboard.release(Key.page_up)
     pag.scroll(100)
     for _ in range(10):
         statData = customOCR(0,wh/7,ww/7,wh/2)
         statNames = ''.join([x[1] for x in statData]).lower()
         if 'speed'in statNames:
+            pag.write("\\")
             break
-        pag.scroll(200)
+        keyboard.press(Key.page_up)
+        time.sleep(0.02)
+        keyboard.release(Key.page_up)
     else:
+        pag.write("\\")
         return
-    time.sleep(1)
+    time.sleep(0.3)
     check = customOCR(0,0,ww/7,wh)
     for i, e in enumerate(check):
         if 'speed' in e[1]:
@@ -1610,7 +1640,7 @@ def rejoin():
         
         if reset.resetCheck():
             webhook("","Rejoin successful","dark brown")
-            openSettings()
+            if setdat['haste_compensation']: openSettings()
             break
         webhook("",'Rejoin unsuccessful, attempt 2','dark brown')
         
@@ -1648,7 +1678,7 @@ def placeSprinkler():
         move.apkey("space")
         time.sleep(0.13)
 def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_start):
-        
+    setdat = loadsettings.load()   
     val = validateSettings()
     with open('canonfails.txt', 'w') as f:
         f.write('0')
@@ -1676,7 +1706,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
         currHoney = imToString('honey')
         loadsettings.save('start_honey',currHoney)
         loadsettings.save('prev_honey',currHoney)
-        openSettings()
+        if setdat['haste_compensation']: openSettings()
     reset.reset()
     convert()
     savedata = loadRes()
@@ -1706,7 +1736,6 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
         """
         os.system(cmd)
         timings = loadtimings()
-        setdat = loadsettings.load()
         #Stump snail check
         if setdat['stump_snail'] and checkRespawn("stump_snail","96h"):
             canon()
@@ -2179,6 +2208,7 @@ if __name__ == "__main__":
     scorpion = tk.IntVar(value=setdat["scorpion"])
     spider = tk.IntVar(value=setdat["spider"])
     mantis = tk.IntVar(value=setdat["mantis"])
+    stinger = tk.IntVar(value=setdat["stinger"])
     gifted_vicious_bee = tk.IntVar(value=setdat["gifted_vicious_bee"])
     enable_discord_webhook = tk.IntVar(value=setdat["enable_discord_webhook"])
     discord_webhook_url= setdat["discord_webhook_url"]
@@ -2555,6 +2585,7 @@ if __name__ == "__main__":
             "scorpion": scorpion.get(),
             "werewolf": werewolf.get(),
             "mantis": mantis.get(),
+            "stinger": stinger.get(),
 
             "wealthclock": wealthclock.get(),
             "blueberrydispenser": blueberrydispenser.get(),
@@ -3024,6 +3055,7 @@ if __name__ == "__main__":
 
 
         
+
 
 
 
