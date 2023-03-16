@@ -34,6 +34,7 @@ import Quartz.CoreGraphics as CG
 import struct
 import reset
 from pixelcolour import getPixelColor
+from paddleocr import PaddleOCR,draw_ocr
 keyboard = Controller()
 mouse = pynput.mouse.Controller()
 #import easyocr
@@ -61,58 +62,46 @@ ww = savedata['ww']
 wh = savedata['wh']
 
     
-roblox()
+#roblox()
+times = []
+ocr = PaddleOCR(use_angle_cls=True, lang='en')
+for _ in range(5):
+    st = time.time()
+    pag.screenshot().save("hi.png")
+    img_path = "hi.png"
+    result = ocr.ocr(img_path, cls=True)
+    print(result)
+    times.append(time.time()-st)
+print(sum(times)/len(times))
 
-def detectNight():
-    savedat = loadRes()
-    ww = savedat['ww']
-    wh = savedat['wh']
-    ylm = loadsettings.load('multipliers.txt')['y_length_multiplier']
-    xlm = loadsettings.load('multipliers.txt')['x_length_multiplier']
-    screen = np.array(pag.screenshot(region=(0,0,round((ww/3.4)*xlm),round((wh/25)*ylm))))
-    w,h = screen.shape[:2]
-    rgb = screen[0,0][:3]
-    for x in range(w):
-        for y in range(h):
-            if list(screen[x,y][:3]) == [0,0,0]:
-                success = True
-                for x1 in range(5):
-                    for y1 in range(5):
-                        if not x1 < w and y1 < h:
-                            if screen[x1,y1][:3] != (0,0,0):
-                                success = False
-                if success:
-                    print("night detected")
-                    return
                 
                     
-    '''
-    screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
-    small_image = cv2.imread('./images/general/nightsky.png')
-    large_image = screen
-    res = cv2.matchTemplate(small_image, large_image, method)
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    x,y = max_loc
-    print("Trying to find night sky. max_val is {} ".format(max_val))
-    MPx,MPy = min_loc
-    
-    print(MPx,MPy)
-    pag.moveTo(MPx//2,MPy//2)
-    # Step 2: Get the size of the template. This is the same size as the match.
-    trows,tcols = small_image.shape[:2]
-    # Step 3: Draw the rectangle on large_image
-    cv2.rectangle(large_image, (MPx,MPy),(MPx+tcols,MPy+trows),(0,0,255),2)
-    # Display the original image with the rectangle around the match.
-    cv2.imshow('output',large_image)
-    # The image is only displayed if we call this
-    cv2.waitKey(0)
+'''
+screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
+small_image = cv2.imread('./images/general/nightsky.png')
+large_image = screen
+res = cv2.matchTemplate(small_image, large_image, method)
+min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+x,y = max_loc
+print("Trying to find night sky. max_val is {} ".format(max_val))
+MPx,MPy = min_loc
 
-    if max_val >= 0.5:
-        return [1,x,y,max_val]
-    return
-    '''
-while True:  
-    detectNight()
+print(MPx,MPy)
+pag.moveTo(MPx//2,MPy//2)
+# Step 2: Get the size of the template. This is the same size as the match.
+trows,tcols = small_image.shape[:2]
+# Step 3: Draw the rectangle on large_image
+cv2.rectangle(large_image, (MPx,MPy),(MPx+tcols,MPy+trows),(0,0,255),2)
+# Display the original image with the rectangle around the match.
+cv2.imshow('output',large_image)
+# The image is only displayed if we call this
+cv2.waitKey(0)
+
+if max_val >= 0.5:
+    return [1,x,y,max_val]
+return
+'''
+
 '''
 
 times = []

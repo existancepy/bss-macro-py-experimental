@@ -49,7 +49,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.36.5"
+macrov = "1.36.6"
 planterInfo = loadsettings.planterInfo()
 mouse = pynput.mouse.Controller()
 keyboard = pynput.keyboard.Controller()
@@ -1085,7 +1085,7 @@ def openSettings():
     xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
     webhook('','Opening Stats',"brown")
     
-    promoCode = ''.join([x[1] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
+    promoCode = ''.join([x[1][0] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
     if not "code" in promoCode:
         pag.typewrite("\\")
         for _ in range(30):
@@ -1102,7 +1102,7 @@ def openSettings():
             time.sleep(0.05)
             keyboard.release(Key.right)
         move.press('enter')
-        promoCode = ''.join([x[1] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
+        promoCode = ''.join([x[1][0] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
         if not "code" in promoCode:
             move.press('enter')
     keyboard.press(Key.down)
@@ -1120,7 +1120,7 @@ def openSettings():
     pag.scroll(100)
     for _ in range(10):
         statData = customOCR(0,wh/7,ww/7,wh/2)
-        statNames = ''.join([x[1] for x in statData]).lower()
+        statNames = ''.join([x[1][0] for x in statData]).lower()
         if 'speed'in statNames:
             pag.typewrite("\\")
             break
@@ -1133,7 +1133,7 @@ def openSettings():
     time.sleep(0.3)
     check = customOCR(0,0,ww/7,wh)
     for i, e in enumerate(check):
-        if 'speed' in e[1]:
+        if 'speed' in e[1][0]:
             movespeedInfo = e
     print(movespeedInfo)
     coords = movespeedInfo[0]
@@ -1155,9 +1155,9 @@ def getHaste():
     ocr = customOCR(ww/8,msy,ww/10,msh)
     print(ocr)
     if not ocr:return
-    filtered = [x for x in ocr if "." in x[1] or x[1].replace("_","").replace(" ","").isdigit()]
+    filtered = [x for x in ocr if "." in x[1][0] or x[1][0].replace("_","").replace(" ","").isdigit()]
     if not filtered:return
-    text = filtered[0][1].replace(" ","")
+    text = filtered[0][1][0].replace(" ","")
     if not text:return
     num = ""
     currms = ws
