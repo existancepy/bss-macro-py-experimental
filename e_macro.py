@@ -256,6 +256,7 @@ def ebutton(pagmode=0):
     ocrval = ''.join([x for x in list(imToString('ebutton').strip()) if x.isalpha()])
     log(ocrval)
     return ocrval == "E"
+
 def detectNight():
     savedat = loadRes()
     ww = savedat['ww']
@@ -269,12 +270,13 @@ def detectNight():
         for y in range(h):
             if list(screen[x,y][:3]) == [0,0,0]:
                 success = True
-                for x1 in range(5):
-                    for y1 in range(5):
-                        if not x1 < w and y1 < h:
-                            if screen[x1,y1][:3] != (0,0,0):
+                for x1 in range(8):
+                    for y1 in range(8):
+                        if x+x1 < w and y1+y < h:
+                            if list(screen[x+x1,y+y1][:3]) != [0,0,0]:
                                 success = False
                 if success:
+                    print(x,y)
                     webhook("","Night Detected","light green")
                     return True
     return False
@@ -2096,12 +2098,13 @@ def setResolution():
     ndisplay = "{}x{}".format(wwd,whd)
 
     multiInfo = {
+        #ysm, xsm, ylm,  xlm
         "2880x1800": [1,1,1,1],
         "2940x1912": [0.666666666666666,1,1,1],
         "1920x1080": [1.3,0.94,1,1],
         "1440x900": [1,1,1,1],
         "4096x2304": [1.45,0.91,1.32,1.5]
-
+        "3024x1964": [0.62,0.98, 1.2, 1.2]
         }
     if ndisplay in multiInfo:
         loadsettings.save("y_screenshot_multiplier",multiInfo[ndisplay][0],"multipliers.txt")

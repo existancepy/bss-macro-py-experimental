@@ -62,17 +62,32 @@ ww = savedata['ww']
 wh = savedata['wh']
 
     
-#roblox()
-times = []
-ocr = PaddleOCR(use_angle_cls=True, lang='en')
-for _ in range(5):
-    st = time.time()
-    pag.screenshot().save("hi.png")
-    img_path = "hi.png"
-    result = ocr.ocr(img_path, cls=True)
-    print(result)
-    times.append(time.time()-st)
-print(sum(times)/len(times))
+def detectNight():
+    savedat = loadRes()
+    ww = savedat['ww']
+    wh = savedat['wh']
+    ylm = loadsettings.load('multipliers.txt')['y_length_multiplier']
+    xlm = loadsettings.load('multipliers.txt')['x_length_multiplier']
+    screen = np.array(pag.screenshot(region=(0,0,round((ww/3.4)*xlm),round((wh/25)*ylm))))
+    w,h = screen.shape[:2]
+    rgb = screen[0,0][:3]
+    for x in range(w):
+        for y in range(h):
+            if list(screen[x,y][:3]) == [0,0,0]:
+                success = True
+                for x1 in range(8):
+                    for y1 in range(8):
+                        if x+x1 < w and y1+y < h:
+                            if list(screen[x+x1,y+y1][:3]) != [0,0,0]:
+                                success = False
+                if success:
+                    print(x,y)
+                    webhook("","Night Detected","light green")
+                    return True
+    return False
+
+roblox()
+detectNight()
 
                 
                     

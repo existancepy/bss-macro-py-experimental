@@ -70,7 +70,9 @@ def reset():
             for i in range(len(r)):
                 if tar[i]-var <= r[i] <= tar[i]+var:
                     pass
-                else:
+                elif i == 2 and 0 <= tar[i] <= 50:
+                    pass
+                else:           
                     passed = 0
                     break
                 
