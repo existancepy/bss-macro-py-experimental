@@ -59,3 +59,5 @@ start_time:1678527882.004333
 canon_time:1.0
 reverse_hive_direction:0
 stinger:0
+gluedispenser:0
+gumdrop_slot:0

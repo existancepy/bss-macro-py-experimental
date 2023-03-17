@@ -16,6 +16,7 @@ wealthclock:1678529140.393138
 blueberrydispenser:1677917944.7230668
 strawberrydispenser:1677919519.9847522
 royaljellydispenser:1677918089.284729
+gluedispenser:0
 treatdispenser:1677918134.6855612
 stockings:1678504402.725334
 feast:1677918298.008616
