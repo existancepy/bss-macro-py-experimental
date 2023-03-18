@@ -49,7 +49,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.36.7"
+macrov = "1.37"
 planterInfo = loadsettings.planterInfo()
 mouse = pynput.mouse.Controller()
 keyboard = pynput.keyboard.Controller()
@@ -126,7 +126,16 @@ def discord_bot(dc,rejoinval):
                 #savehoney_history(honeyHist)
     handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
     client.run(setdat['discord_bot_token'], log_handler=handler)
-    
+def setStatus(msg="none"):
+    with open("status.txt","w") as f:
+        f.write(msg)
+    f.close()
+
+def getStatus():
+    with open("status.txt","r") as f:
+        out = f.read()
+    f.close()
+    return out
 def validateSettings():
     msg = ""
     files = os.listdir("./")
@@ -268,12 +277,12 @@ def detectNight():
     rgb = screen[0,0][:3]
     for x in range(w):
         for y in range(h):
-            if list(screen[x,y][:3]) == [0,0,0]:
+            if list(screen[x,y]) == [0,0,0,255]:
                 success = True
                 for x1 in range(8):
                     for y1 in range(8):
                         if x+x1 < w and y1+y < h:
-                            if list(screen[x+x1,y+y1][:3]) != [0,0,0]:
+                            if list(screen[x+x1,y+y1]) != [0,0,0,255]:
                                 success = False
                 if success:
                     print(x,y)
@@ -559,7 +568,8 @@ def convert():
     webhook("","Starting convert","brown",1)
     st = time.perf_counter()
     while True:
-        if stingerHunt(): return
+        if stingerHunt():
+            break
         c = ebutton()
         if not c:
             webhook("","Convert done","brown")
@@ -951,7 +961,7 @@ def background(cf,bpcap,gat,dc, rejoinval):
             with open('canonfails.txt', 'r') as f:
                 cfCount = int(f.read())
             f.close()
-            if cfCount >= 3:
+            if cfCount >= 4:
                 with open('canonfails.txt', 'w') as f:
                     f.write('0')
                 f.close()
@@ -969,6 +979,7 @@ def background(cf,bpcap,gat,dc, rejoinval):
                     if invalid_prev_honey and ch:
                         invalid_prev_honey = 0
                         honeyHist = [ch]*60
+                        loadsettings.save("prev_honey",ch)
                     else:
                         if ch:
                             honeyHist[sysMin] = int(ch)
@@ -1041,6 +1052,11 @@ def collect(name,beesmas=0):
                 move.hold("s",0.2)
                 if ebutton():
                     break
+        elif usename == "gluedispenser":
+            time.sleep(1)
+            move.press(str(setdat['gumdrop_slot']))
+            time.sleep(2)
+            move.hold("w",2.5)
         time.sleep(0.5)
         if usename == "feast":
             if checkwithOCR("bee bear"):
@@ -1088,14 +1104,17 @@ def openSettings():
     webhook('','Opening Stats',"brown")
     
     promoCode = ''.join([x[1][0] for x in customOCR(0,wh/7,ww/3,wh/8)]).lower()
+    pag.typewrite("\\")
     if not "code" in promoCode:
-        pag.typewrite("\\")
-        for _ in range(30):
-            keyboard.press(Key.right)
+        for _ in range(5):
+            keyboard.press(Key.up)
             time.sleep(0.05)
-            keyboard.release(Key.right)
+            keyboard.release(Key.up)
             time.sleep(0.1)
-        for _ in range(15):
+        keyboard.press(Key.down)
+        time.sleep(0.05)
+        keyboard.release(Key.down)
+        for _ in range(9):
             keyboard.press(Key.left)
             time.sleep(0.05)
             keyboard.release(Key.left)
@@ -1783,6 +1802,9 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
             collect('lid_art',1)
         if setdat['candles'] and checkRespawn('candles','4h'):
             collect('candles',1)
+        if setdat['gluedispenser'] and checkRespawn('gluedispenser','22h'):
+            collect('glue dispenser')
+            
         if setdat['mondo_buff']:
             now = datetime.now()
             current_time = now.strftime("%H:%M:%S")
@@ -1801,6 +1823,7 @@ def startLoop(cf,bpcap,gat,dc,planterTypes_prev, planterFields_prev,session_star
                 webhook("","Collected: Mondo Buff","bright green",1)
                 reset.reset()
                 convert()
+        
             
         
         #Planter check
@@ -2243,6 +2266,9 @@ if __name__ == "__main__":
     strawberrydispenser = tk.IntVar(value=setdat["strawberrydispenser"])
     royaljellydispenser  = tk.IntVar(value=setdat["royaljellydispenser"])
     treatdispenser = tk.IntVar(value=setdat["treatdispenser"])
+    gluedispenser = tk.IntVar(value=setdat["gluedispenser"])
+    gumdrop_slot = tk.StringVar(root)
+    gumdrop_slot.set(setdat["gumdrop_slot"])
     stockings = tk.IntVar(value=setdat["stockings"])
     feast = tk.IntVar(value=setdat["feast"])
     samovar = tk.IntVar(value=setdat["samovar"])
@@ -2596,6 +2622,8 @@ if __name__ == "__main__":
             "strawberrydispenser": strawberrydispenser.get(),
             "royaljellydispenser":royaljellydispenser.get(),
             "treatdispenser":treatdispenser.get(),
+            "gluedispenser":gluedispenser.get(),
+            "gumdrop_slot":gumdrop_slot.get(),
             "stockings":stockings.get(),
             "feast": feast.get(),
             "samovar": samovar.get(),
@@ -2900,6 +2928,11 @@ if __name__ == "__main__":
     tkinter.Checkbutton(frame4, text="Lid Art", variable=lid_art).place(x=390, y = 85)
     tkinter.Checkbutton(frame4, text="Honey Wreath", variable=wreath).place(x=470, y = 85)
     tkinter.Checkbutton(frame4, text="Candles", variable=candles).place(x=595, y = 85)
+    tkinter.Checkbutton(frame4, text="Glue Dispenser", variable=gluedispenser).place(x=0, y = 120)
+    tkinter.Label(frame4, text = "Gumdrop Slot").place(x = 130, y = 122)
+    dropField = ttk.OptionMenu(frame4, gumdrop_slot,setdat['gumdrop_slot'], *[x for x in range(1,8)],style='smaller.TMenubutton')
+    dropField.place(width=65,x = 225, y = 124,height=20)
+    
     #Tab 4
     tkinter.Checkbutton(frame6, text="Enable Planters", variable=enable_planters).place(x=545, y = 20)
     tkinter.Label(frame6, text = "Allowed Planters").place(x = 120, y = 15)

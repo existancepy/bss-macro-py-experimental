@@ -17,7 +17,7 @@ def loadRes():
         outdict[l[0]] = l[1]
     return outdict
 
-ocr = PaddleOCR(lang='en')
+ocr = PaddleOCR(lang='en', show_log = False, use_angle_cls=False)
 def imToString(m):
     savedata = loadRes()
     ww = savedata['ww']
@@ -38,7 +38,7 @@ def imToString(m):
     elif m == "ebutton":
         cap = pag.screenshot(region=(ww//(2.65*xsm),wh//(20*ysm),ww//(21*xlm),wh//(17*ylm)))
         cap.save("{}.png".format(sn))  
-        result = ocr.ocr("{}.png".format(sn))[0]
+        result = ocr.ocr("{}.png".format(sn),cls=False)[0]
         result = sorted(result, key = lambda x: x[1][1], reverse = True)
         os.remove("{}.png".format(sn))
         try:
@@ -48,7 +48,7 @@ def imToString(m):
     elif m == "honey":
         cap = pag.screenshot(region=(ww//(3*xsm),0,ww//(6.5*xlm),wh//(ylm*25)))
         cap.save("{}.png".format(sn))  
-        ocrres = ocr.ocr("{}.png".format(sn))[0]
+        ocrres = ocr.ocr("{}.png".format(sn),cls=False)[0]
         print(ocrres)
         result = [x[1][0] for x in ocrres]
         honey = 0
@@ -68,7 +68,7 @@ def imToString(m):
     elif m == "dialog":
         cap = pag.screenshot(region=(ww//(3*xsm),wh//(1.6*ysm),ww//(8*xlm),wh//(ylm*15)))
     cap.save("{}.png".format(sn))  
-    result = ocr.ocr("{}.png".format(sn))[0]
+    result = ocr.ocr("{}.png".format(sn),cls=False)[0]
     result = sorted(result, key = lambda x: x[1][1], reverse = True)
     out = ''.join([x[1][0] for x in result])
     os.remove("{}.png".format(sn))
@@ -82,7 +82,7 @@ def customOCR(X1,Y1,W1,H1,**k):
     xlm = loadsettings.load('multipliers.txt')['x_length_multiplier']
     cap = pag.screenshot(region=(X1/xsm,Y1/ysm,W1/xlm,H1/ylm))
     cap.save("{}.png".format(sn)) 
-    out = ocr.ocr("{}.png".format(sn))
+    out = ocr.ocr("{}.png".format(sn),cls=False)
     log("OCR for Custom\n{}".format(out))
     os.remove("{}.png".format(sn))
     return out[0]

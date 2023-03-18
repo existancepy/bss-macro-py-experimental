@@ -68,9 +68,7 @@ def reset():
             log(r)
             passed = 1
             for i in range(len(r)):
-                if tar[i]-var <= r[i] <= tar[i]+var:
-                    pass
-                elif i == 2 and 0 <= tar[i] <= 50:
+                if tar[i]-var <= r[i] <= tar[i]+var or tar[2] == 0:
                     pass
                 else:           
                     passed = 0

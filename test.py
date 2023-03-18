@@ -34,7 +34,7 @@ import Quartz.CoreGraphics as CG
 import struct
 import reset
 from pixelcolour import getPixelColor
-from paddleocr import PaddleOCR,draw_ocr
+#from paddleocr import PaddleOCR,draw_ocr
 keyboard = Controller()
 mouse = pynput.mouse.Controller()
 #import easyocr
@@ -73,12 +73,12 @@ def detectNight():
     rgb = screen[0,0][:3]
     for x in range(w):
         for y in range(h):
-            if list(screen[x,y][:3]) == [0,0,0]:
+            if list(screen[x,y]) == [0,0,0,255]:
                 success = True
                 for x1 in range(8):
                     for y1 in range(8):
                         if x+x1 < w and y1+y < h:
-                            if list(screen[x+x1,y+y1][:3]) != [0,0,0]:
+                            if list(screen[x+x1,y+y1]) != [0,0,0,255]:
                                 success = False
                 if success:
                     print(x,y)
