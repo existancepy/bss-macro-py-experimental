@@ -68,7 +68,9 @@ def reset():
             log(r)
             passed = 1
             for i in range(len(r)):
-                if tar[i]-var <= r[i] <= tar[i]+var or tar[2] == 0:
+                if tar[i]-var <= r[i] <= tar[i]+var:
+                    pass
+                elif i == 2 and tar[2] == 0:
                     pass
                 else:           
                     passed = 0
@@ -204,9 +206,12 @@ def resetCheck():
             for i in range(len(r)):
                 if tar[i]-var <= r[i] <= tar[i]+var:
                     pass
-                else:
+                elif i == 2 and tar[2] == 0:
+                    pass
+                else:           
                     passed = 0
                     break
+                
                 
             if passed:
                 time.sleep(0.1)
