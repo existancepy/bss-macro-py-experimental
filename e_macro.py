@@ -268,8 +268,9 @@ def ebutton(pagmode=0):
     return
     '''
     ocrval = ''.join([x for x in list(imToString('ebutton').strip()) if x.isalpha()])
+    
     log(ocrval)
-    return ocrval == "E"
+    return "E" in ocrval and len(ocrval) <= 3
 
 def detectNight():
     savedat = loadRes()
