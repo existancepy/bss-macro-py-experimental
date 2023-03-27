@@ -49,7 +49,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.39"
+macrov = "1.39.1"
 sv_i = sys.version_info
 python_ver = '.'.join([str(sv_i[i]) for i in range(0,3)])
 planterInfo = loadsettings.planterInfo()
@@ -2225,11 +2225,12 @@ def setResolution():
         #ysm, xsm, ylm,  xlm
         "2880x1800": [1,1,1,1],
         "2940x1912": [1.1,0.98,1,1.2],
-        "1920x1080": [1.3,0.94,1,1],
+        "1920x1080": [1.2,0.92,1.3,1.5],
         "1440x900": [1,1,1,1],
         "4096x2304": [1.45,0.91,1.32,1.5],
         "3024x1964": [1,0.98, 1.2, 1.2],
-        "3360x2100": [1.2,0.95,1.2,1.3]
+        "3360x2100": [1.2,0.95,1.2,1.3],
+        "4480x2520": [1.4,0.89,1.4,1.9]
         }
     if ndisplay in multiInfo:
         loadsettings.save("y_screenshot_multiplier",multiInfo[ndisplay][0],"multipliers.txt")
@@ -3091,7 +3092,7 @@ if __name__ == "__main__":
     dropField.place(width=50,x = 695, y = ylevel+65,height=22)
 
     ylevel = 140
-    dropField = ttk.OptionMenu(frame1, gather_field_two,setdat['gather_field'][1].title(), *gather_fields[1:],style='smaller.TMenubutton' )
+    dropField = ttk.OptionMenu(frame1, gather_field_two,setdat['gather_field'][1].title(), *gather_fields,style='smaller.TMenubutton' )
     dropField.place(x = 10, y = ylevel+35,height=22,width=100)
     tkinter.Checkbutton(frame1, text="Field Drift\nCompensation", variable=field_drift_compensation_two).place(x=10, y = ylevel+65)
 
@@ -3128,7 +3129,7 @@ if __name__ == "__main__":
     dropField.place(width=50,x = 695, y = ylevel+65,height=22)
 
     ylevel = 230
-    dropField = ttk.OptionMenu(frame1, gather_field_three,setdat['gather_field'][2].title(), *gather_fields[1:],style='smaller.TMenubutton' )
+    dropField = ttk.OptionMenu(frame1, gather_field_three,setdat['gather_field'][2].title(), *gather_fields,style='smaller.TMenubutton' )
     dropField.place(x = 10, y = ylevel+35,height=22,width=100)
     tkinter.Checkbutton(frame1, text="Field Drift\nCompensation", variable=field_drift_compensation_three).place(x=10, y = ylevel+65)
 
@@ -3287,7 +3288,7 @@ if __name__ == "__main__":
     dropField.place(width=60,x = 245, y = 85,height=24)
 
     tkinter.Checkbutton(frame3, text="Enable Haste Compensation", variable=haste_compensation).place(x=0, y = 120)
-    tkinter.Checkbutton(frame3, text="Low Performance Haste Compensation", variable=low_performance_haste_compensation).place(x=210, y = 120)
+    
 
 
     #Tab 6
