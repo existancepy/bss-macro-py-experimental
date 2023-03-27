@@ -91,6 +91,7 @@ def reset():
                 return
             for _ in range(4):
                 keyboard.press(',')
+                time.sleep(0.05)
                 keyboard.release(',')
             
             time.sleep(0.5)
