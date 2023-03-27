@@ -9,7 +9,7 @@ sprinkler_slot:1
 sprinkler_type:saturator
 display_type:built-in retina display
 private_server_link:
-enable_discord_bot:1
+enable_discord_bot:0
 discord_bot_token:
 haste_compensation:1
 low_performance_haste_compensation:0
