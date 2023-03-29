@@ -16,7 +16,7 @@ mouse = Controller()
 savedata = {}
 mw,mh = pag.size()
 tar =  (127, 108, 41)
-var = 20
+var = 30
 def loadSave():
     with open('save.txt') as f:
         lines = f.read().split("\n")
@@ -70,7 +70,7 @@ def reset():
             for i in range(len(tar)):
                 if tar[i]-var <= r[i] <= tar[i]+var:
                     pass
-                elif i == 2 and r[2] == 0:
+                elif i == 2 and r[2] < 15:
                     pass
                 else:           
                     passed = 0
@@ -135,7 +135,7 @@ def resetCheck():
             for i in range(len(tar)):
                 if tar[i]-var <= r[i] <= tar[i]+var:
                     pass
-                elif i == 2 and r[2] == 0:
+                elif i == 2 and r[2] < 15:
                     pass
                 else:           
                     passed = 0

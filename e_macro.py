@@ -49,7 +49,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.39.1"
+macrov = "1.39.2"
 sv_i = sys.version_info
 python_ver = '.'.join([str(sv_i[i]) for i in range(0,3)])
 planterInfo = loadsettings.planterInfo()
@@ -851,28 +851,29 @@ def placePlanter(planter):
     webhook("","Placed Planter: {}".format(displayPlanterName(planter)),"bright green",1)
     reset.reset()
 
+
 urows,ucols = cv2.imread('./images/retina/yes.png').shape[:2]
 def clickYes():
     res = loadRes()
     ww = res['ww']
     wh = res['wh']
     setdat = loadsettings.load()
-    pag.typewrite("\\")
-    for _ in range(15):
-        keyboard.press(Key.right)
-        time.sleep(0.05)
-        keyboard.release(Key.right)
-        time.sleep(0.1)
-    keyboard.press(Key.left)
-    time.sleep(0.05)
-    keyboard.release(Key.left)
-    keyboard.press(Key.down)
-    time.sleep(0.05)
-    keyboard.release(Key.down)
-    keyboard.press(Key.enter)
-    time.sleep(0.05)
-    keyboard.release(Key.enter)
-        
+    a = imagesearch.find("yes.png",0.2,0,0,ww,wh)
+    if setdat['display_type'] == "built-in retina display":
+        if a:
+            mouse.position = (a[1]//2+urows//4,a[2]//2+ucols//4)
+            mouse.click(Button.left, 1)
+        else:
+            mouse.position = (ww//4-70,wh//3.2)
+            mouse.click(Button.left, 1)
+    else:
+        if a:
+            mouse.position = (a[1]+urows//2,a[2]+ucols//2)
+            mouse.click(Button.left, 1)
+        else:
+            mouse.position= (ww//2-50,wh//1.6)
+            mouse.click(Button.left, 1)
+            
     
 def goToPlanter(field,place=0):
     canon()
