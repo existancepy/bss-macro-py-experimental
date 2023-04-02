@@ -2200,11 +2200,16 @@ def haste_comp():
 def setResolution():
     wwd = int(pag.size()[0])
     whd = int(pag.size()[1])
-    if subprocess.call("system_profiler SPDisplaysDataType | grep -i 'retina'", shell=True) == 0:
-        retout = subprocess.check_output("system_profiler SPDisplaysDataType | grep -i 'retina'",shell=True)
-        retout = retout.decode().split("\n")[1].strip().split("x")
-        nww = ''.join([x for x in retout[0] if x.isdigit()])
-        nwh = ''.join([x for x in retout[1] if x.isdigit()])
+    info  = str(subprocess.check_output("system_profiler SPDisplaysDataType", shell=True)).lower()
+    if "retina" in info or "m1" in info:
+        try:
+            retout = subprocess.check_output("system_profiler SPDisplaysDataType | grep -i 'retina'",shell=True)
+            retout = retout.decode().split("\n")[1].strip().split("x")
+            nww = ''.join([x for x in retout[0] if x.isdigit()])
+            nwh = ''.join([x for x in retout[1] if x.isdigit()])
+        except:
+            nww = 0
+            nwh = 0
         loadsettings.save('display_type', 'built-in retina display')
         print("display type: retina")
         log("display type: retina")
