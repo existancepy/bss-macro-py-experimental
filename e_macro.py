@@ -720,7 +720,6 @@ def stingerHunt(night,convert=0,gathering=0):
                 if status == "killing_vb_died":
                     reset.reset()
                     canon(1)
-                    fieldGoTo = status.split("_")[4]
                     exec(open("field_{}.py".format(fieldGoTo)).read())
                     setStatus("killing_vb")
             reset.reset()
