@@ -38,42 +38,7 @@ import pygetwindow as gw
 from logpy import log
 keyboard = Controller()
 mouse = pynput.mouse.Controller()
-def canon():
-    savedata = loadRes()
-    setdat = loadsettings.load()
-    ww = savedata['ww']
-    wh = savedata['wh']
-    #Move to canon:
-    webhook("","Moving to canon","dark brown")
-    move.hold("w",0.8)
-    move.hold("d",0.9*(setdat["hive_number"])+1)
-    pag.keyDown("d")
-    time.sleep(0.5)
-    move.press("space")
-    time.sleep(0.2)
-    r = ""
-    pag.keyUp("d")
-    move.hold("d",0.3)
-    for _ in range(3):
-        move.hold("d",0.2)
-        time.sleep(0.05)
-    webhook("","Canon found","dark brown")
-    with open('canonfails.txt', 'w') as f:
-        f.write('0')
-    f.close()
-    return
-    mouse.position = (mw//2,mh//5*4)
-    with open('canonfails.txt','r') as f:
-        cfCount = int(f.read())
-        cfCount += 1
-    f.close()
-    webhook("","Cannon not found, attempt: {},resetting".format(cf),"dark brown",1)
-    with open('canonfails.txt','w') as f:
-        f.write(str(cfCount))
-    f.close()
-        
-    reset.reset()   
-    canon()
+
 def roblox():
     cmd = """
     osascript -e 'activate application "Roblox"' 
@@ -99,16 +64,39 @@ def loadRes():
         outdict[l[0]] = l[1]
     return outdict
 
-fields = ['a','b','c']
-for field in fields:
-    fi = fields.index(field)
-    if fi > 0:
-        prev_field = fields[fi-1]
-    else:
-        prev_field = fields[fi]
-    print(prev_field)
+fields = {}
 
+while True:
+    field = input("field: ")
+    if field == "quit": break
+    gp = input("gather pattern: ")
+    gs = "s"
+    gw = 2
+    gt = 8
+    pack = 100
+    bgt = input("before gather turn: ")
+    tt = input("turn times")
+    rth = "walk"
+    ws = 1
+    sl = input("start location: ")
+    dfc = input("distance from center: ")
+    fdc = 0
+    fields[field] = {
+        "gather_pattern": gp,
+        "gather_width": gw,
+        "gather_time": gt,
+        "pack": pack,
+        "before_gather_turn": bgt,
+        "turn_times": tt,
+        "return_to_hive": rth,
+        "whirligig_slot": ws,
+        "start_location": sl,
+        "distance_from_center": dfc,
+        "field_drift_compensation": fdc
+        
 
+        }
+print(fields)
                     
 '''
 screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
