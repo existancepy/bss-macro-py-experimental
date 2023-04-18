@@ -50,7 +50,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.41"
+macrov = "1.41.1"
 sv_i = sys.version_info
 python_ver = '.'.join([str(sv_i[i]) for i in range(0,3)])
 planterInfo = loadsettings.planterInfo()
@@ -268,12 +268,12 @@ def detectNight(bypasstime=0):
     if not setdat['stinger']: return False
     if not checkRespawn("night","10m") and not bypasstime:
         return False
-    for x in range(w):
-        for y in range(h):
+    for x in range(20,w):
+        for y in range(20,h):
             if list(screen[x,y]) == [0,0,0,255]:
                 success = True
-                for x1 in range(9):
-                    for y1 in range(9):
+                for x1 in range(15):
+                    for y1 in range(15):
                         if x+x1+1 < w and y1+y+1 < h:
                             if list(screen[x+x1+1,y+y1+1]) != [0,0,0,255]:
                                 success = False
@@ -714,6 +714,7 @@ def stingerHunt(convert=0,gathering=0):
             exec(open("field_{}.py".format(fieldGoTo)).read())
             exec(open("vb_{}.py".format(fieldGoTo)).read())
             killvb = 1
+        time.sleep(1)
         if killvb:
             setStatus("killing_vb")
             st = time.time()
@@ -730,7 +731,6 @@ def stingerHunt(convert=0,gathering=0):
                     webhook("","Died to vicious bee", "red")
                     reset.reset()
                     if canon(1) == "dc": return "dc"
-                    fieldGoTo = status.split("_")[-1]
                     exec(open("field_{}.py".format(fieldGoTo)).read())
                     setStatus("killing_vb")
             reset.reset()
