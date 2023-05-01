@@ -1,16 +1,16 @@
 
-hive_number:1
+hive_number:5
 walkspeed:28
 gifted_vicious_bee:0
 enable_discord_webhook:0
-discord_webhook_url:
+discord_webhook_url:0
 send_screenshot:0
 sprinkler_slot:1
 sprinkler_type:saturator
 display_type:built-in retina display
-private_server_link:
-enable_discord_bot:0
-discord_bot_token:
+private_server_link:0
+enable_discord_bot:1
+discord_bot_token:0
 haste_compensation:0
 low_performance_haste_compensation:0
 rejoin_every_enabled:0
@@ -44,12 +44,16 @@ snow_machine:0
 mondo_buff:0
 lid_art:0
 candles:0
-start_honey:14131723177065
-prev_honey:14138567567395
-start_time:1681627360.272546
+start_honey:14146034812013
+prev_honey:14146061963462
+start_time:1682945907.727582
 canon_time:1.0
 reverse_hive_direction:0
 blue_booster:0
 red_booster:0
 mountain_booster:0
 gather_in_boosted:0
+slot_enable:[0, 0, 0, 0, 0, 0, 0]
+slot_time:[0, 0, 0, 0, 0, 0, 0]
+slot_freq:['secs', 'secs', 'secs', 'secs', 'secs', 'secs', 'secs']
+slot_use:['always', 'gathering', 'gathering', 'gathering', 'gathering', 'gathering', 'gathering']

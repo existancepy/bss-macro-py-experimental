@@ -50,7 +50,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.41.1"
+macrov = "1.42"
 sv_i = sys.version_info
 python_ver = '.'.join([str(sv_i[i]) for i in range(0,3)])
 planterInfo = loadsettings.planterInfo()
@@ -564,6 +564,7 @@ def convert():
         move.press(",")
     webhook("","Starting convert","brown",1)
     st = time.perf_counter()
+    setStatus("hive")
     while True:
         sh = stingerHunt(1,1)
         if sh == "dc" or sh == "success":
@@ -575,6 +576,7 @@ def convert():
         if time.perf_counter()  - st > 600:
             webhook("","Converting took too long, moving on","brown")
             break
+    setStatus()
     if setdat['stinger']:
         move.press(".")
         
@@ -971,16 +973,38 @@ def hastecompbg():
         getHaste()
 
 def vic():
+    setdat = loadsettings.load()
     fields = ['pepper','mountain','rose','cactus','spider','clover']
     prevHour = datetime.now().hour
     prevMin = datetime.now().minute
     invalid_prev_honey = 1
     honeyHist = [0]*60
+    slots_last_used = [0]*7
     while True:
         status = getStatus()
         
         #r = imagesearch.find('disconnect.png',0.7,ww//3,wh//2.8,ww//2.3,wh//2.5)
-        
+        currtime = time.time()
+        for i in range(len(setdat['slot_enable'])):
+            slot_enable = setdat['slot_enable'][i]
+            slot_freq = setdat['slot_freq'][i]
+            slot_use = setdat['slot_use'][i]
+            slot_time = setdat['slot_time'][i]
+            if slot_enable and status != "disconnect":
+                if slot_freq == "mins":
+                    slot_time*= 60
+                if currtime - slots_last_used[i] < slot_time:
+                    continue
+                if slot_use == "gathering" and status != "gathering":
+                    continue
+                if slot_use == "hive" and status != "hive":
+                    continue
+                move.press(str(i+1))
+                slots_last_used[i] = currtime
+                
+                
+                    
+                    
         if "vb" in status:
             bluetexts = imToString("blue").lower()
             print(bluetexts)
@@ -1839,6 +1863,7 @@ def gather(gfid):
     pag.click()
     gp = setdat["gather_pattern"].lower()
     webhook("Gathering: {}".format(currfield),"Limit: {}.00 - {} - Backpack: {}%".format(setdat["gather_time"],setdat["gather_pattern"],setdat["pack"]),"light green")
+    setStatus("gathering")
     time.sleep(0.2)
     timestart = time.perf_counter()
     fullTime = 0
@@ -1873,7 +1898,7 @@ def gather(gfid):
         if checkwithOCR("disconnect"): return       
         mouse.release(Button.left)
     time.sleep(0.5)
-    print(stingerFound)
+    setStatus()
     if not stingerFound:
         if setdat["before_gather_turn"] == "left":
             for _ in range(setdat["turn_times"]):
@@ -2360,6 +2385,7 @@ def setResolution():
     whd = int(pag.size()[1])
     warnings = []
     info  = str(subprocess.check_output("system_profiler SPDisplaysDataType", shell=True)).lower()
+    scw = "\nScreen Coordinates not found in supported list. Contact Existance to get it supported"
     if "retina" in info or "m1" in info or "m2" in info:
         try:
             retout = subprocess.check_output("system_profiler SPDisplaysDataType | grep -i 'retina'",shell=True)
@@ -2409,7 +2435,8 @@ def setResolution():
         loadsettings.save("y_length_multiplier",multiInfo[ndisplay][2],"multipliers.txt")
         loadsettings.save("x_length_multiplier",multiInfo[ndisplay][3],"multipliers.txt")
     else:
-        warnings.append("\nScreen Coordinates not found in supported list. Contact Existance to get it supported")
+        warnings.append(scw)
+        pag.alert(scw)
     if warnings:
         print("\033[0;31mWarnings:\n{}\033[00m".format(warnings))
 if __name__ == "__main__":
@@ -2421,13 +2448,14 @@ if __name__ == "__main__":
     cmd = 'defaults read -g AppleInterfaceStyle'
     p = bool(subprocess.Popen(cmd, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, shell=True).communicate()[0])
-    print("\033[0;32m\n\nTo launch the macro manually, enter the following 2 commands in terminal:\033[00m")
+    print("\033[0;32m\n\nTo re-launch the macro, enter the following 2 commands in terminal:\033[00m")
     print("cd path/to/macro-folder\npython3 e_macro.py\n")
     print("\033[0;32mTo stop the macro\033[00m")
     print("tab out of roblox, make sure terminal is in focus and press ctrl c\nor,\nright click the macro app in the dock and force quit")
     print("\n\nYour python version is {}".format(python_ver))
     print("Your macro version is {}\n\n".format(macrov))
     log("Your macro version is {}\n\n".format(macrov))
+    time.sleep(5)
     setResolution()
     loadSave()
     plantdat = loadsettings.planterLoad()
@@ -2704,6 +2732,16 @@ if __name__ == "__main__":
 
     multipliers = loadsettings.load('multipliers.txt')
 
+    for i,e in enumerate(setdat['slot_enable']):
+        globals()['slot_enable_%s' % (i+1)] = tk.IntVar(value=e)
+        
+    for i,e in enumerate(setdat['slot_freq']):
+        globals()['slot_freq_%s' % (i+1)] = tk.StringVar(root)
+        globals()['slot_freq_%s' % (i+1)].set(e)
+    print(setdat['slot_use'])
+    for i,e in enumerate(setdat['slot_use']):
+        globals()['slot_use_%s' % (i+1)] = tk.StringVar(root)
+        globals()['slot_use_%s' % (i+1)].set(e)
 
 
     
@@ -2997,7 +3035,17 @@ if __name__ == "__main__":
         with open("fieldsettings.txt","w") as f:
             f.write(str(fields))
         f.close()
-    
+        slot_enable_list = []
+        slot_use_list = []
+        slot_freq_list = []
+        slot_time_list = []
+        nums = ['one','two','three','four','five','six','seven']
+        for i in range(1,8):
+            slot_enable_list.append(globals()[f'slot_enable_{i}'].get())
+            slot_freq_list.append(globals()[f'slot_freq_{i}'].get())
+            slot_use_list.append(globals()[f'slot_use_{i}'].get())
+            slot_time_list.append(globals()[f'slottextbox_{nums[i-1]}'].get(1.0,"end").replace("\n",""))
+            
         setdict = {
             "hive_number": hive_number.get(),
             "walkspeed": speedtextbox.get(1.0,"end").replace("\n",""),
@@ -3057,8 +3105,12 @@ if __name__ == "__main__":
             "blue_booster": blue_booster.get(),
             "red_booster": red_booster.get(),
             "mountain_booster": mountain_booster.get(),
-            "gather_in_boosted": gather_in_boosted.get()
+            "gather_in_boosted": gather_in_boosted.get(),
 
+            "slot_enable": slot_enable_list,
+            "slot_time": slot_time_list,
+            "slot_freq": slot_freq_list,
+            "slot_use": slot_use_list
 
         }
 
@@ -3181,6 +3233,15 @@ if __name__ == "__main__":
     def macro():
         global  prevHour, prevMin, honeyHist, warnings
         savedat = loadRes()
+        planterset = loadsettings.planterLoad()
+        with open("planterdata.txt","r") as f:
+            lines = f.read().split("\n")
+        f.close()
+        planterFields = ast.literal_eval(lines[2])
+        if planterset['enable_planters'] and not planterFields:
+            pag.alert(text='Planters enabled but no fields are selected', title='Warning', button='OK')
+            return
+        
         ww = savedat['ww']
         wh = savedat['wh']
         webhook("Macro started - Report","exih_macro\nVersion {}\nScreen Coordinates: {}x{}\nPython {}\n{}".format(macrov,ww,wh,python_ver,warnings),"dark brown")
@@ -3206,8 +3267,8 @@ if __name__ == "__main__":
             discord_bot_proc.start()
         if setdat['haste_compensation']:
             hastecompbg_proc.start()
-        if setdat['stinger'] or (setdat['enable_discord_webhook'] and setdat['send_screenshot']):
-            vic_proc.start()
+        
+        vic_proc.start()
         try:
             ses_start = 1
             while True:
@@ -3451,6 +3512,67 @@ if __name__ == "__main__":
     tkinter.Checkbutton(frame5, text="Red Booster", variable=red_booster).place(x=10, y = 50)
     tkinter.Checkbutton(frame5, text="Mountain Booster", variable=mountain_booster).place(x=10, y = 85)
     tkinter.Checkbutton(frame5, text="Gather in\nBoosted Field", variable=gather_in_boosted).place(x=15, y = 130)
+    ttk.Separator(frame5,orient="vertical").place(x=190, y=15, width=2, height=310)
+    tkinter.Label(frame5, text = "Slot").place(x = 300, y = 15)
+    tkinter.Checkbutton(frame5, text="Slot 1", variable=slot_enable_1).place(x=210, y = 60)
+    tkinter.Checkbutton(frame5, text="Slot 2", variable=slot_enable_2).place(x=210, y = 95)
+    tkinter.Checkbutton(frame5, text="Slot 3", variable=slot_enable_3).place(x=210, y = 130)
+    tkinter.Checkbutton(frame5, text="Slot 4", variable=slot_enable_4).place(x=210, y = 165)
+    tkinter.Checkbutton(frame5, text="Slot 5", variable=slot_enable_5).place(x=210, y = 200)
+    tkinter.Checkbutton(frame5, text="Slot 6", variable=slot_enable_6).place(x=210, y = 235)
+    tkinter.Checkbutton(frame5, text="Slot 7", variable=slot_enable_7).place(x=210, y = 270)
+    useOptions = ["Always", "Hive", "Gathering"]
+    timeOptions = ["secs", "mins"]
+    dropField = ttk.OptionMenu(frame5, slot_use_1, slot_use_1.get().title(), *useOptions,style='smaller.TMenubutton')
+    dropField.place(width=85,x = 290, y = 60,height=20)
+    dropField = ttk.OptionMenu(frame5, slot_use_2, slot_use_2.get().title(), *useOptions,style='smaller.TMenubutton')
+    dropField.place(width=85,x = 290, y = 95,height=20)
+    dropField = ttk.OptionMenu(frame5, slot_use_3, slot_use_3.get().title(), *useOptions,style='smaller.TMenubutton')
+    dropField.place(width=85,x = 290, y = 130,height=20)
+    dropField = ttk.OptionMenu(frame5, slot_use_4, slot_use_4.get().title(), *useOptions,style='smaller.TMenubutton')
+    dropField.place(width=85,x = 290, y = 165,height=20)
+    dropField = ttk.OptionMenu(frame5, slot_use_5, slot_use_5.get().title(), *useOptions,style='smaller.TMenubutton')
+    dropField.place(width=85,x = 290, y = 200,height=20)
+    dropField = ttk.OptionMenu(frame5, slot_use_6, slot_use_6.get().title(), *useOptions,style='smaller.TMenubutton')
+    dropField.place(width=85,x = 290, y = 235,height=20)
+    dropField = ttk.OptionMenu(frame5, slot_use_7, slot_use_7.get().title(), *useOptions,style='smaller.TMenubutton')
+    dropField.place(width=85,x = 290, y = 270,height=20)
+    slottextbox_one = tkinter.Text(frame5, width = 4, height = 1, bg= wbgc)
+    slottextbox_one.place(x = 390, y=60)
+    slottextbox_one.insert("end",setdat['slot_time'][0])
+    slottextbox_two = tkinter.Text(frame5, width = 4, height = 1, bg= wbgc)
+    slottextbox_two.place(x = 390, y=95)
+    slottextbox_two.insert("end",setdat['slot_time'][1])
+    slottextbox_three = tkinter.Text(frame5, width = 4, height = 1, bg= wbgc)
+    slottextbox_three.place(x = 390, y=130)
+    slottextbox_three.insert("end",setdat['slot_time'][2])
+    slottextbox_four = tkinter.Text(frame5, width = 4, height = 1, bg= wbgc)
+    slottextbox_four.place(x = 390, y=165)
+    slottextbox_four.insert("end",setdat['slot_time'][3])
+    slottextbox_five = tkinter.Text(frame5, width = 4, height = 1, bg= wbgc)
+    slottextbox_five.place(x = 390, y=200)
+    slottextbox_five.insert("end",setdat['slot_time'][4])
+    slottextbox_six = tkinter.Text(frame5, width = 4, height = 1, bg= wbgc)
+    slottextbox_six.place(x = 390, y=235)
+    slottextbox_six.insert("end",setdat['slot_time'][5])
+    slottextbox_seven = tkinter.Text(frame5, width = 4, height = 1, bg= wbgc)
+    slottextbox_seven.place(x = 390, y=270)
+    slottextbox_seven.insert("end",setdat['slot_time'][6])
+    dropField = ttk.OptionMenu(frame5, slot_freq_1, slot_freq_1.get().title(), *timeOptions,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 430, y = 60,height=20)
+    dropField = ttk.OptionMenu(frame5, slot_freq_2, slot_freq_2.get().title(), *timeOptions,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 430, y = 95,height=20)
+    dropField = ttk.OptionMenu(frame5, slot_freq_3, slot_freq_3.get().title(), *timeOptions,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 430, y = 130,height=20)
+    dropField = ttk.OptionMenu(frame5, slot_freq_4, slot_freq_4.get().title(), *timeOptions,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 430, y = 165,height=20)
+    dropField = ttk.OptionMenu(frame5, slot_freq_5, slot_freq_5.get().title(), *timeOptions,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 430, y = 200,height=20)
+    dropField = ttk.OptionMenu(frame5, slot_freq_6, slot_freq_6.get().title(), *timeOptions,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 430, y = 235,height=20)
+    dropField = ttk.OptionMenu(frame5, slot_freq_7, slot_freq_7.get().title(), *timeOptions,style='smaller.TMenubutton')
+    dropField.place(width=65,x = 430, y = 270,height=20)
+    
     #Tab 5
     tkinter.Checkbutton(frame6, text="Enable Planters", variable=enable_planters).place(x=545, y = 20)
     tkinter.Label(frame6, text = "Allowed Planters").place(x = 120, y = 15)

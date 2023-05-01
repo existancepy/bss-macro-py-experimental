@@ -1,22 +1,90 @@
-Your macro version is 1.40.3
+Your macro version is 1.42
 
 
 display type: retina
 Screen coordinates: 2880x1800
-[14:42:40] Macro started - Report - exih_macro
-Version 1.40.3
+[20:45:01] Macro started - Report - exih_macro
+Version 1.42
 Screen Coordinates: 2880x1800
 Python 3.9.5
 []
 Session Start
-[14:43:01]  - Resetting character, Attempt: 1
-(132, 112, 43, 255)
-E
-[14:43:21]  - Starting convert
 PyNaCl is not installed, voice will NOT be supported
 logging in using static token
+[20:46:30] Macro started - Report - exih_macro
+Version 1.42
+Screen Coordinates: 2880x1800
+Python 3.9.5
+[]
+Session Start
+PyNaCl is not installed, voice will NOT be supported
+logging in using static token
+Shard ID None has connected to Gateway (Session ID: 461df73254ea8e832bc7653d883b87a9).
+[20:46:43]  - Resetting character, Attempt: 1
+(191, 215, 230, 255)
+(132, 112, 43, 255)
+ToM
+ToM
+OCR for disconnect
+
+token slav
+[20:47:01]  - First Honey detected: 14.14 T
+14144312901118
+ToM
+ToM
+OCR for disconnect
+
+tokenslav
+[20:47:05]  - Moving to cannon
+
 E
-Shard ID None has connected to Gateway (Session ID: 0ebd7fc72b34a2b8771695c8d9ba6447).
+OCR for bee bear
+
+Fire the Red Cannon
+[20:47:15]  - Cannon found
+[20:47:15]  - Travelling: Strawberry Dispenser
+E
+[20:47:25]  - Collected: Strawberry Dispenser
+[20:47:29]  - Resetting character, Attempt: 1
+(191, 215, 230, 255)
+(132, 112, 43, 255)
+OCR for disconnect
+
+token slav
+OCR for disconnect
+
+token slav
+[20:47:49]  - Moving to cannon
+
+
+E
+OCR for bee bear
+
+Fire the Red Cannon
+[20:48:00]  - Cannon found
+14144312901618
+[20:48:01]  - Travelling: Pine Tree
+[20:48:15] Gathering: pine tree - Limit: 8.00 - cornerxsnake - Backpack: 100%
+14144335428893
+[20:50:28] Macro started - Report - exih_macro
+Version 1.42
+Screen Coordinates: 2880x1800
+Python 3.9.5
+[]
+Session Start
+PyNaCl is not installed, voice will NOT be supported
+logging in using static token
+[20:50:40]  - Resetting character, Attempt: 1
+Shard ID None has connected to Gateway (Session ID: 8dffbd75c8af991ec2a5bbd0b25208d8).
+(130, 105, 89, 255)
+(191, 215, 231, 255)
+(130, 105, 89, 255)
+(191, 215, 231, 255)
+[20:50:58]  - Resetting character, Attempt: 2
+(191, 215, 230, 255)
+(132, 112, 43, 255)
+E
+[20:51:13]  - Starting convert
 E
 E
 E
@@ -25,8 +93,78 @@ E
 E
 E
 E
-[14:44:05]  - First Honey detected: 14.13 T
-14132214272317
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+[20:52:36] Macro started - Report - exih_macro
+Version 1.42
+Screen Coordinates: 2880x1800
+Python 3.9.5
+[]
+Session Start
+PyNaCl is not installed, voice will NOT be supported
+logging in using static token
+Shard ID None has connected to Gateway (Session ID: 70a4f95f50b78f0bcd82db284be5c6cf).
+[20:52:49]  - Resetting character, Attempt: 1
+(191, 215, 230, 255)
+[20:53:01]  - First Honey detected: 14.15 T
+14145224109184
+(132, 112, 43, 255)
+E
+[20:53:04]  - Starting convert
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
 E
 E
 E
@@ -41,306 +179,187 @@ E
 E
 E
 ToM
-[14:44:55]  - Convert done
-14132882888515
+[20:53:41]  - Convert done
 OCR for disconnect
 
-17.7
+
 OCR for disconnect
 
-kenslav17.7
-[14:45:14]  - Moving to cannon
+okensla17.17
+[20:53:46]  - Moving to cannon
+
+
 E
 OCR for bee bear
 
-Fire the Red CannonE
-[14:45:33]  - Cannon found
-[14:45:34]  - Traveling: Blue Booster
-14132882898189
-E
-OCR for blue
-
-Activated "Pine Tree Forest Boost"
-OCR for blue
-
-
-OCR for blue
-
-
-[14:46:32]  - Collected: Blue Booster.
- Boosted Field: Pine Tree
-[14:46:37]  - Resetting character, Attempt: 1
-(133, 106, 90, 255)
-(191, 215, 231, 255)
-(133, 106, 90, 255)
-(191, 215, 231, 255)
-[14:47:01]  - Resetting character, Attempt: 2
-14132882898189
-(133, 106, 90, 255)
-(191, 215, 231, 255)
-(133, 106, 90, 255)
-(191, 215, 231, 255)
+Fire the Red Cannon
+[20:53:57]  - Cannon found
+[20:53:57]  - Travelling: Pine Tree
+14145458562551
+[20:54:11] Gathering: pine tree - Limit: 1.00 - cornerxsnake - Backpack: 100%
+14145523369471
+[20:55:27] Gathering: ended - Time: 1.26 - Time Limit - Return: walk
 OCR for disconnect
 
-toker
-[14:47:34]  - Moving to cannon
+slav
+[20:55:31]  - Going back to hive: Pine Tree
+14145609431969
+E
+OCR for bee bear
 
-
-
-
-[14:47:58]  - Resetting character, Attempt: 1
-14132882898189
+1718EMakesHoney171717.0
+E
+[20:56:25]  - Starting convert
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+14145934967119
+E
+E
+E
+E
+E
+EXIS
+[20:57:07]  - Convert done
+[20:57:07]  - Resetting character, Attempt: 1
 (191, 215, 230, 255)
 (132, 112, 43, 255)
 OCR for disconnect
 
+16,783,132Blessing x10token slav
+OCR for disconnect
 
-[14:48:21]  - Moving to cannon
+15.5k/26.9M16,783,132Blessing x10
+[20:57:25]  - Moving to cannon
 E
 OCR for bee bear
 
-Fire the Red CannonE
-[14:48:39]  - Cannon found
-[14:48:40]  - Travelling: Pine Tree
-[14:48:53] Gathering: pine tree - Limit: 8.00 - cornerxsnake - Backpack: 100%
-14132883751735
-14133156376096
-14133487927595
-14133722816089
-OCR for disconnect
-
-60tokenslay
-[14:52:50] Gathering: ended - Time: 3.93 - Backpack - Return: walk
-OCR for disconnect
-
-PoPotokenslavPo
-[14:52:58]  - Going back to hive: Pine Tree
-14134088883170
+Fire the Red Cannon
+[20:57:34]  - Cannon found
+[20:57:34]  - Travelling: Pine Tree
+[20:57:48] Gathering: pine tree - Limit: 1.00 - cornerxsnake - Backpack: 100%
+[20:58:27] Macro started - Report - exih_macro
+Version 1.42
+Screen Coordinates: 2880x1800
+Python 3.9.5
+[]
+Session Start
+PyNaCl is not installed, voice will NOT be supported
+logging in using static token
+[20:58:39]  - Resetting character, Attempt: 1
+Shard ID None has connected to Gateway (Session ID: ece2437fb43a267331ec4589db13135c).
+(191, 215, 230, 255)
+(132, 112, 43, 255)
 E
-14134092288433
+[20:58:54]  - Starting convert
+E
+E
+E
+E
+[20:59:01]  - First Honey detected: 14.15 T
+14146034812013
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+E
+ToM
+[20:59:31]  - Convert done
+OCR for disconnect
+
+token slav
+OCR for disconnect
+
+token slaw717.
+[20:59:36]  - Moving to cannon
+
+
+E
 OCR for bee bear
 
-Honey1717MakeE171
-E
-[14:54:05]  - Starting convert
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-14134650538101
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-14135497037074
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-14136576201792
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-14137552235881
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-14138567567395
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-14139497615351
-[14139497615351, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132882888515, 14132882898189, 14132882898189, 14132882898189, 14132883751735, 14133156376096, 14133487927595, 14133722816089, 14134088883170, 14134092288433, 14134650538101, 14135497037074, 14136576201792, 14137552235881, 14138567567395]
-prev honey: 14132214272317
-[14139497615351, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132882888515, 14132882898189, 14132882898189, 14132882898189, 14132883751735, 14133156376096, 14133487927595, 14133722816089, 14134088883170, 14134092288433, 14134650538101, 14135497037074, 14136576201792, 14137552235881, 14138567567395]
-[14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132214272317, 14132882888515, 14132882898189, 14132882898189, 14132882898189, 14132883751735, 14133156376096, 14133487927595, 14133722816089, 14134088883170, 14134092288433, 14134650538101, 14135497037074, 14136576201792, 14137552235881, 14138567567395]
-E
-E
-E
-[15:00:16] **Hourly Report** - 
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-14140360164802
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-E
-14141162739457
-E
-E
-E
-E
-E
-E
-E
-Poll
-[15:02:19]  - Convert done
-[15:02:20]  - Resetting character, Attempt: 1
-(193, 217, 233, 255)
-(132, 113, 43, 255)
+Fire the Red Cannon
+[20:59:47]  - Cannon found
+[20:59:48]  - Travelling: Pine Tree
+14146061963462
+[14146061963462, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013, 14146034812013]
+prev honey: 14146034812013
+[14146061963462]
+[14146061963462]
+max() arg is an empty sequence
+[21:00:01]  - Hourly Report has an error that has been caught. The error can be found in macroLogs.log
+[21:00:02] Gathering: pine tree - Limit: 1.00 - cornerxsnake - Backpack: 100%
+14146203386898
+[21:01:18] Gathering: ended - Time: 1.26 - Time Limit - Return: walk
 OCR for disconnect
 
-token slay
-OCR for disconnect
-
-717.
-[15:02:48]  - Moving to cannon
-
+token slayYo
+[21:01:22]  - Going back to hive: Pine Tree
+14146362375859
 E
-14141409603915
 OCR for bee bear
 
-Fire the Red CannonE
-[15:03:06]  - Cannon found
-[15:03:06]  - Travelling: Pine Tree
-[15:03:20] Gathering: pine tree - Limit: 8.00 - cornerxsnake - Backpack: 100%
-14141437442498
-14141726139265
+1717171817E7Make Honey
+E
+[21:02:15]  - Starting convert
+E
+E
+E
