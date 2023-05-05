@@ -2385,7 +2385,7 @@ def setResolution():
     whd = int(pag.size()[1])
     warnings = []
     info  = str(subprocess.check_output("system_profiler SPDisplaysDataType", shell=True)).lower()
-    scw = "\nScreen Coordinates not found in supported list. Contact Existance to get it supported"
+    scw = "\nScreen Coordinates not found in supported list. Contact Existance to get it supported."
     if "retina" in info or "m1" in info or "m2" in info:
         try:
             retout = subprocess.check_output("system_profiler SPDisplaysDataType | grep -i 'retina'",shell=True)
@@ -2435,11 +2435,13 @@ def setResolution():
         loadsettings.save("y_length_multiplier",multiInfo[ndisplay][2],"multipliers.txt")
         loadsettings.save("x_length_multiplier",multiInfo[ndisplay][3],"multipliers.txt")
     else:
+        scw+= "Your screen coordinates are: {}".format(ndisplay)
         warnings.append(scw)
         pag.alert(scw)
     if warnings:
         print("\033[0;31mWarnings:\n{}\033[00m".format(warnings))
 if __name__ == "__main__":
+    global show_haste_warn
     with open('macroLogs.log', 'w'):
         pass
     with open('firstRun.txt', 'w') as f:
@@ -2645,7 +2647,7 @@ if __name__ == "__main__":
     sprinkler_type.set(setdat["sprinkler_type"].title())
     discord_bot_token = setdat['discord_bot_token']
     haste_compensation = tk.IntVar(value=setdat["haste_compensation"])
-    low_performance_haste_compensation = tk.IntVar(value=setdat["low_performance_haste_compensation"])
+
     rejoin_every_enabled = tk.IntVar(value=setdat["rejoin_every_enabled"])
     rejoin_every = setdat['rejoin_every']
     rejoin_delay = setdat['rejoin_delay']
@@ -2721,6 +2723,7 @@ if __name__ == "__main__":
     harvest = plantdat['harvest']
     planter_count = tk.StringVar(root)
     planter_count.set(plantdat['planter_count'])
+    show_haste_warn = setdat['show_haste_warn']
     harvest_full = tk.IntVar(value=boolToInt(str(harvest)=="full"))
     harvest_auto = tk.IntVar(value=boolToInt(str(harvest)=="auto"))
     harvest_int = plantdat['harvest']
@@ -3060,7 +3063,7 @@ if __name__ == "__main__":
             "enable_discord_bot":enable_discord_bot.get(),
             "discord_bot_token":tokentextbox.get(1.0,"end").replace("\n",""),
             "haste_compensation": haste_compensation.get(),
-            "low_performance_haste_compensation": low_performance_haste_compensation.get(),
+            "show_haste_warn": show_haste_warn,
             "rejoin_every_enabled": rejoin_every_enabled.get(),
             "rejoin_every": rejoinetextbox.get(1.0,"end").replace("\n",""),
             "rejoin_delay": rejoindelaytextbox.get(1.0,"end").replace("\n",""),
@@ -3323,7 +3326,12 @@ if __name__ == "__main__":
         else:
             sendss.configure(state="disable")
             urltextbox.configure(state="disable")
-
+    def warnHasteComp():
+        global show_haste_warn
+        if not show_haste_warn and str(haste_compensation.get()) == "1":
+            pag.alert("Note: Enabling haste compensation will cause the macro to use the roblox UI navigation. This is normal behavior.")
+            show_haste_warn = 1
+            
     def changeHarvest(selected):
         global harvest_full, harvest_auto, harvest_int
         htt = harvesttextbox.get(1.0,"end").replace("\n","")
@@ -3663,7 +3671,7 @@ if __name__ == "__main__":
     dropField = ttk.OptionMenu(frame3, sprinkler_slot, setdat['sprinkler_slot'], *[x+1 for x in range(6)],style='my.TMenubutton' )
     dropField.place(width=60,x = 245, y = 85,height=24)
 
-    tkinter.Checkbutton(frame3, text="Enable Haste Compensation", variable=haste_compensation).place(x=0, y = 120)
+    tkinter.Checkbutton(frame3, text="Enable Haste Compensation", variable=haste_compensation, command = warnHasteComp).place(x=0, y = 120)
     
 
 
