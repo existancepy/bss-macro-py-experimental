@@ -50,7 +50,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.42"
+macrov = "1.42.1"
 sv_i = sys.version_info
 python_ver = '.'.join([str(sv_i[i]) for i in range(0,3)])
 planterInfo = loadsettings.planterInfo()
@@ -1869,34 +1869,39 @@ def gather(gfid):
     fullTime = 0
     stingerFound = 0
     end_gather = 0
+    bpcap = 0
+    cycleCount = 0
     while not end_gather:
         time.sleep(0.05)
         mouse.press(Button.left)
         time.sleep(0.05)
-        for _ in range(10):
-            if setdat['shift_lock']: pag.press('shift')
-            exec(open("gather_{}.py".format(gp)).read())
-            bpcap = backpack.bpc()
-            resetMobTimer(cf.lower())
-            timespent = (time.perf_counter() - timestart)/60
-            if bpcap >= setdat["pack"]:
-                webhook("Gathering: ended","Time: {:.2f} - Backpack - Return: {}".format(timespent, setdat["return_to_hive"]),"light green")
-                end_gather = 1
-                break
-            
-            if timespent > setdat["gather_time"]:
-                webhook("Gathering: ended","Time: {:.2f} - Time Limit - Return: {}".format(timespent, setdat["return_to_hive"]),"light green")
-                end_gather = 1
-                break
-            if setdat['field_drift_compensation'] and gp != "stationary":
-                fieldDriftCompensation()
-            if setdat['shift_lock']: pag.press('shift')
-            shv = stingerHunt(0,1)
-            if  shv == "success":
-                stingerFound = 1
-                break
-        if checkwithOCR("disconnect"): return       
+        if setdat['shift_lock']: pag.press('shift')
+        exec(open("gather_{}.py".format(gp)).read())
+        bpcap = backpack.bpc()
+        resetMobTimer(cf.lower())
+        timespent = (time.perf_counter() - timestart)/60
+        if bpcap >= setdat["pack"]:
+            webhook("Gathering: ended","Time: {:.2f} - Backpack - Return: {}".format(timespent, setdat["return_to_hive"]),"light green")
+            end_gather = 1
+            break
+        
+        if timespent > setdat["gather_time"]:
+            webhook("Gathering: ended","Time: {:.2f} - Time Limit - Return: {}".format(timespent, setdat["return_to_hive"]),"light green")
+            end_gather = 1
+            break
+        if setdat['field_drift_compensation'] and gp != "stationary":
+            fieldDriftCompensation()
+        if setdat['shift_lock']: pag.press('shift')
+        shv = stingerHunt(0,1)
+        if  shv == "success":
+            stingerFound = 1
+            break
+        if not cycleCount%20:
+            if checkwithOCR("disconnect"): return
+        if not cycleCount%3:
+            bpcap = backpack.bpc() 
         mouse.release(Button.left)
+        cycleCount += 1
     time.sleep(0.5)
     setStatus()
     if not stingerFound:
