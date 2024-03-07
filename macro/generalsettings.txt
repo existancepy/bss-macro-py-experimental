@@ -1,0 +1,24 @@
+
+hive_number:3
+walkspeed:28
+gifted_vicious_bee:0
+enable_discord_webhook:1
+discord_webhook_url:https://discord.com/api/webhooks/1162895121315008545/IHapDfOLoVpERdPquwSSUWgIki9DcSM_hRgeCVN47VnY1ZlJDefqikBiCww2j-58WEBv
+send_screenshot:1
+sprinkler_slot:1
+display_type:built-in retina display
+new_ui:0
+private_server_link:https://www.roblox.com/games/1537690962/Bee-Swarm-Simulator?privateServerLinkCode=64869142584380982248217921694898
+enable_discord_bot:1
+discord_bot_token:MTA2NTIwNjQ3OTUyNDczNzA2NA.GmOYES.iPxIrltexD9WWX-ZMt_ors4K7k4o0dWGmko94w
+show_haste_warn:
+current_profile:delte
+start_honey:15273198716976
+prev_honey:15276909561526
+start_time:1709814046.8737228
+canon_time:1.0
+reverse_hive_direction:0
+rejoin_delay:60
+rejoin_method:deeplink
+sprinkler_type:saturator
+so_broke:0

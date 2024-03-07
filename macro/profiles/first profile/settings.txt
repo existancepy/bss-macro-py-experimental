@@ -1,26 +1,10 @@
-
-hive_number:4
-walkspeed:28
-gifted_vicious_bee:0
-enable_discord_webhook:0
-discord_webhook_url:
-send_screenshot:0
-sprinkler_slot:1
-sprinkler_type:saturator
-display_type:built-in retina display
-private_server_link:
-enable_discord_bot:0
-discord_bot_token:
-haste_compensation:0
-show_haste_warn:0
+haste_compensation:1
 rejoin_every_enabled:0
 rejoin_every:1
-rejoin_delay:50
-rejoin_method:new tab
 manual_fullscreen:0
-convert_wait:5
+convert_wait:0
 gather_enable:1
-gather_field:['strawberry', 'none', 'none']
+gather_field:['pine tree', 'none', 'none']
 stump_snail:0
 continue_after_stump_snail:0
 ladybug:0
@@ -30,7 +14,8 @@ scorpion:0
 werewolf:0
 mantis:0
 stinger:0
-wealthclock:1
+ant_challenge:0
+wealthclock:0
 blueberrydispenser:0
 strawberrydispenser:0
 royaljellydispenser:0
@@ -45,11 +30,7 @@ snow_machine:0
 mondo_buff:0
 lid_art:0
 candles:0
-start_honey:14862116603044
-prev_honey:14862325828619
-start_time:1700272005.732896
-canon_time:1.0
-reverse_hive_direction:0
+antpass:0
 blue_booster:0
 red_booster:0
 mountain_booster:0
@@ -59,3 +40,4 @@ slot_time:[0, 0, 0, 0, 0, 0, 0]
 slot_freq:['secs', 'secs', 'secs', 'secs', 'secs', 'secs', 'secs']
 slot_use:['gathering', 'gathering', 'gathering', 'gathering', 'gathering', 'gathering', 'gathering']
 polar_quest:0
+backpack_freeze:0

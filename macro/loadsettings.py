@@ -4,11 +4,22 @@ import os
 import tkinter
 import ast
 
-def load(filename = "settings.txt"):
+def load(filename = None, **kwargs):
+    if filename is None:
+        general = loadFile("generalsettings.txt")
+        if not "profile" in kwargs:
+            kwargs["profile"] = general['current_profile']
+        settings = loadFile(f"./profiles/{kwargs['profile']}/settings.txt")
+        return {**general, **settings}
+    return loadFile(filename)
+
+def loadFile(filename):
     info = {}
-    with open(filename,"r") as f:
-        lines = f.read().split("\n")
-    f.close()
+    lines = []
+    while len(lines) == 1 or not len(lines):
+        with open(filename,"r") as f:
+            lines = f.read().split("\n")
+        f.close()
     for s in lines:
         if not s.startswith("=") and not s == "":
             l = s.strip().split(":",1)
@@ -43,10 +54,11 @@ def load(filename = "settings.txt"):
                 
             info[l[0]] = l[1]
     return info
-
-def planterLoad():
+def planterLoad(profile = None):
     info = {}
-    with open('plantersettings.txt',"r") as f:
+    if profile is None:
+        profile = loadFile("generalsettings.txt")["current_profile"]
+    with open(f"./profiles/{profile}/plantersettings.txt","r") as f:
         lines = f.read().split("\n")
     f.close()
     for s in lines:
@@ -66,7 +78,7 @@ def planterLoad():
             info[l[0]] = l[1]
     return info
     
-def save(setting,value,filename = "settings.txt"):
+def save(setting,value,filename = "generalsettings.txt"):
     info = load(filename)
     info[setting] = value
     out = ''
