@@ -12,7 +12,7 @@ private_server_link:
 enable_discord_bot:0
 discord_bot_token:
 show_haste_warn:
-current_profile:delte
+current_profile:first profile
 start_honey:15273198716976
 prev_honey:15276909561526
 start_time:1709814046.8737228
