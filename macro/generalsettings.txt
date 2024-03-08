@@ -2,15 +2,15 @@
 hive_number:3
 walkspeed:28
 gifted_vicious_bee:0
-enable_discord_webhook:1
+enable_discord_webhook:0
 discord_webhook_url:
 send_screenshot:1
 sprinkler_slot:1
 display_type:built-in retina display
 new_ui:0
-private_server_link:https://www.roblox.com/games/1537690962/Bee-Swarm-Simulator?privateServerLinkCode=64869142584380982248217921694898
-enable_discord_bot:1
-discord_bot_token:MTA2NTIwNjQ3OTUyNDczNzA2NA.GmOYES.iPxIrltexD9WWX-ZMt_ors4K7k4o0dWGmko94w
+private_server_link:
+enable_discord_bot:0
+discord_bot_token:
 show_haste_warn:
 current_profile:delte
 start_honey:15273198716976
