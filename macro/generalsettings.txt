@@ -3,7 +3,7 @@ hive_number:3
 walkspeed:28
 gifted_vicious_bee:0
 enable_discord_webhook:1
-discord_webhook_url:https://discord.com/api/webhooks/1162895121315008545/IHapDfOLoVpERdPquwSSUWgIki9DcSM_hRgeCVN47VnY1ZlJDefqikBiCww2j-58WEBv
+discord_webhook_url:
 send_screenshot:1
 sprinkler_slot:1
 display_type:built-in retina display
