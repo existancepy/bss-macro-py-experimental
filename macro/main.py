@@ -99,7 +99,7 @@ mw = ms[0]
 mh = ms[1]
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.57"
+macrov = "1.57.1"
 planterInfo = loadsettings.planterInfo()
 mouse = pynput.mouse.Controller()
 keyboard = pynput.keyboard.Controller()
@@ -5361,28 +5361,6 @@ if __name__ == "__main__":
     cycleCanvas.bind_all('<MouseWheel>', on_vertical)
     
     ylevel = 50
-    '''
-    cycleCanvas.create_window(60, ylevel-30, window = tkinter.Label(cycleCanvas, text = "Cycle 1"))
-    
-    tkinter.Label(cycleCanvas, text = "Planters").place(x = 0, y = ylevel)
-    dropField = ttk.OptionMenu(cycleCanvas, cycle_1_planter_1,plantdat['cycle_1_planter_1'], *planters,style='smaller.TMenubutton' )
-    dropField.place(x = 60, y = ylevel,height=24,width=95)
-    tkinter.Label(cycleCanvas, text = "Fields").place(x = 0, y = ylevel+35)
-    dropField = ttk.OptionMenu(cycleCanvas, cycle_1_field_1,plantdat['cycle_1_field_1'], *gather_fields,style='smaller.TMenubutton' )
-    dropField.place(x = 60, y = ylevel+35,height=24,width=95)
-    
-    dropField = ttk.OptionMenu(cycleCanvas, cycle_1_planter_2,plantdat['cycle_1_planter_2'], *planters,style='smaller.TMenubutton' )
-    dropField.place(x = 190, y = ylevel,height=24,width=95)
-    dropField = ttk.OptionMenu(cycleCanvas, cycle_1_field_2,plantdat['cycle_1_field_2'], *gather_fields,style='smaller.TMenubutton' )
-    dropField.place(x = 190, y = ylevel+35,height=24,width=95)
-
-    dropField = ttk.OptionMenu(cycleCanvas, cycle_1_planter_3,plantdat['cycle_1_planter_3'], *planters,style='smaller.TMenubutton' )
-    dropField.place(x = 320, y = ylevel,height=24,width=95)
-    dropField = ttk.OptionMenu(cycleCanvas, cycle_1_field_3,plantdat['cycle_1_field_3'], *gather_fields,style='smaller.TMenubutton' )
-    dropField.place(x = 320, y = ylevel+35,height=24,width=95)
-
-    ttk.Separator(cycleCanvas,orient="horizontal").place(x=0, y=ylevel+75, width=400, height=2) 
-    '''
 
     cycleCanvas.create_window(60, ylevel-40, window = tkinter.Label(cycleCanvas, text = "Cycle 1"))
 
@@ -5419,7 +5397,7 @@ if __name__ == "__main__":
 
     dropField = ttk.OptionMenu(cycleCanvas, cycle_2_planter_2,plantdat['cycle_2_planter_2'], *planters,style='smaller.TMenubutton')
     cycleCanvas.create_window(250, ylevel, height=24, width=95, window = dropField)
-    dropField = ttk.OptionMenu(cycleCanvas, cycle_1_field_2,plantdat['cycle_2_field_2'], *gather_fields,style='smaller.TMenubutton')
+    dropField = ttk.OptionMenu(cycleCanvas, cycle_2_field_2,plantdat['cycle_2_field_2'], *gather_fields,style='smaller.TMenubutton')
     cycleCanvas.create_window(250, ylevel+35, height=24, width=95, window = dropField)
 
     dropField = ttk.OptionMenu(cycleCanvas, cycle_2_planter_3,plantdat['cycle_2_planter_3'], *planters,style='smaller.TMenubutton')
@@ -5443,7 +5421,7 @@ if __name__ == "__main__":
 
     dropField = ttk.OptionMenu(cycleCanvas, cycle_3_planter_2,plantdat['cycle_3_planter_2'], *planters,style='smaller.TMenubutton')
     cycleCanvas.create_window(250, ylevel, height=24, width=95, window = dropField)
-    dropField = ttk.OptionMenu(cycleCanvas, cycle_1_field_2,plantdat['cycle_3_field_2'], *gather_fields,style='smaller.TMenubutton')
+    dropField = ttk.OptionMenu(cycleCanvas, cycle_3_field_2,plantdat['cycle_3_field_2'], *gather_fields,style='smaller.TMenubutton')
     cycleCanvas.create_window(250, ylevel+35, height=24, width=95, window = dropField)
 
     dropField = ttk.OptionMenu(cycleCanvas, cycle_3_planter_3,plantdat['cycle_3_planter_3'], *planters,style='smaller.TMenubutton')
@@ -5467,7 +5445,7 @@ if __name__ == "__main__":
 
     dropField = ttk.OptionMenu(cycleCanvas, cycle_4_planter_2,plantdat['cycle_4_planter_2'], *planters,style='smaller.TMenubutton')
     cycleCanvas.create_window(250, ylevel, height=24, width=95, window = dropField)
-    dropField = ttk.OptionMenu(cycleCanvas, cycle_1_field_2,plantdat['cycle_4_field_2'], *gather_fields,style='smaller.TMenubutton')
+    dropField = ttk.OptionMenu(cycleCanvas, cycle_4_field_2,plantdat['cycle_4_field_2'], *gather_fields,style='smaller.TMenubutton')
     cycleCanvas.create_window(250, ylevel+35, height=24, width=95, window = dropField)
 
     dropField = ttk.OptionMenu(cycleCanvas, cycle_4_planter_3,plantdat['cycle_4_planter_3'], *planters,style='smaller.TMenubutton')
@@ -5491,7 +5469,7 @@ if __name__ == "__main__":
 
     dropField = ttk.OptionMenu(cycleCanvas, cycle_5_planter_2,plantdat['cycle_5_planter_2'], *planters,style='smaller.TMenubutton')
     cycleCanvas.create_window(250, ylevel, height=24, width=95, window = dropField)
-    dropField = ttk.OptionMenu(cycleCanvas, cycle_1_field_2,plantdat['cycle_5_field_2'], *gather_fields,style='smaller.TMenubutton')
+    dropField = ttk.OptionMenu(cycleCanvas, cycle_5_field_2,plantdat['cycle_5_field_2'], *gather_fields,style='smaller.TMenubutton')
     cycleCanvas.create_window(250, ylevel+35, height=24, width=95, window = dropField)
 
     dropField = ttk.OptionMenu(cycleCanvas, cycle_5_planter_3,plantdat['cycle_5_planter_3'], *planters,style='smaller.TMenubutton')
