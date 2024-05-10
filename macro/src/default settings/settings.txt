@@ -2,7 +2,6 @@
 haste_compensation:0
 rejoin_every_enabled:0
 rejoin_every:1
-manual_fullscreen:0
 convert_wait:0
 gather_enable:1
 gather_field:['Pine Tree', 'None', 'None']
@@ -29,6 +28,7 @@ samovar:0
 wreath:0
 snow_machine:0
 mondo_buff:0
+mondo_interrupt:0
 lid_art:0
 candles:0
 antpass:0
@@ -42,3 +42,11 @@ slot_freq:['Secs', 'Secs', 'Secs', 'Secs', 'Secs', 'Secs', 'Secs']
 slot_use:['Gathering', 'Gathering', 'Gathering', 'Gathering', 'Gathering', 'Gathering', 'Gathering']
 polar_quest:0
 backpack_freeze:0
+return_to_hive_override: no override
+gather_time_override:8
+gather_time_override_enabled:0
+bucko_quest:0
+enable_quest_gumdrop:0
+quest_gumdrop_slot:1
+riley_quest:0
+cps:10

@@ -20,12 +20,6 @@ def loadRes():
 
 ocr = PaddleOCR(lang='en', show_log = False, use_angle_cls=False)
 
-def millify(n):
-    if not n: return 0
-    millnames = ['',' K',' M',' B',' T', 'Qd']
-    n = float(n)
-    millidx = max(0,min(len(millnames)-1,
-                        int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
 def screenshot(**kwargs):
     out = None
     for _ in range(4):
@@ -58,7 +52,7 @@ def imToString(m):
         honeyY = 31
         if setdat['display_type'] == "built-in retina display": honeyY*=2
     if m == "bee bear":
-        cap = screenshot(region=(ww//(2.7*xsm),ebY/1.1,ww//(3*xlm),wh//(15*ylm)))
+        cap = screenshot(region=(ww//(3*xsm),ebY/1.1,ww//(3*xlm),wh//(15*ylm)))
     elif m == "egg shop":
         cap = screenshot(region=(ww//(1.2*xsm),wh//(3*ysm),ww-ww//1.2,wh//5))
     elif m == "blue":
@@ -85,13 +79,14 @@ def imToString(m):
         #print(ocrres)
         try:
             result = [x[1][0] for x in ocrres]
+            log(result)
             for i in result:
                 if i[0].isdigit():
                     honey = i
                     break
             honey = int(''.join([x for x in honey if x.isdigit()]))
-            log(millify(honey))
         except Exception as e:
+            print(e)
             print(honey)
         os.remove("{}.png".format(sn))
         return honey
