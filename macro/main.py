@@ -1,5 +1,14 @@
 def printRed(txt):
     print("\033[0;31m{}\033[00m".format(txt))
+
+import sys
+sv_i = sys.version_info
+python_ver = '.'.join([str(sv_i[i]) for i in range(0,3)])
+if (sv_i[1]>=10):
+    printRed("{} is an incorrect python version. Visit #common-fixes 'resintalling-python' to fix it.".format(python_ver))
+    quit()
+print(python_ver)
+
 try:
     import pyautogui as pag
 except Exception as e:
@@ -7,18 +16,16 @@ except Exception as e:
     printRed("This error means that libraries arent installed. Here are some common causes:\n1. You didnt run the commands to install the library\n2. An incorrect version of python (such as 3.11) was installed. Visit #common-fixes 'reinstalling python' in the discord server\n3. There was an error when installing the libraries, preventing them from being downloaded. Create a support ticket in the discord server ")
     quit()
 
-    
-import sys
-sv_i = sys.version_info
-python_ver = '.'.join([str(sv_i[i]) for i in range(0,3)])
-if (sv_i[1]>=10):
-    pag.alert(title = "error", text = "{} is an incorrect python version. Visit #common-fixes 'resintalling-python' to fix it.".format(python_ver))
-    quit()
-print(python_ver)
+import time, os, ctypes, tty
+import numpy as np
+if tuple(map(int, np.__version__.split("."))) >= (1,24,0):
+    os.system('pip3 install "numpy<1.24.0"')
+    import numpy as np
+    #printRed("Invalid numpy version. Your current numpy version is {} but the required one is < 1.24.0.\nTo fix this, run the command\npip3 install \"numpy<1.24.0\"".format(np.__version__))
+    #quit()
 
 
 from difflib import SequenceMatcher
-import time, os, ctypes, tty
 import tkinter
 import tkinter.filedialog
 import tkinter as tk
@@ -29,7 +36,6 @@ from webhook import webhook
 global savedata
 global setdat
 from tkinter import messagebox
-import numpy as np
 import asyncio
 from logpy import log
 import logging
@@ -41,6 +47,9 @@ from pynput.mouse import Button
 from convertAhkPattern import ahkPatternToPython
 from pixelcolour import getPixelColor
 import platform
+import imagehash
+import random
+
 try:
     from html2image import Html2Image
 except ModuleNotFoundError:
@@ -62,26 +71,22 @@ except Exception as e:
     quit()
 if __name__ == '__main__':
     print("\033[1;35m\nStarting Macro...  \n")
+
 try:
-    import ocrpy
-    from ocrpy import imToString,customOCR
+    import ocrmac #see if ocr mac is installed
+    from macocrpy import imToString,customOCR,ocrRead
+    print("Imported macocr")
 except:
-    os.system("pip3 install --force-reinstall paddlepaddle==2.5.0")
-    import ocrpy
-    reload(ocrpy)
-    from ocrpy import imToString,customOCR
+    from ocrpy import imToString,customOCR,ocrRead
+    print("Imported paddleocr")
 import sv_ttk
 import math
 import ast
 from datetime import datetime
 import pyscreeze
 import shutil
-  
-if tuple(map(int, np.__version__.split("."))) >= (1,24,0):
-    os.system('pip3 install "numpy<1.24.0"')
-    import numpy as np
-    #printRed("Invalid numpy version. Your current numpy version is {} but the required one is < 1.24.0.\nTo fix this, run the command\npip3 install \"numpy<1.24.0\"".format(np.__version__))
-    #quit()
+import mss
+import mss.tools
     
 if tuple(map(int, pyscreeze.__version__.split("."))) >= (0,1,29):
     os.system('pip3 install "pyscreeze<0.1.29"')
@@ -94,12 +99,10 @@ retina = "retina" in info or "m1" in info or "m2" in info
 savedata = {}
 ww = ""
 wh = ""
-ms = pag.size()
-mw = ms[0]
-mh = ms[1]
+mw, mh = pag.size()
 stop = 1
 setdat = loadsettings.load()
-macrov = "1.57.1"
+macrov = "1.58.1"
 planterInfo = loadsettings.planterInfo()
 mouse = pynput.mouse.Controller()
 keyboard = pynput.keyboard.Controller()
@@ -117,6 +120,17 @@ except FileNotFoundError:
         hti = None
         pass
     
+cmd = """
+    osascript -e 'tell application "Image Events" to display profile of display 1' 
+    """
+colorProfile = subprocess.check_output(cmd, shell=True).decode(sys.stdout.encoding)
+colorProfile = colorProfile.strip()
+if colorProfile == "missing value": colorProfile = "Color LCD"
+if not "sRGB IEC61966" in colorProfile:
+    pag.alert(text = f'Your current color profile is {colorProfile}.The recommended one is sRGB IEC61966-2.1.\
+    \n(This is optional, but some features like backpack detection wont work)\
+    \nTo change it, go to system settings -> display and set the Color Profile to "sRGB IEC61966-2.1"')
+    
 questData = {}
 questBear = ""
 questTitle = ""
@@ -125,6 +139,7 @@ with open("./dataFiles/quest_data.txt", "r") as f:
     qdata = [x for x in f.read().split("\n") if x]
 f.close()
 
+redcannon = cv2.imread('./images/general/e2.png')
 for i in qdata:
     if i.startswith("="):
         i = i.replace("=","")
@@ -150,14 +165,6 @@ if __name__ == '__main__':
         occupiedStuff = ast.literal_eval(lines[0])
         planterTypes_prev = ast.literal_eval(lines[1])
         planterFields_prev = ast.literal_eval(lines[2])
-    manager = multiprocessing.Manager()
-    currentfield = manager.Value(ctypes.c_wchar_p, "")
-    bpc = multiprocessing.Value('i', 0)
-    rejoinval = multiprocessing.Value('i', 0)
-    gather = multiprocessing.Value('i', 0)
-    disconnected = multiprocessing.Value('i', 0)
-    timeupdate = multiprocessing.Value('i', 0)
-    night = manager.Value(ctypes.c_wchar_p, "")
     reservedImages = ['test.png','roblox.png','night.png']
     for i in os.listdir():
         if ".png" in i and not i in reservedImages:
@@ -213,6 +220,16 @@ def fullscreen():
     keyboard.release(Key.cmd)
     keyboard.release(Key.ctrl)
     keyboard.release("f")
+    
+def mssScreenshot(x,y,w,h):
+    with mss.mss() as sct:
+        # The screen part to capture
+        monitor = {"left": x, "top": y, "width": w, "height": h}
+        # Grab the data and convert to pillow img
+        sct_img = sct.grab(monitor)
+        img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+        return img
+    
 def discord_bot():
     setdat = loadsettings.load()
     intents = discord.Intents.default()
@@ -424,14 +441,17 @@ def getBesideE():
     return text
 
 def ebutton(pagmode=0):
-    ocrval = ''.join([x for x in list(imToString('ebutton').strip()) if x.isalpha()])
-    log(ocrval)
-    return "E" in ocrval and len(ocrval) <= 3
+    img = mssScreenshot(mw//2-200,20,400,125)
+    img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+    res = cv2.matchTemplate(img_cv, redcannon, cv2.TM_CCOEFF_NORMED)
+    #print(res)
+    return (res >= 0.9).any()
 
 def rebutton():
     return "claim" in getBesideE()
 
 def detectNight(bypasstime=0):
+    if getStatus() in ["disconnect","noNight"]: return False
     setdat = loadsettings.load()
     savedat = loadRes()
     ww = savedat['ww']
@@ -470,6 +490,7 @@ def getTop(y):
         height*=2
         y*=2
     res = customOCR(ww/3.5,y,ww/2.5,height,0)
+    print(res)
     log(f"{y},{res}")
     if not res: return False
     text = ''.join([x[1][0].lower() for x in res])
@@ -574,6 +595,14 @@ def hourlyReport(hourly=1):
         convert_avg = minAndSecs(sum(stats["convert_time"])/len(stats["convert_time"]))
         
         hourly_honeys = stats["hourly_honey"]
+        hourly_honey_change = 0
+        hourly_honey_colour = "#05f515"
+        hhc_prefix = "+"
+        if len(hourly_honeys) > 1:
+            if hourly_honeys[-2] > hourly_honey:
+                hourly_honey_colour = "#fa4343"
+                hhc_prefix = "-"
+            hourly_honey_change = round(abs((hourly_honey - hourly_honeys[-2])/hourly_honeys[-2]*100))
         
         if planterset["enable_planters"]:
             showPlanters = "flex"
@@ -609,6 +638,8 @@ def hourlyReport(hourly=1):
             "-vickills": str(stats["vic_kills"]),
             "-quests": str(stats["quests"]),
             "-hourlyhoney": millify(hourly_honey),
+            "-hhc": f"({hhc_prefix}{hourly_honey_change}%)",
+            "-changecolor": hourly_honey_colour,
             "-gatheravg": gather_avg,
             "-convertavg": convert_avg,
             "-bugkills": str(stats["bug_kills"]),
@@ -727,7 +758,7 @@ def reset(hiveCheck=False):
         return False
 
     for _ in range(4):
-        pix = getPixelColor(ww//2,wh-2)
+        pix = getPixelColor((ww//2)+15,wh-2)
         r = [int(x) for x in pix]
         log(r)
         log(abs(r[2]-r[1]))
@@ -736,7 +767,7 @@ def reset(hiveCheck=False):
         log("real")
         avgDiff = (abs(r[2]-r[1])+abs(r[2]-r[0])+abs(r[1]-r[0]))/3
         log(avgDiff)
-        if avgDiff < 10:
+        if avgDiff < 20:
             for _ in range(8):
                 pagPress("o")
             time.sleep(0.8)
@@ -744,6 +775,7 @@ def reset(hiveCheck=False):
         
         for _ in range(4):
             pagPress(".")
+            time.sleep(0.4)
     time.sleep(0.3)
     if hiveCheck:
         webhook("Notice","Hive not found.","red",1)
@@ -784,9 +816,8 @@ def canon(fast=0):
         for _ in range(6):
             move.hold("d",0.2)
             time.sleep(0.05)
-            beside = getBesideE()
-            if "fire" in beside or "red" in beside:
-                webhook("","Cannon found","dark brown")
+            if ebutton():
+                #webhook("","Cannon found","dark brown")
                 with open('./dataFiles/canonfails.txt', 'w') as f:
                     f.write('0')
                 f.close()
@@ -896,8 +927,9 @@ def convert(bypass=0):
     if not bypass:
         r = False
         for _ in range(2):
-            besideE = getBesideE()
-            r = "make" in besideE and not "to" in besideE
+            #besideE = getBesideE()
+            #r = "make" in besideE and not "to" in besideE
+            r = ebutton()
             if r: break
             time.sleep(0.25)
         if not r: return
@@ -942,8 +974,7 @@ def walk_to_hive(field):
     for _ in range(50):
         move.hold("a",0.2)
         time.sleep(0.06)
-        text = getBesideE()
-        if "make" in text:
+        if ebutton():
             convert(1)
             reset()
             return
@@ -1098,7 +1129,163 @@ def antChallenge():
     webhook("", "Cant start ant challenge", "red", 1)
     reset()
     return
+
+def solveMemoryMatch(mmType=""):
     
+    def mmclick(x,y):
+        pag.moveTo(x = x, y = y)
+        time.sleep(0.3)
+        pag.mouseDown()
+        time.sleep(0.3)
+        pag.mouseUp()
+
+    gridSize = [4,4]
+    
+    #return true if img1 and img2 are similar
+    #img1, img2 are hash values of the images
+    def similarImages(img1,img2):
+        return img1 - img2 < 2
+
+    #return a pillow obj of the item at the tile
+    def screenshotItem(x,y):
+        with mss.mss() as sct:
+            # The screen part to capture
+            monitor = {"left": x-30, "top": y-20, "width": 50, "height": 30}
+            # Grab the data and convert to pillow img
+            sct_img = sct.grab(monitor)
+            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+            
+            #save it as a img
+            #output = "{}.png".format(time.time())
+            #mss.tools.to_png(sct_img.rgb, sct_img.size, output=output)
+
+        #then convert it to a hash
+        return imagehash.average_hash(img)
+
+    cmd = """
+    osascript -e 'activate application "Roblox"' 
+    """
+    os.system(cmd)
+    time.sleep(3)
+    
+    #get coordinates of grid
+    gridCoords = []
+    mmData = [None]*(gridSize[0]*gridSize[1]) #store the hashed images of each mm tile
+    checkedCoords = set() #store the coords the macro has checked
+    claimedCoords = set() #store the index that has been claimed
+    middleX = mw//2
+    middleY = mh//2
+    offsetX = 0
+    offsetY = 0
+    if mmType.lower() in ["extreme","winter"]:
+        offsetX = 40
+        gridSize = [5,4]
+    for i in range(1,gridSize[0]+1):
+        x = middleX-200+80*i
+        for j in range(1,gridSize[1]+1):
+            y = middleY-200+80*j
+            gridCoords.append([x,y])
+    #randomiswe the grid positions
+    random.shuffle(gridCoords)
+
+    #get number of attempts (defaults to 10)
+    attempts = 10
+    try:
+        cap = mssScreenshot(middleX-275-offsetX, middleY-146, 100, 100)
+        #read the attempt screen
+        #get only numbers from the ocr result
+        attemptsOCR = int(''.join([x[1][0] for x in ocrRead(cap) if x[1][0].isdigit()]))
+        #min 6, max 10
+        if 6 <= attemptsOCR <= 10:
+            attempts = attemptsOCR
+            print(f"Number of attempts: {attempts}")
+    except Exception as e:
+        print(e)
+            
+    matchFound = None #store the value of the match
+    skipAttempt = False
+    for _ in range(attempts):
+        if skipAttempt:
+            skipAttempt = False
+            continue
+
+        firstTile = None
+        matchFound = None
+        #open first tile
+        for i,e in enumerate(gridCoords):
+            xr,yr = e
+            if (xr,yr) in checkedCoords: continue
+            x = xr-offsetX
+            y = yr-offsetY
+            mmclick(x,y)
+            time.sleep(0.1)
+            pag.moveTo(x = middleX, y = middleY-190) #move the mouse out of the way of the img
+            time.sleep(0.6)
+            tileImg = screenshotItem(x,y)
+            checkedCoords.add((xr,yr))
+            #check if the image matches with anything
+            for j,img in enumerate(mmData):
+                if not img: continue
+                if j in claimedCoords: continue
+                if similarImages(tileImg,img):
+                    matchFound = j
+                    claimedCoords.add(i)
+                    claimedCoords.add(j)
+                    break
+            mmData[i] = tileImg #add the img
+            firstTile = i
+            break
+        
+        time.sleep(0.8)
+        #second tile
+
+        if matchFound:
+            print("match found, 1st tile")
+            mmclick(*gridCoords[matchFound])
+        else:
+            for i,e in enumerate(gridCoords):
+                xr,yr = e
+                if (xr,yr) in checkedCoords: continue
+                x = xr-offsetX
+                y = yr-offsetY
+                mmclick(x,y)
+                time.sleep(0.1)
+                pag.moveTo(x = middleX, y = middleY-190) #move the mouse out of the way of the img
+                time.sleep(0.3)
+                tileImg = screenshotItem(x,y)
+                checkedCoords.add((xr,yr))
+                #check if the image matches with anything
+                for j,img in enumerate(mmData):
+                    if not img: continue
+                    if j in claimedCoords: continue
+                    if similarImages(tileImg,img):
+                        #check if the 1st tile = 2nd tile, got lucky
+                        if (j == firstTile):
+                            print("match found, same attempt")
+                            claimedCoords.add(i)
+                            claimedCoords.add(j)
+                            break
+                        print("match found, 2nd tile")
+                        #since its the 2nd tile, its a new "turn"
+                        time.sleep(2)
+                        mmclick(x,y) #first tile, click the prev 2nd tile
+                        time.sleep(1)
+                        xr2,yr2 = gridCoords[j]
+                        x2 = xr2-offsetX
+                        y2 = yr2-offsetY
+                        mmclick(x2,y2) #click the tile that matches
+                        skipAttempt = True
+                        claimedCoords.add(i)
+                        claimedCoords.add(j)
+                        break
+                mmData[i] = tileImg #add the img 
+                break
+        time.sleep(0.8)
+    cmd = """
+    osascript -e 'activate application "Terminal"' 
+    """
+    os.system(cmd)
+        
 def stingerHunt(convert=0,gathering=0):
     setdat = loadsettings.load()
     fields = ['pepper','mountain top','rose','cactus','spider','clover']
@@ -1157,6 +1344,7 @@ def stingerHunt(convert=0,gathering=0):
                 addStat("objective_time",round((time.perf_counter() - sst)/60,2))
                 return "dc"
             fieldGoTo = status.split("_")[-1]
+            webhook("",f"Travelling to {fieldGoTo} field (vicious bee)","dark brown")
             exec(open("./paths/field_{}.py".format(fieldGoTo)).read())
             exec(open("./paths/vb_{}.py".format(fieldGoTo)).read())
             killvb = 1
@@ -1167,12 +1355,16 @@ def stingerHunt(convert=0,gathering=0):
             while True:
                 exec(open("./paths/killvb_{}.py".format(fieldGoTo)).read())
                 status = getStatus()
+                log(f"stingerHunt status: {status}")
                 if status == "vb_killed":
                     webhook("","Vicious Bee Killed","bright green")
                     addStat("vic_kills", 1)
                     break
                 if time.time()-st > 300:
                     webhook("","Took too long to kill vicious bee, leaving","red")
+                    break
+                if "vb_left" in status:
+                    webhook("","Vicious bee has left","red")
                     break
                 if status == "killing_vb_died":
                     webhook("","Died to vicious bee", "red")
@@ -1329,7 +1521,6 @@ def clickYes():
     setdat = loadsettings.load()
     ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
     xsm = loadsettings.load('multipliers.txt')['x_screenshot_multiplier']
-    mw,mh = pag.size()
     region = (ww/3.2,wh/2.3,ww/2.5,wh/3.4)
     ocr = customOCR(*region,0)
     multi = 1
@@ -1501,7 +1692,7 @@ def vic():
                 
             elif "vb" in status:
                 bluetexts = imToString("blue").lower()
-                print(bluetexts)
+                log(f"vic status: {status}")
                 if "vicious" in bluetexts and "left" in bluetexts:
                     setStatus("vb_left")
                 elif "finding_vb" in status and "vicious" in bluetexts and "attack" in bluetexts:
@@ -1531,7 +1722,7 @@ def vic():
                 if detectNight():
                     setStatus("night")
                     
-            if setdat['enable_discord_webhook'] and setdat['send_screenshot']:
+            if setdat['enable_discord_webhook'] and setdat['hourly_report']:
                 sysTime = datetime.now()
                 sysHour = sysTime.hour
                 sysMin = sysTime.minute
@@ -1660,11 +1851,13 @@ def collect(name,beesmas=0):
             move.press(str(setdat['gumdrop_slot']))
             time.sleep(2)
             move.hold("w",2.5)
+            setStatus("noNight")
                 
         if usename == "wealthclock" or usename == "samovar" or usename == "treatdispenser":
             for _ in range(6):
                 move.hold("w",0.2)
-                if "use" in getBesideE():
+                besideE = getBesideE()
+                if "use" in besideE or "heat" in besideE or "samovar" in besideE:
                     claimLoot = 1
                     break
                 
@@ -1696,6 +1889,12 @@ def collect(name,beesmas=0):
                 if "use" in besideE or "dispenser" in besideE or "claim" in besideE:
                     claimLoot = 1
                     break
+        elif usename = "stockings":
+            for _ in range(2):
+                besideE = getBesideE()
+                if "check" in besideE or "stockings" in besideE or "inside" in besideE:
+                    claimLoot =  1
+                    break
         else:
             for _ in range(2):
                 besideE = getBesideE()
@@ -1707,6 +1906,7 @@ def collect(name,beesmas=0):
             break
         webhook("","Unable To Collect: {}".format(dispname),"dark brown",1)
         reset()
+        setStatus()
     savetimings(usename)
     move.press('e')
     time.sleep(0.5)
@@ -1717,6 +1917,7 @@ def collect(name,beesmas=0):
         exec(open("./paths/claim_{}.py".format(usename)).read())
     reset()
     addStat("objective_time",round((time.perf_counter() - st)/60,2))
+    setStatus()
 
 def rawreset(nowait=0):
     pag.press('esc')
@@ -1794,7 +1995,7 @@ def getQuest(giver):
     q_title = ""
     lines = []
     for j in range(10):
-        ocr = customOCR(0,wh/7,ww/4.1,wh/1.6,0)
+        ocr = customOCR(0,wh/8.5,ww/4.1,wh/1.6,0)
         lines = [x[1][0].lower() for x in ocr]
         #log(lines)
         #search for quest title in only the first 6 lines
@@ -1878,6 +2079,11 @@ def getQuest(giver):
         "bamboc": "bamboo",
         "bamcc": "bamboo"
     }
+
+    feedSynonymDict = {
+        "strawberry": "strawberries",
+        "blueberry": "blueberries"
+    }
     
     for i,e in enumerate(completeLines):
         for k,v in replaceDict.items():
@@ -1892,10 +2098,14 @@ def getQuest(giver):
             #check for kill
             elif a[0] == "kill" and "defeat" in e and a[2] in e:
                 add = True
-            elif a[0] == "feed" and "feed" in e and a[2] in e:
-                a[1] = ''.join([m for m in e[e.find("feed"): e.find(a[2])] if m.isdigit()])
-                x = "_".join(a)
-                add = True
+            elif a[0] == "feed" and "feed" in e:
+                for k,v in feedSynonymDict.items():
+                    if a[2] == k and v in e: 
+                        a[2] = v
+                if a[2] in e:
+                    a[1] = ''.join([m for m in e[e.find("feed"): e.find(a[2])] if m.isdigit()])
+                    x = "_".join(a)
+                    add = True
             elif (a[0] == "misc" or a[0] == "token"  or a[0] == "fieldtoken") and a[1] in e:
                 add = True
             elif a[0] == "collect":
@@ -1937,7 +2147,6 @@ def getQuest(giver):
     
 def openSettings():
     savedat = loadRes()
-    mw, mh = pag.size()
     ww = savedat['ww']
     wh = savedat['wh']
     ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
@@ -2380,10 +2589,21 @@ def openRoblox(link):
         keyboard.type(link)
         time.sleep(0.5)
         keyboard.press(Key.enter)
+
+def findHive(setdat):
+    move.hold("a",0.4)
+    time.sleep(0.06)
+    text = getBesideE()
+    if "claim" in text or "hive" in text:
+        move.press("e")
+        return True
+    return False
     
 def rejoin():
     setdat = loadsettings.load()
+    hiveNumber = setdat['hive_number']
     st = time.perf_counter()
+    rejoinSuccess = False
     for i in range(5):
         savedata = loadRes()
         ww = savedata['ww']
@@ -2455,27 +2675,47 @@ def rejoin():
         move.hold("d",4,0)
         move.hold("s",0.3,0)
         time.sleep(0.5)
-        webhook("","Finding Hive", "dark brown",1)
-        for j in range(40):
+        webhook("",f'Claiming hive {hiveNumber} (guessing hive location)', "dark brown",1)
+        
+        steps = round(hiveNumber*2.5)
+        if hiveNumber == 1: steps = 1
+        for _ in range(steps):
             move.hold("a",0.4)
-            time.sleep(0.06)
-            text = getBesideE()
-            if "claim" in text or "hive" in text:
-                move.press("e")
-                log(j)
-                log((j+1)//2)
-                updateHive(max(1,min(6,round((j+1)//2.5))))
-                convert()
-                webhook("","Rejoin successful","dark brown")
-                currentTime = datetime.now().strftime("%H:%M")
-                setStatus()
-                if setdat["so_broke"]:
-                    pag.typewrite("/")
-                    pag.typewrite(f'Existance so broke :weary: {currentTime}', interval = 0.1)
-                    keyboard.press(Key.enter)
-                if setdat['haste_compensation']: openSettings()
-                addStat("rejoin_time", round((time.perf_counter() - st)/60, 2))
-                return
+
+        for _ in range(3):
+            if findHive(setdat):
+                webhook("",f'Claimed hive {hiveNumber}', "dark brown",1)
+                rejoinSuccess = True
+                break
+        else:
+            webhook("",f'Hive is {hiveNumber} already claimed, finding new hive','dark brown')
+            rawreset()
+            move.hold("w",5+(i*0.5),0)
+            move.hold("s",0.3,0)
+            move.hold("d",4,0)
+            move.hold("s",0.3,0)
+            time.sleep(0.5)
+            for j in range(40):
+                if findHive(setdat):
+                    log(j)
+                    log((j+1)//2)
+                    updateHive(max(1,min(6,round((j+1)//2.5))))
+                    rejoinSuccess = True
+                    break
+                
+        if rejoinSuccess:
+            convert()
+            webhook("","Rejoin successful","dark brown")
+            currentTime = datetime.now().strftime("%H:%M")
+            setStatus()
+            if setdat["so_broke"]:
+                pag.typewrite("/")
+                pag.typewrite(f'Existance so broke :weary: {currentTime}', interval = 0.1)
+                keyboard.press(Key.enter)
+            if setdat['haste_compensation']: openSettings()
+            addStat("rejoin_time", round((time.perf_counter() - st)/60, 2))
+            return
+
         webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown')
 
     
@@ -2610,7 +2850,7 @@ def gather(gfid, quest = False, questGoo = False):
         status = getStatus()
         
         if bpcap >= setdat["pack"]:
-            webhook("Gathering: ended","Time: {:.2f} - Backpack - Return: {}".format(timespent, setdat["return_to_hive"]),"light green")
+            webhook("Gathering: ended","Time: {:.2f} - Backpack - Return: {}".format(timespent, setdat["return_to_hive"]),"light green",1)
             end_gather = 1
             break
         if timespent > setdat["gather_time"]:
@@ -2631,9 +2871,9 @@ def gather(gfid, quest = False, questGoo = False):
         if  shv == "success":
             stingerFound = 1
             break
-        if not cycleCount%20:
+        if not cycleCount%10:
             if checkwithOCR("disconnect"): return
-            
+        print(cycleCount) 
         if not cycleCount%2:
             if (settings["backpack_freeze"] or setdat["pack"] <= 100):
                 bpcap = backpack.bpc()
@@ -2759,7 +2999,6 @@ def feed(name, quantity):
     setdat = loadsettings.load()
     ww = savedata['ww']
     wh = savedata['wh']
-    mw,mh = pag.size()
     while not reset():
         pass
     
@@ -2780,10 +3019,11 @@ def feed(name, quantity):
         time.sleep(0.1)
 
     move.press("enter")
-    keyboard.press(Key.down)
+    time.sleep(1)
+    keyboard.press("s")
     time.sleep(0.05)
-    keyboard.release(Key.down)
-
+    keyboard.release("s")
+    time.sleep(0.5)
     for _ in range(20):
         keyboard.press(Key.page_up)
         time.sleep(0.02)
@@ -2814,6 +3054,7 @@ def feed(name, quantity):
         return
     
     print(foundItem)
+    multi = 1
     if setdat['display_type'] == "built-in retina display":
         multi = 2
     startY = ((wh/7 + foundItem[0][0][1])//multi)+30
@@ -2941,11 +3182,11 @@ def quest(giver, session_start = 0):
         if quest:
             return quest
         else:
-            webhook("","Could not find quest","red")
+            webhook("",f'Could not find {giverName} quest',"red")
 
                     
 def startLoop(planterTypes_prev, planterFields_prev,session_start):
-    global invalid_prev_honey, quest_kills, quest_gathers
+    global invalid_prev_honey, planter_cycle, quest_gathers
     setStatus()
     setdat = loadsettings.load()
     val = validateSettings()
@@ -2991,7 +3232,6 @@ def startLoop(planterTypes_prev, planterFields_prev,session_start):
     ww = savedata['ww']
     wh = savedata['wh']
     gfid = 0
-    planter_cycle = 1
     maxPlanters = 3
     maxCycles = 1
     automatic_planters = bool(planterset['enable_planters'] == 1)
@@ -3235,14 +3475,14 @@ def startLoop(planterTypes_prev, planterFields_prev,session_start):
         #Planter check
         
         if planterset['enable_planters']:
-            if not continuePlanters or (not occupiedStuff and automatic_planters):
+            if not continuePlanters or not occupiedStuff:
                 occupiedStuff = []
                 if automatic_planters:
                     for i in range(maxPlanters):
                         bestPlanter = getBestPlanter(planterFields[i],occupiedStuff,planterTypes)
                         webhook('',"Travelling: {} ({})\nObjective: Place Planter".format(displayPlanterName(bestPlanter),planterFields[i].title()),"dark brown")
                         goToPlanter(planterFields[i],1)
-                        while getStatus() == "disconnect":
+                        if getStatus() == "disconnect":
                             rejoin()
                             goToPlanter(planterFields[i],1)
                         placePlanter(bestPlanter)
@@ -3258,9 +3498,9 @@ def startLoop(planterTypes_prev, planterFields_prev,session_start):
                         if planter == "none" or field == "none": continue
                         webhook('',"Travelling: {} ({})\nObjective: Place Planter".format(planter.title(),field.title()),"dark brown")
                         goToPlanter(field,1)
-                        while getStatus() == "disconnect":
+                        if getStatus() == "disconnect":
                             rejoin()
-                            goToPlanter(usablePlanterName(planter))
+                            goToPlanter(field,1)
                         placePlanter(usablePlanterName(planter))
                         occupiedStuff.append((planter,field))
                     with open("planterdata.txt","w") as f:
@@ -3310,12 +3550,12 @@ def startLoop(planterTypes_prev, planterFields_prev,session_start):
                         collectAnyPlanters += 1
                         for i in range(2):
                             goToPlanter(currField)
-                            while getStatus() == "disconnect":
+                            if getStatus() == "disconnect":
                                 rejoin()
                                 goToPlanter(currField)
                             webhook('',"Travelling: {} ({})\nObjective: Collect Planter, Attempt: {}".format(displayPlanterName(currPlanter),currField.title(),i+1),"dark brown")
                             getBeside = getBesideE()
-                            if "harv" in getBeside or "plant" in getBeside:
+                            if "harv" in getBeside or "plant" in getBeside or "grow" in getBeside:
                                 move.press('e')
                                 clickYes()
                                 addStat("planters",1)
@@ -3824,6 +4064,7 @@ if __name__ == "__main__":
     enable_discord_webhook = tk.IntVar()
     discord_webhook_url= ""
     send_screenshot  = tk.IntVar()
+    hourly_report = tk.IntVar()
     walkspeed = ""
     hive_number = tk.IntVar()
     display_type = tk.StringVar(root)
@@ -3975,6 +4216,7 @@ if __name__ == "__main__":
         enable_discord_webhook.set(setdat["enable_discord_webhook"])
         discord_webhook_url= setdat["discord_webhook_url"]
         send_screenshot.set(setdat["send_screenshot"])
+        hourly_report.set(setdat["hourly_report"])
         walkspeed = setdat["walkspeed"]
         hive_number.set(setdat["hive_number"])
         display_type.set(setdat["display_type"].capitalize())
@@ -4222,7 +4464,6 @@ if __name__ == "__main__":
 
                                                   }
         if gather_field_two.get().lower() != "none":
-            print('saved field 2')
             fields[gather_field_two.get().lower()] = {'gather_pattern': gather_pattern_two.get(),
                                               'gather_size': gather_size_two.get(),
                                               'gather_width': gather_width_two.get(),
@@ -4240,8 +4481,7 @@ if __name__ == "__main__":
                                                       }
 
         if gather_field_three.get().lower() != "none":
-            print('saved field 3')
-            fields[gather_field_two.get().lower()] = {'gather_pattern': gather_pattern_three.get(),
+            fields[gather_field_three.get().lower()] = {'gather_pattern': gather_pattern_three.get(),
                                               'gather_size': gather_size_three.get(),
                                               'gather_width': gather_width_three.get(),
                                               'gather_time': timetextbox_three.get(1.0,"end").replace("\n",""),
@@ -4283,7 +4523,7 @@ if __name__ == "__main__":
         print(files)
         for i in validFiles:
             if i not in files:
-                pag.alert("Not a valid profile folder")
+                pag.alert("Not a valid profile folder. The folder must contain the following files: plantersettings.txt, settings.txt and fieldsettings.txt")
                 return
                 path = f"./profiles/{name}"
         count = 0
@@ -4413,6 +4653,7 @@ if __name__ == "__main__":
             "enable_discord_webhook": enable_discord_webhook.get(),
             "discord_webhook_url": urltextbox.get(1.0,"end").replace("\n",""),
             "send_screenshot": send_screenshot.get(),
+            "hourly_report": hourly_report.get(),
             "sprinkler_slot": sprinkler_slot.get(),
             "display_type": display_type.get().lower(),
             "new_ui": new_ui.get(),
@@ -4628,8 +4869,8 @@ if __name__ == "__main__":
         return [planterFields_set, generalDict, setDict, planterdict]
         
     def startGo():
-        global setdat, stop, planterTypes_prev, planterFields_prev, quest_kill, quest_gathers
-        quest_kills = {}
+        global setdat, stop, planterTypes_prev, planterFields_prev, planter_cycle, quest_gathers
+        planter_cycle = 1
         quest_gathers = {}
         saved = saveSettings()
         if not saved: return
@@ -4704,8 +4945,6 @@ if __name__ == "__main__":
             newUI = 0    
         loadsettings.save("new_ui",newUI)
         
-        gather.value = 0
-        timeupdate.value = int(time.time())
         time.sleep(0.5)
         prevHour = datetime.now().hour
         prevMin = datetime.now().minute
@@ -5577,13 +5816,16 @@ if __name__ == "__main__":
     checkbox = tkinter.Checkbutton(frame7, text="Enable Discord Webhook", command = disabledw,variable=enable_discord_webhook)
     checkbox.place(x=0, y = 15)
     Tooltip(checkbox, text = "Uses a discord webhook to send status messages")
-    tkinter.Label(frame7, text = "Discord Webhook Link").place(x = 350, y = 15)
+    tkinter.Label(frame7, text = "Discord Webhook Link").place(x = 470, y = 15)
     urltextbox = tkinter.Text(frame7, width = 24, height = 1, yscrollcommand = True, bg= wbgc)
     urltextbox.insert("end",discord_webhook_url)
     sendss = tkinter.Checkbutton(frame7, text="Send screenshots", variable=send_screenshot)
     sendss.place(x=200, y = 15)
-    Tooltip(sendss, text = "Sends screenshots along with the status messages.\nAlso enables the hourly report, which is sent at the start of every hour")
-    urltextbox.place(x = 500, y=17)
+    Tooltip(sendss, text = "Sends screenshots along with the status messages.")
+    sendhr = tkinter.Checkbutton(frame7, text="Hourly report", variable=hourly_report)
+    sendhr.place(x=350, y = 15)
+    Tooltip(sendhr, text = "Sends a hourly report at the start of every hour")
+    urltextbox.place(x = 620, y=17)
     
     tkinter.Label(frame7, text = "Private Server Link (optional)").place(x = 0, y = 85)
     linktextbox = tkinter.Text(frame7, width = 24, height = 1, bg= wbgc)
@@ -5628,7 +5870,7 @@ if __name__ == "__main__":
     Tooltip(checkbox, text = "Detects roblox as frozen when the backpack has not changed for a while.\nThis detection only occurs when the macro is gathering")
     checkbox = tkinter.Checkbutton(frame7, text="Existance so broke", variable=so_broke)
     checkbox.place(x=0, y = 225)
-    Tooltip(checkbox, text = "Sends 'Existance so broke' when rejoining. This is a reference to Natro's 'Natro so broke'")
+    Tooltip(checkbox, text = "Sends 'Existance so broke' in chat after rejoining. This is a reference to Natro Macro's so broke message'")
 
     #Tab 9
 
@@ -5647,7 +5889,7 @@ if __name__ == "__main__":
                 break
             
     def autoClick():
-        window = tk.Toplevel() #creates a window to confirm if the user wants to start deleting files
+        window = tk.Toplevel() #creates a window for autoclicker settings
         window.geometry('250x150')
         
         tkinter.Label(window, text = "Clicks per second").place(x = 10, y = 10)
@@ -5660,9 +5902,23 @@ if __name__ == "__main__":
         
         tkinter.Label(window, text = "Move the mouse to the top left corner\nto stop the auto clicker", justify="left").place(x = 10, y = 50)
         ttk.Button(window, text = "Start", command = lambda: startAutoClick(cpstextbox.get(1.0,"end").replace("\n","")), style='small.TButton').place(x=10,y=100)
+    
+    def mmWindow():
+        window = tk.Toplevel() #creates a window for memory match
+        window.geometry('280x210')
+
+        mmType = tk.StringVar(window,"Basic")
+        
+        tkinter.Label(window, justify="left", text = "Instructions\n1.In-game, start the memory match\n2.Select the memory match type\n3.Click the start button below").place(x = 10, y = 10)
+        tkinter.Label(window, text = "Memory Match Type:").place(x = 10, y = 100)
+        dropField = ttk.OptionMenu(window, mmType, "Basic", *["Basic","Mega","Night","Extreme","Winter"],style='my.TMenubutton')
+        dropField.place(width=100,x = 10, y = 130)
+    
+        ttk.Button(window, text = "Start", command = lambda: solveMemoryMatch(mmType.get()), style='small.TButton').place(x=10,y=180)
         
         
     ttk.Button(frame10, text = "Autoclicker", command = autoClick, style='small.TButton').place(x=20,y=50)
+    ttk.Button(frame10, text = "Memory Match Solver", command = mmWindow, style='small.TButton', width = 20).place(x=150,y=50)
     
     
     

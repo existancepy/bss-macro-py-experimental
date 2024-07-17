@@ -172,6 +172,10 @@ kill_3_mantis
 -abilities	
 token_redability
 
+-booster
+token_redboost
+collect_red_booster
+
 -clean-up
 gathergoo_mushroom
 gathergoo_strawberry
@@ -187,7 +191,7 @@ pollengoo_red
 
 -medley
 token_redability
-gathergoo_stawberry
+gathergoo_strawberry
 gather_rose
 
 -mushrooms

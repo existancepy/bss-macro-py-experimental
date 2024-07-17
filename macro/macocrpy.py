@@ -1,5 +1,4 @@
-
-from paddleocr import PaddleOCR
+from ocrmac import ocrmac
 import loadsettings
 import pyautogui as pag
 import numpy as np
@@ -7,6 +6,7 @@ from logpy import log
 import os
 import subprocess
 import time
+
 def loadRes():
     outdict =  {}
     with open('save.txt') as f:
@@ -19,7 +19,15 @@ def loadRes():
         outdict[l[0]] = l[1]
     return outdict
 
-ocr = PaddleOCR(lang='en', show_log = False, use_angle_cls=False)
+def paddleBounding(b):
+    #convert all values to int and unpack
+    x1,y1,x2,y2 = [int(x) for x in b]
+    return ([x1,y1],[x2,y1],[x2,y2],[x1,y2])
+    
+def ocr(img):
+    result = ocrmac.OCR(img).recognize(px=True)
+    #convert it to the same format as paddleocr
+    return [ [paddleBounding(x[2]),(x[0],x[1]) ] for x in result]
 
 def screenshot(**kwargs):
     out = None
@@ -35,7 +43,7 @@ def screenshot(**kwargs):
             print(e)
             time.sleep(0.5)
     return out
-    
+
 def imToString(m):
     setdat = loadsettings.load()
     savedata = loadRes()
@@ -62,10 +70,7 @@ def imToString(m):
         cap = screenshot(region=(ww*3//4, 0, ww//4,wh//3))
     elif m == "ebutton":
         cap = screenshot(region=(ww//(2.65*xsm),ebY,ww//(21*xlm),wh//(17*ylm)))
-        if not cap: return ""
-        cap.save("{}.png".format(sn))
-        result = ocr.ocr("{}.png".format(sn),cls=False)[0]
-        os.remove("{}.png".format(sn))
+        result = ocr(cap)
         try:
             result = sorted(result, key = lambda x: x[1][1], reverse = True)
             return result[0][1][0]
@@ -79,38 +84,35 @@ def imToString(m):
             wm = 5
         cap = pag.screenshot(region=(ww//(xm*xsm),honeyY,ww//(wm*xlm),wh//(ylm*25)))
         if not cap: return ""
-        cap.save("{}.png".format(sn))  
-        ocrres = ocr.ocr("{}.png".format(sn),cls=False)[0]
-        honey = 0
-        #print(ocrres)
+        ocrres = ocr(cap)
+        honey = ""
         try:
-            result = [x[1][0] for x in ocrres]
+            result = ''.join([x[1][0] for x in ocrres])
             log(result)
             for i in result:
-                if i[0].isdigit():
-                    honey = i
+                if i == "(" or i == "+":
                     break
-            honey = int(''.join([x for x in honey if x.isdigit()]))
+                elif i.isdigit():
+                    honey += i
+            honey = int(honey)
         except Exception as e:
             print(e)
             print(honey)
-        os.remove("{}.png".format(sn))
         return honey
     elif m == "disconnect":
         cap = screenshot(region=(ww//(3),wh//(2.8),ww//(2.3),wh//(5)))
     elif m == "dialog":
         cap = screenshot(region=(ww//(3*xsm),wh//(1.6*ysm),ww//(8*xlm),wh//(ylm*15)))
     if not cap: return ""
-    cap.save("{}.png".format(sn))  
-    result = ocr.ocr("{}.png".format(sn),cls=False)[0]
+    result = ocr(cap)
     try:
         result = sorted(result, key = lambda x: x[1][1], reverse = True)
         out = ''.join([x[1][0] for x in result])
     except:
         out = ""
-    os.remove("{}.png".format(sn))
     log("OCR for {}\n\n{}".format(m,out))
     return out
+
 def customOCR(X1,Y1,W1,H1,applym=1):
     sn = time.time()
     ysm = loadsettings.load('multipliers.txt')['y_screenshot_multiplier']
@@ -121,11 +123,11 @@ def customOCR(X1,Y1,W1,H1,applym=1):
         cap = screenshot(region=(X1/xsm,Y1/ysm,W1/xlm,H1/ylm))
     else:
         cap = screenshot(region=(X1,Y1,W1,H1))
-    cap.save("{}.png".format(sn)) 
-    out = ocr.ocr("{}.png".format(sn),cls=False)
+    out = ocr(cap)
     log("OCR for Custom\n{}".format(out))
-    os.remove("{}.png".format(sn))
     if not out is None:
-        return out[0]
+        return out
     else:
         return [[[""],["",0]]]
+    
+
