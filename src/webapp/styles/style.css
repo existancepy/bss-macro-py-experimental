@@ -1,0 +1,239 @@
+/*import font*/
+@import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+/*Responsive font sizes*/
+@media (min-width: 1200px) {
+    html {
+        font-size: 13.5px;
+    }
+}
+
+@media (max-width: 1200px) {
+    html {
+        font-size: 13.5px;
+    }
+}
+
+@media (max-width: 900px) {
+    html {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 700px) {
+    html {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 560px) {
+    html {
+        font-size: 8px;
+    }
+}
+
+/*remove pre-built css*/
+button{
+    all: unset;
+    cursor: pointer;
+}
+
+ul,h1,h2,a{
+    all: unset
+}
+
+/*setup classes for font types*/
+.poppins-regular {
+    font-family: "Poppins", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+  
+.poppins-medium {
+    font-family: "Poppins", sans-serif;
+    font-weight: 500;
+    font-style: normal;
+}
+  
+.poppins-semibold {
+    font-family: "Poppins", sans-serif;
+    font-weight: 600;
+    font-style: normal;
+}
+  
+.poppins-bold {
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-style: normal;
+}
+
+.jost-regular{
+    font-family: "Jost", sans-serif; 
+    font-weight:400;
+}
+
+.jost-medium{
+    font-family: "Jost", sans-serif; 
+    font-weight: 500;
+}
+
+.exo-semibold{
+    font-family: "Exo", sans-serif; 
+    font-weight: 600
+}
+
+body{
+    background-color: #36393F;
+    margin: 0;
+    font-family: "Poppins", sans-serif;
+    color: #E8E8E8;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/*utility classes*/
+.flex-center{
+    display: flex;
+    justify-content: center;
+}
+
+/*element styling*/
+
+#tabs-placeholder{
+    display: flex;
+}
+main{
+    display: flex;
+    width: 100%;
+    flex-grow: 1;
+}
+
+.content{
+    display: flex;
+    padding-top: 0.5rem;
+    padding-bottom: 0.8rem;
+    width: 100%;
+    margin-left: 1rem;
+    margin-right: 1rem;
+}
+
+.sidebar-item{
+    width: 80%;
+    height: 100%;
+    cursor: pointer;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 1rem;
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+    height: min-content;
+    --active-text: #C5C3F7;
+    --active-img: invert(21%) sepia(32%) saturate(711%) hue-rotate(196deg) brightness(100%) contrast(94%);
+}
+
+.sidebar-item img{
+    width: 40%;
+    object-fit: contain;
+    margin-bottom: 0.3rem;
+}
+
+.sidebar-item.active{
+    color: var(--active-text);
+    font-weight: 500;
+}
+
+.sidebar-item:hover{
+    color: var(--active-text);
+    font-weight: 500;
+}
+
+.sidebar-item:hover img{
+    filter: var(--active-img);
+}
+
+.sidebar-item.active img{
+    filter: var(--active-img);
+}
+
+.standard-container{
+    background-color: #2F3136; 
+    margin-top: 1rem; 
+    border: #21262D solid 1px; 
+    height: min-content; 
+    display: flex; 
+    justify-items: center;
+    padding: 0.6rem 1.3rem;
+}
+
+.standard-container h2{
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;  
+}
+
+.standard-container .seperator{
+    height: 2px;
+    width: calc(100% + 0.7rem + 0.7rem);
+    background-color: #40444B;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    margin-left: -0.7rem;
+}
+
+.purple-button{
+    border: #202225 solid 1px; 
+    font-size: 1rem; 
+    background-color: #7A77BB;  
+    padding: 0.4rem 1rem;
+    font-weight: 400;
+}
+
+.purple-button.active {
+    background-color: #36393F;
+}
+
+/*Custom scrollbar*/
+/* width */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: #686868; 
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: #888; 
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #555; 
+}
+
+.log-msg{
+    display: flex; 
+    height: min-content;
+    align-items: center;
+    font-weight: 300;
+}
+
+.log-msg span {
+    height: 1.5rem; 
+    width: 0.2rem; 
+    margin-right: 0.8rem;
+}
+
+.credits a{
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.credits a:hover {
+    color: #1898F4;
+}
