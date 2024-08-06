@@ -11,9 +11,16 @@ async function saveEnabled(){
     eel.saveProfileSetting("fields",fields)
 }
 function saveField(){
-    const fieldProperties = ["shift_lock","field_drift_compensation", "pattern", "size","width","turn","turn_times","mins","backpack","return","whirligig_slot", "start_location", "distance"]
+    const fieldProperties = ["shift_lock","field_drift_compensation", "shape", "size","width","invert_lr","invert_fb","turn","turn_times","mins","backpack","return","whirligig_slot", "start_location", "distance"]
     const fieldData = generateSettingObject(fieldProperties)
     eel.saveField(document.getElementById("field").value,fieldData)
+}
+//save the fields_enabled
+async function updateFieldEnable(ele){
+    //save
+    const fields_enabled = (await loadSettings()).fields_enabled
+    fields_enabled[fieldNo-1] = ele.checked
+    eel.saveProfileSetting("fields_enabled",fields_enabled)
 }
 
 //load the field selected in the dropdown
@@ -33,15 +40,20 @@ async function switchGatherTab(target){
     const selector = document.getElementById("gather-select")
     if (selector) selector.remove()
     Array.from(document.getElementsByClassName("gather-tab-item")).forEach(x => x.classList.remove("active")) //remove the active class
+    //add indicator + active class
     target.classList.add("active")
     target.innerHTML = `<div class = "select-indicator" id = "gather-select"></div>` + target.innerHTML
     document.getElementById("gather-field").innerText = `Gather Field ${fieldNo}`
-    const settings = await loadSettings()
-    console.log(settings)
+    //scroll back to top
+    document.getElementById("gather").scrollTo(0,0); 
     //load the fields
+    const settings = await loadSettings()
     const fieldDropdown = document.getElementById("field")
     fieldDropdown.value = settings.fields[fieldNo-1]
     document.getElementById("field_enable").checked = settings.fields_enabled[fieldNo-1]
+    //get the pattern list
+    const patterns = await eel.getPatterns()()
+    setDropdownData("shape",patterns)
 }
 
 $("#gather-placeholder").load("../htmlImports/tabs/gather.html", () => switchGatherTab(document.getElementById("field-1"))) //load home tab, switch to field 1 once its done loading

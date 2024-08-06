@@ -1,6 +1,7 @@
 import eel
 import webbrowser
 import modules.misc.settingsManager as settingsManager
+import os
 
 eel.init('webapp')
 run = None
@@ -17,11 +18,16 @@ def start():
 def stop():
     if run.value == 3: return #already stopped
     run.value = 0
+@eel.expose
+def getPatterns():
+    return [x.replace(".py","") for x in os.listdir("../settings/patterns") if ".py" in x]
 
 eel.expose(settingsManager.loadFields)
 eel.expose(settingsManager.saveField) 
 eel.expose(settingsManager.loadSettings)
+eel.expose(settingsManager.loadAllSettings)
 eel.expose(settingsManager.saveProfileSetting)
+
 
 
 def toggleStartStop():

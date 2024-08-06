@@ -36,6 +36,10 @@ function getInputValue(id){
 async function loadSettings(){
     return await eel.loadSettings()()
 }
+
+async function loadAllSettings(){
+    return await eel.loadAllSettings()()
+}
 //returns a object based on the settings
 //proprties: an array of property names
 //note: element corresponding to the property must have the same id as that property
@@ -44,7 +48,6 @@ function generateSettingObject(properties){
     properties.forEach(x => {
         out[x] = getInputValue(x)
     })
-    console.log(out)
     return out
 }
 
@@ -125,7 +128,3 @@ window.addEventListener("keydown", (event) => {
     return false
 }
 })
-
-
-
-

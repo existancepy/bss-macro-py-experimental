@@ -28,6 +28,22 @@ const slotArray = [1,2,3,4,5,6,7]
         inputLimit: 5 //restrict the maximum number of characters allowed. If set to 0 or not included, no limit 
     }
 */
+
+
+ 
+//create option elements in a already existing dropdown
+//id: id of dropdown element
+//data: array of values to set
+function setDropdownData(id, data){
+    //create the html
+    html = ""
+    data.forEach(x => {
+        html += `<option value="${x}">${x}</option>`
+    })
+    //add it to the element
+    document.getElementById(id).innerHTML = html
+}
+
 function buildInput(id, type){
     if (type.name == "checkbox"){
         return `<label class="checkbox-container" style="margin-top: 0.6rem;">

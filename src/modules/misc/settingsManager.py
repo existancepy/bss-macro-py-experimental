@@ -42,3 +42,7 @@ def saveProfileSetting(setting, value):
 
 def loadSettings():
     return readSettingsFile(f"../settings/profiles/{profileName}/settings.txt")
+
+#return a dict containing all settings except field (general, profile, planters)
+def loadAllSettings():
+    return {**loadSettings()}

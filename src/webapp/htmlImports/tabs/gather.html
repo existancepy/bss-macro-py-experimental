@@ -8,26 +8,7 @@
         <script>
             const parentElement = document.getElementById("gather")
             const triggerFunction = "saveField()"
-            //https://emojidb.org/
-            const fields = [
-                "🌻 Sunflower",
-                "🌼 Dandelion",
-                "🍄 Mushroom",
-                "🔷 Blue Flower",
-                "🍀 Clover",
-                "🍓 Strawberry",
-                "🕸️ Spider",
-                "🐼 Bamboo",
-                "🍍 Pineapple",
-                "🐌 Stump",
-                "🌵 Cactus",
-                "🎃 Pumpkin",
-                "🌲 Pine Tree",
-                "🌹 Rose",
-                "⛰️ Mountain Top",
-                "🌶️ Pepper",
-                "🥥 Coconut"
-            ]
+            const fields = toEmojiArray(fieldEmojis)
             buildStandardContainer(parentElement,"Gather Field", "",[
                 {
                     id: "field_enable",
@@ -35,6 +16,7 @@
                     desc: "Enable gathering in this field",
                     type: {
                             name: "checkbox",
+                            triggerFunction: "updateFieldEnable(this)"
                         }
                 },
                 {
@@ -70,7 +52,7 @@
             ])
             buildStandardContainer(parentElement, "Pattern", "",[
                 {
-                    id: "pattern",
+                    id: "shape",
                     title: "Shape",
                     desc: "The movement pattern",
                     type: {
@@ -97,6 +79,26 @@
                     type: {
                         name: "dropdown",
                         data: [1,2,3,4,5,6,7,8],
+                        triggerFunction: triggerFunction
+                        
+                    }
+                },
+                {
+                    id: "invert_lr",
+                    title: "Invert Left/Right",
+                    desc: "Invert left and right of the pattern. Instead of going left, it will go right and vice versa",
+                    type: {
+                        name: "checkbox",
+                        triggerFunction: triggerFunction
+                        
+                    }
+                },
+                {
+                    id: "invert_fb",
+                    title: "Invert Forward/Back",
+                    desc: "Invert forwards and backwards of the pattern. Instead of going forwards, it will go backwards and vice versa",
+                    type: {
+                        name: "checkbox",
                         triggerFunction: triggerFunction
                         
                     }
@@ -155,7 +157,7 @@
                     desc: "The method used to return to hive<br> - Reset is best for blue hives with balloons<br> - Walk is generally good but inconsistent<br> - Rejoin is best for those without balloons",
                     type: {
                         name: "dropdown",
-                        data: ["Reset","Walk","Rejoin","Whirligig"],
+                        data: ["💀 Reset","👟 Walk","🔄 Rejoin","🌱 Whirligig"],
                         triggerFunction: triggerFunction
                         
                     }
@@ -187,7 +189,7 @@
                 {
                     id: "distance",
                     title: "Distance",
-                    desc: "Distance to travel in the direction of the start location. Does not affect anything if start location is set to center",
+                    desc: "Distance to travel in the direction of the start location. Does nothing if start location is set to center",
                     type: {
                         name: "dropdown",
                         data: [1,2,3,4,5,6,7,8,9,10],
