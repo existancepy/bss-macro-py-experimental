@@ -1,6 +1,3 @@
-//load the html
-$("#header-placeholder").load("../imports/header.html");
-
 //change the styling of the purple buttons
 //element: the purple button element
 //label: the text labels of the button [not-active-label, active-label]
@@ -18,42 +15,117 @@ function purpleButtonToggle(element, labels){
     
 }
 
-//tab bar 
-//switch tab
-//start by hiding all tabs, then show the one that is relevant
-//also remove all tabs' active class and add it back to the target one
-function switchTab(event){
-    const tabName = event.currentTarget.id.split("-")[0]
-    //remove and hide
-    Array.from(document.getElementsByClassName("content")).forEach(x => {
-        x.style.display = "none"
-    })
-    Array.from(document.getElementsByClassName("sidebar-item")).forEach(x => {
-        x.classList.remove("active")
-    })
-    //add and show
-    event.currentTarget.classList.add("active")
-    document.getElementById(`${tabName}-placeholder`).style.display = "flex"
-}
-//load and add event handlers
-$("#tabs-placeholder")
-.load("../imports/tabs.html")
-.on("click",".sidebar-item", switchTab)
-//home tab
-
-//use a python function to open the link in the user's actual browser
-function ahref(link){
-    eel.openLink(link)
+//get the value of input elements like checkboxes, dropdown and textboxes
+function getInputValue(id){
+    const ele = document.getElementById(id)
+    //checkbox
+    if (ele.tagName == "INPUT" && ele.type == "checkbox"){
+        return ele.checked
+    //textbox
+    } else if (ele.tagName == "INPUT" && ele.type == "text"){
+        const value = ele.value
+        if (!value && (ele.dataset.inputType == "float" || ele.dataset.inputType == "int")) return 0
+        if (!value) return ""
+        return value
+    //dropdown
+    } else if (ele.tagName == "SELECT"){
+        return ele.value.toLowerCase()
+    }
 }
 
-$("#home-placeholder")
-.load("../imports/home.html") //load home tab
-.on("click", "#log-btn",(event) => { //log button
-    const result = purpleButtonToggle(event.currentTarget, ["Simple","Detailed"])
-    document.getElementById("log-type").innerText = result
+async function loadSettings(){
+    return await eel.loadSettings()()
+}
+//returns a object based on the settings
+//proprties: an array of property names
+//note: element corresponding to the property must have the same id as that property
+function generateSettingObject(properties){
+    let out = {}
+    properties.forEach(x => {
+        out[x] = getInputValue(x)
+    })
+    console.log(out)
+    return out
+}
+
+//load fields based on the obj data
+function loadInputs(obj){
+    for (const [k,v] of Object.entries(obj)) {
+        const ele = document.getElementById(k)
+        if (ele.type == "checkbox"){
+            ele.checked = v
+        }else{
+            ele.value = v
+        }
+    }
+}
+
+/*
+=============================================
+Header
+=============================================
+*/
+//load the html
+$("#header-placeholder").load("../htmlImports/persistent/header.html");
+
+/*
+=============================================
+Utils
+=============================================
+*/
+
+//utility to run after content has loaded
+//to be fired as a callback in ajax .load
+function textboxRestriction(ele, evt) {
+    if (ele.dataset.inputLimit && ele.value.length >= ele.dataset.inputLimit) return false
+    if (ele.dataset.inputType == "float"){
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (charCode == 46) {
+            //Check if the text already contains the . character
+            if (ele.value.indexOf('.') === -1) {
+                return true
+            } else {
+                return false
+            }
+        } else {
+            if (charCode > 31 && (charCode < 48 || charCode > 57)) return false
+        }
+        return true;
+    } else if (ele.dataset.inputType == "int"){
+        return !(charCode > 31 && (charCode < 48 || charCode > 57))
+    }
+    }
+
+
+//disable browser actions
+/*
+window.oncontextmenu = function(event) {
+    // block right-click / context-menu
+    event.preventDefault();
+    event.stopPropagation();
+    return false;
+};
+*/
+window.addEventListener("keydown", (event) => {
+    const key = event.key
+    const disabledKeys = ["F1","F3","F5","F12"]
+    if (disabledKeys.includes(key)){
+        event.preventDefault()
+        event.stopPropagation()
+        return false
+    } else if (event.ctrlKey && event.shiftKey && event.key == "I") {
+        // block Strg+Shift+I (DevTools)
+        event.preventDefault()
+        event.stopPropagation()
+        return false
+    } else if (event.ctrlKey && event.shiftKey && event.key == "J") {
+    // block Strg+Shift+J (Console)
+    event.preventDefault()
+    event.stopPropagation()
+    return false
+}
 })
-.on("click", "#start-btn",(event) => { //start button
-    purpleButtonToggle(event.currentTarget, ["Start [F1]","Stop [F3]"])
-})
+
+
 
 
