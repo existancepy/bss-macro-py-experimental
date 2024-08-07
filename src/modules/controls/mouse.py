@@ -7,4 +7,4 @@ import time
 
 #move the mouse instantly
 def teleport(x,y):
-    pag.moveTo(x,y)
+    pag.moveTo(int(x),int(y))

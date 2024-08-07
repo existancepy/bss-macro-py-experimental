@@ -36,7 +36,7 @@ def openAppMac(app="roblox"):
 
 def openAppWindows(name):
     w = WindowMgr()
-    w.find_window_wildcard(".*Roblox.*")
+    w.find_window_wildcard(f".*Roblox.*")
     w.set_foreground()
 
 if sys.platform == "darwin":

@@ -10,7 +10,7 @@ import sys
 
 def macro():
     import modules.macro
-    macro = modules.macro.macro()
+    macro = modules.macro.macro(run)
     macro.start()
     while True:
         pass
