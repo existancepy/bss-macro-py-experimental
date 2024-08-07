@@ -6,11 +6,15 @@ import typing
 import threading
 import eel
 import time
+import sys
 
 def macro():
+    import modules.macro
+    macro = modules.macro.macro()
+    macro.start()
     while True:
-        print("a")
-        time.sleep(1)
+        pass
+        
 
 def watch_for_hotkeys(run):
     def on_press(key):
@@ -26,9 +30,10 @@ def watch_for_hotkeys(run):
 
 if __name__ == "__main__":
     import gui
-
+    import modules.screen.screenData as screenData
     macroProc: typing.Optional[multiprocessing.Process] = None
-
+    #set screen data
+    screenData.setScreenData()
     #value to control if macro main loop is running
     #0: stop (terminate process)
     #1: start (start process)

@@ -10,19 +10,26 @@ def readSettingsFile(path):
     f.close()
     out = {}
     for k,v in data:
-        out[k] = ast.literal_eval(v)
+        try:
+            out[k] = ast.literal_eval(v)
+        except:
+            out[k] = v
     return out
 
+def saveDict(path, data):
+    out = "\n".join([f"{k}={v}" for k,v in data.items()])
+    with open(path, "w") as f:
+        f.write(str(out))
+    f.close()
+
+#update one property of a setting
 def saveSettingFile(setting,value, path):
     #get the dictionary
     data = readSettingsFile(path)
     #update the dictionary
     data[setting] = value
     #write it
-    out = "\n".join([f"{k}={v}" for k,v in data.items()])
-    with open(path, "w") as f:
-        f.write(str(out))
-    f.close()
+    saveDict(path, data)
 
 def loadFields():
     with open(f"../settings/profiles/{profileName}/fields.txt") as f:
