@@ -10,20 +10,20 @@ else:
     size = 1.5
 
 
-move.hold("s",0.5*size)
-move.hold("a",abs(0.17*width*2))
+self.keyboard.walk("s",0.5*size)
+self.keyboard.walk("a",abs(0.17*width*2))
 for _ in range(width):
-    move.hold("w",0.5*size)
-    move.hold("d",0.17)
-    move.hold("s",0.5*size)
-    move.hold("d",0.17)
-move.hold("w",0.5*size)
-move.hold("a",abs(0.17*width*2))
+    self.keyboard.walk("w",0.5*size)
+    self.keyboard.walk("d",0.17)
+    self.keyboard.walk("s",0.5*size)
+    self.keyboard.walk("d",0.17)
+self.keyboard.walk("w",0.5*size)
+self.keyboard.walk("a",abs(0.17*width*2))
 for _ in range(width):
-    move.hold("s",0.5*size)
-    move.hold("d",0.17)
-    move.hold("w",0.5*size)
-    move.hold("d",0.17)
+    self.keyboard.walk("s",0.5*size)
+    self.keyboard.walk("d",0.17)
+    self.keyboard.walk("w",0.5*size)
+    self.keyboard.walk("d",0.17)
 
 
 

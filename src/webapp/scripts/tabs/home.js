@@ -37,7 +37,7 @@ async function loadTasks(){
     for(let i = setdat.fields_enabled.length-1; i >= 0; i--){
         if (!setdat.fields_enabled[i]) continue
         const field = setdat.fields[i]
-        out += taskHTML(`Gather ${i+1}`,`${fieldEmojis[field]} ${field}`)
+        out += taskHTML(`Gather ${i+1}`,`${fieldEmojis[field.replaceAll(" ","_")]} ${field}`)
     }
     //display the tasks
     document.getElementById("task-list").innerHTML = out

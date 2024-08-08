@@ -13,6 +13,9 @@ def readSettingsFile(path):
         try:
             out[k] = ast.literal_eval(v)
         except:
+            #check if integer
+            if v.isdigit():
+                out[k] = int(v)
             out[k] = v
     return out
 
@@ -35,6 +38,10 @@ def loadFields():
     with open(f"../settings/profiles/{profileName}/fields.txt") as f:
         out = ast.literal_eval(f.read())
     f.close()
+    for field,settings in out.items():
+        for k,v in settings.items():
+            #check if integer
+            if isinstance(v,str) and v.isdigit(): out[field][k] = int(v)
     return out
 
 def saveField(field, settings):

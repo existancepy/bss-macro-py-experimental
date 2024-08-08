@@ -12,21 +12,21 @@ else:
     
 wm = 0.2*size
 sm = 0.65*size
-move.hold("a",width*wm*2)
-move.hold("s",sm)
+self.keyboard.walk("a",width*wm*2)
+self.keyboard.walk("s",sm)
 for _ in range(width):
-    move.hold("d",wm)
-    move.hold("w",sm)
-    move.hold("d",wm)
-    move.hold("s",sm)
+    self.keyboard.walk("d",wm)
+    self.keyboard.walk("w",sm)
+    self.keyboard.walk("d",wm)
+    self.keyboard.walk("s",sm)
     
-move.hold("a",width*wm*2)
-move.hold("w",sm)
+self.keyboard.walk("a",width*wm*2)
+self.keyboard.walk("w",sm)
 for _ in range(width):
-    move.hold("d",wm)
-    move.hold("s",sm)
-    move.hold("d",wm)
-    move.hold("w",sm)
+    self.keyboard.walk("d",wm)
+    self.keyboard.walk("s",sm)
+    self.keyboard.walk("d",wm)
+    self.keyboard.walk("w",sm)
 
 
         

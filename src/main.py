@@ -8,9 +8,9 @@ import eel
 import time
 import sys
 
-def macro():
+def macro(status, log):
     import modules.macro
-    macro = modules.macro.macro(run)
+    macro = modules.macro.macro(status, log)
     macro.start()
     while True:
         pass
@@ -39,8 +39,9 @@ if __name__ == "__main__":
     #1: start (start process)
     #2: already running (do nothing)
     #3: already stopped (do nothing)
-    #4: rejoin (stop and trigger rejoin sequence)
     run = multiprocessing.Value('i', 3)
+    status = multiprocessing.Value(ctypes.c_wchar_p, "")
+    log = multiprocessing.Value(ctypes.c_wchar_p, "")
     watch_for_hotkeys(run)
 
     #setup and launch gui
@@ -50,7 +51,7 @@ if __name__ == "__main__":
     while True:
         eel.sleep(0.1)
         if run.value == 1:
-            macroProc = multiprocessing.Process(target=macro)
+            macroProc = multiprocessing.Process(target=macro, args=(status, log))
             macroProc.start()
             print("start")
             run.value = 2
@@ -61,6 +62,9 @@ if __name__ == "__main__":
                 macroProc.kill()
                 run.value = 3
                 gui.toggleStartStop()
+        
+        if status == "yes":
+            print("hi")
             
             
             

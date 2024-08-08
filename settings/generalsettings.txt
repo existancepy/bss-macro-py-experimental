@@ -1,0 +1,2 @@
+hive_number=1
+sprinkler_slot=1

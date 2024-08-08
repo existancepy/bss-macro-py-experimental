@@ -11,25 +11,25 @@ else:
 
 
 for _ in range(2):
-    move.hold("s",0.5*size)
-    move.hold("a",abs(0.17*width*2))
+    self.keyboard.walk("s",0.5*size)
+    self.keyboard.walk("a",abs(0.17*width*2))
     for _ in range(width):
-        move.hold("w",0.5*size)
-        move.hold("d",0.17)
-        move.hold("s",0.5*size)
-        move.hold("d",0.17)
-    move.hold("w",0.5*size)
-    move.hold("a",abs(0.17*width*2))
+        self.keyboard.walk("w",0.5*size)
+        self.keyboard.walk("d",0.17)
+        self.keyboard.walk("s",0.5*size)
+        self.keyboard.walk("d",0.17)
+    self.keyboard.walk("w",0.5*size)
+    self.keyboard.walk("a",abs(0.17*width*2))
     for _ in range(width):
-        move.hold("s",0.5*size)
-        move.hold("d",0.17)
-        move.hold("w",0.5*size)
-        move.hold("d",0.17)
+        self.keyboard.walk("s",0.5*size)
+        self.keyboard.walk("d",0.17)
+        self.keyboard.walk("w",0.5*size)
+        self.keyboard.walk("d",0.17)
 
-move.hold("d",0.9*width)
-move.hold("w",0.4*size)
-move.hold("s",0.3*size)
-move.hold("a",0.3*width)
+self.keyboard.walk("d",0.9*width)
+self.keyboard.walk("w",0.4*size)
+self.keyboard.walk("s",0.3*size)
+self.keyboard.walk("a",0.3*width)
 
 
 
