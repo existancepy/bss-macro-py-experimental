@@ -22,11 +22,15 @@ def stop():
 def getPatterns():
     return [x.replace(".py","") for x in os.listdir("../settings/patterns") if ".py" in x]
 
+def log(time = "", msg = "", color = ""):
+    eel.log(time, msg, color)
+
 eel.expose(settingsManager.loadFields)
 eel.expose(settingsManager.saveField) 
 eel.expose(settingsManager.loadSettings)
 eel.expose(settingsManager.loadAllSettings)
 eel.expose(settingsManager.saveProfileSetting)
+eel.expose(settingsManager.saveGeneralSetting)
 
 
 

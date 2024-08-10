@@ -1,6 +1,6 @@
 
 exec(open("./paths/field_rose.py").read())
-move.apkey("space")
+self.keyboard.press("space")
 self.keyboard.walk("s",1)
 self.keyboard.walk("a",4)
 self.keyboard.walk("s",3)

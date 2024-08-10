@@ -54,6 +54,8 @@ async function switchGatherTab(target){
     //get the pattern list
     const patterns = await eel.getPatterns()()
     setDropdownData("shape",patterns)
+    //load the inputs
+    loadAndSaveField(fieldDropdown)
 }
 
 $("#gather-placeholder").load("../htmlImports/tabs/gather.html", () => switchGatherTab(document.getElementById("field-1"))) //load home tab, switch to field 1 once its done loading

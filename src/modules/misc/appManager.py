@@ -1,5 +1,6 @@
 import sys
 import re
+import os
 class WindowMgr:
     """Encapsulates some calls to the winapi for window management"""
 
@@ -33,6 +34,7 @@ class WindowMgr:
 
 def openAppMac(app="roblox"):
     runAppleScript('activate application "{}"'.format(app))
+    os.system(f"open -a {app}")
 
 def openAppWindows(name):
     w = WindowMgr()

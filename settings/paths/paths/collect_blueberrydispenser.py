@@ -1,5 +1,5 @@
 exec(open("./paths/field_blue flower.py").read())
-move.apkey("space")
+self.keyboard.press("space")
 self.keyboard.walk("s",3)
 self.keyboard.walk("a",5)
 self.keyboard.walk("w",1.5)

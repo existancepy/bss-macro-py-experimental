@@ -19,7 +19,7 @@ for _ in range(3):
     self.keyboard.keyUp("w")
     
 self.keyboard.walk('w',2)
-move.apkey("space")
+self.keyboard.press("space")
 self.keyboard.walk('a',2.5)
 
 

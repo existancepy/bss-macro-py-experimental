@@ -1,6 +1,6 @@
 self.keyboard.walk("d",5)
 self.keyboard.walk("s",7)
-move.apkey('space')
+self.keyboard.press('space')
 self.keyboard.keyDown("a")
 time.sleep(12*28/ws)
 self.keyboard.keyUp("a")

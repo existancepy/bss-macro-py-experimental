@@ -48,3 +48,8 @@ class keyboard:
             settings = loadsettings.load()
             ws = settings['walkspeed']
         time.sleep((tiles/8.3)*28/ws)
+    #release all movement keys (wasd, space)
+    def releaseMovement(self):
+        keys = ["w","a","s","d","space"]
+        for k in keys:
+            self.keyUp(k)

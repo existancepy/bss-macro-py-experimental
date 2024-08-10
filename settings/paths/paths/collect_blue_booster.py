@@ -1,5 +1,5 @@
 exec(open("./paths/field_blue flower.py").read())
-move.apkey("space")
+self.keyboard.press("space")
 self.keyboard.keyDown("a")
 sleep(8)
 self.keyboard.slowPress("space")

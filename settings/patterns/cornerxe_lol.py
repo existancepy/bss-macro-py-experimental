@@ -1,6 +1,6 @@
 if sizeword.lower() == "xs":
     size = 0.5
-elif sizeword.lower() == "s":
+elif sizeword.lower() == afcfbkey:
     size = 1
 elif sizeword.lower() == "l":
     size = 2
@@ -11,25 +11,25 @@ else:
 
 
 for _ in range(2):
-    self.keyboard.walk("s",0.5*size)
-    self.keyboard.walk("a",abs(0.17*width*2))
+    self.keyboard.walk(afcfbkey,0.5*size)
+    self.keyboard.walk(tclrkey,abs(0.17*width*2))
     for _ in range(width):
-        self.keyboard.walk("w",0.5*size)
-        self.keyboard.walk("d",0.17)
-        self.keyboard.walk("s",0.5*size)
-        self.keyboard.walk("d",0.17)
-    self.keyboard.walk("w",0.5*size)
-    self.keyboard.walk("a",abs(0.17*width*2))
+        self.keyboard.walk(tcfbkey,0.5*size)
+        self.keyboard.walk(afclrkey,0.17)
+        self.keyboard.walk(afcfbkey,0.5*size)
+        self.keyboard.walk(afclrkey,0.17)
+    self.keyboard.walk(tcfbkey,0.5*size)
+    self.keyboard.walk(tclrkey,abs(0.17*width*2))
     for _ in range(width):
-        self.keyboard.walk("s",0.5*size)
-        self.keyboard.walk("d",0.17)
-        self.keyboard.walk("w",0.5*size)
-        self.keyboard.walk("d",0.17)
+        self.keyboard.walk(afcfbkey,0.5*size)
+        self.keyboard.walk(afclrkey,0.17)
+        self.keyboard.walk(tcfbkey,0.5*size)
+        self.keyboard.walk(afclrkey,0.17)
 
-self.keyboard.walk("d",0.9*width)
-self.keyboard.walk("w",0.4*size)
-self.keyboard.walk("s",0.3*size)
-self.keyboard.walk("a",0.3*width)
+self.keyboard.walk(afclrkey,0.9*width)
+self.keyboard.walk(tcfbkey,0.4*size)
+self.keyboard.walk(afcfbkey,0.3*size)
+self.keyboard.walk(tclrkey,0.3*width)
 
 
 

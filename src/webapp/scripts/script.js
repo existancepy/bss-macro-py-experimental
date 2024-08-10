@@ -40,6 +40,19 @@ async function loadSettings(){
 async function loadAllSettings(){
     return await eel.loadAllSettings()()
 }
+//save the setting
+//element
+//type: setting type, eg: profile, general
+function saveSetting(ele, type){
+    const id = ele.id
+    const value = getInputValue(id)
+    if (type == "profile"){
+        eel.saveProfileSetting(id, value)
+    }else if (type == "general"){
+        eel.saveGeneralSetting(id, value)
+    }
+}
+
 //returns a object based on the settings
 //proprties: an array of property names
 //note: element corresponding to the property must have the same id as that property
@@ -55,6 +68,8 @@ function generateSettingObject(properties){
 function loadInputs(obj){
     for (const [k,v] of Object.entries(obj)) {
         const ele = document.getElementById(k)
+        //check if element exists
+        if (!ele) continue
         if (ele.type == "checkbox"){
             ele.checked = v
         }else{
@@ -80,9 +95,9 @@ Utils
 //utility to run after content has loaded
 //to be fired as a callback in ajax .load
 function textboxRestriction(ele, evt) {
+    var charCode = (evt.which) ? evt.which : evt.keyCode
     if (ele.dataset.inputLimit && ele.value.length >= ele.dataset.inputLimit) return false
     if (ele.dataset.inputType == "float"){
-        var charCode = (evt.which) ? evt.which : evt.keyCode;
         if (charCode == 46) {
             //Check if the text already contains the . character
             if (ele.value.indexOf('.') === -1) {

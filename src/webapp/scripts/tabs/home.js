@@ -15,6 +15,17 @@ function toggleStartStop(){
     return purpleButtonToggle(document.getElementById("start-btn"), ["Start [F1]","Stop [F3]"])
 }
 
+eel.expose(log)
+function log(time = "", msg = "", color = ""){
+    document.getElementById("log")
+    let timeText = ""
+    if (time) timeText = `[${time}]`
+    const html = `
+    <div class = "log-msg"><span style="background-color: #${color}; align-self: start"></span>${timeText} ${msg}</div>
+    `
+    document.getElementById("logs").innerHTML += html
+}
+
 //returns a html string for the task
 function taskHTML(title, desc){
     const html = `
@@ -30,6 +41,7 @@ function taskHTML(title, desc){
 
 */
 //load the tasks
+//also set max-height for logs
 async function loadTasks(){
     const setdat = await loadAllSettings()
     let out = ""
@@ -41,6 +53,12 @@ async function loadTasks(){
     }
     //display the tasks
     document.getElementById("task-list").innerHTML = out
+
+    //get log height
+    const logEle = document.getElementById("logs")
+    console.log(logEle.offsetHeight)
+    console.log(logEle)
+    //logEle.style.height = `${logEle.clientHeight}px`
 }
 
 

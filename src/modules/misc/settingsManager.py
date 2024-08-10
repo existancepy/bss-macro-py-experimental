@@ -16,6 +16,8 @@ def readSettingsFile(path):
             #check if integer
             if v.isdigit():
                 out[k] = int(v)
+            elif v.replace(".","",1).isdigit():
+                out[k] = float(v)
             out[k] = v
     return out
 
@@ -41,7 +43,9 @@ def loadFields():
     for field,settings in out.items():
         for k,v in settings.items():
             #check if integer
-            if isinstance(v,str) and v.isdigit(): out[field][k] = int(v)
+            if isinstance(v,str): 
+                if v.isdigit(): out[field][k] = int(v)
+                elif v.replace(".","",1).isdigit(): out[field][k] = float(v)
     return out
 
 def saveField(field, settings):
@@ -54,9 +58,12 @@ def saveField(field, settings):
 def saveProfileSetting(setting, value):
     saveSettingFile(setting, value, f"../settings/profiles/{profileName}/settings.txt")
 
+def saveGeneralSetting(setting, value):
+    saveSettingFile(setting, value, "../settings/generalsettings.txt")
+
 def loadSettings():
     return readSettingsFile(f"../settings/profiles/{profileName}/settings.txt")
 
 #return a dict containing all settings except field (general, profile, planters)
 def loadAllSettings():
-    return {**loadSettings()}
+    return {**loadSettings(), **readSettingsFile("../settings/generalsettings.txt")}
