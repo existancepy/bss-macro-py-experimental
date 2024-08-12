@@ -14,6 +14,7 @@ import sys
 import os
 from threading import Thread
 from modules.screen.backpack import bpc
+import webbrowser
 
 class macro:
     def __init__(self, status, log):
@@ -57,6 +58,16 @@ class macro:
     
     def isInBlueTexts(self, includeList = [], excludeList = []):
         return self.isInOCR("blue", includeList, excludeList)
+    #detect the honey/pollen bar to determine if its new or old ui
+    def getTop(self,y):
+        height = 30
+        if self.display_type == "retina":
+            height*=2
+            y*=2
+        res = ocr.customOCR(self.ww/3.5,y,self.ww/2.5,height,0)
+        if not res: return False
+        text = ''.join([x[1][0].lower() for x in res])
+        return "honey" in text or "pollen" in text
     
     #place sprinklers by jumping up and down and placing them middair
     def placeSprinkler(self):
@@ -94,6 +105,11 @@ class macro:
         while True:
             if not self.isBesideE(["stop"]): 
                 self.logger.webhook("", "Finished converting", "brown")
+                #deal with the extra delay
+                wait = self.setdat["convert_wait"]
+                if (wait):
+                    self.logger.webhook("", f'Waiting for an additional {wait} seconds', "light green")
+                time.sleep(wait)
                 break
             if time.time() - st > 600:
                 self.logger.webhook("", "Converting took too long, moving on", "brown")
@@ -101,7 +117,8 @@ class macro:
 
     def reset(self, hiveCheck = False, convert = True):
         self.keyboard.releaseMovement()
-        yOffset = 20 #TODO: calculate yoffset
+        yOffset = 10 #calculate yoffset
+        if self.newUI: yOffset += 20
         #reset until player is at hive
         for i in range(5):
             #set mouse and execute hotkeys
@@ -164,11 +181,134 @@ class macro:
                 time.sleep(0.05)
                 if self.isBesideE(["fire","red"]):
                     return
-            self.logger.webhook("Notice", f"Could not find cannon", "red")
+            self.logger.webhook("Notice", f"Could not find cannon", "dark brown")
             self.reset()
         else:
             self.logger.webhook("Notice", f"Failed to reach cannon too many times", "red")
             disconnect = True
+    
+    def rejoin(self):
+        rejoinMethod = self.setdat["rejoin_method"]
+        psLink = self.setdat["private_server_link"]
+        browserLink = "https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129"
+        for i in range(3):
+            if psLink and i ==2: 
+                self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red")
+            else:
+                browserLink = psLink
+            appManager.closeApp("Roblox") # close roblox
+            time.sleep(4)
+            #execute rejoin method
+            if rejoinMethod == "deeplink":
+                deeplink = "roblox://placeID=1537690962"
+                if psLink:
+                    deeplink += f"&linkCode={psLink.lower().split('code=')[1]}"
+                print(deeplink)
+                appManager.openDeeplink(deeplink)
+            elif rejoinMethod == "new tab":
+                webbrowser.open(browserLink, new = 2)
+            elif rejoinMethod == "reload":
+                webbrowser.open(browserLink, new = 2)
+                time.sleep(2)
+                if sys.platform == "darwin":
+                    self.keyboard.keyDown("command")
+                else:
+                    self.keyboard.keyDown("ctrl")
+                self.keyboard.press("r")
+                if sys.platform == "darwin":
+                    self.keyboard.keyUp("command")
+                else:
+                    self.keyboard.keyUp("ctrl")
+            #wait for bss to load
+            time.sleep(self.setdat["rejoin_wait"])
+            appManager.openApp("roblox")
+            #run fullscreen check (mac only)
+            if sys.platform == "darwin":
+                menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar
+                menubar = ""
+                try:
+                    for x in menubarRaw:
+                        menubar += x[1][0]
+                except:
+                    pass
+                menubar = menubar.lower()
+                if "rob" in menubar or "lox" in menubar: #check if roblox can be found in menu bar
+                    self.logger.webhook("","Roblox is not in fullscreen, activating fullscreen", "dark brown")
+                    self.keyboard.keyDown("command")
+                    time.sleep(0.05)
+                    self.keyboard.keyDown("ctrl")
+                    time.sleep(0.05)
+                    self.keyboard.keyDown("f")
+                    time.sleep(0.1)
+                    self.keyboard.keyUp("command")
+                    self.keyboard.keyUp("ctrl")
+                    self.keyboard.keyUp("f")
+                else:
+                    self.logger.webhook("","Roblox is already in fullscreen, not activating fullscreen", "dark brown")
+
+            #if use browser to rejoin, close the browser
+            if self.setdat["rejoin_method"] != "deeplink":
+                time.sleep(2)
+                webbrowser.open("https://docs.python.org/3/library/webbrowser.html", autoraise=True)
+                time.sleep(0.5)
+                for _ in range(2):
+                    if sys.platform == "darwin":
+                        self.keyboard.keyDown("command")
+                    else:
+                        self.keyboard.keyDown("ctrl")
+                    self.keyboard.press("w")
+                    if sys.platform == "darwin":
+                        self.keyboard.keyUp("command")
+                    else:
+                        self.keyboard.keyUp("ctrl")
+                    time.sleep(0.5)
+                appManager.openApp("Roblox")
+            #find hive
+            self.keyboard.walk("w",5+(i*0.5),0)
+            self.keyboard.walk("s",0.3,0)
+            self.keyboard.walk("d",4,0)
+            self.keyboard.walk("s",0.3,0)
+            time.sleep(0.5)
+            hiveNumber = self.setdat["hive_number"]
+            #find the hive in hive number
+            self.logger.webhook("",f'Claiming hive {hiveNumber} (guessing hive location)', "dark brown",1)
+            steps = round(hiveNumber*2.5) if hiveNumber == 1 else 0
+            for _ in range(steps):
+                self.keyboard.walk("a",0.4, 0)
+
+            def findHive():
+                self.keyboard.walk("a",0.4)
+                time.sleep(0.06)
+                if self.isBesideE(["claim", "hive"]):
+                    self.logger.press("e")
+                    return True
+                return False
+            rejoinSuccess = False
+            for _ in range(5):
+                if findHive():
+                    self.logger.webhook("",f'Claimed hive {hiveNumber}', "bright green",1)
+                    rejoinSuccess = True
+                    break 
+            #find a new hive
+            else:
+                self.logger.webhook("",f'Hive is {hiveNumber} already claimed, finding new hive','dark brown')
+                self.keyboard.walk("d",0.9*(hiveNumber)+1,0)
+                time.sleep(0.5)
+                for j in range(40):
+                    if findHive():
+                        hiveClaim = max(1,min(6,round((j+1)//2.5)))
+                        self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", 1)
+                        rejoinSuccess = True
+                        break
+            #after hive is claimed, convert
+            if rejoinSuccess:
+                self.convert()
+                #no need to reset
+                #TODO: haste compensation
+                return
+            self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown')
+
+
     def gather(self, field):
         fieldSetting = self.fieldSettings[field]
         for i in range(3):
@@ -234,13 +374,14 @@ class macro:
         sizeword = fieldSetting["size"]
         size = sizeData[sizeword]
         width = fieldSetting["width"]
-        maxGatherTime = 0 #fieldSetting["mins"]*60
+        maxGatherTime = fieldSetting["mins"]*60
         gatherTimeLimit = "{:.2f}".format(fieldSetting["mins"])
         returnType = fieldSetting["return"]
         st = time.time()
         keepGathering = True
         #time to gather
         self.logger.webhook(f"Gathering: {field.title()}", f"Limit: {gatherTimeLimit} - {fieldSetting['shape']} - Backpack: {fieldSetting['backpack']}%", "light green")
+        mouse.moveBy(10,5)
         while keepGathering:
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
             mouse.mouseDown()
@@ -253,16 +394,16 @@ class macro:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTimeLimit} - Time Limit - Return: {returnType}", "light green")
                 keepGathering = False
             #check backpack
-            if bpc(self.ww, False, self.display_type) >= fieldSetting["backpack"]:
+            if bpc(self.ww, self.newUI, self.display_type) >= fieldSetting["backpack"]:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTimeLimit} - Backpack - Return: {returnType}", "light green")
                 keepGathering = False
-        '''
+        
+        #go back to hive
         if returnType == "reset":
             self.reset(convert=True)
         elif returnType == "rejoin":
             pass
-        '''
-        if returnType:
+        elif returnType == "walk":
             #walk to hive
             #face correct direction (towards hive)
             reverseTurnTimes = 4 - fieldSetting["turn_times"]
@@ -282,7 +423,7 @@ class macro:
             self.keyboard.walk("a", (self.setdat["hive_number"]-1)*0.9)
             for _ in range(30):
                 self.keyboard.walk("a",0.2)
-                time.sleep(0.15)
+                time.sleep(0.2) #add a delay so that the E can popup
                 if self.isBesideE(["make", "маке"]):
                     self.convert(bypass=True)
                     self.reset(convert=False)
@@ -294,7 +435,17 @@ class macro:
 
     def start(self):
         print(self.status.value)
-        #TODO: detect new/old ui and set 
         appManager.openApp("roblox")
         time.sleep(2)
+        #detect new/old ui and set 
+        if self.getTop(0):
+            self.newUI = 0
+            self.logger.webhook("","Detected: Old Roblox UI","light blue")
+        elif self.getTop(30):
+            self.newUI = 1
+            self.logger.webhook("","Detected: New Roblox UI","light blue")
+            ocr.newUI = True
+        else:
+            self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red")
+            self.newUI = 0    
         self.reset(convert=True)

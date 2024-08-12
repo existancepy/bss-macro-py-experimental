@@ -99,6 +99,46 @@
             ])
         </script>
     </div>
-    <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="other"></div>
+    <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="other">
+        <script>
+        const parentOther = document.getElementById("other")
+            buildStandardContainer(parentOther,"Rejoining", "",[
+                {
+                    id: "private_server_link",
+                    title: "Private Server Link",
+                    desc: "The link of a private server for the macro to join to.<br>Leave it blank to join a public server instead",
+                    type: {
+                        name: "textbox",
+                        inputType: "string",
+                        triggerFunction: saveGeneralTriggerFunction
+                    }
+                },
+                {
+                    id: "rejoin_wait",
+                    title: "Wait for X secs when rejoining",
+                    desc: "The amount of time to wait for bee swarm to load after joining",
+                    type: {
+                            name: "textbox",
+                            inputType: "int",
+                            inputLimit: 3,
+                            triggerFunction: saveGeneralTriggerFunction
+                        }
+                    
+                },
+                {
+                    id: "rejoin_method",
+                    title: "Rejoin Method",
+                    desc: "How the macro should rejoin. All methods other than deeplink use the browser",
+                    type: {
+                        name: "dropdown",
+                        data: ["Deeplink", "New Tab", "Reload"],
+                        triggerFunction: saveGeneralTriggerFunction
+                    }
+                    
+                },
+
+            ])
+        </script>
+    </div>
     <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="discord"></div>
 </div>

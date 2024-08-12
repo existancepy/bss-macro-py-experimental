@@ -10,7 +10,6 @@ self.keyboard.slowPress("space")
 self.keyboard.slowPress(",")
 self.keyboard.keyUp("w")
 self.keyboard.slowPress("space")
-
-sleep(1)
+sleep(1.2)
 
     

@@ -23,7 +23,9 @@ function log(time = "", msg = "", color = ""){
     const html = `
     <div class = "log-msg"><span style="background-color: #${color}; align-self: start"></span>${timeText} ${msg}</div>
     `
-    document.getElementById("logs").innerHTML += html
+    const logs = document.getElementById("logs")
+    logs.innerHTML += html
+    logs.scrollTop = logs.scrollHeight;
 }
 
 //returns a html string for the task

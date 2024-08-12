@@ -1,4 +1,4 @@
 self.keyboard.walk("d",5)
-exec(open("./paths/walk_pine tree.py").read())
+self.runPath(f"field_to_hive/pine tree")
 
     

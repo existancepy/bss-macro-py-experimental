@@ -1,6 +1,8 @@
 import sys
 import re
 import os
+import subprocess
+
 class WindowMgr:
     """Encapsulates some calls to the winapi for window management"""
 
@@ -39,7 +41,27 @@ def openAppMac(app="roblox"):
 def openAppWindows(name):
     w = WindowMgr()
     w.find_window_wildcard(f".*Roblox.*")
-    w.set_foreground()
+    try:
+        w.set_foreground()
+        return True
+    except:
+        return False
+
+def openDeeplink(link):
+    if sys.platform == "darwin":
+        subprocess.call(["open", link])
+    else:
+        os.system(f"start {link}")
+
+def closeApp(app):
+    if app.lower() == "roblox":
+        app = "RobloxPlayerBeta"
+    if sys.platform == "darwin":
+        subprocess.call(["pkill", app])
+    else:
+        #taskkill /IM RobloxPlayerBeta.exe
+        #app += ".exe"
+        os.system(f"START /wait taskkill /f /im {app}.exe")
 
 if sys.platform == "darwin":
     from appleScript import runAppleScript

@@ -13,8 +13,9 @@ import ast
 def macro(status, log):
     import modules.macro
     macro = modules.macro.macro(status, log)
-    macro.start()
+    #macro.start()
     setdat = macro.setdat
+    macro.rejoin()
     while True:
         #gather
         for i in range(3):

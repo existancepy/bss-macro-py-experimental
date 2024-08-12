@@ -96,7 +96,7 @@ Utils
 //to be fired as a callback in ajax .load
 function textboxRestriction(ele, evt) {
     var charCode = (evt.which) ? evt.which : evt.keyCode
-    if (ele.dataset.inputLimit && ele.value.length >= ele.dataset.inputLimit) return false
+    if (ele.dataset.inputLimit != 0 && ele.value.length >= ele.dataset.inputLimit) return false
     if (ele.dataset.inputType == "float"){
         if (charCode == 46) {
             //Check if the text already contains the . character

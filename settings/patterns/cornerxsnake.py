@@ -1,6 +1,6 @@
 if sizeword.lower() == "xs":
     size = 0.5
-elif sizeword.lower() == afcfbkey:
+elif sizeword.lower() == "s":
     size = 1
 elif sizeword.lower() == "l":
     size = 2
@@ -17,11 +17,11 @@ self.keyboard.walk(tcfbkey,sm)
 self.keyboard.walk(afclrkey,wm*2)
 self.keyboard.walk(tcfbkey,sm)
 self.keyboard.walk(tclrkey,wm*2)
-keyboard.press(afclrkey)
-keyboard.press(afcfbkey)
+self.keyboard.keyDown(afclrkey)
+self.keyboard.keyDown(afcfbkey)
 sleep(df)
-keyboard.release(afcfbkey)
-keyboard.release(afclrkey)
+self.keyboard.keyUp(afcfbkey)
+self.keyboard.keyUp(afclrkey)
 self.keyboard.walk(tclrkey,wm*2)
 self.keyboard.walk(tcfbkey,sm)
 self.keyboard.walk(afclrkey,wm*2)
@@ -38,11 +38,11 @@ self.keyboard.walk(afcfbkey,sm)
 self.keyboard.walk(afclrkey,wm*2)
 self.keyboard.walk(afcfbkey,sm)
 self.keyboard.walk(tclrkey,wm*2)
-keyboard.press(tcfbkey)
-keyboard.press(afclrkey)
+self.keyboard.keyDown(tcfbkey)
+self.keyboard.keyDown(afclrkey)
 sleep(df/2)
-keyboard.release(afclrkey)
-keyboard.release(tcfbkey)
+self.keyboard.keyUp(afclrkey)
+self.keyboard.keyUp(tcfbkey)
 
 
 

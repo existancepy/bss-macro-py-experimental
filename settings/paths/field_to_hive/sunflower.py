@@ -1,4 +1,3 @@
-
 self.keyboard.walk("d",6)
 self.keyboard.walk("w",8)
 self.keyboard.slowPress(",")

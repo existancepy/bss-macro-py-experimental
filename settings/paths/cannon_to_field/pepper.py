@@ -1,5 +1,5 @@
 
-self.keyboard.slowPress(".")
+self.keyboard.press(".")
 self.keyboard.slowPress("e")
 sleep(0.12)
 self.keyboard.keyDown("w")
@@ -37,7 +37,8 @@ sleep(0.2)
 self.keyboard.keyUp("d")
 self.keyboard.walk("d",1.9)
 self.keyboard.walk("s",2.9)
-
+for _ in range(4):
+    self.keyboard.press(".")
 
 
 

@@ -17,7 +17,7 @@ class log:
     def log(self, msg):
         pass
     #webhook, gui and macrologs
-    def webhook(self, title, desc, color):
+    def webhook(self, title, desc, color, ss = False):
         logData = {
             "type": "webhook",
             "time": time.strftime("%H:%M:%S", time.localtime()),

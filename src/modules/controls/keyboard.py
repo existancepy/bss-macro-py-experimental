@@ -29,7 +29,7 @@ class keyboard:
         pag.keyUp(k)
 
     #like press, but with walkspeed and haste compensation
-    def walk(self,k,t):
+    def walk(self,k,t,applyHaste = True):
         self.press(k,t*28/self.ws)
     #like walk, but with multiple keys
     def multiWalk(self, keys, t):

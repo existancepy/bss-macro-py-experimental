@@ -1,7 +1,7 @@
 
 if sizeword.lower() == "xs":
     size = 0.5
-elif sizeword.lower() == afcfbkey:
+elif sizeword.lower() == "s":
     size = 1
 elif sizeword.lower() == "l":
     size = 2

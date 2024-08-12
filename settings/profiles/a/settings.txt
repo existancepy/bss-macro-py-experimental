@@ -1,2 +1,2 @@
 fields_enabled=[True, False, False]
-fields=['mushroom', 'sunflower', 'dandelion']
+fields=['pine tree', 'sunflower', 'dandelion']

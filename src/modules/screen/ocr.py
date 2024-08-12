@@ -27,7 +27,7 @@ ysm = screenInfo["y_multiplier"]
 xsm = screenInfo['x_multiplier']
 ylm = screenInfo['y_length_multiplier']
 xlm = screenInfo['x_length_multiplier']
-
+newUI = False
 def paddleBounding(b):
     #convert all values to int and unpack
     x1,y1,x2,y2 = [int(x) for x in b]
@@ -66,7 +66,7 @@ def imToString(m):
     sn = time.time()
     ebY = wh//(20*ysm)
     honeyY = 0
-    if False:
+    if newUI:
         ebY = wh//(14*ysm)
         honeyY = 25
     if m == "bee bear":

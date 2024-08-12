@@ -18,3 +18,6 @@ def mouseDown():
 def mouseUp():
     pynputMouse.release(Button.left)
     pag.mouseUp()
+
+def moveBy(x = 0,y = 0):
+    pag.move(x, y)  
