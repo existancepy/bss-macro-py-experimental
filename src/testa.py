@@ -28,7 +28,7 @@ for _ in range(7):
 for _ in range(2):
     keyboard.press("s")
     time.sleep(0.3)
-
+keyboard.press("enter")
 #scroll down, note the best match
 bestScroll, bestX, bestY = None, None, None
 valBest = 0
