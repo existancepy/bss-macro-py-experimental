@@ -1,4 +1,5 @@
 import mss
+from PIL import Image
 def mssScreenshot(x,y,w,h):
     with mss.mss() as sct:
         # The screen part to capture

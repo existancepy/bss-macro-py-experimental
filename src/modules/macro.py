@@ -45,6 +45,7 @@ class macro:
     def isInOCR(self, name, includeList, excludeList):
         #get text
         text = ocr.imToString(name).lower()
+        print(text)
         #check if text is to be rejected
         for i in excludeList:
             if i in text: return False
@@ -272,19 +273,19 @@ class macro:
             hiveNumber = self.setdat["hive_number"]
             #find the hive in hive number
             self.logger.webhook("",f'Claiming hive {hiveNumber} (guessing hive location)', "dark brown",1)
-            steps = round(hiveNumber*2.5) if hiveNumber == 1 else 0
+            steps = round(hiveNumber*2.5) if hiveNumber != 1 else 0
             for _ in range(steps):
                 self.keyboard.walk("a",0.4, 0)
 
             def findHive():
                 self.keyboard.walk("a",0.4)
-                time.sleep(0.06)
+                time.sleep(0.15)
                 if self.isBesideE(["claim", "hive"]):
                     self.logger.press("e")
                     return True
                 return False
             rejoinSuccess = False
-            for _ in range(5):
+            for _ in range(3):
                 if findHive():
                     self.logger.webhook("",f'Claimed hive {hiveNumber}', "bright green",1)
                     rejoinSuccess = True
@@ -439,13 +440,13 @@ class macro:
         time.sleep(2)
         #detect new/old ui and set 
         if self.getTop(0):
-            self.newUI = 0
+            self.newUI = False
             self.logger.webhook("","Detected: Old Roblox UI","light blue")
         elif self.getTop(30):
-            self.newUI = 1
+            self.newUI = True
             self.logger.webhook("","Detected: New Roblox UI","light blue")
             ocr.newUI = True
         else:
             self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red")
-            self.newUI = 0    
+            self.newUI = False   
         self.reset(convert=True)

@@ -2,7 +2,7 @@ import sys
 import re
 import os
 import subprocess
-
+from modules.misc.appleScript import runAppleScript
 class WindowMgr:
     """Encapsulates some calls to the winapi for window management"""
 
@@ -64,7 +64,6 @@ def closeApp(app):
         os.system(f"START /wait taskkill /f /im {app}.exe")
 
 if sys.platform == "darwin":
-    from appleScript import runAppleScript
     openApp = openAppMac
 else:
     import win32gui, win32con,  win32com.client

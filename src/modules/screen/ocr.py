@@ -70,7 +70,9 @@ def imToString(m):
         ebY = wh//(14*ysm)
         honeyY = 25
     if m == "bee bear":
-        cap = screenshot(region=(ww//(3*xsm),ebY/1.1,ww//(3*xlm),wh//(15*ylm)))
+        #cap = screenshot(region=(ww//(3*xsm),ebY/1.1,ww//(3*xlm),wh//(15*ylm)))
+        cap = mssScreenshot(mw//2-200,20,400,125)
+        cap.save("ebutton.png")
     elif m == "egg shop":
         cap = screenshot(region=(ww//(1.2*xsm),wh//(3*ysm),ww-ww//1.2,wh//5))
     elif m == "blue":
@@ -135,7 +137,8 @@ if useOCRMac:
     ocrFunc = ocrMac_
     try:
         ocrFunc(mssScreenshot(1,1,10,10))
-    except:
+    except Exception as e:
+        print(e)
         print("Language Preferences for ocrmac is disabled")
         useLangPref = False
 else:
