@@ -99,7 +99,7 @@ class macro:
     def convert(self, bypass = False):
         if not bypass:
             if not self.isBesideE(["make", "маке"], ["to"]): return
-        self.logger.webhook("", "Converting", "brown")
+        self.logger.webhook("", "Converting", "brown", True)
         self.keyboard.press("e")
         st = time.time()
         time.sleep(2)
@@ -133,7 +133,7 @@ class macro:
             besideE = self.isBesideE(["make", "маке", "нопеу", "honey", "flower", "field"])
             if besideE: break
         else:
-            self.logger.webhook("Notice", f"Unable to detect that player respawned at hive, continuing", "red")
+            self.logger.webhook("Notice", f"Unable to detect that player respawned at hive, continuing", "red", True)
             return False
 
         #set the player's orientation to face hive, max 4 attempts
@@ -153,7 +153,7 @@ class macro:
                 self.keyboard.press(".")
                 time.sleep(0.05)
         time.sleep(0.3)
-        self.logger.webhook("Notice", f"Unable to detect the direction the player is facing, continuing", "red")
+        self.logger.webhook("Notice", f"Unable to detect the direction the player is facing, continuing", "red", True)
         return False
 
     def cannon(self, fast = False):
@@ -190,7 +190,7 @@ class macro:
         browserLink = "https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129"
         for i in range(3):
             if psLink and i ==2: 
-                self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red")
+                self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", True)
             else:
                 browserLink = psLink
             appManager.closeApp("Roblox") # close roblox
@@ -268,7 +268,7 @@ class macro:
             time.sleep(0.5)
             hiveNumber = self.setdat["hive_number"]
             #find the hive in hive number
-            self.logger.webhook("",f'Claiming hive {hiveNumber} (guessing hive location)', "dark brown",1)
+            self.logger.webhook("",f'Claiming hive {hiveNumber} (guessing hive location)', "dark brown")
             steps = round(hiveNumber*2.5) if hiveNumber != 1 else 0
             for _ in range(steps):
                 self.keyboard.walk("a",0.4, 0)
@@ -283,18 +283,18 @@ class macro:
             rejoinSuccess = False
             for _ in range(3):
                 if findHive():
-                    self.logger.webhook("",f'Claimed hive {hiveNumber}', "bright green",1)
+                    self.logger.webhook("",f'Claimed hive {hiveNumber}', "bright green",True)
                     rejoinSuccess = True
                     break 
             #find a new hive
             else:
-                self.logger.webhook("",f'Hive is {hiveNumber} already claimed, finding new hive','dark brown')
+                self.logger.webhook("",f'Hive is {hiveNumber} already claimed, finding new hive','dark brown', True)
                 self.keyboard.walk("d",0.9*(hiveNumber)+1,0)
                 time.sleep(0.5)
                 for j in range(40):
                     if findHive():
                         hiveClaim = max(1,min(6,round((j+1)//2.5)))
-                        self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", 1)
+                        self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", True)
                         rejoinSuccess = True
                         break
             #after hive is claimed, convert
@@ -303,7 +303,7 @@ class macro:
                 #no need to reset
                 #TODO: haste compensation
                 return
-            self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown')
+            self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', True)
 
 
     def gather(self, field):

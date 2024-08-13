@@ -1,0 +1,170 @@
+<div style="display: flex; justify-content: center; width: 100%;">
+    <div style="width: 74%; overflow-y: auto; height: 94vh;" id="collect">
+        <script>
+            const parentCollect = document.getElementById("collect")
+            const saveProfileTriggerFunction = "saveSetting(this, 'profile')"
+            buildStandardContainer(parentCollect,"Regular 🕓", "",[
+                {
+                    id: "wealth_clock",
+                    title: "Wealth Clock",
+                    desc: "Collect the wealth clock",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                    
+                },
+                {
+                    id: "blueberry_dispenser",
+                    title: "Blueberry Dispenser",
+                    desc: "Collect the blueberry dispenser in the blue HQ",
+                    type: {
+                        name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+                {
+                    id: "strawberry_dispenser",
+                    title: "Strawberry Dispenser",
+                    desc: "Collect the strawberry dispenser in the red HQ",
+                    type: {
+                        name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+                {
+                    id: "royal_jelly_dispenser",
+                    title: "(Free) Royal Jelly Dispenser",
+                    desc: "Collect the free royal jelly dispenser in the star hall",
+                    type: {
+                        name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+                {
+                    id: "ant_pass_dispenser",
+                    title: "(Free) Ant Pass Dispenser",
+                    desc: "Collect the free ant pass dispenser",
+                    type: {
+                        name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+                {
+                    
+                    id: "treat_dispenser",
+                    title: "Treat Dispenser",
+                    desc: "Collect the treat dispenser in front the pro shop",
+                    type: {
+                        name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+            ])
+
+            buildStandardContainer(parentCollect,"Mondo Buff 🐣", "",[
+                {
+                    id: "mondo_buff",
+                    title: "Enable Task",
+                    desc: "Collect the mondo buff by doing some damage to mondo chick. Will not wait for it to die or collect its drops.",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "mondo_buff_interrupt_gathering",
+                    title: "Mondo Buff Interrupts gathering",
+                    desc: "If mondo respawns while gathering, stop and collect its buff",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                }
+            ])
+
+            buildStandardContainer(parentCollect,"Stinger Hunt 🌙", "",[
+                {
+                    id: "stinger_hunt",
+                    title: "Enable Task",
+                    desc: "Hunt and kill vicious bee when it is night",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+            ])
+
+            buildStandardContainer(parentCollect,"Ant Challenge 🎯", "",[
+                {
+                    id: "ant_challenge",
+                    title: "Enable Task",
+                    desc: "Complete ant challenges. Recommended only for quests",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+            ])
+
+            buildStandardContainer(parentCollect,"Beesmas 🎅🏻", "",[
+                {
+                    id: "stockings",
+                    title: "Stockings",
+                    desc: "Collect the stockings near clover field",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "feast",
+                    title: "Feast",
+                    desc: "Collect the stockings near polar bear",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "samovar",
+                    title: "Samovar",
+                    desc: "Collect the samovar outside dapper bear's shop",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "snow_machine",
+                    title: "Snow Machine",
+                    desc: "Collect the snow machine on top of blue HQ",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "lid art",
+                    title: "Lid art",
+                    desc: "Collect the lid art near onett",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "candles",
+                    title: "Candles",
+                    desc: "Collect the candles next to the red HQ",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+            ])
+
+           
+       </script>
+    </div>
+</div>

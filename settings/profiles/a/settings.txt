@@ -1,2 +1,8 @@
 fields_enabled=[True, False, False]
 fields=['pine tree', 'sunflower', 'dandelion']
+wealth_clock=True
+blueberry_dispenser=False
+strawberry_dispenser=False
+royal_jelly_dispenser=False
+treat_dispenser=False
+mondo_buff=False

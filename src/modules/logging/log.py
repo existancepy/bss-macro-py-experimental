@@ -38,7 +38,7 @@ class log:
         if not self.enableWebhook: return
         webhookImg = None
         if ss:
-            webhookImg = "webhookScreenshot"
+            webhookImg = "webhookScreenshot.png"
             screenshotScreen(webhookImg)
         logWebhook.webhook(self.webhookObj, title, desc, logData["time"], colors[color], webhookImg)
         
