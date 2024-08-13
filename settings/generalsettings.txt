@@ -1,0 +1,8 @@
+hive_number=1
+sprinkler_slot=1
+movespeed=28.0
+sprinkler_type=saturator
+convert_wait=5
+private_server_link=
+rejoin_wait=20
+rejoin_method=deeplink
