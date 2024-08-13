@@ -15,6 +15,9 @@ import os
 from threading import Thread
 from modules.screen.backpack import bpc
 import webbrowser
+from pynput.keyboard import Key, Controller
+import cv2
+pynputKeyboard = Controller()
 
 class macro:
     def __init__(self, status, log):
