@@ -12,7 +12,7 @@ import sys
 
 pynputKeyboard = Controller()
 isRetina = False
-whirligig = cv2.imread("./images/built-in/inventory/whirligig.png")
+whirligig = cv2.imread("./images/retina/inventory/whirligig.png")
 mw, mh = pag.size()
 keyboard = keyboardModule.keyboard(28)
 
@@ -22,7 +22,7 @@ keyboard.press("\\")
 #align with first buff
 for _ in range(7):
     keyboard.press("w")
-for _ in range(20):
+for _ in range(10):
     keyboard.press("a")
 #open inventory
 if sys.platform == "darwin":
@@ -49,10 +49,6 @@ time.sleep(0.8)
 bestScroll, bestX, bestY = None, None, None
 valBest = 0
 for i in range(20):
-    for _ in range(4):
-        pynputKeyboard.press(Key.page_down)
-        pynputKeyboard.release(Key.page_down)
-        time.sleep(0.05)
     img = mssScreenshot(0, 80, 150, mh-120)
     img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
     res = cv2.matchTemplate(img_cv, whirligig, cv2.TM_CCOEFF_NORMED)
@@ -61,7 +57,11 @@ for i in range(20):
     if max_val > valBest:
         valBest = max_val
         bestX, bestY = max_loc
-        bestScroll = i+1
+        bestScroll = i
+    for j in range(4):
+        pynputKeyboard.press(Key.page_down)
+        pynputKeyboard.release(Key.page_down)
+        if j > 1: time.sleep(0.05)
 #scroll to the top
 for _ in range(100):
     pynputKeyboard.press(Key.page_up)
@@ -71,7 +71,7 @@ time.sleep(0.1)
 for _ in range(bestScroll*4):
     pynputKeyboard.press(Key.page_down)
     pynputKeyboard.release(Key.page_down)
-    time.sleep(0.05)
+    time.sleep(0.02)
 #close UI navigation
 keyboard.press("\\")
 mouse.teleport(bestX//2+20, bestY//2+80+20)
