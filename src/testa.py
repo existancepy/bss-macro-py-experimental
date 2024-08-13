@@ -40,6 +40,11 @@ else:
     keyboard.press("enter")
     time.sleep(0.3)
     keyboard.press("s")
+#scroll up to reset
+for _ in range(100):
+    pynputKeyboard.press(Key.page_up)
+    pynputKeyboard.release(Key.page_up)
+time.sleep(0.8)
 #scroll down, note the best match
 bestScroll, bestX, bestY = None, None, None
 valBest = 0
@@ -47,7 +52,8 @@ for i in range(20):
     for _ in range(4):
         pynputKeyboard.press(Key.page_down)
         pynputKeyboard.release(Key.page_down)
-    img = mssScreenshot(0, 80, 100, mh-120)
+        time.sleep(0.05)
+    img = mssScreenshot(0, 80, 150, mh-120)
     img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
     res = cv2.matchTemplate(img_cv, whirligig, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
@@ -65,6 +71,7 @@ time.sleep(0.1)
 for _ in range(bestScroll*4):
     pynputKeyboard.press(Key.page_down)
     pynputKeyboard.release(Key.page_down)
+    time.sleep(0.05)
 #close UI navigation
 keyboard.press("\\")
-mouse.teleport(bestX+20, bestY+80+20)
+mouse.teleport(bestX//2+20, bestY//2+80+20)
