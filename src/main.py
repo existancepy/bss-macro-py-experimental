@@ -8,6 +8,7 @@ import eel
 import time
 import sys
 import ast
+from discord_webhook import DiscordWebhook
 
 #controller for the macro
 def macro(status, log):
@@ -41,6 +42,7 @@ if __name__ == "__main__":
     import modules.controls.keyboard
     import modules.logging.log as logModule
     import modules.controls.mouse as mouse
+    import modules.misc.settingsManager as settingsManager
     keyboardModule = modules.controls.keyboard.keyboard(0)
     macroProc: typing.Optional[multiprocessing.Process] = None
     #set screen data
@@ -56,7 +58,7 @@ if __name__ == "__main__":
     log = manager.Value(ctypes.c_wchar_p, "")
     prevLog = ""
     watch_for_hotkeys(run)
-    logger = logModule.log(log)
+    logger = logModule.log(log, False, None)
 
     #setup and launch gui
     gui.run = run
@@ -65,6 +67,11 @@ if __name__ == "__main__":
     while True:
         eel.sleep(0.1)
         if run.value == 1:
+            #create and set webhook obj for the logger
+            setdat = settingsManager.loadAllSettings()
+            logger.enableWebhook = setdat["enable_webhook"]
+            logger.webhookObj = DiscordWebhook(url = setdat["webhook_link"])
+
             macroProc = multiprocessing.Process(target=macro, args=(status, log))
             macroProc.start()
             logger.webhook("Macro Started", "exih macro", "purple")

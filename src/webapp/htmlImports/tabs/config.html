@@ -140,5 +140,42 @@
             ])
         </script>
     </div>
-    <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="discord"></div>
+    <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="discord">
+        <script>
+            const parentDiscord = document.getElementById("discord")
+                buildStandardContainer(parentDiscord,"Webhook", "",[
+                    {
+                        id: "enable_webhook",
+                        title: "Enable webhook",
+                        desc: "A webhook to send the macro's status. Does not receive commands",
+                        type: {
+                            name: "checkbox",
+                            triggerFunction: saveGeneralTriggerFunction
+                        }
+                    },
+                    {
+                        id: "webhook_link",
+                        title: "Webhook link",
+                        desc: "The link of the webhook for the macro to use",
+                        type: {
+                            name: "textbox",
+                            inputType: "string",
+                            length: 13,
+                            triggerFunction: saveGeneralTriggerFunction
+                        }
+                    },
+                    {
+                        id: "send_screenshot",
+                        title: "Send screenshots",
+                        desc: "Send screenshots of the game via the webhook",
+                        type: {
+                                name: "checkbox",
+                                triggerFunction: saveGeneralTriggerFunction
+                            }
+                        
+                    }
+    
+                ])
+        </script>
+    </div>
 </div>

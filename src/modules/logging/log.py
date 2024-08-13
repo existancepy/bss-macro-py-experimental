@@ -1,4 +1,7 @@
 import time
+from modules.screen.screenshot import screenshotScreen
+import modules.logging.webhook as logWebhook
+from discord_webhook import DiscordWebhook
 colors = {
     "red":"D22B2B",
     "light blue":"89CFF0",
@@ -11,13 +14,16 @@ colors = {
 }
 
 class log:
-    def __init__(self, log):
+    def __init__(self, log, enableWebhook, webhookLink):
         self.logVar = log
+        self.enableWebhook = enableWebhook
+        self.webhookObj = DiscordWebhook(url = webhookLink)
     #display in gui and in macrologs
     def log(self, msg):
         pass
     #webhook, gui and macrologs
     def webhook(self, title, desc, color, ss = False):
+        #update logs
         logData = {
             "type": "webhook",
             "time": time.strftime("%H:%M:%S", time.localtime()),
@@ -27,6 +33,15 @@ class log:
 
         }
         self.logVar.value = str(logData)
+
+        #send webhook
+        if not self.enableWebhook: return
+        webhookImg = None
+        if ss:
+            webhookImg = "webhookScreenshot"
+            screenshotScreen(webhookImg)
+        logWebhook.webhook(self.webhookObj, title, desc, logData["time"], colors[color], webhookImg)
+        
 
 
     

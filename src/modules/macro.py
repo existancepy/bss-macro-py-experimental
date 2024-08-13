@@ -25,7 +25,7 @@ class macro:
         screenData = getScreenData()
         self.display_type, self.ww, self.wh, self.ysm, self.xsm, self.ylm, self.xlm = itemgetter("display_type", "screen_width","screen_height", "y_multiplier", "x_multiplier", "y_length_multiplier", "x_length_multiplier")(screenData)
         self.keyboard = keyboard(self.setdat["movespeed"]) #TODO: implement haste compensation
-        self.logger = logModule.log(log)
+        self.logger = logModule.log(log, self.setdat["enable_webhook"], self.setdat["webhook_link"])
 
     #run a path. Choose automater over python if it exists (except on windows)
     def runPath(self, name):
@@ -112,9 +112,6 @@ class macro:
                     self.logger.webhook("", f'Waiting for an additional {wait} seconds', "light green")
                 time.sleep(wait)
                 break
-            if time.time() - st > 600:
-                self.logger.webhook("", "Converting took too long, moving on", "brown")
-                break
 
     def reset(self, hiveCheck = False, convert = True):
         self.keyboard.releaseMovement()
@@ -186,7 +183,6 @@ class macro:
             self.reset()
         else:
             self.logger.webhook("Notice", f"Failed to reach cannon too many times", "red")
-            disconnect = True
     
     def rejoin(self):
         rejoinMethod = self.setdat["rejoin_method"]
