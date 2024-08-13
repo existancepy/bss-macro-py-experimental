@@ -70,7 +70,7 @@ if __name__ == "__main__":
             #create and set webhook obj for the logger
             setdat = settingsManager.loadAllSettings()
             logger.enableWebhook = setdat["enable_webhook"]
-            logger.webhookObj = DiscordWebhook(url = setdat["webhook_link"])
+            logger.webhookURL = setdat["webhook_link"]
 
             macroProc = multiprocessing.Process(target=macro, args=(status, log))
             macroProc.start()

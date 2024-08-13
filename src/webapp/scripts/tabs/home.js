@@ -55,12 +55,6 @@ async function loadTasks(){
     }
     //display the tasks
     document.getElementById("task-list").innerHTML = out
-
-    //get log height
-    const logEle = document.getElementById("logs")
-    console.log(logEle.offsetHeight)
-    console.log(logEle)
-    //logEle.style.height = `${logEle.clientHeight}px`
 }
 
 

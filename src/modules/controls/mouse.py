@@ -9,7 +9,7 @@ from pynput.mouse import Button, Controller
 pynputMouse = Controller()
 #move the mouse instantly
 def teleport(x,y):
-    pag.moveTo(int(x),int(y))
+    pag.moveTo(int(x),int(y),0.2)
 
 def mouseDown():
     pynputMouse.press(Button.left)
@@ -21,3 +21,8 @@ def mouseUp():
 
 def moveBy(x = 0,y = 0):
     pag.move(x, y)  
+
+def click():
+    mouseDown()
+    time.sleep(0.07)
+    mouseUp()

@@ -4,6 +4,7 @@ import modules.misc.appManager as appManager
 import modules.misc.settingsManager as settingsManager
 import time
 import pyautogui as pag
+from modules.screen.screenshot import mssScreenshot
 from modules.controls.keyboard import keyboard
 from modules.controls.sleep import sleep
 import modules.controls.mouse as mouse
@@ -12,13 +13,14 @@ import modules.logging.log as logModule
 from operator import itemgetter
 import sys
 import os
+import numpy as np
 from threading import Thread
 from modules.screen.backpack import bpc
+from modules.screen.imageSearch import locateImageOnScreen
 import webbrowser
 from pynput.keyboard import Key, Controller
 import cv2
 pynputKeyboard = Controller()
-
 class macro:
     def __init__(self, status, log):
         self.status = status
@@ -99,22 +101,97 @@ class macro:
             self.keyboard.keyUp("space")
         return True
     
+    def clickYes(self):
+        yesImg = cv2.imread(f"./images/{self.display_type}/inventory/yes.png")
+        x = self.ww/3.2
+        y = self.wh/2.3
+        time.sleep(0.4)
+        _, max_val, _, max_loc = locateImageOnScreen(yesImg,x,y,self.ww/2.5,self.wh/3.4)
+        bestX, bestY = max_loc
+        if self.display_type == "retina":
+            bestX //=2
+            bestY //=2
+        mouse.teleport(bestX+x, bestY+y)
+        time.sleep(0.5)
+        for _ in range(2):
+            mouse.click()
+
+    def useItemInInventory(self, itemName):
+        itemImg = cv2.imread(f"./images/{self.display_type}/inventory/{itemName}.png")
+        def toggleInventory():
+            self.keyboard.press("\\")
+            #align with first buff
+            for _ in range(7):
+                self.keyboard.press("w")
+            for _ in range(20):
+                self.keyboard.press("a")
+            #open inventory
+            if sys.platform == "darwin":
+                for _ in range(5):
+                    self.keyboard.press("w")
+                    time.sleep(0.1)
+                self.keyboard.press("s")
+                self.keyboard.press("a")
+                time.sleep(0.1)
+                self.keyboard.press("enter")
+            else:
+                self.keyboard.press("s")
+                self.keyboard.press("enter")
+        #open inventory
+        toggleInventory()
+        time.sleep(0.3)
+        self.keyboard.press("s")
+        #scroll down, note the best match
+        bestScroll, bestX, bestY = None, None, None
+        valBest = 0
+        for i in range(20):
+            min_val, max_val, min_loc, max_loc = locateImageOnScreen(itemImg, 0, 80, 100, self.mh-120)
+            print(max_val)
+            if max_val > valBest:
+                valBest = max_val
+                bestX, bestY = max_loc
+                bestScroll = i
+            for j in range(4):
+                pynputKeyboard.press(Key.page_down)
+                pynputKeyboard.release(Key.page_down)
+                if j > 1: time.sleep(0.05)
+        #scroll to the top
+        for _ in range(100):
+            pynputKeyboard.press(Key.page_up)
+            pynputKeyboard.release(Key.page_up)
+        time.sleep(0.1)
+        #scroll to item
+        for _ in range(bestScroll*4):
+            pynputKeyboard.press(Key.page_down)
+            pynputKeyboard.release(Key.page_down)
+        #close UI navigation
+        self.keyboard.press("\\")
+        if self.display_type == "retina":
+            mouse.teleport(bestX//2+20, bestY//2+80+20)
+        else:
+            mouse.teleport(bestX+20, bestY+80+20)
+        mouse.click()
+        self.clickYes()
+        #close inventory
+        toggleInventory()
+        #close UI navigation
+        self.keyboard.press("\\")
+
     def convert(self, bypass = False):
         if not bypass:
-            if not self.isBesideE(["make", "маке"], ["to"]): return
+            if not self.isBesideE(["make", "маке"], ["to"]): return False
         self.logger.webhook("", "Converting", "brown", True)
         self.keyboard.press("e")
         st = time.time()
         time.sleep(2)
-        while True:
-            if not self.isBesideE(["stop"]): 
-                self.logger.webhook("", "Finished converting", "brown")
-                #deal with the extra delay
-                wait = self.setdat["convert_wait"]
-                if (wait):
-                    self.logger.webhook("", f'Waiting for an additional {wait} seconds', "light green")
-                time.sleep(wait)
-                break
+        while self.isBesideE(["stop"]): pass
+        #deal with the extra delay
+        self.logger.webhook("", "Finished converting", "brown")
+        wait = self.setdat["convert_wait"]
+        if (wait):
+            self.logger.webhook("", f'Waiting for an additional {wait} seconds', "light green")
+        time.sleep(wait)
+        return True
 
     def reset(self, hiveCheck = False, convert = True):
         self.keyboard.releaseMovement()
@@ -390,20 +467,17 @@ class macro:
             mouse.mouseUp()
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
             #check if max time is reached
+            gatherTime = "{:.2f}".format(time.time() - st)
             if time.time() - st > maxGatherTime:
-                self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTimeLimit} - Time Limit - Return: {returnType}", "light green")
+                self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green")
                 keepGathering = False
             #check backpack
             if bpc(self.ww, self.newUI, self.display_type) >= fieldSetting["backpack"]:
-                self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTimeLimit} - Backpack - Return: {returnType}", "light green")
+                self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Backpack - Return: {returnType}", "light green")
                 keepGathering = False
         
         #go back to hive
-        if returnType == "reset":
-            self.reset(convert=True)
-        elif returnType == "rejoin":
-            pass
-        elif returnType == "walk":
+        def walk_to_hive():
             #walk to hive
             #face correct direction (towards hive)
             reverseTurnTimes = 4 - fieldSetting["turn_times"]
@@ -432,6 +506,20 @@ class macro:
                 self.logger.webhook("","Can't find hive, resetting", "dark brown")
                 self.reset()
 
+        if returnType == "reset":
+            self.reset()
+        elif returnType == "rejoin":
+            pass
+        elif returnType == "whirligig":
+            self.useItemInInventory("whirligig")
+            if not self.convert():
+                self.logger.webhook("","Whirligigs failed, walking to hive", "dark brown", True)
+                walk_to_hive()
+                return
+            #whirligig sucessful
+            self.reset(convert=False)
+        elif returnType == "walk":
+            walk_to_hive()
 
     def start(self):
         print(self.status.value)
@@ -446,6 +534,6 @@ class macro:
             self.logger.webhook("","Detected: New Roblox UI","light blue")
             ocr.newUI = True
         else:
-            self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red")
+            self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red", True)
             self.newUI = False   
         self.reset(convert=True)

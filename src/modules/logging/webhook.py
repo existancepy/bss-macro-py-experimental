@@ -1,6 +1,7 @@
-from discord_webhook import DiscordEmbed
+from discord_webhook import DiscordEmbed, DiscordWebhook
 
-def webhook(webhook, title, desc, time, color, imagePath = None):
+def webhook(url, title, desc, time, color, imagePath = None):
+    webhook = DiscordWebhook(url = url,rate_limit_retry=True)
     if title:
         embed = DiscordEmbed(title="[{}] {}".format(time,title), description=desc, color=color)
     else:
