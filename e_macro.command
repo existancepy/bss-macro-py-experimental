@@ -27,5 +27,7 @@ if [ -d bin ]; then
    source ./bin/activate
    printf "activating virtual environment"
 fi
-cd macro
-python"${python_ver}" main.py
+cd src
+python3.7 main.py
+python3.8 main.py
+python3.9 main.py

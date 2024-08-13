@@ -50,7 +50,7 @@ def setScreenData():
         sh, sw, _ = np.array(pag.screenshot()).shape
         if whd*2 == sh: #check if retina (screenshot size is twice pyautogui's size)
             screenData["screen_width"] = sw
-            screenData["screen_width"] = sh
+            screenData["screen_height"] = sh
             screenData["display_type"] = "retina"
             print("display type: retina")
             
