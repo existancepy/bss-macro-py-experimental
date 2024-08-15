@@ -38,4 +38,4 @@ def toggleStartStop():
     eel.toggleStartStop()
 
 def launch():
-    eel.start('index.html',app_mode = True, block = False)
+    eel.start('index.html',app_mode = True,block = False, cmdline_args=['--incognito'])

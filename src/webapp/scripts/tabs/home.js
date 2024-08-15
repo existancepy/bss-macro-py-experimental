@@ -29,7 +29,7 @@ function log(time = "", msg = "", color = ""){
 }
 
 //returns a html string for the task
-function taskHTML(title, desc){
+function taskHTML(title, desc=""){
     const html = `
     <div style="margin-top: 1rem;">
         <div style="font-size: 1.1rem;">${title}</div>
@@ -47,6 +47,11 @@ function taskHTML(title, desc){
 async function loadTasks(){
     const setdat = await loadAllSettings()
     let out = ""
+    //load collect
+    for (const [k, v] of Object.entries(collectEmojis)) {
+        if (!setdat[k]) continue
+        out += taskHTML("Collect", `${v} ${toTitleCase(k.replaceAll("_", " "))}`)
+    }
     //load the gather
     for(let i = setdat.fields_enabled.length-1; i >= 0; i--){
         if (!setdat.fields_enabled[i]) continue

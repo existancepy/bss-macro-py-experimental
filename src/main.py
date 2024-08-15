@@ -9,20 +9,46 @@ import time
 import sys
 import ast
 from discord_webhook import DiscordWebhook
+from datetime import datetime
 
 #controller for the macro
 def macro(status, log):
-    import modules.macro
-    macro = modules.macro.macro(status, log)
+    import modules.macro as macroModule
+    macro = macroModule.macro(status, log)
     macro.start()
     setdat = macro.setdat
+    '''
+    #function to run a task
+    #makes it easy to do any checks after a task is complete (like stinger hunt, rejoin every, etc)
+    def runTask(func = None, args = (), resetAfter = True, convertAfter = True):
+        #execute the task
+        if not func is None: func(*args)
+        #task done
+        if resetAfter: macro.reset(convert=convertAfter)
+
+        #do priority tasks
+        if setdat["mondo_buff"]:
+            macro.collectMondoBuff()
+
     #macro.rejoin()
     while True:
+        #run empty task
+        #this is in case no other settings are selected 
+        runTask(resetAfter=False)
+        #collect
+        for k, _ in macroModule.collectData.items():
+            if setdat[k]:
+                #check if the cooldown is up
+                if macro.hasRespawned(k, macro.collectCooldowns[k]):
+                    runTask(macro.collect, args=(k,))
+        #ant challenge
+        if setdat["ant_challenge"]: 
+            runTask(macro.antChallenge)
         #gather
         for i in range(3):
             if setdat["fields_enabled"][i]:
-                macro.gather(setdat["fields"][i])
-        
+                runTask(macro.gather, args=(setdat["fields"][i],), resetAfter=False)
+     '''
 
 def watch_for_hotkeys(run):
     def on_press(key):
@@ -64,6 +90,22 @@ if __name__ == "__main__":
     gui.run = run
     gui.launch()
     #use run.value to control the macro loop
+
+    #check color profile
+    if sys.platform == "darwin":
+        try:
+            cmd = """
+                osascript -e 'tell application "Image Events" to display profile of display 1' 
+                """
+            colorProfile = subprocess.check_output(cmd, shell=True).decode(sys.stdout.encoding)
+            colorProfile = colorProfile.strip()
+            if colorProfile == "missing value": colorProfile = "Color LCD"
+            if not "sRGB IEC61966" in colorProfile:
+                pag.alert(text = f'Your current color profile is {colorProfile}.The recommended one is sRGB IEC61966-2.1.\
+                \n(This is optional, but some features like backpack detection wont work)\
+                \nTVisit step 6 of the macro installation guide in the discord for instructions"')
+        except:
+            pass
     while True:
         eel.sleep(0.1)
         if run.value == 1:

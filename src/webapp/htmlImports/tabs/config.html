@@ -138,6 +138,18 @@
                 },
 
             ])
+
+            buildStandardContainer(parentOther, "Haste Compensation", "", [
+                {
+                    id: "haste_compensation",
+                    title: "Enable Haste Compensation",
+                    desc: "Adjust the macro's movements based on the amount of haste the player has. This is done by reading the movespeed stat from the settings",
+                    type: {
+                        name: "checkbox",
+                        triggerFunction: saveGeneralTriggerFunction
+                    }
+                },
+            ])
         </script>
     </div>
     <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="discord">

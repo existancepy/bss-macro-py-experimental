@@ -33,3 +33,23 @@ const fieldEmojis = {
     pepper: "🌶️",
     coconut: "🥥"
 }
+
+const collectEmojis = {
+    wealth_clock: "🕒",
+    blueberry_dispenser: "🔵",
+    strawberry_dispenser: "🍓",
+    royal_jelly_dispenser: "💎",
+    treat_dispenser: "🦴",
+    ant_pass_dispenser: "🎫",
+    stockings: "🧦",
+    feast: "🍽️",
+    samovar: "🏺",
+    snow_machine: "❄️",
+    lid_art: "🖼️",
+    candles: "🕯️",
+    glue_dispenser: "🧴",
+    wreath: "🎄",
+    ant_challenge: "🎯",
+    mondo_buff: "🐣",
+    stinger_hunt: "😈",
+}

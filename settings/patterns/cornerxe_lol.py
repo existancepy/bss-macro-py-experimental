@@ -27,8 +27,8 @@ for _ in range(2):
         self.keyboard.walk(afclrkey,0.17)
 
 self.keyboard.walk(afclrkey,0.7*width)
-self.keyboard.walk(tcfbkey,0.55*size)
-self.keyboard.walk(afcfbkey,0.3*size)
+self.keyboard.walk(tcfbkey,1*size)
+self.keyboard.walk(afcfbkey,0.4*size)
 self.keyboard.walk(tclrkey,0.3*width)
 
 
