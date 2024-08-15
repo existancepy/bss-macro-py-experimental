@@ -12,7 +12,7 @@ def teleport(x,y):
     pag.moveTo(int(x),int(y))
 
 def moveTo(x,y):
-    pag.moveTo(int(x),int(y),0.5)
+    pag.moveTo(int(x),int(y),0.1)
 
 def mouseDown():
     pynputMouse.press(Button.left)
