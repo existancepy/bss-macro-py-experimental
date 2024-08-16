@@ -1,20 +1,48 @@
-import modules.screen.ocr as ocr
-import modules.controls.mouse as mouse
-from modules.misc.appManager import openApp
+import cv2
+import pyautogui as pag
+from modules.screen.imageSearch import templateMatch
+from modules.screen.screenshot import mssScreenshot
+import numpy as np
 import time
-from modules.screen.screenData import getScreenData
-openApp("roblox")
-time.sleep(1)
-multi = 1
-screenData = getScreenData()
-ww = screenData["screen_width"]
-wh = screenData["screen_height"]
-region = (ww/3.15,wh/2.15,ww/2.7,wh/4.2)
-res = ocr.customOCR(*region,0)
-for i in res:
-    if "keep" in i[1][0].lower():
-        mouse.mouseUp()
-        mouse.teleport((i[0][0][0]+region[0])//multi, (i[0][0][1]+region[1])//multi)
-        mouse.click()
-        breakLoop = True
-        break
+from PIL import Image
+
+res = 3360
+ww = 3360
+def adjustImage(path):
+    img = Image.open(path)
+    #get original size of image
+    width, height = img.size
+    #calculate the scaling value (based on width)
+    scaling = res/ww
+    #resize image
+    img = img.resize((int(width/scaling), int(height/scaling)))
+    #convert to cv2
+    return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        
+    #run a path. Ch
+    
+hasteStacks = []
+for i in range(10):
+    hasteStacks.append(adjustImage(f"./images/general/buffs/haste{i+1}.png"))
+hasteStacks = list(enumerate(hasteStacks))[::-1]
+mw, mh = pag.size()
+
+def thresholdMatch(target, screen):
+    res = templateMatch(target, screen)
+    _, val, _, _ = res
+    return (val > 0.7, val)
+
+while True:
+    st = time.time()
+    screen = mssScreenshot(0,mh/30,mw/2.1,mh/16)
+    screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
+    bestHaste = 0
+    bestHasteMaxVal = 0
+    for i,e in hasteStacks:
+        res, val = thresholdMatch(e, screen)
+        if res and val > bestHasteMaxVal:
+            bestHasteMaxVal = val
+            bestHaste = i+1
+    print(time.time()-st)
+    print(f"haste {bestHaste} detected")
+
