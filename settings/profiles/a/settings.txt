@@ -1,6 +1,6 @@
 fields_enabled=[True, False, False]
 fields=['pine tree', 'sunflower', 'dandelion']
-wealth_clock=False
+wealth_clock=True
 blueberry_dispenser=False
 strawberry_dispenser=False
 royal_jelly_dispenser=False
@@ -16,6 +16,6 @@ samovar=False
 snow_machine=False
 lid_art=False
 candles=False
-glue_dispenser=True
+glue_dispenser=False
 wreath=False
 mondo_buff_wait=2

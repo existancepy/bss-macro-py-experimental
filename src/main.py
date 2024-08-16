@@ -17,7 +17,6 @@ def macro(status, log):
     macro = macroModule.macro(status, log)
     macro.start()
     setdat = macro.setdat
-    '''
     #function to run a task
     #makes it easy to do any checks after a task is complete (like stinger hunt, rejoin every, etc)
     def runTask(func = None, args = (), resetAfter = True, convertAfter = True):
@@ -48,7 +47,6 @@ def macro(status, log):
         for i in range(3):
             if setdat["fields_enabled"][i]:
                 runTask(macro.gather, args=(setdat["fields"][i],), resetAfter=False)
-     '''
 
 def watch_for_hotkeys(run):
     def on_press(key):

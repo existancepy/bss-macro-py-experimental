@@ -54,7 +54,7 @@ def openDeeplink(link):
     if sys.platform == "darwin":
         subprocess.call(["open", link])
     else:
-        os.system(f"start {link}")
+        os.system(f'start "" "{link}"')
 
 def closeApp(app):
     if sys.platform == "darwin":

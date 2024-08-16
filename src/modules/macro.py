@@ -163,10 +163,10 @@ class macro:
     
     def clickYes(self):
         yesImg = self.adjustImage("./images/general/menu", "yes")
-        x = self.ww/3.2
-        y = self.wh/2.3
+        x = self.mw/3.2
+        y = self.mh/2.3
         time.sleep(0.4)
-        _, max_val, _, max_loc = locateImageOnScreen(yesImg,x,y,self.ww/2.5,self.wh/3.4)
+        _, max_val, _, max_loc = locateImageOnScreen(yesImg,x,y,self.mw/2.5,self.mh/3.4)
         bestX, bestY = max_loc
         if self.display_type == "retina":
             bestX //=2
@@ -207,7 +207,7 @@ class macro:
         bestScroll, bestX, bestY = None, None, None
         valBest = 0
         for i in range(20):
-            min_val, max_val, min_loc, max_loc = locateImageOnScreen(itemImg, 0, 80, 100, self.mh-120)
+            min_val, max_val, min_loc, max_loc = locateImageOnScreen(itemImg, 0, 80, 180, self.mh-120)
             print(max_val)
             if max_val > valBest:
                 valBest = max_val
@@ -341,6 +341,7 @@ class macro:
         rejoinMethod = self.setdat["rejoin_method"]
         psLink = self.setdat["private_server_link"]
         browserLink = "https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129"
+        self.logger.webhook("","Rejoining", "dark brown")
         for i in range(3):
             if psLink and i ==2: 
                 self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", True)
@@ -430,7 +431,7 @@ class macro:
                 self.keyboard.walk("a",0.4)
                 time.sleep(0.15)
                 if self.isBesideE(["claim", "hive"]):
-                    self.logger.press("e")
+                    self.keyboard.press("e")
                     return True
                 return False
             rejoinSuccess = False
@@ -729,8 +730,6 @@ class macro:
         if not appManager.openApp("roblox"):
             self.rejoin()
         time.sleep(2)
-        self.useItemInInventory("festiveplanter")
-        '''
         #detect new/old ui and set 
         if self.getTop(0):
             self.newUI = False
@@ -743,4 +742,3 @@ class macro:
             self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red", True)
             self.newUI = False   
         self.reset(convert=True)
-        '''
