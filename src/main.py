@@ -8,14 +8,14 @@ import eel
 import time
 import sys
 import ast
-from discord_webhook import DiscordWebhook
-from datetime import datetime
+import subprocess
 
 #controller for the macro
 def macro(status, log):
     import modules.macro as macroModule
     macro = macroModule.macro(status, log)
     macro.start()
+    return
     setdat = macro.setdat
     #function to run a task
     #makes it easy to do any checks after a task is complete (like stinger hunt, rejoin every, etc)

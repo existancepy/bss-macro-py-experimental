@@ -35,7 +35,7 @@ collectData = {
     "ant_pass_dispenser": [["use", "free"], None, 2*60*60], #2hr
     "glue_dispenser": [["use", "glue"], None, 22*60*60], #22hr
     "stockings": [["check", "inside", "stocking"], None, 1*60*60], #1hr
-    "wreath": [[], None, 30*60], #30mins
+    "wreath": [["admire", "honey"], None, 30*60], #30mins
     "feast": [["dig", "beesmas"], "s", 1.5*60*60], #1.5hr
     "samovar": [["heat", "samovar"], "w", 6*60*60], #6hr
     "snow_machine": [["activate"], None, 2*60*60], #2hr
@@ -62,15 +62,20 @@ class macro:
         for x in images:
             #images are named in the format itemname-width
             #width is the width of the monitor used to take the image
-            name, res = x.split(".")[0].split("-")
+            name, res = x.split(".")[0].split("-",1)
             if name == imageName:
                 img = Image.open(f"{path}/{x}")
-                res = int(res)
                 break
         #get original size of image
         width, height = img.size
-        #calculate the scaling value (based on width)
-        scaling = res/self.ww
+        #calculate the scaling value 
+        #retina has 2x more, built-in is 1x
+        if self.display_type == res:
+            scaling = 1
+        elif self.display_type == "built-in": #screen is built-in but image is retina
+            scaling = 2
+        else: #screen is retina but image is built-in
+            scaling = 0.5
         #resize image
         img = img.resize((int(width/scaling), int(height/scaling)))
         #convert to cv2
@@ -149,7 +154,7 @@ class macro:
         #place one sprinkler and check if its in field
         self.keyboard.press(sprinklerSlot)
         time.sleep(0.3)
-        if self.isInBlueTexts(["must", "standing", "place"]):
+        if self.isInBlueTexts(["must", "standing"], ["cannot", "close"]):
             return False
         #place the remaining sprinklers
         #hold jump and spam place sprinklers
@@ -162,7 +167,7 @@ class macro:
         return True
     
     def clickYes(self):
-        yesImg = self.adjustImage("./images/general/menu", "yes")
+        yesImg = self.adjustImage("./images/menu", "yes")
         x = self.mw/3.2
         y = self.mh/2.3
         time.sleep(0.4)
@@ -179,7 +184,7 @@ class macro:
             mouse.click()
 
     def useItemInInventory(self, itemName):
-        itemImg = self.adjustImage("./images/general/inventory", itemName)
+        itemImg = self.adjustImage("./images/inventory", itemName)
         def toggleInventory():
             self.keyboard.press("\\")
             #align with first buff
@@ -232,6 +237,9 @@ class macro:
             mouse.moveTo(bestX//2+20, bestY//2+80+20)
         else:
             mouse.moveTo(bestX+20, bestY+80+20)
+        for _ in range(2):
+            mouse.click()
+        mouse.moveBy(10,10)
         mouse.click()
         self.clickYes()
         #close inventory
@@ -239,11 +247,11 @@ class macro:
         #close UI navigation
         self.keyboard.press("\\")
         #adjust camera
-        for _ in range(6):
+        for _ in range(20):
             pynputKeyboard.press(Key.page_down)
             pynputKeyboard.release(Key.page_down)
 
-        for _ in range(7):
+        for _ in range(5):
             pynputKeyboard.press(Key.page_up)
             time.sleep(0.05)
             pynputKeyboard.release(Key.page_up)
@@ -325,10 +333,10 @@ class macro:
                 self.keyboard.walk("d",0.95)
                 time.sleep(0.1)
                 return
-            self.keyboard.walk("d",0.35)
+            self.keyboard.walk("d",0.2)
             self.keyboard.walk("s",0.07)
             for _ in range(6):
-                self.keyboard.walk("d",0.2)
+                self.keyboard.walk("d",0.15)
                 time.sleep(0.05)
                 if self.isBesideE(["fire","red"]):
                     return
@@ -730,6 +738,11 @@ class macro:
         if not appManager.openApp("roblox"):
             self.rejoin()
         time.sleep(2)
+        self.useItemInInventory("candyplanter")
+        self.useItemInInventory("ticketplanter")
+        self.useItemInInventory("blueclayplanter")
+        self.useItemInInventory("festiveplanter")
+        return
         #detect new/old ui and set 
         if self.getTop(0):
             self.newUI = False
