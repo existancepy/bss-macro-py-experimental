@@ -106,7 +106,7 @@
                 {
                     id: "private_server_link",
                     title: "Private Server Link",
-                    desc: "The link of a private server for the macro to join to.<br>Leave it blank to join a public server instead",
+                    desc: "The link of a private server for the macro to join to.<br>If left blank, the macro will join a public server instead",
                     type: {
                         name: "textbox",
                         inputType: "string",
@@ -143,7 +143,7 @@
                 {
                     id: "haste_compensation",
                     title: "Enable Haste Compensation",
-                    desc: "Adjust the macro's movements based on the amount of haste the player has. This is done by reading the movespeed stat from the settings",
+                    desc: "Adjust the macro's movements based on the amount of haste the player has. This is done by searching for haste and bear morph buffs on the screen",
                     type: {
                         name: "checkbox",
                         triggerFunction: saveGeneralTriggerFunction

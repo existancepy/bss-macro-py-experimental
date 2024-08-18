@@ -15,7 +15,7 @@ import sys
 import os
 import numpy as np
 from threading import Thread
-from modules.screen.backpack import bpc
+from modules.submacros.backpack import bpc
 from modules.screen.imageSearch import locateImageOnScreen
 import webbrowser
 from pynput.keyboard import Key, Controller
@@ -43,14 +43,14 @@ collectData = {
     "candles": [["admire", "candle", "honey"], "w", 4*60*60] #4hr
 }
 class macro:
-    def __init__(self, status, log):
+    def __init__(self, status, log, haste):
         self.status = status
         self.setdat = settingsManager.loadAllSettings()
         self.fieldSettings = settingsManager.loadFields()
         self.mw, self.mh = pag.size()
         screenData = getScreenData()
         self.display_type, self.ww, self.wh, self.ysm, self.xsm, self.ylm, self.xlm = itemgetter("display_type", "screen_width","screen_height", "y_multiplier", "x_multiplier", "y_length_multiplier", "x_length_multiplier")(screenData)
-        self.keyboard = keyboard(self.setdat["movespeed"]) #TODO: implement haste compensation
+        self.keyboard = keyboard(self.setdat["movespeed"], haste)
         self.logger = logModule.log(log, self.setdat["enable_webhook"], self.setdat["webhook_link"])
         #setup an internal cooldown tracker. The cooldowns can be modified
         self.collectCooldowns = dict([(k, v[2]) for k,v in collectData.items()])
@@ -265,7 +265,8 @@ class macro:
         self.logger.webhook("", "Converting", "brown", True)
         st = time.time()
         time.sleep(2)
-        while not self.isBesideE(["make", "маке", "flower", "field"]): pass
+        while not self.isBesideE(["make", "маке", "flower", "field"]): 
+            mouse.click()
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
         wait = self.setdat["convert_wait"]
@@ -738,11 +739,6 @@ class macro:
         if not appManager.openApp("roblox"):
             self.rejoin()
         time.sleep(2)
-        self.useItemInInventory("candyplanter")
-        self.useItemInInventory("ticketplanter")
-        self.useItemInInventory("blueclayplanter")
-        self.useItemInInventory("festiveplanter")
-        return
         #detect new/old ui and set 
         if self.getTop(0):
             self.newUI = False

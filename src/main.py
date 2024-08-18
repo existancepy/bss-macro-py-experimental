@@ -10,12 +10,17 @@ import sys
 import ast
 import subprocess
 
+def hasteCompensationThread(baseSpeed, haste):
+    from modules.submacros.hasteCompensation import hasteCompensation
+    global stopThreads
+    while not stopThreads:
+        hasteCompensation(baseSpeed, haste)
+
 #controller for the macro
-def macro(status, log):
+def macro(status, log, haste):
     import modules.macro as macroModule
-    macro = macroModule.macro(status, log)
+    macro = macroModule.macro(status, log, haste)
     macro.start()
-    return
     setdat = macro.setdat
     #function to run a task
     #makes it easy to do any checks after a task is complete (like stinger hunt, rejoin every, etc)
@@ -61,13 +66,14 @@ def watch_for_hotkeys(run):
     keyboard.Listener(on_press=on_press).start()
 
 if __name__ == "__main__":
+    global stopThreads
     import gui
     import modules.screen.screenData as screenData
     import modules.controls.keyboard
     import modules.logging.log as logModule
     import modules.controls.mouse as mouse
     import modules.misc.settingsManager as settingsManager
-    keyboardModule = modules.controls.keyboard.keyboard(0)
+    keyboardModule = modules.controls.keyboard.keyboard(0,0)
     macroProc: typing.Optional[multiprocessing.Process] = None
     #set screen data
     screenData.setScreenData()
@@ -80,6 +86,7 @@ if __name__ == "__main__":
     run = multiprocessing.Value('i', 3)
     status = manager.Value(ctypes.c_wchar_p, "none")
     log = manager.Value(ctypes.c_wchar_p, "")
+    haste = multiprocessing.Value('d', 0)
     prevLog = ""
     watch_for_hotkeys(run)
     logger = logModule.log(log, False, None)
@@ -111,9 +118,13 @@ if __name__ == "__main__":
             setdat = settingsManager.loadAllSettings()
             logger.enableWebhook = setdat["enable_webhook"]
             logger.webhookURL = setdat["webhook_link"]
-
-            macroProc = multiprocessing.Process(target=macro, args=(status, log))
+            stopThreads = False
+            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste))
             macroProc.start()
+            if setdat["haste_compensation"]:
+                hasteCompThread = Thread(target=hasteCompensationThread, args=(setdat["movespeed"],haste,))
+                hasteCompThread.daemon = True
+                hasteCompThread.start()
             logger.webhook("Macro Started", "exih macro", "purple")
             run.value = 2
             gui.toggleStartStop()
@@ -121,6 +132,7 @@ if __name__ == "__main__":
             if macroProc:
                 logger.webhook("Macro Stopped", "exih macro", "red")
                 macroProc.kill()
+                stopThreads = True
                 run.value = 3
                 gui.toggleStartStop()
                 keyboardModule.releaseMovement()

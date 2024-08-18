@@ -7,8 +7,9 @@ import time
 
 
 class keyboard:
-    def __init__(self, walkspeed):
+    def __init__(self, walkspeed, haste):
         self.ws = walkspeed
+        self.haste = haste
 
     def keyDown(self, k):
         pag.keyDown(k)
@@ -30,7 +31,8 @@ class keyboard:
 
     #like press, but with walkspeed and haste compensation
     def walk(self,k,t,applyHaste = True):
-        self.press(k,t*28/self.ws)
+        print(self.haste.value)
+        self.press(k,t*28/self.haste.value)
     #like walk, but with multiple keys
     def multiWalk(self, keys, t):
         for k in keys:
