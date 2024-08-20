@@ -114,7 +114,8 @@ def fastFieldDriftCompensation(isRetina, initialSaturatorLocation):
         elif y > winDown:
             keyboard.keyDown("s", False)
             vmove = "s"
-        
+
+        i = 0
         while hmove or vmove:
             #check if reached saturator
             if (hmove == "a" and x >= winLeft) or (hmove == "d" and x <= winRight):
@@ -129,7 +130,7 @@ def fastFieldDriftCompensation(isRetina, initialSaturatorLocation):
             
             time.sleep(0.02)
             #taking too long, just give up
-            if time.time()-st > 6:
+            if i >= 100:
                 print("give up")
                 keyboard.releaseMovement()
                 break
@@ -156,6 +157,7 @@ def fastFieldDriftCompensation(isRetina, initialSaturatorLocation):
                         break
                 else: #still cant find it, give up
                     return
+            i += 1
             
 def fieldDriftCompensation(isRetina):
     #calculate how fast it takes to get the saturator and determine if the fast or slow version should be used
