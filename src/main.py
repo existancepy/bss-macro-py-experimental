@@ -41,10 +41,12 @@ def macro(status, log, haste):
         runTask(resetAfter=False)
         #collect
         for k, _ in macroModule.collectData.items():
-            if setdat[k]:
-                #check if the cooldown is up
-                if macro.hasRespawned(k, macro.collectCooldowns[k]):
-                    runTask(macro.collect, args=(k,))
+            #check if the cooldown is up
+            if setdat[k] and macro.hasRespawned(k, macro.collectCooldowns[k]):
+                runTask(macro.collect, args=(k,))
+
+        if setdat["sticker_printer"] and macro.hasRespawned("sticker_printer", macro.collectCooldowns["sticker_printer"]):
+            runTask(macro.collectStickerPrinter)
         #ant challenge
         if setdat["ant_challenge"]: 
             runTask(macro.antChallenge)

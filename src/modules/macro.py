@@ -36,7 +36,6 @@ collectData = {
     "treat_dispenser": [["use", "treat"], "w", 1*60*60], #1hr
     "ant_pass_dispenser": [["use", "free"], None, 2*60*60], #2hr
     "glue_dispenser": [["use", "glue"], None, 22*60*60], #22hr
-    "sticker_printer": [["inspect", "stick", "print"], "w", 1*60*60], #1hr
     "stockings": [["check", "inside", "stocking"], None, 1*60*60], #1hr
     "wreath": [["admire", "honey"], None, 30*60], #30mins
     "feast": [["dig", "beesmas"], "s", 1.5*60*60], #1.5hr
@@ -57,6 +56,7 @@ class macro:
         self.logger = logModule.log(log, self.setdat["enable_webhook"], self.setdat["webhook_link"])
         #setup an internal cooldown tracker. The cooldowns can be modified
         self.collectCooldowns = dict([(k, v[2]) for k,v in collectData.items()])
+        self.collectCooldowns["sticker_printer"] = 1*60*60
 
     #resize the image based on the user's screen coordinates
     def adjustImage(self, path, imageName):
@@ -267,9 +267,9 @@ class macro:
             if not self.isBesideE(["make", "маке"], ["to", "pollen"]): return False
         self.keyboard.press("e")
         st = time.time()
-        time.sleep(1)
+        time.sleep(2)
         self.logger.webhook("", "Converting", "brown", "screen")
-        while not self.isBesideE(["make", "маке", "flower", "field"]): 
+        while not self.isBesideE(["to", "pollen", "flower", "field"]): 
             mouse.click()
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
@@ -680,6 +680,59 @@ class macro:
         self.reset(convert=True)
         #done
         return True
+
+    def collectStickerPrinter(self):
+        reached = False
+        for _ in range(2):
+            self.logger.webhook("",f"Travelling: Sticker Printer","dark brown")
+            self.cannon()
+            self.runPath("collect/sticker_printer")
+            for _ in range(6):
+                self.keyboard.walk("w", 0.2)
+                reached = self.isBesideE(["inspect", "stick", "print"])
+                if reached: break
+            if reached: break
+            self.logger.webhook("", f"Failed to reach sticker printer", "dark brown", "screen")
+            self.reset(convert=False)
+        else: return
+
+        self.keyboard.press("e")
+        #claim sticker
+        eggPosData = {
+            "basic": -95, 
+            "silver": -40,
+            "gold": 15,
+            "diamond": 70,
+            "mythic": 125
+        }
+        #click egg
+        eggPos = eggPosData[self.setdat["sticker_printer_egg"]]
+        mouse.moveTo(self.mw//2+eggPos, 4*self.mh//10-20)
+        time.sleep(0.2)
+        mouse.click()
+        time.sleep(0.2)
+        #check if on cooldown
+        confirmImg = self.adjustImage("./images/menu", "confirm")
+        _, max_val, _, _ = locateImageOnScreen(confirmImg, self.mw//2+150, 4*self.mh//10+16, 100, 60)
+        if max_val < 0.7:
+            self.logger.webhook(f"", "Sticker printer on cooldown", "dark brown", "screen")
+            self.keyboard.press("e")
+            return
+        #confirm
+        mouse.moveTo(self.mw//2+225, 4*self.mh//10+195)
+        time.sleep(0.1)
+        mouse.click()
+        time.sleep(0.2)
+        #click yes
+        self.clickYes()
+        #wait for sticker to generate
+        time.sleep(6)
+        self.logger.webhook(f"", "Claimed sticker", "light green", "sticker")
+        #close the inventory
+        time.sleep(1)
+        self.toggleInventory()
+        self.keyboard.press("\\")
+
 
     def collect(self, objective):
         reached = None

@@ -72,19 +72,19 @@ def slowFieldDriftCompensation(isRetina, initialSaturatorLocation):
     winUp, winDown = mh/2.14, mh/1.88
     winLeft, winRight = mw/2.14, mw/1.88
     saturatorLocation = initialSaturatorLocation
-    for _ in range(5):
+    for _ in range(8):
         if saturatorLocation is None: break #cant find saturator
         x,y = saturatorLocation
         if x >= winLeft and x <= winRight and y >= winUp and y <= winDown: 
             break
         if x < winLeft:
-            press("a",0.3)
+            press("a",0.2)
         elif x > winRight:
-            press("d",0.3)
+            press("d",0.2)
         if y < winUp:
-            press("w",0.3)
+            press("w",0.2)
         elif y > winDown:
-           press("s",0.3)
+           press("s",0.2)
 
         saturatorLocation = getSaturatorLocation(isRetina)
 
