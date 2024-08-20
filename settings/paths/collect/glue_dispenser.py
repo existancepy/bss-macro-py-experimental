@@ -13,4 +13,5 @@ self.keyboard.walk("a",0.2)
 self.useItemInInventory("gumdrops")
 time.sleep(2)
 self.keyboard.walk("w",2.5)
+time.sleep(0.5)
 

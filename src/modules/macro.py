@@ -186,7 +186,7 @@ class macro:
         for _ in range(2):
             mouse.click()
 
-    def toggleInventory():
+    def toggleInventory(self):
             self.keyboard.press("\\")
             #align with first buff
             for _ in range(7):
