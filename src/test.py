@@ -52,53 +52,56 @@ def getSaturatorInImage(imgSRC):
     '''
     #get the center and return its coordinates
     return (x+w//2, y+h//2)
-'''
-def fieldDriftCompensation(isRetina):
-    winUp, winDown = mh/2.14, mh/1.8
+
+def getSaturatorLocation(isRetina):
+    st = time.time()
+    saturatorLocation = getSaturatorInImage(pillowToCv2(mssScreenshot(0,100, mw, mh-100)))
+    if saturatorLocation is None: return None
+    x,y = saturatorLocation
+    if isRetina:
+        x /= 2
+        y /= 2
+    y += 100
+    print(time.time()-st)
+    return (x,y)
+    
+def press(k,t):
+    keyboard.keyDown(k, False)
+    time.sleep(t)
+    keyboard.keyUp(k, False)
+    
+def slowFieldDriftCompensation(isRetina, initialSaturatorLocation):
+    winUp, winDown = mh/2.14, mh/1.88
     winLeft, winRight = mw/2.14, mw/1.88
+    saturatorLocation = initialSaturatorLocation
     for _ in range(5):
-        st = time.time()
-        saturatorLocation = getSaturatorLocation(pillowToCv2(mssScreenshot(0,100, mw, mh-100)))
-        print(time.time()-st)
         if saturatorLocation is None: break #cant find saturator
         x,y = saturatorLocation
-        y += 100
-        if isRetina:
-            x /= 2
-            y /= 2
         if x >= winLeft and x <= winRight and y >= winUp and y <= winDown: 
             break
         if x < winLeft:
-            press("a",0.32)
+            press("a",0.3)
         elif x > winRight:
-            press("d",0.32)
+            press("d",0.3)
         if y < winUp:
-            press("w",0.32)
+            press("w",0.3)
         elif y > winDown:
-           press("d",0.32)
+           press("s",0.3)
 
-'''
+        saturatorLocation = getSaturatorLocation(isRetina)
 
-def fieldDriftCompensation(isRetina):
 
-    def getSaturatorLocation():
-        saturatorLocation = getSaturatorInImage(pillowToCv2(mssScreenshot(0,100, mw, mh-100)))
-        if saturatorLocation is None: return None
-        x,y = saturatorLocation
-        if isRetina:
-            x /= 2
-            y /= 2
-        y += 100
-        return (x,y)
+
+#natro's field drift compensation
+#works well with fast detection times (<0.2s)
+def fastFieldDriftCompensation(isRetina, initialSaturatorLocation):
     
     winUp, winDown = mh/2.14, mh/1.88
     winLeft, winRight = mw/2.14, mw/1.88
     i = 0
     hmove, vmove = 1, 1
-    #find saturator
-    saturatorLocation = getSaturatorLocation()
-    if saturatorLocation:
-        x,y = saturatorLocation
+    if initialSaturatorLocation:
+        x,y = initialSaturatorLocation
 
         #move towards saturator
         if x >= winLeft and x <= winRight and y >= winUp and y <= winDown: 
@@ -132,16 +135,17 @@ def fieldDriftCompensation(isRetina):
                 keyboard.releaseMovement()
                 break
             #update saturator location
-            saturatorLocation = getSaturatorLocation()
-            if saturatorLocation:
+            saturatorLocation = getSaturatorLocation(isRetina)
+            if saturatorLocation is not None:
                 x,y = saturatorLocation
 
             else: #cant find saturator, pause
                 keyboard.releaseMovement()
                 #try to find saturator
+                print("a")
                 for _ in range(20):
                     time.sleep(0.02)
-                    saturatorLocation = getSaturatorLocation()
+                    saturatorLocation = getSaturatorLocation(isRetina)
                     #saturator found
                     if saturatorLocation:
                         #move towards saturator
@@ -154,8 +158,18 @@ def fieldDriftCompensation(isRetina):
                 else: #still cant find it, give up
                     break
             i += 1
-
+            
+def fieldDriftCompensation(isRetina):
+    #calculate how fast it takes to get the saturator and determine if the fast or slow version should be used
+    st = time.time()
+    saturatorLocation = getSaturatorLocation(isRetina)
+    timing = time.time()-st
+    if timing > 0.25:
+        slowFieldDriftCompensation(isRetina, saturatorLocation)
+    else:
+        fastFieldDriftCompensation(isRetina, saturatorLocation)
+        
 openApp("roblox")
 time.sleep(1)
-fieldDriftCompensation(False)
+fieldDriftCompensation(True)
 #print(getSaturatorLocation(cv2.imread("screen3.png")))
