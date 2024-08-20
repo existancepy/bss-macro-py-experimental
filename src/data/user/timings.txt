@@ -1,4 +1,4 @@
-wealth_clock=1723938926.167131
+wealth_clock=1724038270.3764124
 blueberry_dispenser=1723639631.5261157
 strawberry_dispenser=0
 royal_jelly_dispenser=0
@@ -10,5 +10,5 @@ samovar=0
 snow_machine=0
 lid_art=0
 candles=0
-glue_dispenser=0
+glue_dispenser=1723970089.6208496
 mondo=0

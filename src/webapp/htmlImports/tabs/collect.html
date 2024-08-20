@@ -71,6 +71,29 @@
                 },
             ])
 
+            buildStandardContainer(parentCollect,"Sticker Printer 🖨️", "",[
+                {
+                    id: "sticker_printer",
+                    title: "Enable Task",
+                    desc: "Print stickers using the sticker printer at mountain top",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "sticker_printer_egg",
+                    title: "Egg",
+                    desc: "The type of egg to donate to the printer",
+                    type: {
+                        name: "dropdown",
+                        data: ["Basic", "Silver", "Gold", "Diamond", "Mythic"],
+                        triggerFunction: saveProfileTriggerFunction
+                        
+                    }
+                },
+            ])
+
             buildStandardContainer(parentCollect,"Mondo Buff 🐣", "",[
                 {
                     id: "mondo_buff",

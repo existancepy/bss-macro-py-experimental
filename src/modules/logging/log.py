@@ -2,6 +2,7 @@ import time
 from modules.screen.screenshot import screenshotScreen
 import modules.logging.webhook as logWebhook
 import threading
+import pyautogui as pag
 
 colors = {
     "red":"D22B2B",
@@ -10,15 +11,20 @@ colors = {
     "light green": "98FB98",
     "dark brown": "5C4033",
     "brown": "D27D2D",
-    "purple": "954cf5"
-    
+    "purple": "954cf5"   
 }
 
-def sendWebhook(url, title, desc, time, colorHex, ss):
+mw, mh = pag.size()
+screenshotRegions = {
+    "screen": None,
+    "honey-pollen": (mw/2.95, 0, mw/3, 40),
+}
+
+def sendWebhook(url, title, desc, time, colorHex, ss = None):
     webhookImg = None
-    if ss:
+    if not ss is None:
         webhookImg = "webhookScreenshot.png"
-        screenshotScreen("webhookScreenshot.png")
+        screenshotScreen("webhookScreenshot.png", screenshotRegions[ss])
     logWebhook.webhook(url, title, desc, time, colorHex, webhookImg)
 
 class log:
@@ -30,7 +36,7 @@ class log:
     def log(self, msg):
         pass
     #webhook, gui and macrologs
-    def webhook(self, title, desc, color, ss = False):
+    def webhook(self, title, desc, color, ss = None):
         #update logs
         logData = {
             "type": "webhook",

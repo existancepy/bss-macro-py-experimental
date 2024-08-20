@@ -9,3 +9,4 @@ rejoin_method=deeplink
 webhook_link=https://discord.com/api/webhooks/1162895121315008545/IHapDfOLoVpERdPquwSSUWgIki9DcSM_hRgeCVN47VnY1ZlJDefqikBiCww2j-58WEBv
 send_screenshot=True
 enable_webhook=True
+haste_compensation=True

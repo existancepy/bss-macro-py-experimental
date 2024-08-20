@@ -19,3 +19,5 @@ candles=False
 glue_dispenser=False
 wreath=False
 mondo_buff_wait=2
+sticker_printer=False
+sticker_printer_egg=basic

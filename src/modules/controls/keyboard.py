@@ -11,17 +11,19 @@ class keyboard:
         self.ws = walkspeed
         self.haste = haste
 
-    def keyDown(self, k):
-        pag.keyDown(k)
+    @staticmethod
+    def keyDown(k, pause = False):
+        pag.keyDown(k, _pause = pause)
 
-    def keyUp(self, k):
-        pag.keyUp(k)
+    @staticmethod
+    def keyUp(k, pause = False):
+        pag.keyUp(k, _pause = pause)
 
     #pyautogui without the pause
     def press(self,key, delay = 0.02):
-        pag.keyDown(key, _pause = False)
+        keyboard.keyDown(key, False)
         time.sleep(delay)
-        pag.keyUp(key, _pause = False)
+        keyboard.keyUp(key, False)
 
     #pyautogui with the pause
     def slowPress(self,k):
@@ -32,7 +34,10 @@ class keyboard:
     #like press, but with walkspeed and haste compensation
     def walk(self,k,t,applyHaste = True):
         print(self.haste.value)
-        self.press(k,t*28/self.haste.value)
+        if applyHaste:
+            self.press(k,t*28/self.haste.value)
+        else:
+            self.press(k, t*28/self.ws)
     #like walk, but with multiple keys
     def multiWalk(self, keys, t):
         for k in keys:
@@ -51,7 +56,8 @@ class keyboard:
             ws = settings['walkspeed']
         time.sleep((tiles/8.3)*28/ws)
     #release all movement keys (wasd, space)
-    def releaseMovement(self):
+    @staticmethod
+    def releaseMovement():
         keys = ["w","a","s","d","space"]
         for k in keys:
-            self.keyUp(k)
+            keyboard.keyUp(k, False)

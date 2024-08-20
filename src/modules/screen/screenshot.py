@@ -9,9 +9,15 @@ def mssScreenshot(x,y,w,h):
         # Grab the data and convert to pillow img
         sct_img = sct.grab(monitor)
         img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-        mss.tools.to_png(sct_img.rgb, sct_img.size, output="screen.png")
+        #mss.tools.to_png(sct_img.rgb, sct_img.size, output="screen.png")
         return img
 
-def screenshotScreen(path):
+def screenshotScreen(path, region = None):
     with mss.mss() as sct:
-        sct.shot(output=path)
+        if region is None:
+            sct.shot(output=path)
+        else:
+            monitor = {"left": int(region[0]), "top": int(region[1]), "width": int(region[2]), "height": int(region[3])}
+            sct_img = sct.grab(monitor)
+            # Save to the picture file
+            mss.tools.to_png(sct_img.rgb, sct_img.size, output=path)

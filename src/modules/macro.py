@@ -21,6 +21,7 @@ import webbrowser
 from pynput.keyboard import Key, Controller
 import cv2
 from datetime import timedelta, datetime
+from modules.misc.imageManipulation import pillowToCv2
 from PIL import Image
 pynputKeyboard = Controller()
 
@@ -34,6 +35,7 @@ collectData = {
     "treat_dispenser": [["use", "treat"], "w", 1*60*60], #1hr
     "ant_pass_dispenser": [["use", "free"], None, 2*60*60], #2hr
     "glue_dispenser": [["use", "glue"], None, 22*60*60], #22hr
+    "sticker_printer": [["inspect", "stick", "print"], None, 1*60*60], #1hr
     "stockings": [["check", "inside", "stocking"], None, 1*60*60], #1hr
     "wreath": [["admire", "honey"], None, 30*60], #30mins
     "feast": [["dig", "beesmas"], "s", 1.5*60*60], #1.5hr
@@ -79,7 +81,7 @@ class macro:
         #resize image
         img = img.resize((int(width/scaling), int(height/scaling)))
         #convert to cv2
-        return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        return pillowToCv2(img)
         
     #run a path. Choose automater over python if it exists (except on windows)
     #file must exist: if set to False, will not attempt to run the file if it doesnt exist
@@ -260,11 +262,11 @@ class macro:
 
     def convert(self, bypass = False):
         if not bypass:
-            if not self.isBesideE(["make", "маке"], ["to"]): return False
+            if not self.isBesideE(["make", "маке"], ["to", "pollen"]): return False
         self.keyboard.press("e")
-        self.logger.webhook("", "Converting", "brown", True)
         st = time.time()
-        time.sleep(2)
+        time.sleep(1)
+        self.logger.webhook("", "Converting", "brown", "screen")
         while not self.isBesideE(["make", "маке", "flower", "field"]): 
             mouse.click()
         #deal with the extra delay
@@ -295,7 +297,7 @@ class macro:
             besideE = self.isBesideE(["make", "маке", "нопеу", "honey", "flower", "field"])
             if besideE: break
         else:
-            self.logger.webhook("Notice", f"Unable to detect that player respawned at hive, continuing", "red", True)
+            self.logger.webhook("Notice", f"Unable to detect that player respawned at hive, continuing", "red", "screen")
             return False
 
         #set the player's orientation to face hive, max 4 attempts
@@ -307,7 +309,7 @@ class macro:
                 for _ in range(8):
                     self.keyboard.press("o")
                 #convert if enabled
-                if convert and (("make" in besideE or "маке" in besideE) and not "to" in besideE):
+                if convert and (("make" in besideE or "маке" in besideE) and not ("to" in besideE or "pollen" in besideE)):
                     self.convert(True)
                 return True
             
@@ -315,7 +317,7 @@ class macro:
                 self.keyboard.press(".")
                 time.sleep(0.05)
         time.sleep(0.3)
-        self.logger.webhook("Notice", f"Unable to detect the direction the player is facing, continuing", "red", True)
+        self.logger.webhook("Notice", f"Unable to detect the direction the player is facing, continuing", "red", "screen")
         return False
 
     def cannon(self, fast = False):
@@ -341,7 +343,7 @@ class macro:
                 time.sleep(0.05)
                 if self.isBesideE(["fire","red"]):
                     return
-            self.logger.webhook("Notice", f"Could not find cannon", "dark brown")
+            self.logger.webhook("Notice", f"Could not find cannon", "dark brown", "screen")
             self.reset()
         else:
             self.logger.webhook("Notice", f"Failed to reach cannon too many times", "red")
@@ -353,7 +355,7 @@ class macro:
         self.logger.webhook("","Rejoining", "dark brown")
         for i in range(3):
             if psLink and i ==2: 
-                self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", True)
+                self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", "screen")
             else:
                 browserLink = psLink
             appManager.closeApp("Roblox") # close roblox
@@ -446,18 +448,18 @@ class macro:
             rejoinSuccess = False
             for _ in range(3):
                 if findHive():
-                    self.logger.webhook("",f'Claimed hive {hiveNumber}', "bright green",True)
+                    self.logger.webhook("",f'Claimed hive {hiveNumber}', "bright green", "screen")
                     rejoinSuccess = True
                     break 
             #find a new hive
             else:
-                self.logger.webhook("",f'Hive is {hiveNumber} already claimed, finding new hive','dark brown', True)
+                self.logger.webhook("",f'Hive is {hiveNumber} already claimed, finding new hive','dark brown', "screen")
                 self.keyboard.walk("d",0.9*(hiveNumber)+1,0)
                 time.sleep(0.5)
                 for j in range(40):
                     if findHive():
                         hiveClaim = max(1,min(6,round((j+1)//2.5)))
-                        self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", True)
+                        self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", "screen")
                         rejoinSuccess = True
                         break
             #after hive is claimed, convert
@@ -466,7 +468,7 @@ class macro:
                 #no need to reset
                 #TODO: haste compensation
                 return
-            self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', True)
+            self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
 
 
     def gather(self, field):
@@ -555,11 +557,11 @@ class macro:
             #check if max time is reached
             gatherTime = "{:.2f}".format((time.time() - st)/60)
             if time.time() - st > maxGatherTime:
-                self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green")
+                self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
             #check backpack
             if bpc(self.ww, self.newUI, self.display_type) >= fieldSetting["backpack"]:
-                self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Backpack - Return: {returnType}", "light green")
+                self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Backpack - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
             #check for gather interrupts
             if self.collectMondoBuff(gatherInterrupt=True):
@@ -601,7 +603,7 @@ class macro:
         elif returnType == "whirligig":
             self.useItemInInventory("whirligig")
             if not self.convert():
-                self.logger.webhook("","Whirligigs failed, walking to hive", "dark brown", True)
+                self.logger.webhook("","Whirligigs failed, walking to hive", "dark brown", "screen")
                 walk_to_hive()
                 return
             #whirligig sucessful
@@ -619,7 +621,7 @@ class macro:
         self.keyboard.walk("s",0.4)
         time.sleep(0.5)
         if self.isBesideE(["spen","play"], ["need"]):
-            self.logger.webhook("","Start Ant Challenge","bright green",1)
+            self.logger.webhook("","Start Ant Challenge","bright green", "screen")
             self.keyboard.press("e")
             self.placeSprinkler()
             mouse.click()
@@ -643,9 +645,9 @@ class macro:
                         breakLoop = True
                         break
                     
-            self.logger.webhook("","Ant Challenge Complete","bright green",1)
+            self.logger.webhook("","Ant Challenge Complete","bright green", "screen")
             return
-        self.logger.webhook("", "Cant start ant challenge", "red", 1)
+        self.logger.webhook("", "Cant start ant challenge", "red", "screen")
 
     def collectMondoBuff(self, gatherInterrupt = False):
         #check if mondo can be collected (first 10mins)
@@ -667,7 +669,7 @@ class macro:
         self.keyboard.walk("d",4)
         #wait
         self.saveTiming("mondo")
-        self.logger.webhook("","Collecting: Mondo Buff","bright green",1)
+        self.logger.webhook("","Collecting: Mondo Buff","bright green", "screen")
         sleep(self.setdat["mondo_buff_wait"]*60)
         self.logger.webhook("","Collected: Mondo Buff","dark brown")
         self.reset(convert=True)
@@ -692,7 +694,7 @@ class macro:
                     reached = self.isBesideE(objectiveData[0])
                     if reached: break
             if reached: break
-            self.logger.webhook("", f"Failed to reach {displayName}", "dark brown", True)
+            self.logger.webhook("", f"Failed to reach {displayName}", "dark brown", "screen")
             self.reset(convert=False)
         
         if not reached: return #player failed to reach objective
@@ -722,13 +724,13 @@ class macro:
                 cooldownSeconds = int(''.join([x for x in cooldownRaw if x.isdigit()]))
 
             cooldownFormat = timedelta(seconds=cooldownSeconds)
-            self.logger.webhook("", f"{displayName} is on cooldown ({cooldownFormat} remaining)", "dark brown", True)
+            self.logger.webhook("", f"{displayName} is on cooldown ({cooldownFormat} remaining)", "dark brown", "screen")
         else: #not on cooldown
             for _ in range(2):
                 self.keyboard.press("e")
             #run the claim path (if it exists)
             self.runPath(f"collect/claim/{objective}", fileMustExist=False)
-            self.logger.webhook("", f"Collected: {displayName}", "light green", True)
+            self.logger.webhook("", f"Collected: {displayName}", "light green", "screen")
         #update the internal cooldown
         self.saveTiming(objective)
         self.collectCooldowns[objective] = cooldownSeconds
@@ -748,6 +750,6 @@ class macro:
             self.logger.webhook("","Detected: New Roblox UI","light blue")
             ocr.newUI = True
         else:
-            self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red", True)
+            self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red", "screen")
             self.newUI = False   
         self.reset(convert=True)

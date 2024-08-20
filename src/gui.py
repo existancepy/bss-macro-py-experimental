@@ -7,7 +7,7 @@ eel.init('webapp')
 run = None
 @eel.expose
 def openLink(link):
-    webbrowser.open(link)
+    webbrowser.open(link, autoraise = True)
     
 @eel.expose
 def start():
@@ -38,4 +38,4 @@ def toggleStartStop():
     eel.toggleStartStop()
 
 def launch():
-    eel.start('index.html',app_mode = True,block = False, cmdline_args=['--incognito'])
+    eel.start('index.html',app_mode = True,block = False, cmdline_args=["--incognito", "--new-window"])

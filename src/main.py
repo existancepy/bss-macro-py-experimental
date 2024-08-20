@@ -69,11 +69,10 @@ if __name__ == "__main__":
     global stopThreads
     import gui
     import modules.screen.screenData as screenData
-    import modules.controls.keyboard
+    from modules.controls.keyboard import keyboard as keyboardModule
     import modules.logging.log as logModule
     import modules.controls.mouse as mouse
     import modules.misc.settingsManager as settingsManager
-    keyboardModule = modules.controls.keyboard.keyboard(0,0)
     macroProc: typing.Optional[multiprocessing.Process] = None
     #set screen data
     screenData.setScreenData()
@@ -118,6 +117,7 @@ if __name__ == "__main__":
             setdat = settingsManager.loadAllSettings()
             logger.enableWebhook = setdat["enable_webhook"]
             logger.webhookURL = setdat["webhook_link"]
+            haste.value = setdat["movespeed"]
             stopThreads = False
             macroProc = multiprocessing.Process(target=macro, args=(status, log, haste))
             macroProc.start()

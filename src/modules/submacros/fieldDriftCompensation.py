@@ -154,8 +154,3 @@ def fieldDriftCompensation(isRetina):
                 else: #still cant find it, give up
                     break
             i += 1
-
-openApp("roblox")
-time.sleep(1)
-fieldDriftCompensation(False)
-#print(getSaturatorLocation(cv2.imread("screen3.png")))
