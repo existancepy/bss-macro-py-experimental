@@ -43,8 +43,8 @@ def macro(status, log, haste):
         for k, _ in macroModule.collectData.items():
             if setdat[k]:
                 #check if the cooldown is up
-                #if macro.hasRespawned(k, macro.collectCooldowns[k]):
-                runTask(macro.collect, args=(k,))
+                if macro.hasRespawned(k, macro.collectCooldowns[k]):
+                    runTask(macro.collect, args=(k,))
         #ant challenge
         if setdat["ant_challenge"]: 
             runTask(macro.antChallenge)
