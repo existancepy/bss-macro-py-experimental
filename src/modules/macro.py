@@ -10,6 +10,7 @@ from modules.controls.sleep import sleep
 import modules.controls.mouse as mouse
 from modules.screen.screenData import getScreenData
 import modules.logging.log as logModule
+from modules.submacros.fieldDriftCompensation import fieldDriftCompensation
 from operator import itemgetter
 import sys
 import os
@@ -35,7 +36,7 @@ collectData = {
     "treat_dispenser": [["use", "treat"], "w", 1*60*60], #1hr
     "ant_pass_dispenser": [["use", "free"], None, 2*60*60], #2hr
     "glue_dispenser": [["use", "glue"], None, 22*60*60], #22hr
-    "sticker_printer": [["inspect", "stick", "print"], None, 1*60*60], #1hr
+    "sticker_printer": [["inspect", "stick", "print"], "w", 1*60*60], #1hr
     "stockings": [["check", "inside", "stocking"], None, 1*60*60], #1hr
     "wreath": [["admire", "honey"], None, 30*60], #30mins
     "feast": [["dig", "beesmas"], "s", 1.5*60*60], #1.5hr
@@ -185,9 +186,7 @@ class macro:
         for _ in range(2):
             mouse.click()
 
-    def useItemInInventory(self, itemName):
-        itemImg = self.adjustImage("./images/inventory", itemName)
-        def toggleInventory():
+    def toggleInventory():
             self.keyboard.press("\\")
             #align with first buff
             for _ in range(7):
@@ -206,8 +205,11 @@ class macro:
             else:
                 self.keyboard.press("s")
                 self.keyboard.press("enter")
+
+    def useItemInInventory(self, itemName):
+        itemImg = self.adjustImage("./images/inventory", itemName)
         #open inventory
-        toggleInventory()
+        self.toggleInventory()
         time.sleep(0.3)
         self.keyboard.press("s")
         #scroll down, note the best match
@@ -245,7 +247,7 @@ class macro:
         mouse.click()
         self.clickYes()
         #close inventory
-        toggleInventory()
+        self.toggleInventory()
         #close UI navigation
         self.keyboard.press("\\")
         #adjust camera
@@ -365,7 +367,6 @@ class macro:
                 deeplink = "roblox://placeID=1537690962"
                 if psLink:
                     deeplink += f"&linkCode={psLink.lower().split('code=')[1]}"
-                print(deeplink)
                 appManager.openDeeplink(deeplink)
             elif rejoinMethod == "new tab":
                 webbrowser.open(browserLink, new = 2)
@@ -566,6 +567,10 @@ class macro:
             #check for gather interrupts
             if self.collectMondoBuff(gatherInterrupt=True):
                 return
+
+            #field drift compensation
+            if fieldSetting["field_drift_compensation"]:
+                fieldDriftCompensation(self.display_type == "retina")
         
         #go back to hive
         def walk_to_hive():
@@ -680,7 +685,6 @@ class macro:
         reached = None
         objectiveData = collectData[objective]
         displayName = objective.replace("_"," ").title()
-        print(objectiveData)
         #go to collect and check that player has reached
         for _ in range(2):
             self.logger.webhook("",f"Travelling: {displayName}","dark brown")
@@ -736,7 +740,6 @@ class macro:
         self.collectCooldowns[objective] = cooldownSeconds
         
     def start(self):
-        print(self.status.value)
         #if roblox is not open, rejoin
         if not appManager.openApp("roblox"):
             self.rejoin()

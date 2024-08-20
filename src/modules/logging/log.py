@@ -18,6 +18,7 @@ mw, mh = pag.size()
 screenshotRegions = {
     "screen": None,
     "honey-pollen": (mw/2.95, 0, mw/3, 40),
+    "sticker": (200, 100, mw/2.5-200, mh/4),
 }
 
 def sendWebhook(url, title, desc, time, colorHex, ss = None):

@@ -12,11 +12,11 @@ class keyboard:
         self.haste = haste
 
     @staticmethod
-    def keyDown(k, pause = False):
+    def keyDown(k, pause = True):
         pag.keyDown(k, _pause = pause)
 
     @staticmethod
-    def keyUp(k, pause = False):
+    def keyUp(k, pause = True):
         pag.keyUp(k, _pause = pause)
 
     #pyautogui without the pause

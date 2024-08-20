@@ -43,12 +43,13 @@ def openAppMac(app="roblox"):
 
 def openAppWindows(name):
     w = WindowMgr()
-    w.find_window_wildcard(f".*Roblox.*")
+    w.find_window(None, "Roblox")
     try:
         w.set_foreground()
         return True
     except:
         return False
+        
 
 def openDeeplink(link):
     if sys.platform == "darwin":
