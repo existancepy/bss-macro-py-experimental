@@ -1,5 +1,5 @@
-wealth_clock=1724124446.9674363
-blueberry_dispenser=1723639631.5261157
+wealth_clock=0
+blueberry_dispenser=0
 strawberry_dispenser=0
 royal_jelly_dispenser=0
 treat_dispenser=0
@@ -11,6 +11,6 @@ snow_machine=0
 lid_art=0
 candles=0
 wreath=1724206030.7849054
-glue_dispenser=1724156631.971306
+glue_dispenser=0
 mondo=0
-sticker_printer=1724205025.077151
+sticker_printer=0
