@@ -1,23 +1,18 @@
-def acchold(key, duration):
-    ws = loadsettings.load()["walkspeed"]
-    self.keyboard.keyDown(key)
-    sleep(duration*ws/28)
-    self.keyboard.keyUp(key)
 time.sleep(1)
-sideTime = 0
+sideTime = 0.2
 frontTime = 0.45
-acchold('w',0.2)
-acchold('d',0.1)
+self.keyboard.walk('w',0.2)
+self.keyboard.walk('d',0.1)
 for i in range(3):
-    acchold("s", frontTime)
-    acchold("a", sideTime)
-    acchold("w", frontTime)
-    acchold("a", sideTime)
+    self.keyboard.walk("s", frontTime)
+    self.keyboard.walk("a", sideTime)
+    self.keyboard.walk("w", frontTime)
+    self.keyboard.walk("a", sideTime)
 for i in range(3):
-    acchold("s", frontTime)
-    acchold("d", sideTime)
-    acchold("w", frontTime)
-    acchold("d", sideTime)
+    self.keyboard.walk("s", frontTime)
+    self.keyboard.walk("d", sideTime)
+    self.keyboard.walk("w", frontTime)
+    self.keyboard.walk("d", sideTime)
    
 
     

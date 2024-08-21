@@ -10,6 +10,7 @@ self.keyboard.slowPress(".")
 self.keyboard.slowPress(".")
 sleep(0.5)
 self.keyboard.keyUp("w")
+time.sleep(0.8)
 
 
     
