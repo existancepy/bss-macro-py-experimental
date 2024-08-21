@@ -78,6 +78,7 @@ if __name__ == "__main__":
     macroProc: typing.Optional[multiprocessing.Process] = None
     #set screen data
     screenData.setScreenData()
+    screenInfo = screenData.getScreenData()
     #value to control if macro main loop is running
     #0: stop (terminate process)
     #1: start (start process)
@@ -127,7 +128,7 @@ if __name__ == "__main__":
                 hasteCompThread = Thread(target=hasteCompensationThread, args=(setdat["movespeed"],haste,))
                 hasteCompThread.daemon = True
                 hasteCompThread.start()
-            logger.webhook("Macro Started", "exih macro", "purple")
+            logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
             run.value = 2
             gui.toggleStartStop()
         elif run.value == 0:
