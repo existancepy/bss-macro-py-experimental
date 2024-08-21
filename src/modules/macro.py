@@ -619,7 +619,7 @@ class macro:
     def antChallenge(self):
         self.logger.webhook("","Travelling: Ant Challenge","dark brown")
         self.cannon()
-        self.runPath("collect/ant_pass")
+        self.runPath("collect/ant_pass_dispenser")
         self.keyboard.walk("w",4)
         self.keyboard.walk("a",3)
         self.keyboard.walk("d",3)
