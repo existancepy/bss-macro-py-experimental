@@ -17,8 +17,8 @@ colors = {
 mw, mh = pag.size()
 screenshotRegions = {
     "screen": None,
-    "honey-pollen": (mw/3.08, 0, mw/2.85, 40),
-    "sticker": (200, 100, mw/2.5-200, mh/4),
+    "honey-pollen": (mw/3.5, 0, mw/2.4, 40),
+    "sticker": (200, 70, mw/2.5-200, mh/4),
 }
 
 def sendWebhook(url, title, desc, time, colorHex, ss = None):

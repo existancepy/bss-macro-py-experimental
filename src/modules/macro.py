@@ -37,7 +37,7 @@ collectData = {
     "ant_pass_dispenser": [["use", "free"], None, 2*60*60], #2hr
     "glue_dispenser": [["use", "glue"], None, 22*60*60], #22hr
     "stockings": [["check", "inside", "stocking"], None, 1*60*60], #1hr
-    "wreath": [["admire", "honey"], None, 30*60], #30mins
+    "wreath": [["admire", "honey"], "a", 30*60], #30mins
     "feast": [["dig", "beesmas"], "s", 1.5*60*60], #1.5hr
     "samovar": [["heat", "samovar"], "w", 6*60*60], #6hr
     "snow_machine": [["activate"], None, 2*60*60], #2hr
@@ -269,7 +269,7 @@ class macro:
         st = time.time()
         time.sleep(2)
         self.logger.webhook("", "Converting", "brown", "screen")
-        while not self.isBesideE(["to", "pollen", "flower", "field"]): 
+        while not self.isBesideE(["pollen", "flower", "field"]): 
             mouse.click()
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
@@ -710,13 +710,14 @@ class macro:
         mouse.moveTo(self.mw//2+eggPos, 4*self.mh//10-20)
         time.sleep(0.2)
         mouse.click()
-        time.sleep(0.2)
+        time.sleep(2)
         #check if on cooldown
         confirmImg = self.adjustImage("./images/menu", "confirm")
-        _, max_val, _, _ = locateImageOnScreen(confirmImg, self.mw//2+150, 4*self.mh//10+16, 100, 60)
+        _, max_val, _, _ = locateImageOnScreen(confirmImg, self.mw//2+150, 4*self.mh//10+160, 120, 60)
         if max_val < 0.7:
             self.logger.webhook(f"", "Sticker printer on cooldown", "dark brown", "screen")
             self.keyboard.press("e")
+            self.saveTiming("sticker_printer")
             return
         #confirm
         mouse.moveTo(self.mw//2+225, 4*self.mh//10+195)
@@ -726,8 +727,9 @@ class macro:
         #click yes
         self.clickYes()
         #wait for sticker to generate
-        time.sleep(6)
+        time.sleep(7)
         self.logger.webhook(f"", "Claimed sticker", "light green", "sticker")
+        self.saveTiming("sticker_printer")
         #close the inventory
         time.sleep(1)
         self.toggleInventory()
