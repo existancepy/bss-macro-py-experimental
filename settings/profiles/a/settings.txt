@@ -1,4 +1,4 @@
-fields_enabled=[False, False, False]
+fields_enabled=[True, False, False]
 fields=['pine tree', 'sunflower', 'dandelion']
 wealth_clock=False
 blueberry_dispenser=False
@@ -17,8 +17,8 @@ snow_machine=False
 lid_art=False
 candles=False
 glue_dispenser=False
-wreath=True
+wreath=False
 mondo_buff_wait=2
-sticker_printer=True
+sticker_printer=False
 sticker_printer_egg=basic
 haste_compensation=False
