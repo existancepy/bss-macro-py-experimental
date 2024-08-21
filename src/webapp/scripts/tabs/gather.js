@@ -11,7 +11,7 @@ async function saveEnabled(){
     eel.saveProfileSetting("fields",fields)
 }
 function saveField(){
-    const fieldProperties = ["shift_lock","field_drift_compensation", "shape", "size","width","invert_lr","invert_fb","turn","turn_times","mins","backpack","return","whirligig_slot", "start_location", "distance"]
+    const fieldProperties = ["shift_lock","field_drift_compensation", "shape", "size","width","invert_lr","invert_fb","turn","turn_times","mins","backpack","return", "start_location", "distance"]
     const fieldData = generateSettingObject(fieldProperties)
     eel.saveField(document.getElementById("field").value,fieldData)
 }

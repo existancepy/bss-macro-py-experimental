@@ -9,7 +9,6 @@ def getPixelColor(X1,Y1):
     
     with mss.mss() as sct:
         img = sct.grab(region)
-        mss.tools.to_png(img.rgb, img.size, output='test.png')
         im = np.array(img)
         col = tuple(im[0,0])[:-1][::-1]
         return col
