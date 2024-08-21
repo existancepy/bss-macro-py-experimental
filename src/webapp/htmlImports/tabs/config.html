@@ -36,7 +36,6 @@
     <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="bss">
         <script>
             const parentBSS = document.getElementById("bss")
-            const saveGeneralTriggerFunction = "saveSetting(this, 'general')"
             buildStandardContainer(parentBSS,"Basic", "",[
                 {
                     id: "hive_number",
@@ -65,7 +64,7 @@
                 {
                     id: "sprinkler_type",
                     title: "Sprinkler Type",
-                    desc: "The type of sprinkler that you used",
+                    desc: "The type of sprinkler that you use. Note that the macro will stack the sprinklers on top of each other when placing them",
                     type: {
                             name: "dropdown",
                             data: ["Basic", "Silver", "Golden", "Diamond", "Saturator"],
@@ -106,7 +105,7 @@
                 {
                     id: "private_server_link",
                     title: "Private Server Link",
-                    desc: "The link of a private server for the macro to join to.<br>Leave it blank to join a public server instead",
+                    desc: "The link of a private server for the macro to join to.<br>If left blank, the macro will join a public server instead",
                     type: {
                         name: "textbox",
                         inputType: "string",
@@ -138,7 +137,56 @@
                 },
 
             ])
+
+            buildStandardContainer(parentOther, "Haste Compensation", "", [
+                {
+                    id: "haste_compensation",
+                    title: "Enable Haste Compensation",
+                    desc: "Adjust the macro's movements based on the amount of haste the player has. This is done by searching for haste and bear morph buffs on the screen",
+                    type: {
+                        name: "checkbox",
+                        triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+            ])
         </script>
     </div>
-    <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="discord"></div>
+    <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="discord">
+        <script>
+            const parentDiscord = document.getElementById("discord")
+                buildStandardContainer(parentDiscord,"Webhook", "",[
+                    {
+                        id: "enable_webhook",
+                        title: "Enable webhook",
+                        desc: "A webhook to send the macro's status. Does not receive commands",
+                        type: {
+                            name: "checkbox",
+                            triggerFunction: saveGeneralTriggerFunction
+                        }
+                    },
+                    {
+                        id: "webhook_link",
+                        title: "Webhook Link",
+                        desc: "The link of the webhook for the macro to use",
+                        type: {
+                            name: "textbox",
+                            inputType: "string",
+                            length: 13,
+                            triggerFunction: saveGeneralTriggerFunction
+                        }
+                    },
+                    {
+                        id: "send_screenshot",
+                        title: "Send Screenshots",
+                        desc: "Send screenshots of the game via the webhook",
+                        type: {
+                                name: "checkbox",
+                                triggerFunction: saveGeneralTriggerFunction
+                            }
+                        
+                    }
+    
+                ])
+        </script>
+    </div>
 </div>

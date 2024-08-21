@@ -35,30 +35,34 @@ class WindowMgr:
 
 
 def openAppMac(app="roblox"):
+    tmp = os.popen("ps -Af").read()
+    if not app in tmp[:]: return False
     runAppleScript('activate application "{}"'.format(app))
     os.system(f"open -a {app}")
+    return True
 
 def openAppWindows(name):
     w = WindowMgr()
-    w.find_window_wildcard(f".*Roblox.*")
+    w.find_window(None, "Roblox")
     try:
         w.set_foreground()
         return True
     except:
         return False
+        
 
 def openDeeplink(link):
     if sys.platform == "darwin":
         subprocess.call(["open", link])
     else:
-        os.system(f"start {link}")
+        os.system(f'start "" "{link}"')
 
 def closeApp(app):
-    if app.lower() == "roblox":
-        app = "RobloxPlayerBeta"
     if sys.platform == "darwin":
         subprocess.call(["pkill", app])
     else:
+        if app.lower() == "roblox":
+            app = "RobloxPlayerBeta"
         #taskkill /IM RobloxPlayerBeta.exe
         #app += ".exe"
         os.system(f"START /wait taskkill /f /im {app}.exe")

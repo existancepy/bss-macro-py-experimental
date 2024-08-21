@@ -15,3 +15,11 @@ function toTitleCase(str) {
       text => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase()
     );
 }
+
+/*
+=============================================
+UI
+=============================================
+*/
+const saveGeneralTriggerFunction = "saveSetting(this, 'general')"
+const saveProfileTriggerFunction = "saveSetting(this, 'profile')"

@@ -6,7 +6,7 @@ def readSettingsFile(path):
     #read the file, format it to:
     #[[key, value], [key, value]]
     with open(path) as f:
-        data = [[x.strip() for x in y.split("=")] for y in f.read().split("\n")]
+        data = [[x.strip() for x in y.split("=", 1)] for y in f.read().split("\n")]
     f.close()
     out = {}
     for k,v in data:
