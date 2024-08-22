@@ -10,7 +10,7 @@ from modules.controls.sleep import sleep
 import modules.controls.mouse as mouse
 from modules.screen.screenData import getScreenData
 import modules.logging.log as logModule
-from modules.submacros.fieldDriftCompensation import fieldDriftCompensation
+from modules.submacros.fieldDriftCompensation import fieldDriftCompensation as fieldDriftCompensationClass
 from operator import itemgetter
 import sys
 import os
@@ -25,7 +25,6 @@ from datetime import timedelta, datetime
 from modules.misc.imageManipulation import pillowToCv2
 from PIL import Image
 pynputKeyboard = Controller()
-
 #data for collectable objectives
 #[besideE text, movement key, max cooldowns]
 collectData = { 
@@ -44,6 +43,12 @@ collectData = {
     "lid_art": [["gander", "onett", "art"], "s", 8*60*60], #8hr
     "candles": [["admire", "candle", "honey"], "w", 4*60*60] #4hr
 }
+
+# Define the color range for reset detection (in HSL color space)
+resetLower = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
+resetUpper = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
+resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25,25)) #might need double kernel size for retina, but not sure
+
 class macro:
     def __init__(self, status, log, haste):
         self.status = status
@@ -57,6 +62,9 @@ class macro:
         #setup an internal cooldown tracker. The cooldowns can be modified
         self.collectCooldowns = dict([(k, v[2]) for k,v in collectData.items()])
         self.collectCooldowns["sticker_printer"] = 1*60*60
+
+        #field drift compensation class
+        self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
 
     #resize the image based on the user's screen coordinates
     def adjustImage(self, path, imageName):
@@ -285,6 +293,7 @@ class macro:
         if self.newUI: yOffset += 20
         #reset until player is at hive
         for i in range(5):
+            self.logger.webhook("", f"Resetting character, Attempt: {i+1}", "dark brown")
             #set mouse and execute hotkeys
             mouse.teleport(self.mw/(self.xsm*4.11)+40,(self.mh/(9*self.ysm))+yOffset)
             time.sleep(0.5)
@@ -293,34 +302,38 @@ class macro:
             self.keyboard.press('r')
             time.sleep(0.2)
             self.keyboard.press('enter')
-            time.sleep(8)
-            #detect if player at hive
-            self.logger.webhook("", f"Resetting character, Attempt: {i+1}", "dark brown")
-            besideE = self.isBesideE(["make", "маке", "нопеу", "honey", "flower", "field"])
-            if besideE: break
-        else:
-            self.logger.webhook("Notice", f"Unable to detect that player respawned at hive, continuing", "red", "screen")
-            return False
-
-        #set the player's orientation to face hive, max 4 attempts
-        for _ in range(4):
-            pix = getPixelColor((self.ww//2)+20,self.wh-2)
-            r = [int(x) for x in pix]
-            avgDiff = (abs(r[2]-r[1])+abs(r[2]-r[0])+abs(r[1]-r[0]))/3
-            if avgDiff < 15:
-                for _ in range(8):
-                    self.keyboard.press("o")
-                #convert if enabled
-                if convert and (("make" in besideE or "маке" in besideE) and not ("to" in besideE or "pollen" in besideE)):
-                    self.convert(True)
-                return True
-            
+            time.sleep(2)
+            emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
+            st = time.time()
+            #if the empty health bar disappears, player has respawned
+            #max 8s in case player does not respawn
+            while time.time() - st < 7:
+                _, max_val, _, _ = locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60)
+                if max_val < 0.7:
+                    time.sleep(0.5)
+                    break
+            #detect if player at hive. Spin a max of 4 times
             for _ in range(4):
-                self.keyboard.press(".")
-                time.sleep(0.05)
-        time.sleep(0.3)
-        self.logger.webhook("Notice", f"Unable to detect the direction the player is facing, continuing", "red", "screen")
-        return False
+                screen = pillowToCv2(mssScreenshot(self.mw//2-40, self.mh-30, self.mw//2+40, 30))
+                # Convert the image from BGR to HLS color space
+                hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
+                # Create a mask for the color range
+                mask = cv2.inRange(hsl, resetLower, resetUpper)   
+                mask = cv2.erode(mask, resetKernel, 2)
+                #get contours. If contours exist, direction is correct
+                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                if contours:
+                    for _ in range(8):
+                        self.keyboard.press("o")
+                    if convert: self.convert()
+                    return True
+                #failed to detect, spin
+                for _ in range(4):
+                    self.keyboard.press(".")
+                time.sleep(0.1)
+        else:
+            self.logger.webhook("Notice", f"Unable to detect that player respawned at hive. Ensure that terminal has accessibility and screen recording permissions", "red", "screen")
+            return False
 
     def cannon(self, fast = False):
         for i in range(3):
@@ -546,6 +559,7 @@ class macro:
         st = time.time()
         keepGathering = True
         #time to gather
+        self.status.value = f"gather_{field}"
         self.logger.webhook(f"Gathering: {field.title()}", f"Limit: {gatherTimeLimit} - {fieldSetting['shape']} - Backpack: {fieldSetting['backpack']}%", "light green")
         mouse.moveBy(10,5)
         while keepGathering:
@@ -570,7 +584,7 @@ class macro:
 
             #field drift compensation
             if fieldSetting["field_drift_compensation"]:
-                fieldDriftCompensation(self.display_type == "retina")
+                self.fieldDriftCompensation.run()
         
         #go back to hive
         def walk_to_hive():
@@ -598,7 +612,7 @@ class macro:
                     self.convert(bypass=True)
                     break
             else:
-                self.logger.webhook("","Can't find hive, resetting", "dark brown")
+                self.logger.webhook("","Can't find hive, resetting", "dark brown", "screen")
                 self.reset()
 
         if returnType == "reset":

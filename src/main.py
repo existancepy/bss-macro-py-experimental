@@ -20,6 +20,7 @@ def hasteCompensationThread(baseSpeed, haste):
 def macro(status, log, haste):
     import modules.macro as macroModule
     macro = macroModule.macro(status, log, haste)
+    
     macro.start()
     setdat = macro.setdat
     #function to run a task
@@ -33,6 +34,7 @@ def macro(status, log, haste):
         #do priority tasks
         if setdat["mondo_buff"]:
             macro.collectMondoBuff()
+        status.value = ""
 
     #macro.rejoin()
     while True:
@@ -42,8 +44,8 @@ def macro(status, log, haste):
         #collect
         for k, _ in macroModule.collectData.items():
             #check if the cooldown is up
-            if setdat[k] and macro.hasRespawned(k, macro.collectCooldowns[k]):
-                runTask(macro.collect, args=(k,))
+            #if setdat[k] and macro.hasRespawned(k, macro.collectCooldowns[k]):
+            runTask(macro.collect, args=(k,))
 
         if setdat["sticker_printer"] and macro.hasRespawned("sticker_printer", macro.collectCooldowns["sticker_printer"]):
             runTask(macro.collectStickerPrinter)
