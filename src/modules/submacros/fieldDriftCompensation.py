@@ -173,4 +173,3 @@ class fieldDriftCompensation():
             self.slowFieldDriftCompensation(saturatorLocation)
         else:
             self.fastFieldDriftCompensation(saturatorLocation)
-        

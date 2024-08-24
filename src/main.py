@@ -36,6 +36,7 @@ def macro(status, log, haste):
             macro.collectMondoBuff()
         status.value = ""
 
+    #macro.killMob("ladybug", "strawberry")
     #macro.rejoin()
     while True:
         #run empty task
@@ -44,8 +45,8 @@ def macro(status, log, haste):
         #collect
         for k, _ in macroModule.collectData.items():
             #check if the cooldown is up
-            #if setdat[k] and macro.hasRespawned(k, macro.collectCooldowns[k]):
-            runTask(macro.collect, args=(k,))
+            if setdat[k]: #and macro.hasRespawned(k, macro.collectCooldowns[k]):
+                runTask(macro.collect, args=(k,))
 
         if setdat["sticker_printer"] and macro.hasRespawned("sticker_printer", macro.collectCooldowns["sticker_printer"]):
             runTask(macro.collectStickerPrinter)
