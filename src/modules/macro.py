@@ -15,7 +15,7 @@ from operator import itemgetter
 import sys
 import os
 import numpy as np
-from threading import Thread
+import threading
 from modules.submacros.backpack import bpc
 from modules.screen.imageSearch import locateImageOnScreen
 import webbrowser
@@ -42,6 +42,21 @@ collectData = {
     "snow_machine": [["activate"], None, 2*60*60], #2hr
     "lid_art": [["gander", "onett", "art"], "s", 8*60*60], #8hr
     "candles": [["admire", "candle", "honey"], "w", 4*60*60] #4hr
+}
+
+#werewolf is a unique one. There is only one, but it can be triggered from pine, pumpkin or cactus
+regularMobInFields = {
+    "mushroom": ["ladybug"],
+    "blue flower": ["rhino beetle"],
+    "clover": ["ladybug", "rhino beetle"],
+    "strawberry": ["ladybug"],
+    "bamboo": ["rhino beetle"],
+    "spider": ["spider"],
+    "pineapple": ["mantis", "rhino beetle"],
+    "rose": ["scorpion"],
+    "pine tree": ["mantos", "werewolf"],
+    "pumpkin": ["werewolf"],
+    "cactus": ["werewolf"]
 }
 
 # Define the color range for reset detection (in HSL color space)
@@ -126,16 +141,25 @@ class macro:
     def isBesideE(self, includeList = [], excludeList = []):
         return self.isInOCR("bee bear", includeList, excludeList)
     
-    def getTiming(self,name):
-        return settingsManager.readSettingsFile("./data/user/timings.txt")[name]
+    def getTiming(self,name = None):
+        data = settingsManager.readSettingsFile("./data/user/timings.txt")
+        if name is not None:
+            return data[name]
+        return data
     
     def saveTiming(self, name):
         return settingsManager.saveSettingFile(name, time.time(), "./data/user/timings.txt")
     #returns true if the cooldown is up
     #note that cooldown is in seconds
-    def hasRespawned(self, name, cooldown):
+    def hasRespawned(self, name, cooldown, applyMobRespawnBonus = False):
         timing = self.getTiming(name)
-        return time.time() - timing >= cooldown 
+        mobRespawnBonus = 1
+        if applyMobRespawnBonus:
+            mobRespawnBonus -= 0.15 if self.setdat["gifted_vicious"] else 0
+            mobRespawnBonus -= self.setdat["stick_bug_amulet"]/100 
+            mobRespawnBonus -= self.setdat["icicles_beequip"]/100 
+
+        return time.time() - timing >= cooldown*mobRespawnBonus
 
     def isInBlueTexts(self, includeList = [], excludeList = []):
         return self.isInOCR("blue", includeList, excludeList)
@@ -270,9 +294,17 @@ class macro:
             time.sleep(0.01)
 
 
-    def convert(self, bypass = False):
+    def convert(self, bypass = False, ebuttonDetect = False):
         if not bypass:
-            if not self.isBesideE(["make", "маке"], ["to", "pollen"]): return False
+            #use ebutton detection, faster detection but more prone to false positives (like detecting trades)
+            if ebuttonDetect:
+                ebutton = self.adjustImage("./images/menu", "ebutton")
+                _, max_val, _, _ = locateImageOnScreen(ebutton, self.mw//2-250, 30, 200, 120)
+                print(max_val)
+                if max_val < 0.7: return False
+            else:
+                if not self.isBesideE(["make", "маке"], ["to", "pollen"]): return False
+        #start convert
         self.keyboard.press("e")
         st = time.time()
         time.sleep(2)
@@ -325,7 +357,7 @@ class macro:
                 if contours:
                     for _ in range(8):
                         self.keyboard.press("o")
-                    if convert: self.convert()
+                    if convert: self.convert(ebuttonDetect=True)
                     return True
                 #failed to detect, spin
                 for _ in range(4):
@@ -478,12 +510,24 @@ class macro:
                         break
             #after hive is claimed, convert
             if rejoinSuccess:
-                self.convert()
+                self.convert(ebuttonDetect=True)
                 #no need to reset
-                #TODO: haste compensation
                 return
             self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
-
+    #background thread for gather
+    #check if mobs have been killed and reset their timings
+    #check if player died
+    def gatherBackground(self):
+        field = self.status.value.split("_")[1]
+        mobs = regularMobInFields[field]
+        while "gather_" in self.status.value:
+            #death check
+            text = ocr.imToString("blue").lower()
+            if "you" in text and "died" in text:
+                self.died = True
+            #mob respawn check
+            timings = self.getTiming()
+            
 
     def gather(self, field):
         fieldSetting = self.fieldSettings[field]
@@ -558,10 +602,13 @@ class macro:
         returnType = fieldSetting["return"]
         st = time.time()
         keepGathering = True
+        self.died = False
         #time to gather
         self.status.value = f"gather_{field}"
         self.logger.webhook(f"Gathering: {field.title()}", f"Limit: {gatherTimeLimit} - {fieldSetting['shape']} - Backpack: {fieldSetting['backpack']}%", "light green")
         mouse.moveBy(10,5)
+        gatherBackgroundThread = threading.Thread(target=self.gatherBackground)
+        gatherBackgroundThread.start()
         while keepGathering:
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
             mouse.mouseDown()
@@ -579,13 +626,19 @@ class macro:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Backpack - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
             #check for gather interrupts
+            if self.died:
+                self.logger.webhook("","Player died", "dark brown","screen")
+                break
             if self.collectMondoBuff(gatherInterrupt=True):
-                return
+                break
 
             #field drift compensation
             if fieldSetting["field_drift_compensation"]:
                 self.fieldDriftCompensation.run()
-        
+        self.status.value = ""
+        gatherBackgroundThread.join()
+        #gathering was interrupted
+        if keepGathering: return
         #go back to hive
         def walk_to_hive():
             #walk to hive
@@ -608,8 +661,7 @@ class macro:
             for _ in range(30):
                 self.keyboard.walk("a",0.2)
                 time.sleep(0.2) #add a delay so that the E can popup
-                if self.isBesideE(["make", "маке"]):
-                    self.convert(bypass=True)
+                if self.convert():
                     break
             else:
                 self.logger.webhook("","Can't find hive, resetting", "dark brown", "screen")
@@ -657,18 +709,19 @@ class macro:
             while not breakLoop:
                 res = ocr.customOCR(*region,0)
                 for i in res:
-                    if "keep" in i[1][0].lower():
+                    if "keep" in i[1][0].lower() and "o" in i[1][0].lower():
                         mouse.mouseUp()
+                        self.logger.webhook("","Ant Challenge Complete","bright green", "screen")
+                        time.sleep(1.5)
                         mouse.moveTo((i[0][0][0]+region[0])//multi, (i[0][0][1]+region[1])//multi)
                         mouse.click()
                         breakLoop = True
                         break
-                    
-            self.logger.webhook("","Ant Challenge Complete","bright green", "screen")
             return
         self.logger.webhook("", "Cant start ant challenge", "red", "screen")
 
     def collectMondoBuff(self, gatherInterrupt = False):
+        self.status.value = ""
         #check if mondo can be collected (first 10mins)
         current_time = datetime.now().strftime("%H:%M:%S")
         hour,minute,_ = [int(x) for x in current_time.split(":")]
@@ -742,7 +795,7 @@ class macro:
         self.clickYes()
         #wait for sticker to generate
         time.sleep(7)
-        self.logger.webhook(f"", "Claimed sticker", "light green", "sticker")
+        self.logger.webhook(f"", "Claimed sticker", "bright green", "sticker")
         self.saveTiming("sticker_printer")
         #close the inventory
         time.sleep(1)
@@ -755,7 +808,7 @@ class macro:
         objectiveData = collectData[objective]
         displayName = objective.replace("_"," ").title()
         #go to collect and check that player has reached
-        for _ in range(2):
+        for i in range(3):
             self.logger.webhook("",f"Travelling: {displayName}","dark brown")
             self.cannon()
             self.runPath(f"collect/{objective}")
@@ -768,7 +821,7 @@ class macro:
                     if reached: break
             if reached: break
             self.logger.webhook("", f"Failed to reach {displayName}", "dark brown", "screen")
-            self.reset(convert=False)
+            if i != 2: self.reset(convert=False)
         
         if not reached: return #player failed to reach objective
         #player has reached, get cooldown info
@@ -803,11 +856,100 @@ class macro:
                 self.keyboard.press("e")
             #run the claim path (if it exists)
             self.runPath(f"collect/claim/{objective}", fileMustExist=False)
-            self.logger.webhook("", f"Collected: {displayName}", "light green", "screen")
+            self.logger.webhook("", f"Collected: {displayName}", "bright green", "screen")
         #update the internal cooldown
         self.saveTiming(objective)
         self.collectCooldowns[objective] = cooldownSeconds
+
+    #background thread function to determine if player has defeated the mob
+    #time limit of 20s
+    def mobRunAttackingBackground(self):
+        st = time.time()
+        while True:
+            text = ocr.imToString("blue").lower()
+            if "you" in text and "died" in text:
+                self.mobRunStatus = "dead"
+                break
+            elif "defeated" in text:
+                self.mobRunStatus = "looting"
+                break
+            elif time.time() - st > 20:
+                self.mobRunStatus = "timeout"
+                break
+    #background thread to check if token link is collected or the macro runs out of time (max 15s)
+    def mobRunLootingBackground(self):
+        st = time.time()
+        while time.time() - st < 15:
+            text = ocr.imToString("blue").lower()
+            print(text)
+            if "token" in text and "link" in text: break
+        self.mobRunStatus = "done"
+
+    def killMob(self, mob, field, goToField = True):
+        timingName = "{}_{}".format(mob.replace(" ",""), field.replace(" ",""))
+        self.status.value = "bug_run"
+        self.logger.webhook("","Travelling: {} ({})".format(mob.title(),field.title()),"dark brown")
+        if goToField:
+            #wait for bees to respawn
+            time.sleep(8)
+            self.cannon()
+            self.goToField(field)
+        self.mobRunStatus = "attacking"
+        self.logger.webhook("","Attacking: {} ({})".format(mob.title(),field.title()),"dark brown")
         
+        #attack the mob
+        attackThread = threading.Thread(target=self.mobRunAttackingBackground)
+        attackThread.start()
+        st = time.time()
+        #move in squares to evade attacks
+        distance = 0.5
+        while self.mobRunStatus == "attacking":
+            self.keyboard.walk("w", distance)
+            self.keyboard.walk("a", distance*2)
+            self.keyboard.walk("s", distance)
+            self.keyboard.walk("d", distance*2)
+        attackThread.join()
+        if self.mobRunStatus == "dead":
+            self.logger.webhook("","Player died", "dark brown","screen")
+            return
+        elif self.mobRunStatus == "timeout":
+            self.saveTiming(timingName)
+            self.logger.webhook("","Could not kill {} in time. Maybe it hasn't respawned?".format(mob.title()), "dark brown", "screen")
+            return
+        
+        #loot
+        self.logger.webhook("", "Looting: {}".format(mob.title()), "bright green")
+        #start another background thread to check for token link/time limit
+        lootThread = threading.Thread(target=self.mobRunLootingBackground)
+        lootThread.start()
+        f = 1.2
+        s = 3.5
+        loop = True
+        while True:
+                for _ in range(2):
+                    self.keyboard.walk("w", 0.72*f)
+                    self.keyboard.walk("a", 0.1*s)
+                    self.keyboard.walk("s", 0.72*f)
+                    self.keyboard.walk("a", 0.1*s)
+                    if self.mobRunStatus == "done": 
+                        loop = False
+                        break
+                if not loop:
+                    break
+                for _ in range(2):
+                    self.keyboard.walk("w", 0.72*f)
+                    self.keyboard.walk("d", 0.1*s)
+                    self.keyboard.walk("s", 0.72*f)
+                    self.keyboard.walk("d", 0.1*s)
+                    if self.mobRunStatus == "done":
+                        loop = True 
+                        break
+                if not loop:
+                    break
+        self.saveTiming(timingName)
+        self.status.value = ""
+        lootThread.join()
+
     def start(self):
         #if roblox is not open, rejoin
         if not appManager.openApp("roblox"):

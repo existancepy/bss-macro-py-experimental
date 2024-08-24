@@ -85,8 +85,8 @@ def hasteCompensation(baseMoveSpeed, haste):
     bearMorph = any(thresholdMatch(x, screen)[0] for x in bearMorphs)
     if bearMorph: 
         bearMorph = 4
-        print("bear morph active")
-    if hasteOut: print(f"Haste stacks: {hasteOut}")
+        #print("bear morph active")
+    #if hasteOut: print(f"Haste stacks: {hasteOut}")
     out = (baseMoveSpeed+bearMorph)*(1+(0.1*hasteOut))
     haste.value = out
 

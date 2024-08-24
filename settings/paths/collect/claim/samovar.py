@@ -1,7 +1,7 @@
-sideTime = 0
-frontTime = 0.45
+sideTime = 0.13
+frontTime = 0.7
 self.keyboard.walk('w',0.8)
-self.keyboard.walk('d',0.2)
+self.keyboard.walk('d',0.4)
 for i in range(3):
     self.keyboard.walk("s", frontTime)
     self.keyboard.walk("a", sideTime)
