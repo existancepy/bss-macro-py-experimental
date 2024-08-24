@@ -1,6 +1,6 @@
 fields_enabled=[True, False, False]
 fields=['pine tree', 'sunflower', 'dandelion']
-wealth_clock=False
+wealth_clock=True
 blueberry_dispenser=False
 strawberry_dispenser=False
 royal_jelly_dispenser=False
@@ -21,4 +21,4 @@ wreath=False
 mondo_buff_wait=2
 sticker_printer=False
 sticker_printer_egg=basic
-haste_compensation=False
+haste_compensation=True

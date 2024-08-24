@@ -116,7 +116,7 @@ if __name__ == "__main__":
         except:
             pass
     while True:
-        eel.sleep(0.1)
+        eel.sleep(0.2)
         if run.value == 1:
             #create and set webhook obj for the logger
             setdat = settingsManager.loadAllSettings()
