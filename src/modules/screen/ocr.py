@@ -28,6 +28,14 @@ xsm = screenInfo['x_multiplier']
 ylm = screenInfo['y_length_multiplier']
 xlm = screenInfo['x_length_multiplier']
 newUI = False
+
+def getCenter(coords):
+    x = coords[0][0]
+    y = coords[0][1]
+    w = coords[1][0] - x #x2-x1
+    h = coords[2][1] - y #y2 -y1
+    #calculate center
+    return (x+w//2, y+h//2)
 def paddleBounding(b):
     #convert all values to int and unpack
     x1,y1,x2,y2 = [int(x) for x in b]
@@ -42,10 +50,8 @@ def ocrMac_(img):
     return [ [paddleBounding(x[2]),(x[0],x[1]) ] for x in result]
 
 def ocrPaddle(img):
-    sn = time.time()
-    img.save("{}.png".format(sn))  
-    result = ocrP.ocr("{}.png".format(sn),cls=False)[0]
-    os.remove("{}.png".format(sn))
+    img = np.asarray(img) 
+    result = ocrP.ocr(img, cls=False)[0]
     return result
 
 def screenshot(**kwargs):
