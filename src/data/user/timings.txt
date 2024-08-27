@@ -1,4 +1,4 @@
-wealth_clock=1724474050.9591498
+wealth_clock=1724552550.9021292
 blueberry_dispenser=1724297790.188504
 strawberry_dispenser=1724297819.950319
 royal_jelly_dispenser=0
@@ -13,9 +13,9 @@ candles=1724309061.93166
 wreath=1724206030.7849054
 glue_dispenser=0
 mondo=0
-sticker_printer=0
+sticker_printer=1724554674.3594606
 stump_snail=1712295076.344533
-ladybug_strawberry=1720516079.67122
+ladybug_strawberry=1724552886.204547
 ladybug_mushroom=1712033557.344964
 ladybug_clover=1720586489.5688121
 mantis_pineapple=1720585181.683409

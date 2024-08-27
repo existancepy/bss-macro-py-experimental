@@ -13,6 +13,7 @@ import modules.logging.log as logModule
 from modules.submacros.fieldDriftCompensation import fieldDriftCompensation as fieldDriftCompensationClass
 from operator import itemgetter
 import sys
+import platform
 import os
 import numpy as np
 import threading
@@ -81,6 +82,28 @@ class macro:
         #field drift compensation class
         self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
 
+    def macIsFullScreen(self):
+        menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar
+        menubar = ""
+        try:
+            for x in menubarRaw:
+                menubar += x[1][0]
+        except:
+            pass
+        menubar = menubar.lower()
+        return not ("rob" in menubar or "lox" in menubar) #check if roblox can be found in menu bar
+
+    def macToggleFullscreen(self):
+        self.keyboard.keyDown("command")
+        time.sleep(0.05)
+        self.keyboard.keyDown("ctrl")
+        time.sleep(0.05)
+        self.keyboard.keyDown("f")
+        time.sleep(0.1)
+        self.keyboard.keyUp("command")
+        self.keyboard.keyUp("ctrl")
+        self.keyboard.keyUp("f")
+    
     #resize the image based on the user's screen coordinates
     def adjustImage(self, path, imageName):
         #get a list of all images and find the name of the one that matches
@@ -206,8 +229,7 @@ class macro:
         x = self.mw/3.2
         y = self.mh/2.3
         time.sleep(0.4)
-        _, max_val, _, max_loc = locateImageOnScreen(yesImg,x,y,self.mw/2.5,self.mh/3.4)
-        bestX, bestY = max_loc
+        bestX, bestY = locateImageOnScreen(yesImg,x,y,self.mw/2.5,self.mh/3.4)[1]
         if self.display_type == "retina":
             bestX //=2
             bestY //=2
@@ -248,8 +270,7 @@ class macro:
         bestScroll, bestX, bestY = None, None, None
         valBest = 0
         for i in range(20):
-            min_val, max_val, min_loc, max_loc = locateImageOnScreen(itemImg, 0, 80, 180, self.mh-120)
-            print(max_val)
+            max_val, max_loc = locateImageOnScreen(itemImg, 0, 80, 180, self.mh-120)
             if max_val > valBest:
                 valBest = max_val
                 bestX, bestY = max_loc
@@ -299,9 +320,7 @@ class macro:
             #use ebutton detection, faster detection but more prone to false positives (like detecting trades)
             if ebuttonDetect:
                 ebutton = self.adjustImage("./images/menu", "ebutton")
-                _, max_val, _, _ = locateImageOnScreen(ebutton, self.mw//2-250, 30, 200, 120)
-                print(max_val)
-                if max_val < 0.7: return False
+                if not locateImageOnScreen(ebutton, self.mw//2-250, 30, 200, 120, 0.7): return False
             else:
                 if not self.isBesideE(["make", "маке"], ["to", "pollen"]): return False
         #start convert
@@ -340,8 +359,7 @@ class macro:
             #if the empty health bar disappears, player has respawned
             #max 8s in case player does not respawn
             while time.time() - st < 7:
-                _, max_val, _, _ = locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60)
-                if max_val < 0.7:
+                if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
                     time.sleep(0.5)
                     break
             #detect if player at hive. Spin a max of 4 times
@@ -406,7 +424,7 @@ class macro:
             else:
                 browserLink = psLink
             appManager.closeApp("Roblox") # close roblox
-            time.sleep(4)
+            time.sleep(8)
             #execute rejoin method
             if rejoinMethod == "deeplink":
                 deeplink = "roblox://placeID=1537690962"
@@ -428,31 +446,20 @@ class macro:
                 else:
                     self.keyboard.keyUp("ctrl")
             #wait for bss to load
-            time.sleep(self.setdat["rejoin_wait"])
+            #if sprinkler image is found, bss is loaded
+            #max 60s of waiting
             appManager.openApp("roblox")
+            sprinklerImg = self.adjustImage("./images/menu", "sprinkler")
+            loadStartTime = time.time()
+            while not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.7) and time.time() - loadStartTime < 60:
+                pass
             #run fullscreen check (mac only)
             if sys.platform == "darwin":
-                menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar
-                menubar = ""
-                try:
-                    for x in menubarRaw:
-                        menubar += x[1][0]
-                except:
-                    pass
-                menubar = menubar.lower()
-                if "rob" in menubar or "lox" in menubar: #check if roblox can be found in menu bar
-                    self.logger.webhook("","Roblox is not in fullscreen, activating fullscreen", "dark brown")
-                    self.keyboard.keyDown("command")
-                    time.sleep(0.05)
-                    self.keyboard.keyDown("ctrl")
-                    time.sleep(0.05)
-                    self.keyboard.keyDown("f")
-                    time.sleep(0.1)
-                    self.keyboard.keyUp("command")
-                    self.keyboard.keyUp("ctrl")
-                    self.keyboard.keyUp("f")
-                else:
+                if self.macIsFullScreen(): #check if roblox can be found in menu bar
                     self.logger.webhook("","Roblox is already in fullscreen, not activating fullscreen", "dark brown")
+                else:
+                    self.logger.webhook("","Roblox is not in fullscreen, activating fullscreen", "dark brown")
+                    self.macToggleFullScreen()
 
             #if use browser to rejoin, close the browser
             if self.setdat["rejoin_method"] != "deeplink":
@@ -472,9 +479,13 @@ class macro:
                     time.sleep(0.5)
                 appManager.openApp("Roblox")
             #find hive
+            appManager.openApp("Roblox")
+            time.sleep(2)
+            self.keyboard.releaseMovement()
+            self.keyboard.press("space")
             self.keyboard.walk("w",5+(i*0.5),0)
             self.keyboard.walk("s",0.3,0)
-            self.keyboard.walk("d",4,0)
+            self.keyboard.walk("d",5,0)
             self.keyboard.walk("s",0.3,0)
             time.sleep(0.5)
             hiveNumber = self.setdat["hive_number"]
@@ -507,6 +518,7 @@ class macro:
                         hiveClaim = max(1,min(6,round((j+1)//2.5)))
                         self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", "screen")
                         rejoinSuccess = True
+                        self.setdat["hive_number"] = hiveClaim
                         break
             #after hive is claimed, convert
             if rejoinSuccess:
@@ -514,24 +526,35 @@ class macro:
                 #no need to reset
                 return
             self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
+    
+    def blueTextImageSearch(self, text):
+        target = self.adjustImage("./images/blue", text)
+        return locateImageOnScreen(target, self.mw*3/4, self.mh*2/3, self.mw//4,self.mh//3, 0.7)
     #background thread for gather
     #check if mobs have been killed and reset their timings
     #check if player died
     def gatherBackground(self):
         field = self.status.value.split("_")[1]
         mobs = regularMobInFields[field]
-        while "gather_" in self.status.value:
+        while self.isGathering:
             #death check
-            text = ocr.imToString("blue").lower()
-            if "you" in text and "died" in text:
+            st = time.time()
+            if self.blueTextImageSearch("died"):
+                print("died")
                 self.died = True
             #mob respawn check
             timings = self.getTiming()
+            print(time.time()-st)
+        print("thread broke")
+        print(self.status.value)
+        print(self.isGathering)
             
 
     def gather(self, field):
         fieldSetting = self.fieldSettings[field]
         for i in range(3):
+            #wait for bees to wake up
+            time.sleep(3)
             #go to field
             self.cannon()
             self.logger.webhook("",f"Travelling: {field.title()}, Attempt {i+1}", "dark brown")
@@ -605,10 +628,13 @@ class macro:
         self.died = False
         #time to gather
         self.status.value = f"gather_{field}"
+        self.isGathering = True
         self.logger.webhook(f"Gathering: {field.title()}", f"Limit: {gatherTimeLimit} - {fieldSetting['shape']} - Backpack: {fieldSetting['backpack']}%", "light green")
         mouse.moveBy(10,5)
         gatherBackgroundThread = threading.Thread(target=self.gatherBackground)
+        gatherBackgroundThread.daemon = True
         gatherBackgroundThread.start()
+        self.keyboard.releaseMovement()
         while keepGathering:
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
             mouse.mouseDown()
@@ -616,6 +642,14 @@ class macro:
             #cycle ends
             mouse.mouseUp()
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
+            #check for gather interrupts
+            if self.died:
+                self.logger.webhook("","Player died", "dark brown","screen")
+                self.reset()
+                break
+            if self.collectMondoBuff(gatherInterrupt=True):
+                break
+
             #check if max time is reached
             gatherTime = "{:.2f}".format((time.time() - st)/60)
             if time.time() - st > maxGatherTime:
@@ -625,17 +659,12 @@ class macro:
             if bpc(self.ww, self.newUI, self.display_type) >= fieldSetting["backpack"]:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Backpack - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
-            #check for gather interrupts
-            if self.died:
-                self.logger.webhook("","Player died", "dark brown","screen")
-                break
-            if self.collectMondoBuff(gatherInterrupt=True):
-                break
 
             #field drift compensation
             if fieldSetting["field_drift_compensation"]:
                 self.fieldDriftCompensation.run()
         self.status.value = ""
+        self.isGathering = False
         gatherBackgroundThread.join()
         #gathering was interrupted
         if keepGathering: return
@@ -670,7 +699,7 @@ class macro:
         if returnType == "reset":
             self.reset()
         elif returnType == "rejoin":
-            pass
+            self.rejoin()
         elif returnType == "whirligig":
             self.useItemInInventory("whirligig")
             if not self.convert():
@@ -773,21 +802,25 @@ class macro:
             "mythic": 125
         }
         #click egg
+        time.sleep(2)
         eggPos = eggPosData[self.setdat["sticker_printer_egg"]]
         mouse.moveTo(self.mw//2+eggPos, 4*self.mh//10-20)
         time.sleep(0.2)
         mouse.click()
-        time.sleep(2)
+        time.sleep(1)
         #check if on cooldown
         confirmImg = self.adjustImage("./images/menu", "confirm")
-        _, max_val, _, _ = locateImageOnScreen(confirmImg, self.mw//2+150, 4*self.mh//10+160, 120, 60)
-        if max_val < 0.7:
+        if not locateImageOnScreen(confirmImg, self.mw//2+150, 4*self.mh//10+160, 120, 60, 0.7):
             self.logger.webhook(f"", "Sticker printer on cooldown", "dark brown", "screen")
             self.keyboard.press("e")
             self.saveTiming("sticker_printer")
             return
         #confirm
         mouse.moveTo(self.mw//2+225, 4*self.mh//10+195)
+        time.sleep(0.1)
+        mouse.click()
+        time.sleep(0.2)
+        mouse.moveBy(0, 3)
         time.sleep(0.1)
         mouse.click()
         time.sleep(0.2)
@@ -866,11 +899,10 @@ class macro:
     def mobRunAttackingBackground(self):
         st = time.time()
         while True:
-            text = ocr.imToString("blue").lower()
-            if "you" in text and "died" in text:
+            if self.blueTextImageSearch("died"):
                 self.mobRunStatus = "dead"
                 break
-            elif "defeated" in text:
+            elif self.blueTextImageSearch("defeated"):
                 self.mobRunStatus = "looting"
                 break
             elif time.time() - st > 20:
@@ -887,7 +919,7 @@ class macro:
 
     def killMob(self, mob, field, goToField = True):
         timingName = "{}_{}".format(mob.replace(" ",""), field.replace(" ",""))
-        self.status.value = "bug_run"
+        self.status.value = "bugrun"
         self.logger.webhook("","Travelling: {} ({})".format(mob.title(),field.title()),"dark brown")
         if goToField:
             #wait for bees to respawn
@@ -904,10 +936,10 @@ class macro:
         #move in squares to evade attacks
         distance = 0.5
         while self.mobRunStatus == "attacking":
-            self.keyboard.walk("w", distance)
-            self.keyboard.walk("a", distance*2)
             self.keyboard.walk("s", distance)
-            self.keyboard.walk("d", distance*2)
+            self.keyboard.walk("a", distance*1.8)
+            self.keyboard.walk("w", distance)
+            self.keyboard.walk("d", distance*1.8)
         attackThread.join()
         if self.mobRunStatus == "dead":
             self.logger.webhook("","Player died", "dark brown","screen")
@@ -918,34 +950,31 @@ class macro:
             return
         
         #loot
-        self.logger.webhook("", "Looting: {}".format(mob.title()), "bright green")
+        self.logger.webhook("", "Looting: {}".format(mob.title()), "bright green", "screen")
         #start another background thread to check for token link/time limit
         lootThread = threading.Thread(target=self.mobRunLootingBackground)
         lootThread.start()
-        f = 1.2
-        s = 3.5
-        loop = True
-        while True:
+        def lootPattern(f, s):
+            while True:
                 for _ in range(2):
                     self.keyboard.walk("w", 0.72*f)
+                    if self.mobRunStatus == "done": return
                     self.keyboard.walk("a", 0.1*s)
+                    if self.mobRunStatus == "done": return
                     self.keyboard.walk("s", 0.72*f)
+                    if self.mobRunStatus == "done": return
                     self.keyboard.walk("a", 0.1*s)
-                    if self.mobRunStatus == "done": 
-                        loop = False
-                        break
-                if not loop:
-                    break
+                    if self.mobRunStatus == "done": return
                 for _ in range(2):
                     self.keyboard.walk("w", 0.72*f)
+                    if self.mobRunStatus == "done": return
                     self.keyboard.walk("d", 0.1*s)
+                    if self.mobRunStatus == "done": return
                     self.keyboard.walk("s", 0.72*f)
+                    if self.mobRunStatus == "done": return
                     self.keyboard.walk("d", 0.1*s)
-                    if self.mobRunStatus == "done":
-                        loop = True 
-                        break
-                if not loop:
-                    break
+                    if self.mobRunStatus == "done": return
+        lootPattern(1.2, 2.5)
         self.saveTiming(timingName)
         self.status.value = ""
         lootThread.join()
@@ -955,6 +984,46 @@ class macro:
         if not appManager.openApp("roblox"):
             self.rejoin()
         time.sleep(2)
+        #disable game mode
+        if sys.platform == "darwin":
+            #make sure game mode is a feature (macOS 14.0 and above)
+            macVersion, _, _ = platform.mac_ver()
+            macVersion = float('.'.join(macVersion.split('.')[:2]))
+            if macVersion >= 14:
+                #make sure roblox is not fullscreen
+                if self.macIsFullScreen():
+                    self.macToggleFullscreen
+                #find the game mode button
+                lightGameMode = self.self.adjustImage("./images/mac", "gamemodelight")
+                darkGameMode = self.self.adjustImage("./images/mac", "gamemodedark")
+                x = self.mh/2.5
+                #find light mode
+                res = locateImageOnScreen(lightGameMode,x, 0, self.mh-x, 60, 0.7)
+                if res is None: #cant find light, find dark
+                    res = locateImageOnScreen(darkGameMode,x, 0, self.mh-x, 60, 0.7)
+                #found either light or dark
+                if not res is None:
+                    mouse.moveTo(*res[1])
+                    mouse.click()
+                    #check if game mode is enabled
+                    ocrRes = ocr.customOCR(self.ww/2.5, 0, self.ww-(self.ww/2.5), 150, 0)
+                    for x in ocrRes:
+                        if "mode off" in x[1][0].lower():
+                            #disable game mode
+                            bX, bY = ocr.getCenter(x[0])
+                            if self.display_type == "retina":
+                                bX //= 2
+                                bY //= 2
+                            mouse.moveTo(self.mh//2.5+bX, bY)
+                            mouse.click()
+                            #fullscreen back roblox
+                            appManager.openApp("roblox")
+                            self.macToggleFullscreen
+                            break
+            #toggle fullscreen
+            elif not self.macIsFullScreen:
+                self.macToggleFullscreen
+
         #detect new/old ui and set 
         if self.getTop(0):
             self.newUI = False
@@ -967,3 +1036,4 @@ class macro:
             self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red", "screen")
             self.newUI = False   
         self.reset(convert=True)
+

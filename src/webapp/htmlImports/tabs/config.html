@@ -104,25 +104,13 @@
             buildStandardContainer(parentOther,"Rejoining", "",[
                 {
                     id: "private_server_link",
-                    title: "Private Server Link",
-                    desc: "The link of a private server for the macro to join to.<br>If left blank, the macro will join a public server instead",
+                    title: "Private Server Link (Optional)",
+                    desc: "The link of a private server for the macro to join.<br>If left blank, the macro will join a public server instead",
                     type: {
                         name: "textbox",
                         inputType: "string",
                         triggerFunction: saveGeneralTriggerFunction
                     }
-                },
-                {
-                    id: "rejoin_wait",
-                    title: "Wait for X secs when rejoining",
-                    desc: "The amount of time to wait for bee swarm to load after joining",
-                    type: {
-                            name: "textbox",
-                            inputType: "int",
-                            inputLimit: 3,
-                            triggerFunction: saveGeneralTriggerFunction
-                        }
-                    
                 },
                 {
                     id: "rejoin_method",

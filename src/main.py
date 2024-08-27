@@ -45,7 +45,7 @@ def macro(status, log, haste):
         #collect
         for k, _ in macroModule.collectData.items():
             #check if the cooldown is up
-            if setdat[k]: #and macro.hasRespawned(k, macro.collectCooldowns[k]):
+            if setdat[k] and macro.hasRespawned(k, macro.collectCooldowns[k]):
                 runTask(macro.collect, args=(k,))
 
         if setdat["sticker_printer"] and macro.hasRespawned("sticker_printer", macro.collectCooldowns["sticker_printer"]):
@@ -71,6 +71,7 @@ def watch_for_hotkeys(run):
     keyboard.Listener(on_press=on_press).start()
 
 if __name__ == "__main__":
+    print("Loading macro...")
     global stopThreads
     import gui
     import modules.screen.screenData as screenData
@@ -96,6 +97,15 @@ if __name__ == "__main__":
     watch_for_hotkeys(run)
     logger = logModule.log(log, False, None)
 
+    def stopApp(page= None, sockets = None):
+        global stopThreads
+        stopThreads = True
+        print("stop")
+        print(sockets)
+        macroProc.kill()
+        keyboardModule.releaseMovement()
+        mouse.mouseUp()
+        
     #setup and launch gui
     gui.run = run
     gui.launch()
@@ -130,6 +140,7 @@ if __name__ == "__main__":
             if setdat["haste_compensation"]:
                 hasteCompThread = Thread(target=hasteCompensationThread, args=(setdat["movespeed"],haste,))
                 hasteCompThread.daemon = True
+                print("haste compensation started")
                 hasteCompThread.start()
             logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
             run.value = 2
@@ -137,12 +148,9 @@ if __name__ == "__main__":
         elif run.value == 0:
             if macroProc:
                 logger.webhook("Macro Stopped", "exih macro", "red")
-                macroProc.kill()
-                stopThreads = True
                 run.value = 3
                 gui.toggleStartStop()
-                keyboardModule.releaseMovement()
-                mouse.mouseUp()
+                stopApp()
 
         #detect a new log message
         if log.value != prevLog:
