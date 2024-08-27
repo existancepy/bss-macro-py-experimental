@@ -1,6 +1,7 @@
 import mss
 from PIL import Image
 import mss.tools
+import time
 
 def mssScreenshot(x,y,w,h, save = False):
     with mss.mss() as sct:
@@ -9,7 +10,7 @@ def mssScreenshot(x,y,w,h, save = False):
         # Grab the data and convert to pillow img
         sct_img = sct.grab(monitor)
         img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-        if save: mss.tools.to_png(sct_img.rgb, sct_img.size, output="screen.png")
+        if save: mss.tools.to_png(sct_img.rgb, sct_img.size, output=f"screen-{time.time()}.png")
         return img
 
 def screenshotScreen(path, region = None):

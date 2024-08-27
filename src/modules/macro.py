@@ -34,7 +34,7 @@ collectData = {
     "strawberry_dispenser": [["use", "dispenser"], None, 4*60*60], #4hr
     "royal_jelly_dispenser": [["claim", "royal"], "a",22*60*60], #22hr
     "treat_dispenser": [["use", "treat"], "w", 1*60*60], #1hr
-    "ant_pass_dispenser": [["use", "free"], None, 2*60*60], #2hr
+    "ant_pass_dispenser": [["use", "free"], "a", 2*60*60], #2hr
     "glue_dispenser": [["use", "glue"], None, 22*60*60], #22hr
     "stockings": [["check", "inside", "stocking"], None, 1*60*60], #1hr
     "wreath": [["admire", "honey"], "a", 30*60], #30mins
@@ -102,7 +102,7 @@ class macro:
         menubar = menubar.lower()
         return not ("rob" in menubar or "lox" in menubar) #check if roblox can be found in menu bar
 
-    def macToggleFullscreen(self):
+    def macToggleFullScreen(self):
         self.keyboard.keyDown("command")
         time.sleep(0.05)
         self.keyboard.keyDown("ctrl")
@@ -1060,40 +1060,51 @@ class macro:
             #make sure game mode is a feature (macOS 14.0 and above)
             macVersion, _, _ = platform.mac_ver()
             macVersion = float('.'.join(macVersion.split('.')[:2]))
+            #toggle fullscreen
+            if not self.macIsFullScreen:
+                self.macToggleFullScreen()
             if macVersion >= 14:
+                time.sleep(1.5)
                 #make sure roblox is not fullscreen
-                if self.macIsFullScreen():
-                    self.macToggleFullscreen
+                self.macToggleFullScreen()
+                    
                 #find the game mode button
-                lightGameMode = self.self.adjustImage("./images/mac", "gamemodelight")
-                darkGameMode = self.self.adjustImage("./images/mac", "gamemodedark")
-                x = self.mh/2.5
+                lightGameMode = self.adjustImage("./images/mac", "gamemodelight")
+                darkGameMode = self.adjustImage("./images/mac", "gamemodedark")
+                x = self.mw/2.3
+                time.sleep(2)
                 #find light mode
-                res = locateImageOnScreen(lightGameMode,x, 0, self.mh-x, 60, 0.7)
+                res = locateImageOnScreen(lightGameMode,x, 0, self.mw-x, 60, 0.7)
                 if res is None: #cant find light, find dark
-                    res = locateImageOnScreen(darkGameMode,x, 0, self.mh-x, 60, 0.7)
+                    res = locateImageOnScreen(darkGameMode,x, 0, self.mw-x, 60, 0.7)
                 #found either light or dark
                 if not res is None:
-                    mouse.moveTo(*res[1])
-                    mouse.click()
+                    gx, gy = res[1]
+                    if self.display_type == "retina":
+                        gx //= 2
+                        gy //= 2
+                    mouse.moveTo(gx+x, gy)
+                    time.sleep(0.1)
+                    mouse.fastClick()
+                    time.sleep(2)
                     #check if game mode is enabled
-                    ocrRes = ocr.customOCR(self.ww/2.5, 0, self.ww-(self.ww/2.5), 150, 0)
-                    for x in ocrRes:
-                        if "mode off" in x[1][0].lower():
+                    screen = mssScreenshot(x, 0, self.mw-x, 150)
+                    ocrRes = ocr.ocrRead(screen)
+                    print(ocrRes)
+                    for i in ocrRes:
+                        if "mode off" in i[1][0].lower():
                             #disable game mode
-                            bX, bY = ocr.getCenter(x[0])
+                            bX, bY = ocr.getCenter(i[0])
                             if self.display_type == "retina":
                                 bX //= 2
                                 bY //= 2
-                            mouse.moveTo(self.mh//2.5+bX, bY)
-                            mouse.click()
-                            #fullscreen back roblox
-                            appManager.openApp("roblox")
-                            self.macToggleFullscreen
+                            mouse.moveTo(x+bX, bY)
+                            mouse.click()                        
                             break
-            #toggle fullscreen
-            elif not self.macIsFullScreen:
-                self.macToggleFullscreen
+                #fullscreen back roblox
+                appManager.openApp("roblox")
+                self.macToggleFullScreen()
+            time.sleep(1)
 
         #detect new/old ui and set 
         if self.getTop(0):
