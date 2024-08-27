@@ -50,7 +50,16 @@ const collectEmojis = {
     candles: "🕯️",
     wreath: "🎄",
     sticker_printer: "🖨️",
-    ant_challenge: "🎯",
     mondo_buff: "🐣",
+}
+
+const killEmojis = {
     stinger_hunt: "😈",
+    scorpion: "",
+    werewolf: "",
+    ladybug: "",
+    rhinobeetle: "",
+    spider: "",
+    mantis: "",
+    ant_challenge: "🎯",
 }

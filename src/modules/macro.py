@@ -47,17 +47,26 @@ collectData = {
 
 #werewolf is a unique one. There is only one, but it can be triggered from pine, pumpkin or cactus
 regularMobInFields = {
-    "mushroom": ["ladybug"],
-    "blue flower": ["rhino beetle"],
-    "clover": ["ladybug", "rhino beetle"],
-    "strawberry": ["ladybug"],
-    "bamboo": ["rhino beetle"],
-    "spider": ["spider"],
-    "pineapple": ["mantis", "rhino beetle"],
     "rose": ["scorpion"],
-    "pine tree": ["mantos", "werewolf"],
     "pumpkin": ["werewolf"],
-    "cactus": ["werewolf"]
+    "cactus": ["werewolf"],
+    "spider": ["spider"],
+    "clover": ["ladybug", "rhinobeetle"],
+    "strawberry": ["ladybug"],
+    "bamboo": ["rhinobeetle"],
+    "mushroom": ["ladybug"],
+    "blue flower": ["rhinobeetle"],
+    "pineapple": ["mantis", "rhinobeetle"],
+    "pine tree": ["mantis", "werewolf"],
+}
+
+mobRespawnTimes = {
+    "ladybug": 5*60, #5mins
+    "rhinobeetle": 5*60, #5mins
+    "spider": 30*60, #30mins
+    "mantis": 20*60, #20mins
+    "scorpion": 20*60, #20mins
+    "werewolf": 60*60 #1hr
 }
 
 # Define the color range for reset detection (in HSL color space)
@@ -174,8 +183,8 @@ class macro:
         return settingsManager.saveSettingFile(name, time.time(), "./data/user/timings.txt")
     #returns true if the cooldown is up
     #note that cooldown is in seconds
-    def hasRespawned(self, name, cooldown, applyMobRespawnBonus = False):
-        timing = self.getTiming(name)
+    def hasRespawned(self, name, cooldown, applyMobRespawnBonus = False, timing = None):
+        if timing is None: timing = self.getTiming(name)
         mobRespawnBonus = 1
         if applyMobRespawnBonus:
             mobRespawnBonus -= 0.15 if self.setdat["gifted_vicious"] else 0
@@ -211,8 +220,8 @@ class macro:
         times = sprinklerCount[self.setdat["sprinkler_type"]]
         #place one sprinkler and check if its in field
         self.keyboard.press(sprinklerSlot)
-        time.sleep(0.3)
-        if self.isInBlueTexts(["must", "standing"], ["cannot", "close"]):
+        time.sleep(1)
+        if self.blueTextImageSearch("notinfield"):
             return False
         #place the remaining sprinklers
         #hold jump and spam place sprinklers
@@ -346,7 +355,8 @@ class macro:
         for i in range(5):
             self.logger.webhook("", f"Resetting character, Attempt: {i+1}", "dark brown")
             #set mouse and execute hotkeys
-            mouse.teleport(self.mw/(self.xsm*4.11)+40,(self.mh/(9*self.ysm))+yOffset)
+            #mouse.teleport(self.mw/(self.xsm*4.11)+40,(self.mh/(9*self.ysm))+yOffset)
+            mouse.moveTo(350, 100+yOffset)
             time.sleep(0.5)
             self.keyboard.press('esc')
             time.sleep(0.1)
@@ -522,6 +532,7 @@ class macro:
                         break
             #after hive is claimed, convert
             if rejoinSuccess:
+                time.sleep(1)
                 self.convert(ebuttonDetect=True)
                 #no need to reset
                 return
@@ -535,7 +546,6 @@ class macro:
     #check if player died
     def gatherBackground(self):
         field = self.status.value.split("_")[1]
-        mobs = regularMobInFields[field]
         while self.isGathering:
             #death check
             st = time.time()
@@ -543,8 +553,7 @@ class macro:
                 print("died")
                 self.died = True
             #mob respawn check
-            timings = self.getTiming()
-            print(time.time()-st)
+            self.setMobTimer(field)
         print("thread broke")
         print(self.status.value)
         print(self.isGathering)
@@ -868,7 +877,7 @@ class macro:
             else:
                 cooldownRaw = reached.split("(")[1]
 
-            #clean it up, extract only valid values
+            #clean it up, extract only valid characters
             cooldownRaw = ''.join([x for x in cooldownRaw if x.isdigit() or x == ":" or x == "s"])
             cooldownSeconds = 0 #cooldown in seconds
 
@@ -894,6 +903,39 @@ class macro:
         self.saveTiming(objective)
         self.collectCooldowns[objective] = cooldownSeconds
 
+    #accept mob and field and return them in the format used for timings.txt file
+    #mob_field, eg ladybug_strawberry
+    #werewolf is an acception, just return "werewolf"
+    def formatMobTimingName(self, mob, field):
+        if mob == "werewolf": return mob
+        return f"{mob}_{field}"
+    
+    def hasMobRespawned(self, mob, field, timing = None):
+        return self.hasRespawned(self.formatMobTimingName(mob, field), mobRespawnTimes[mob], True, timing)
+    
+    #to be used by the mob run walk paths
+    #returns true if there are mobs in the field to be killed (enabled + respawned)
+    #returns a list of mobs that have respawned
+    def getRespawnedMobs(self, field):
+        mobs = regularMobInFields[field]
+        out = []
+        for m in mobs:
+            if self.setdat[m] and self.hasMobRespawned(m, field):
+                out.append(m)
+        return out
+    
+    #check which mobs have respawned in the field and reset their timings
+    def setMobTimer(self, field):
+        if not field in regularMobInFields: return
+        timings = self.getTiming()
+        mobs = regularMobInFields[field]
+        for m in mobs:
+            timingName = self.formatMobTimingName(m, field)
+            #check respawn
+            if self.hasMobRespawned(m, field, timings[timingName]):
+                timings[timingName] = time.time()
+        settingsManager.saveDict("./data/user/timings.txt", timings)
+
     #background thread function to determine if player has defeated the mob
     #time limit of 20s
     def mobRunAttackingBackground(self):
@@ -912,72 +954,101 @@ class macro:
     def mobRunLootingBackground(self):
         st = time.time()
         while time.time() - st < 15:
-            text = ocr.imToString("blue").lower()
-            print(text)
-            if "token" in text and "link" in text: break
+           if self.blueTextImageSearch("tokenlink"): break
         self.mobRunStatus = "done"
 
-    def killMob(self, mob, field, goToField = True):
-        timingName = "{}_{}".format(mob.replace(" ",""), field.replace(" ",""))
+    def killMob(self, mob, field, walkPath = None):
+        mobName = mob
+        if mob == "rhinobeetle": mobName = "rhino beetle"
         self.status.value = "bugrun"
-        self.logger.webhook("","Travelling: {} ({})".format(mob.title(),field.title()),"dark brown")
-        if goToField:
+        self.logger.webhook("","{}: {} ({})".format("Travelling" if walkPath is None else "Walking", mobName.title(),field.title()),"dark brown")
+        self.mobRunStatus = "attacking"
+        attackThread = threading.Thread(target=self.mobRunAttackingBackground)
+        if walkPath is None:
             #wait for bees to respawn
             time.sleep(8)
             self.cannon()
             self.goToField(field)
-        self.mobRunStatus = "attacking"
-        self.logger.webhook("","Attacking: {} ({})".format(mob.title(),field.title()),"dark brown")
+            #attack the mob
+            attackThread.start()
+        else:
+            #attack the mob
+            #attack thread will start in the path
+            exec(walkPath)
+        self.logger.webhook("","Attacking: {} ({})".format(mobName.title(),field.title()),"dark brown")
         
-        #attack the mob
-        attackThread = threading.Thread(target=self.mobRunAttackingBackground)
-        attackThread.start()
         st = time.time()
         #move in squares to evade attacks
-        distance = 0.5
-        while self.mobRunStatus == "attacking":
-            self.keyboard.walk("s", distance)
-            self.keyboard.walk("a", distance*1.8)
-            self.keyboard.walk("w", distance)
-            self.keyboard.walk("d", distance*1.8)
+        #save the last entered side and front keys. This will be used for the looting pattern
+        distance = 0.7
+        lastSideKey = "d"
+        lastFrontKey = "s"
+        def dodgeWalk(k,t):
+            nonlocal lastSideKey, lastFrontKey
+            if k in ["w", "s"]: lastFrontKey = k
+            elif k in ["a","d"]: lastSideKey = k
+            self.keyboard.walk(k, t)
+        while True:
+            dodgeWalk("s", distance*1.2)
+            if self.mobRunStatus != "attacking": break
+            dodgeWalk("a", distance*1.8)
+            if self.mobRunStatus != "attacking": break
+            dodgeWalk("w", distance*1.2)
+            if self.mobRunStatus != "attacking": break
+            dodgeWalk("d", distance*1.8)
+            if self.mobRunStatus != "attacking": break
+
         attackThread.join()
         if self.mobRunStatus == "dead":
             self.logger.webhook("","Player died", "dark brown","screen")
             return
         elif self.mobRunStatus == "timeout":
-            self.saveTiming(timingName)
-            self.logger.webhook("","Could not kill {} in time. Maybe it hasn't respawned?".format(mob.title()), "dark brown", "screen")
+            self.setMobTimer(field)
+            self.logger.webhook("","Could not kill {} in time. Maybe it hasn't respawned?".format(mobName.title()), "dark brown", "screen")
             return
-        
+        time.sleep(1.5)
         #loot
-        self.logger.webhook("", "Looting: {}".format(mob.title()), "bright green", "screen")
+        self.logger.webhook("", "Looting: {}".format(mobName.title()), "bright green", "screen")
         #start another background thread to check for token link/time limit
         lootThread = threading.Thread(target=self.mobRunLootingBackground)
         lootThread.start()
         def lootPattern(f, s):
+            if lastSideKey == "a":
+                startSideKey = "d"
+            elif lastSideKey == "d":
+                startSideKey = "a"
+
+            if lastFrontKey == "w":
+                startFrontKey = "s"
+            elif lastFrontKey == "s":
+                startFrontKey = "w"
+
             while True:
                 for _ in range(2):
-                    self.keyboard.walk("w", 0.72*f)
+                    self.keyboard.walk(startFrontKey, 0.72*f)
                     if self.mobRunStatus == "done": return
-                    self.keyboard.walk("a", 0.1*s)
+                    self.keyboard.walk(startSideKey, 0.1*s)
                     if self.mobRunStatus == "done": return
-                    self.keyboard.walk("s", 0.72*f)
+                    self.keyboard.walk(lastFrontKey, 0.72*f)
                     if self.mobRunStatus == "done": return
-                    self.keyboard.walk("a", 0.1*s)
+                    self.keyboard.walk(startSideKey, 0.1*s)
                     if self.mobRunStatus == "done": return
                 for _ in range(2):
-                    self.keyboard.walk("w", 0.72*f)
+                    self.keyboard.walk(startFrontKey, 0.72*f)
                     if self.mobRunStatus == "done": return
-                    self.keyboard.walk("d", 0.1*s)
+                    self.keyboard.walk(lastSideKey, 0.1*s)
                     if self.mobRunStatus == "done": return
-                    self.keyboard.walk("s", 0.72*f)
+                    self.keyboard.walk(lastFrontKey, 0.72*f)
                     if self.mobRunStatus == "done": return
-                    self.keyboard.walk("d", 0.1*s)
+                    self.keyboard.walk(lastSideKey, 0.1*s)
                     if self.mobRunStatus == "done": return
-        lootPattern(1.2, 2.5)
-        self.saveTiming(timingName)
+        lootPattern(1.35, 2.5)
+        self.setMobTimer(field)
         self.status.value = ""
         lootThread.join()
+        #check if there are paths for the macro to walk to other fields for mob runs
+        #run a path in the field format
+        self.runPath(f"mob_runs/{field}", fileMustExist=False)
 
     def start(self):
         #if roblox is not open, rejoin

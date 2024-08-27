@@ -42,7 +42,7 @@ class keyboard:
     def multiWalk(self, keys, t):
         for k in keys:
             pag.keyDown(k, _pause = False)
-        time.sleep(t*28/self.ws)
+        time.sleep(t*28/self.haste.value)
         for k in keys:
             pag.keyUp(k, _pause = False)
     #recreate natro's tile waiting function

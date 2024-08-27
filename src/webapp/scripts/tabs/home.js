@@ -52,6 +52,12 @@ async function loadTasks(){
         if (!setdat[k]) continue
         out += taskHTML("Collect", `${v} ${toTitleCase(k.replaceAll("_", " "))}`)
     }
+    //load kill
+    for (let [k, v] of Object.entries(killEmojis)) {
+        if (!setdat[k]) continue
+        if (k == "rhinobeetle") k = "rhino beetle"
+        out += taskHTML("Kill", `${v} ${toTitleCase(k.replaceAll("_", " "))}`)
+    }
     //load the gather
     for(let i = setdat.fields_enabled.length-1; i >= 0; i--){
         if (!setdat.fields_enabled[i]) continue

@@ -20,7 +20,19 @@ def hasteCompensationThread(baseSpeed, haste):
 def macro(status, log, haste):
     import modules.macro as macroModule
     macro = macroModule.macro(status, log, haste)
-    
+    #invert the regularMobsInFields dict
+    #instead of storing mobs in field, store the fields associated with each mob
+    regularMobData = {}
+    for k,v in macroModule.regularMobInFields.items():
+        for x in v:
+            if x in regularMobData:
+                regularMobData[x].append(k)
+            else:
+                regularMobData[x] = [k]
+    #Limit werewolf to just pumpkin 
+    regularMobData["werewolf"] = ["pumpkin"]
+
+    print(regularMobData)
     macro.start()
     setdat = macro.setdat
     #function to run a task
@@ -36,7 +48,6 @@ def macro(status, log, haste):
             macro.collectMondoBuff()
         status.value = ""
 
-    #macro.killMob("ladybug", "strawberry")
     #macro.rejoin()
     while True:
         #run empty task
@@ -50,6 +61,13 @@ def macro(status, log, haste):
 
         if setdat["sticker_printer"] and macro.hasRespawned("sticker_printer", macro.collectCooldowns["sticker_printer"]):
             runTask(macro.collectStickerPrinter)
+        
+        #mob runs
+        for mob, fields in regularMobData.items():
+            if not setdat[mob]: continue
+            for f in fields:
+                if macro.hasMobRespawned(mob, f):
+                    runTask(macro.killMob, args=(mob, f,), convertAfter=False)
         #ant challenge
         if setdat["ant_challenge"]: 
             runTask(macro.antChallenge)
@@ -71,7 +89,7 @@ def watch_for_hotkeys(run):
     keyboard.Listener(on_press=on_press).start()
 
 if __name__ == "__main__":
-    print("Loading macro...")
+    print("Loading gui...")
     global stopThreads
     import gui
     import modules.screen.screenData as screenData
