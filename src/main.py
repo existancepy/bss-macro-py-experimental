@@ -23,7 +23,8 @@ def disconnectCheck(run, status, display_type):
     mw, mh = pag.size()
     img = adjustImage("./images/menu", "disconnect", display_type)
     while not stopThreads:
-        if locateImageOnScreen(img, mw/2, mh/2, 200, 80, 0.7):
+        if locateImageOnScreen(img, mw/3, mh/2.8, mw/2.3, mh/5, 0.7):
+            print("disconnected")
             run.value = 4
 
 #controller for the macro

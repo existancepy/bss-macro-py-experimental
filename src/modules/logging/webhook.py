@@ -14,6 +14,8 @@ def webhook(url, title, desc, time, color, imagePath = None):
         embed.set_image(url='attachment://screenshot.png')
     # add embed object to webhook
     webhook.add_embed(embed)
-
-    response = webhook.execute()
+    try:
+        webhook.execute()
+    except ConnectionError:
+        print("Webhook failed, connection error")
     

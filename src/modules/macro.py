@@ -91,8 +91,9 @@ class macro:
         #field drift compensation class
         self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
 
-    def macIsFullScreen(self):
-        menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar
+    def isFullScreen(self):
+        menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar on mac, window bar on windows
+        print(menubarRaw)
         menubar = ""
         try:
             for x in menubarRaw:
@@ -100,19 +101,23 @@ class macro:
         except:
             pass
         menubar = menubar.lower()
+        print(menubar)
         return not ("rob" in menubar or "lox" in menubar) #check if roblox can be found in menu bar
 
-    def macToggleFullScreen(self):
-        self.keyboard.keyDown("command")
-        time.sleep(0.05)
-        self.keyboard.keyDown("ctrl")
-        time.sleep(0.05)
-        self.keyboard.keyDown("f")
-        time.sleep(0.1)
-        self.keyboard.keyUp("command")
-        self.keyboard.keyUp("ctrl")
-        self.keyboard.keyUp("f")
-    
+    def toggleFullScreen(self):
+        if sys.platform == "darwin":
+            self.keyboard.keyDown("command")
+            time.sleep(0.05)
+            self.keyboard.keyDown("ctrl")
+            time.sleep(0.05)
+            self.keyboard.keyDown("f")
+            time.sleep(0.1)
+            self.keyboard.keyUp("command")
+            self.keyboard.keyUp("ctrl")
+            self.keyboard.keyUp("f")
+        elif sys.platform == "win32":
+            self.keyboard.press("f11")
+
     def adjustImage(self, path, imageName):
         return adjustImage(path, imageName, self.display_type)
         
@@ -440,13 +445,12 @@ class macro:
             loadStartTime = time.time()
             while not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.7) and time.time() - loadStartTime < 60:
                 pass
-            #run fullscreen check (mac only)
-            if sys.platform == "darwin":
-                if self.macIsFullScreen(): #check if roblox can be found in menu bar
-                    self.logger.webhook("","Roblox is already in fullscreen, not activating fullscreen", "dark brown")
-                else:
-                    self.logger.webhook("","Roblox is not in fullscreen, activating fullscreen", "dark brown")
-                    self.macToggleFullScreen()
+            #run fullscreen check
+            if self.isFullScreen(): #check if roblox can be found in menu bar
+                self.logger.webhook("","Roblox is already in fullscreen, not activating fullscreen", "dark brown")
+            else:
+                self.logger.webhook("","Roblox is not in fullscreen, activating fullscreen", "dark brown")
+                self.toggleFullScreen()
 
             #if use browser to rejoin, close the browser
             if self.setdat["rejoin_method"] != "deeplink":
@@ -498,7 +502,10 @@ class macro:
             #find a new hive
             else:
                 self.logger.webhook("",f'Hive is {hiveNumber} already claimed, finding new hive','dark brown', "screen")
+                #walk closer to the hives so the player wont walk up the ramp
+                self.keyboard.walk("w",0.3,0)
                 self.keyboard.walk("d",0.9*(hiveNumber)+1,0)
+                self.keyboard.walk("s",0.3,0)
                 time.sleep(0.5)
                 for j in range(40):
                     if findHive():
@@ -1031,19 +1038,20 @@ class macro:
         #if roblox is not open, rejoin
         if not appManager.openApp("roblox"):
             self.rejoin()
-        time.sleep(2)
+        else:
+            time.sleep(1)
+            #toggle fullscreen
+            if not self.isFullScreen():
+                self.toggleFullScreen()
         #disable game mode
         if sys.platform == "darwin":
             #make sure game mode is a feature (macOS 14.0 and above)
             macVersion, _, _ = platform.mac_ver()
             macVersion = float('.'.join(macVersion.split('.')[:2]))
-            #toggle fullscreen
-            if not self.macIsFullScreen:
-                self.macToggleFullScreen()
             if macVersion >= 14:
                 time.sleep(1.5)
                 #make sure roblox is not fullscreen
-                self.macToggleFullScreen()
+                self.toggleFullScreen()
                     
                 #find the game mode button
                 lightGameMode = self.adjustImage("./images/mac", "gamemodelight")
@@ -1082,7 +1090,7 @@ class macro:
                         mouse.click()
                 #fullscreen back roblox
                 appManager.openApp("roblox")
-                self.macToggleFullScreen()
+                self.toggleFullScreen()
             time.sleep(1)
 
         #detect new/old ui and set 

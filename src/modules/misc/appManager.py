@@ -29,8 +29,8 @@ class WindowMgr:
         #send the alt key. For some reason this is required to make it run consistently
         shell = win32com.client.Dispatch("WScript.Shell")
         shell.SendKeys('%')
-        win32gui.ShowWindow(self._handle, win32con.SW_NORMAL) #in case window is minimised
         win32gui.SetForegroundWindow(self._handle) #switch to window
+        win32gui.ShowWindow(self._handle, win32con.SW_MAXIMIZE)
     
 
 
