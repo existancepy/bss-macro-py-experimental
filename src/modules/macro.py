@@ -469,6 +469,13 @@ class macro:
                         self.keyboard.keyUp("ctrl")
                     time.sleep(0.5)
                 appManager.openApp("Roblox")
+            else:
+                #check if the user is stuck on the sign up screen
+                signUpImage = self.adjustImage("./images/menu", "signup")
+                if locateImageOnScreen(signUpImage, self.mw/4, self.mh/3, self.mw/2, self.mh*2/3, 0.7):
+                    self.logger.webhook("","Not logged into the roblox app. Rejoining via the browser. It is recommended to log into the app beforehand.","red","screen")
+                    self.setdat["rejoin_method"] = "new tab"
+                    continue
             #find hive
             appManager.openApp("Roblox")
             time.sleep(2)
