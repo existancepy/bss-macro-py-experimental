@@ -3,6 +3,7 @@ pineTreeMobs = self.getRespawnedMobs("pine tree")
 if pineTreeMobs:
     self.killMob(pineTreeMobs[0], "pine tree", walkPath=
     '''
+self.keyboard.walk("d",1.2)
 self.keyboard.multiWalk(["w","d"],6)
 self.keyboard.walk("a",2.5)
 attackThread.start()

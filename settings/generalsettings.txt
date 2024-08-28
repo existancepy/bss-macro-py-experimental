@@ -12,3 +12,4 @@ enable_webhook=True
 gifted_vicious=True
 stick_bug_amulet=0
 icicles_beequip=0
+rejoin_every=0

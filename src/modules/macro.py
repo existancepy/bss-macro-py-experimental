@@ -23,7 +23,7 @@ import webbrowser
 from pynput.keyboard import Key, Controller
 import cv2
 from datetime import timedelta, datetime
-from modules.misc.imageManipulation import pillowToCv2
+from modules.misc.imageManipulation import pillowToCv2, adjustImage
 from PIL import Image
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -113,31 +113,8 @@ class macro:
         self.keyboard.keyUp("ctrl")
         self.keyboard.keyUp("f")
     
-    #resize the image based on the user's screen coordinates
     def adjustImage(self, path, imageName):
-        #get a list of all images and find the name of the one that matches
-        images = os.listdir(path)
-        for x in images:
-            #images are named in the format itemname-width
-            #width is the width of the monitor used to take the image
-            name, res = x.split(".")[0].split("-",1)
-            if name == imageName:
-                img = Image.open(f"{path}/{x}")
-                break
-        #get original size of image
-        width, height = img.size
-        #calculate the scaling value 
-        #retina has 2x more, built-in is 1x
-        if self.display_type == res:
-            scaling = 1
-        elif self.display_type == "built-in": #screen is built-in but image is retina
-            scaling = 2
-        else: #screen is retina but image is built-in
-            scaling = 0.5
-        #resize image
-        img = img.resize((int(width/scaling), int(height/scaling)))
-        #convert to cv2
-        return pillowToCv2(img)
+        return adjustImage(path, imageName, self.display_type)
         
     #run a path. Choose automater over python if it exists (except on windows)
     #file must exist: if set to False, will not attempt to run the file if it doesnt exist
@@ -356,7 +333,7 @@ class macro:
             self.logger.webhook("", f"Resetting character, Attempt: {i+1}", "dark brown")
             #set mouse and execute hotkeys
             #mouse.teleport(self.mw/(self.xsm*4.11)+40,(self.mh/(9*self.ysm))+yOffset)
-            mouse.moveTo(350, 100+yOffset)
+            mouse.moveTo(370, 100+yOffset)
             time.sleep(0.5)
             self.keyboard.press('esc')
             time.sleep(0.1)
@@ -423,11 +400,11 @@ class macro:
         else:
             self.logger.webhook("Notice", f"Failed to reach cannon too many times", "red")
     
-    def rejoin(self):
+    def rejoin(self, rejoinMsg = "Rejoining"):
         rejoinMethod = self.setdat["rejoin_method"]
         psLink = self.setdat["private_server_link"]
         browserLink = "https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129"
-        self.logger.webhook("","Rejoining", "dark brown")
+        self.logger.webhook("",rejoinMsg, "dark brown")
         for i in range(3):
             if psLink and i ==2: 
                 self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", "screen")
@@ -724,7 +701,7 @@ class macro:
         self.logger.webhook("","Travelling: Ant Challenge","dark brown")
         self.cannon()
         self.runPath("collect/ant_pass_dispenser")
-        self.keyboard.walk("w",4)
+        self.keyboard.walk("w",3.5)
         self.keyboard.walk("a",3)
         self.keyboard.walk("d",3)
         self.keyboard.walk("s",0.4)
@@ -1118,4 +1095,4 @@ class macro:
             self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red", "screen")
             self.newUI = False   
         self.reset(convert=True)
-
+        self.saveTiming("rejoin_every")

@@ -123,6 +123,19 @@
                     }
                     
                 },
+                {
+                    
+                    id: "rejoin_every",
+                    title: "Rejoin Every X hours",
+                    desc: "How often the macro should rejoin. Set it as 0 to disable this feature.",
+                    type: {
+                        name: "textbox",
+                        inputType: "float",
+                        inputLimit: 4,
+                        triggerFunction: saveGeneralTriggerFunction
+                    }
+                    
+                },
 
             ])
 

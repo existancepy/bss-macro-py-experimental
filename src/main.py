@@ -16,6 +16,16 @@ def hasteCompensationThread(baseSpeed, haste):
     while not stopThreads:
         hasteCompensation(baseSpeed, haste)
 
+def disconnectCheck(run, status, display_type):
+    from modules.misc.imageManipulation import adjustImage
+    from modules.screen.imageSearch import locateImageOnScreen
+    import pyautogui as pag
+    mw, mh = pag.size()
+    img = adjustImage("./images/menu", "disconnect", display_type)
+    while not stopThreads:
+        if locateImageOnScreen(img, mw/2, mh/2, 200, 80, 0.7):
+            run.value = 4
+
 #controller for the macro
 def macro(status, log, haste):
     import modules.macro as macroModule
@@ -46,6 +56,10 @@ def macro(status, log, haste):
         #do priority tasks
         if setdat["mondo_buff"]:
             macro.collectMondoBuff()
+        if setdat["rejoin_every"]:
+            if macro.hasRespawned("rejoin_every", setdat["rejoin_every"]):
+                macro.rejoin("Rejoining (Scheduled)")
+                macro.saveTiming("rejoin_every")
         status.value = ""
 
     #macro.rejoin()
@@ -97,6 +111,7 @@ if __name__ == "__main__":
     import modules.logging.log as logModule
     import modules.controls.mouse as mouse
     import modules.misc.settingsManager as settingsManager
+    import modules.misc.appManager as appManager
     macroProc: typing.Optional[multiprocessing.Process] = None
     #set screen data
     screenData.setScreenData()
@@ -155,10 +170,13 @@ if __name__ == "__main__":
             stopThreads = False
             macroProc = multiprocessing.Process(target=macro, args=(status, log, haste))
             macroProc.start()
+            #disconnect detection
+            disconnectThread = Thread(target=disconnectCheck, args=(run, status, screenInfo["display_type"]))
+            disconnectThread.daemon = True
+            disconnectThread.start()
             if setdat["haste_compensation"]:
                 hasteCompThread = Thread(target=hasteCompensationThread, args=(setdat["movespeed"],haste,))
                 hasteCompThread.daemon = True
-                print("haste compensation started")
                 hasteCompThread.start()
             logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
             run.value = 2
@@ -169,6 +187,16 @@ if __name__ == "__main__":
                 run.value = 3
                 gui.toggleStartStop()
                 stopApp()
+                disconnectThread.join()
+        elif run.value == 4: #disconnected
+            macroProc.kill()
+            logger.webhook("","Disconnected", "red", "screen")
+            appManager.closeApp("Roblox")
+            keyboardModule.releaseMovement()
+            mouse.mouseUp()
+            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste))
+            macroProc.start()
+            run.value = 2
 
         #detect a new log message
         if log.value != prevLog:
