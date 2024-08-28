@@ -1067,7 +1067,6 @@ class macro:
                     #check if game mode is enabled
                     screen = mssScreenshot(x, 0, self.mw-x, 150)
                     ocrRes = ocr.ocrRead(screen)
-                    print(ocrRes)
                     for i in ocrRes:
                         if "mode off" in i[1][0].lower():
                             #disable game mode
@@ -1078,6 +1077,9 @@ class macro:
                             mouse.moveTo(x+bX, bY)
                             mouse.click()                        
                             break
+                    else: #game mode is already disabled/couldnt be found
+                        mouse.moveTo(x+gx, gy)
+                        mouse.click()
                 #fullscreen back roblox
                 appManager.openApp("roblox")
                 self.macToggleFullScreen()
