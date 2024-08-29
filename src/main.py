@@ -42,8 +42,6 @@ def macro(status, log, haste):
                 regularMobData[x] = [k]
     #Limit werewolf to just pumpkin 
     regularMobData["werewolf"] = ["pumpkin"]
-
-    print(regularMobData)
     macro.start()
     setdat = macro.setdat
     #function to run a task

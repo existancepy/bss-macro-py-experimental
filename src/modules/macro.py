@@ -116,7 +116,9 @@ class macro:
             self.keyboard.keyUp("ctrl")
             self.keyboard.keyUp("f")
         elif sys.platform == "win32":
-            self.keyboard.press("f11")
+            for _ in range(3):
+                self.keyboard.press("f11")
+                time.sleep(0.4)
 
     def adjustImage(self, path, imageName):
         return adjustImage(path, imageName, self.display_type)
@@ -1050,12 +1052,19 @@ class macro:
         if not appManager.openApp("roblox"):
             self.rejoin()
         else:
-            time.sleep(1)
             #toggle fullscreen
             if not self.isFullScreen():
                 self.toggleFullScreen()
         #disable game mode
         if sys.platform == "darwin":
+            time.sleep(1)
+            #check roblox scaling
+            #this is done by checking if all pixels at the top of the screen are black
+            topScreen = mssScreenshot(0, 0, self.mw, 2)
+            extrema = img.convert("L").getextrema()
+            #all are black
+            if extrema == (0, 0):
+                pag.alert(text='It seems like you have not enabled roblox scaling. The macro will not work properly. The instructions to disable it can be found in #7-enable-roblox-scaling in the discord', title='Warning', button='OK')
             #make sure game mode is a feature (macOS 14.0 and above)
             macVersion, _, _ = platform.mac_ver()
             macVersion = float('.'.join(macVersion.split('.')[:2]))

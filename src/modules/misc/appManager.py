@@ -30,6 +30,7 @@ class WindowMgr:
         shell = win32com.client.Dispatch("WScript.Shell")
         shell.SendKeys('%')
         win32gui.SetForegroundWindow(self._handle) #switch to window
+        win32gui.ShowWindow(self._handle, win32con.SW_MINIMIZE)
         win32gui.ShowWindow(self._handle, win32con.SW_MAXIMIZE)
     
 
