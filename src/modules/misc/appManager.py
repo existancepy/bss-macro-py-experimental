@@ -60,6 +60,10 @@ def openDeeplink(link):
 def closeApp(app):
     if sys.platform == "darwin":
         subprocess.call(["pkill", app])
+        cmd = """
+            osascript -e 'quit application "Roblox"'
+        """
+        os.system(cmd)
     else:
         if app.lower() == "roblox":
             app = "RobloxPlayerBeta"

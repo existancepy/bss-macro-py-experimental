@@ -143,7 +143,6 @@ class macro:
     def isInOCR(self, name, includeList, excludeList):
         #get text
         text = ocr.imToString(name).lower()
-        print(text)
         #check if text is to be rejected
         for i in excludeList:
             if i in text: return False
@@ -406,15 +405,16 @@ class macro:
             self.logger.webhook("Notice", f"Failed to reach cannon too many times", "red")
     
     def rejoin(self, rejoinMsg = "Rejoining"):
-        rejoinMethod = self.setdat["rejoin_method"]
         psLink = self.setdat["private_server_link"]
-        browserLink = "https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129"
         self.logger.webhook("",rejoinMsg, "dark brown")
         for i in range(3):
-            if psLink and i ==2: 
-                self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", "screen")
-            else:
-                browserLink = psLink
+            rejoinMethod = self.setdat["rejoin_method"]
+            browserLink = "https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129"
+            if psLink: 
+                if i == 2: 
+                    self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", "screen")
+                else:
+                    browserLink = psLink
             appManager.closeApp("Roblox") # close roblox
             time.sleep(8)
             #execute rejoin method
@@ -424,6 +424,7 @@ class macro:
                     deeplink += f"&linkCode={psLink.lower().split('code=')[1]}"
                 appManager.openDeeplink(deeplink)
             elif rejoinMethod == "new tab":
+                print(browserLink)
                 webbrowser.open(browserLink, new = 2)
             elif rejoinMethod == "reload":
                 webbrowser.open(browserLink, new = 2)
@@ -440,11 +441,14 @@ class macro:
             #wait for bss to load
             #if sprinkler image is found, bss is loaded
             #max 60s of waiting
+            time.sleep(10)
             appManager.openApp("roblox")
             sprinklerImg = self.adjustImage("./images/menu", "sprinkler")
             loadStartTime = time.time()
+            '''
             while not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.7) and time.time() - loadStartTime < 60:
                 pass
+            '''
             #run fullscreen check
             if self.isFullScreen(): #check if roblox can be found in menu bar
                 self.logger.webhook("","Roblox is already in fullscreen, not activating fullscreen", "dark brown")
@@ -473,7 +477,7 @@ class macro:
                 #check if the user is stuck on the sign up screen
                 signUpImage = self.adjustImage("./images/menu", "signup")
                 if locateImageOnScreen(signUpImage, self.mw/4, self.mh/3, self.mw/2, self.mh*2/3, 0.7):
-                    self.logger.webhook("","Not logged into the roblox app. Rejoining via the browser. It is recommended to log into the app beforehand.","red","screen")
+                    self.logger.webhook("","Not logged into the roblox app. Rejoining via the browser. For a smoother experience, please ensure you are logged into the Roblox app beforehand.","red","screen")
                     self.setdat["rejoin_method"] = "new tab"
                     continue
             #find hive
