@@ -72,7 +72,6 @@ mobRespawnTimes = {
 # Define the color range for reset detection (in HSL color space)
 resetLower = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
 resetUpper = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
-resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25,25)) #might need double kernel size for retina, but not sure
 
 class macro:
     def __init__(self, status, log, haste):
@@ -88,6 +87,11 @@ class macro:
         self.collectCooldowns = dict([(k, v[2]) for k,v in collectData.items()])
         self.collectCooldowns["sticker_printer"] = 1*60*60
 
+        #reset kernel
+        if self.display_type == "retina":
+            self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(40,40)) #might need double kernel size for retina, but not sure
+        else:
+            self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25,25))
         #field drift compensation class
         self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
 
@@ -393,7 +397,7 @@ class macro:
                 hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
                 # Create a mask for the color range
                 mask = cv2.inRange(hsl, resetLower, resetUpper)   
-                mask = cv2.erode(mask, resetKernel, 2)
+                mask = cv2.erode(mask, self.resetKernel, 2)
                 #get contours. If contours exist, direction is correct
                 contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 if contours:
