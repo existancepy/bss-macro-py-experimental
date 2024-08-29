@@ -91,6 +91,37 @@ class macro:
         #field drift compensation class
         self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
 
+        #night detection variables
+        self.canDetectNight = True
+        self.night = False
+
+    #thread to detect night
+    #night detection is done by converting the screenshot to hsv and checking the average brightness
+    def detectNight(self):
+        def isNight():
+            screen = pillowToCv2(mssScreenshot(0,0, self.mw, self.mh))
+            hsv = cv2.cvtColor(screen, cv2.COLOR_RGB2HSV)
+            vValues = np.sum(hsv[:, :, 2])
+            area = screen.shape[0] * screen.shape[1]
+            avg_brightness = vValues/area
+            return 10 < avg_brightness < 110 #110 is the threshold for night. It must be > 10 to deal with cases where the player is inside a fruit or stuck against a wall 
+
+        #return true if it detects night 3 times in a row (time apart)
+        def isNightInARow(cd=1):
+            #detect night
+            if not isNight(): return False
+            time.sleep(cd)
+            if not isNight(): return False
+            time.sleep(cd)
+            if not isNight(): return False
+            return True
+        while True:
+            if self.canDetectNight and isNightInARow():
+                self.night = True
+                self.logger.webhook("","Night detected","dark brown", "screen")
+                time.sleep(180) #wait for night to end
+                self.night = False
+
     def isFullScreen(self):
         menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar on mac, window bar on windows
         print(menubarRaw)
@@ -407,6 +438,7 @@ class macro:
             self.logger.webhook("Notice", f"Failed to reach cannon too many times", "red")
     
     def rejoin(self, rejoinMsg = "Rejoining"):
+        self.canDetectNight = False
         psLink = self.setdat["private_server_link"]
         self.logger.webhook("",rejoinMsg, "dark brown")
         for i in range(3):
@@ -532,6 +564,7 @@ class macro:
                 time.sleep(1)
                 self.convert(ebuttonDetect=True)
                 #no need to reset
+                self.canDetectNight = True
                 return
             self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
     
@@ -676,6 +709,7 @@ class macro:
         if keepGathering: return
         #go back to hive
         def walk_to_hive():
+            nonlocal self
             #walk to hive
             #face correct direction (towards hive)
             reverseTurnTimes = 4 - fieldSetting["turn_times"]
@@ -689,6 +723,7 @@ class macro:
                     self.keyboard.press(".")
 
             #start walk
+            self.canDetectNight = False
             self.logger.webhook("",f"Walking back to hive: {field.title()}", "dark brown")
             self.runPath(f"field_to_hive/{field}")
             #find hive and convert
@@ -701,6 +736,7 @@ class macro:
             else:
                 self.logger.webhook("","Can't find hive, resetting", "dark brown", "screen")
                 self.reset()
+            self.canDetectNight = True
 
         if returnType == "reset":
             self.reset()
@@ -950,7 +986,7 @@ class macro:
     #background thread to check if token link is collected or the macro runs out of time (max 15s)
     def mobRunLootingBackground(self):
         st = time.time()
-        while time.time() - st < 15:
+        while time.time() - st < 20:
            if self.blueTextImageSearch("tokenlink"): break
         self.mobRunStatus = "done"
 
@@ -963,7 +999,7 @@ class macro:
         attackThread = threading.Thread(target=self.mobRunAttackingBackground)
         if walkPath is None:
             #wait for bees to respawn
-            time.sleep(8)
+            time.sleep(10)
             self.cannon()
             self.goToField(field)
             #attack the mob
@@ -971,7 +1007,9 @@ class macro:
         else:
             #attack the mob
             #attack thread will start in the path
+            self.canDetectNight = False
             exec(walkPath)
+            self.canDetectNight = True
         self.logger.webhook("","Attacking: {} ({})".format(mobName.title(),field.title()),"dark brown")
         
         st = time.time()
@@ -1124,5 +1162,8 @@ class macro:
         else:
             self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red", "screen")
             self.newUI = False   
+        nightDetectThread = threading.Thread(target=self.detectNight)
+        nightDetectThread.daemon = True
+        nightDetectThread.start()
         self.reset(convert=True)
         self.saveTiming("rejoin_every")

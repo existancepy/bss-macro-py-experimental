@@ -1,6 +1,6 @@
 fields_enabled=[True, False, False]
 fields=['pine tree', 'sunflower', 'dandelion']
-wealth_clock=False
+wealth_clock=True
 blueberry_dispenser=False
 strawberry_dispenser=False
 royal_jelly_dispenser=False
@@ -27,5 +27,5 @@ ladybug=False
 rhinobeetle=False
 scorpion=False
 mantis=False
-spider=False
+spider=True
 werewolf=False
