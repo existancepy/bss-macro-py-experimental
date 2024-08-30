@@ -2,6 +2,17 @@ import mss
 from PIL import Image
 import mss.tools
 import time
+import numpy as np
+
+#returns an NP array, useful for cv2
+def mssScreenshotNP(x,y,w,h, save = False):
+    with mss.mss() as sct:
+        # The screen part to capture
+        monitor = {"left": int(x), "top": int(y), "width": int(w), "height": int(h)}
+        # Grab the data and convert to opencv img
+        sct_img = np.array(sct.grab(monitor))
+        return sct_img
+
 
 def mssScreenshot(x,y,w,h, save = False):
     with mss.mss() as sct:
