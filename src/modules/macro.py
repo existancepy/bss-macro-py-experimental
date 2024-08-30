@@ -1112,7 +1112,7 @@ class macro:
             #check roblox scaling
             #this is done by checking if all pixels at the top of the screen are black
             topScreen = mssScreenshot(0, 0, self.mw, 2)
-            extrema = img.convert("L").getextrema()
+            extrema = topScreen.convert("L").getextrema()
             #all are black
             if extrema == (0, 0):
                 pag.alert(text='It seems like you have not enabled roblox scaling. The macro will not work properly. The instructions to disable it can be found in #7-enable-roblox-scaling in the discord', title='Warning', button='OK')
