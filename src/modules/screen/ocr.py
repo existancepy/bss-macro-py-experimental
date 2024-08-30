@@ -129,6 +129,7 @@ def customOCR(X1,Y1,W1,H1,applym=1):
         cap = screenshot(region=(X1/xsm,Y1/ysm,W1/xlm,H1/ylm))
     else:
         cap = screenshot(region=(X1,Y1,W1,H1))
+    cap.save("{}.png".format(time.time()))
     out = ocrFunc(cap)
     if not out is None:
         return out

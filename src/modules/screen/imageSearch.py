@@ -21,5 +21,6 @@ def locateTransparentImageOnScreen(target, x,y,w,h, threshold = 0):
     screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
     target = cv2.cvtColor(target, cv2.COLOR_RGB2GRAY)
     _, max_val, _, max_loc = templateMatch(target, screen)
+    print(max_val)
     if max_val < threshold: return None
     return (max_val, max_loc)

@@ -11,15 +11,12 @@ data = sorted(data.items())
 def rgb_to_dec(r, g, b):
       return (r * 256 * 256) + (g * 256) + b
     
-def bpc(ww, newUI, displayType):
-    Y1=8
-    add = 65
+def bpc(mw, newUI):
+    Y1=6
+    add = 59+3
     
     if newUI: Y1 = 31  
-    if displayType == "retina":
-        add*= 2
-        Y1 *= 2
-    X1=ww//2+add
+    X1=mw//2+add
     
     pix = pixelColor.getPixelColor(X1, Y1)
     col = rgb_to_dec(*pix)

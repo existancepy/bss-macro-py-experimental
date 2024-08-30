@@ -18,7 +18,7 @@ import os
 import numpy as np
 import threading
 from modules.submacros.backpack import bpc
-from modules.screen.imageSearch import locateImageOnScreen
+from modules.screen.imageSearch import locateImageOnScreen, locateTransparentImageOnScreen
 import webbrowser
 from pynput.keyboard import Key, Controller
 import cv2
@@ -191,8 +191,15 @@ class macro:
     def isBesideE(self, includeList = [], excludeList = []):
         return self.isInOCR("bee bear", includeList, excludeList)
     
+    def isBesideEImage(self, name):
+        template = self.adjustImage("./images/menu",name)
+        return locateTransparentImageOnScreen(template, self.mw//2-200,0,400,self.mh//8, 0.75)
+
     def getTiming(self,name = None):
-        data = settingsManager.readSettingsFile("./data/user/timings.txt")
+        for _ in range(3):
+            data = settingsManager.readSettingsFile("./data/user/timings.txt")
+            if data: break #most likely another process is writing to the file
+            time.sleep(0.1)
         if name is not None:
             return data[name]
         return data
@@ -342,14 +349,10 @@ class macro:
             time.sleep(0.01)
 
 
-    def convert(self, bypass = False, ebuttonDetect = False):
+    def convert(self, bypass = False):
         if not bypass:
             #use ebutton detection, faster detection but more prone to false positives (like detecting trades)
-            if ebuttonDetect:
-                ebutton = self.adjustImage("./images/menu", "ebutton")
-                if not locateImageOnScreen(ebutton, self.mw//2-250, 30, 200, 120, 0.7): return False
-            else:
-                if not self.isBesideE(["make", "маке"], ["to", "pollen"]): return False
+            if not self.isBesideEImage("makehoney"): return False
         #start convert
         self.keyboard.press("e")
         st = time.time()
@@ -403,7 +406,7 @@ class macro:
                 if contours:
                     for _ in range(8):
                         self.keyboard.press("o")
-                    if convert: self.convert(ebuttonDetect=True)
+                    if convert: self.convert()
                     return True
                 #failed to detect, spin
                 for _ in range(4):
@@ -423,7 +426,7 @@ class macro:
             self.keyboard.slowPress("space")
             time.sleep(0.2)
             self.keyboard.keyDown("d")
-            self.keyboard.walk("w",0.25)
+            self.keyboard.walk("w",0.2)
             
             if fast:
                 self.keyboard.walk("d",0.95)
@@ -431,11 +434,13 @@ class macro:
                 return
             self.keyboard.walk("d",0.2)
             self.keyboard.walk("s",0.07)
-            for _ in range(6):
-                self.keyboard.walk("d",0.15)
-                time.sleep(0.05)
-                if self.isBesideE(["fire","red"]):
+            st = time.time()
+            self.keyboard.keyDown("d")
+            while time.time()-st < 0.15*6:
+                if self.isBesideEImage("cannon"):
+                    self.keyboard.keyUp("d")
                     return
+            self.keyboard.keyUp("d")
             self.logger.webhook("Notice", f"Could not find cannon", "dark brown", "screen")
             self.reset()
         else:
@@ -445,6 +450,8 @@ class macro:
         self.canDetectNight = False
         psLink = self.setdat["private_server_link"]
         self.logger.webhook("",rejoinMsg, "dark brown")
+        mouse.mouseUp()
+        keyboard.releaseMovement()
         for i in range(3):
             rejoinMethod = self.setdat["rejoin_method"]
             browserLink = "https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129"
@@ -479,14 +486,10 @@ class macro:
             #wait for bss to load
             #if sprinkler image is found, bss is loaded
             #max 60s of waiting
-            time.sleep(10)
-            appManager.openApp("roblox")
             sprinklerImg = self.adjustImage("./images/menu", "sprinkler")
             loadStartTime = time.time()
-            '''
             while not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.7) and time.time() - loadStartTime < 60:
                 pass
-            '''
             #run fullscreen check
             if self.isFullScreen(): #check if roblox can be found in menu bar
                 self.logger.webhook("","Roblox is already in fullscreen, not activating fullscreen", "dark brown")
@@ -519,9 +522,8 @@ class macro:
                     self.setdat["rejoin_method"] = "new tab"
                     continue
             #find hive
-            appManager.openApp("Roblox")
             time.sleep(2)
-            self.keyboard.releaseMovement()
+            mouse.click()
             self.keyboard.press("space")
             self.keyboard.walk("w",5+(i*0.5),0)
             self.keyboard.walk("s",0.3,0)
@@ -537,8 +539,8 @@ class macro:
 
             def findHive():
                 self.keyboard.walk("a",0.4)
-                time.sleep(0.15)
-                if self.isBesideE(["claim", "hive"]):
+                #$time.sleep(0.15)
+                if self.isBesideEImage("claimhive"):
                     self.keyboard.press("e")
                     return True
                 return False
@@ -553,7 +555,7 @@ class macro:
                 self.logger.webhook("",f'Hive is {hiveNumber} already claimed, finding new hive','dark brown', "screen")
                 #walk closer to the hives so the player wont walk up the ramp
                 self.keyboard.walk("w",0.3,0)
-                self.keyboard.walk("d",0.9*(hiveNumber)+1,0)
+                self.keyboard.walk("d",0.9*(hiveNumber)+2,0)
                 self.keyboard.walk("s",0.3,0)
                 time.sleep(0.5)
                 for j in range(40):
@@ -566,7 +568,7 @@ class macro:
             #after hive is claimed, convert
             if rejoinSuccess:
                 time.sleep(1)
-                self.convert(ebuttonDetect=True)
+                self.convert()
                 #no need to reset
                 self.canDetectNight = True
                 return
@@ -699,7 +701,7 @@ class macro:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
             #check backpack
-            if bpc(self.ww, self.newUI, self.display_type) >= fieldSetting["backpack"]:
+            if bpc(self.mw, self.newUI) >= fieldSetting["backpack"]:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Backpack - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
 
@@ -732,11 +734,18 @@ class macro:
             self.runPath(f"field_to_hive/{field}")
             #find hive and convert
             self.keyboard.walk("a", (self.setdat["hive_number"]-1)*0.9)
-            for _ in range(30):
-                self.keyboard.walk("a",0.2)
-                time.sleep(0.2) #add a delay so that the E can popup
+            self.keyboard.keyDown("a")
+            st = time.time()
+            while time.time()-st < 0.2*20:
+                if self.isBesideEImage("makehoney"):
+                    break
+            self.keyboard.keyUp("a")
+            #in case we overwalked
+            for _ in range(4):
                 if self.convert():
                     break
+                self.keyboard.walk("d",0.2)
+                time.sleep(0.2) #add a delay so that the E can popup
             else:
                 self.logger.webhook("","Can't find hive, resetting", "dark brown", "screen")
                 self.reset()

@@ -7,6 +7,7 @@ import pyautogui as pag
 from modules.misc.appManager import openApp
 from modules.misc.imageManipulation import adjustImage
 from modules.screen.imageSearch import locateTransparentImageOnScreen
+from modules.submacros.backpack import bpc
 import time
 mw, mh = pag.size()
 
@@ -21,6 +22,4 @@ def mssScreenshot(x,y,w,h, save = False):
 openApp("Roblox")
 time.sleep(2)
 st = time.time()
-template = adjustImage("./images/menu","makehoney","built-in")
-res = locateTransparentImageOnScreen(template, mw//2-200,0,400,mh//8, 0.75)
-print(res)
+bpc(mw, False)
