@@ -13,6 +13,7 @@ def adjustImage(folder, imageName, display_type):
     for x in images:
         #images are named in the format itemname-width
         #width is the width of the monitor used to take the image
+        if not "-" in x: continue
         name, res = x.split(".")[0].split("-",1)
         if name == imageName:
             img = Image.open(f"{folder}/{x}")
