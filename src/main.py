@@ -133,7 +133,7 @@ if __name__ == "__main__":
         global stopThreads
         stopThreads = True
         print("stop")
-        print(sockets)
+        #print(sockets)
         macroProc.kill()
         keyboardModule.releaseMovement()
         mouse.mouseUp()
