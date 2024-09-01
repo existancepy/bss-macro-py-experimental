@@ -53,8 +53,12 @@ def macro(status, log, haste):
         if resetAfter: macro.reset(convert=convertAfter)
 
         #do priority tasks
+        if macro.night and setdat["stinger_hunt"]:
+            macro.stingerHunt()
+
         if setdat["mondo_buff"]:
             macro.collectMondoBuff()
+
         if setdat["rejoin_every"]:
             if macro.hasRespawned("rejoin_every", setdat["rejoin_every"]):
                 macro.rejoin("Rejoining (Scheduled)")

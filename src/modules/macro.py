@@ -73,6 +73,9 @@ mobRespawnTimes = {
 resetLower = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
 resetUpper = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
 
+#all fields that vic can appear in
+vicFields = ["pepper", "mountain top", "rose", "cactus", "spider", "clover"]
+
 class macro:
     def __init__(self, status, log, haste):
         self.status = status
@@ -412,6 +415,10 @@ class macro:
             time.sleep(0.2)
             self.keyboard.press('enter')
             time.sleep(2)
+            #close any menus if they exist
+            closeImg = self.adjustImage("./images/menu", "close") #sticker printer
+            if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
+                self.keyboard.press("e")
             self.canDetectNight = True
             emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
             st = time.time()
@@ -716,11 +723,14 @@ class macro:
             mouse.mouseUp()
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
             #check for gather interrupts
-            if self.died:
+            if self.night and self.setdat["stinger_hunt"]:
+                self.stingerHunt()
+                break
+            elif self.collectMondoBuff(gatherInterrupt=True):
+                break
+            elif self.died:
                 self.logger.webhook("","Player died", "dark brown","screen")
                 self.reset()
-                break
-            if self.collectMondoBuff(gatherInterrupt=True):
                 break
 
             #check if max time is reached
@@ -928,6 +938,7 @@ class macro:
         for i in range(3):
             self.logger.webhook("",f"Travelling: {displayName}","dark brown")
             self.cannon()
+            self.canDetectNight = False
             self.runPath(f"collect/{objective}")
             if objectiveData[1] is None:
                 reached = self.isBesideE(objectiveData[0])
@@ -940,7 +951,9 @@ class macro:
             self.logger.webhook("", f"Failed to reach {displayName}", "dark brown", "screen")
             if i != 2: self.reset(convert=False)
         
-        if not reached: return #player failed to reach objective
+        if not reached: 
+            self.canDetectNight = True
+            return #player failed to reach objective
         #player has reached, get cooldown info
         #check if on cooldown
         cooldownSeconds = objectiveData[2]
@@ -975,6 +988,7 @@ class macro:
             self.runPath(f"collect/claim/{objective}", fileMustExist=False)
             self.logger.webhook("", f"Collected: {displayName}", "bright green", "screen")
         #update the internal cooldown
+        self.canDetectNight = True
         self.saveTiming(objective)
         self.collectCooldowns[objective] = cooldownSeconds
 
@@ -1039,6 +1053,7 @@ class macro:
         self.logger.webhook("","{}: {} ({})".format("Travelling" if walkPath is None else "Walking", mobName.title(),field.title()),"dark brown")
         self.mobRunStatus = "attacking"
         attackThread = threading.Thread(target=self.mobRunAttackingBackground)
+        attackThread.daemon = True
         if walkPath is None:
             #wait for bees to respawn
             time.sleep(10)
@@ -1088,6 +1103,7 @@ class macro:
         self.logger.webhook("", "Looting: {}".format(mobName.title()), "bright green", "screen")
         #start another background thread to check for token link/time limit
         lootThread = threading.Thread(target=self.mobRunLootingBackground)
+        lootThread.daemon = True
         lootThread.start()
         def lootPattern(f, s):
             if lastSideKey == "a":
@@ -1126,6 +1142,80 @@ class macro:
         #check if there are paths for the macro to walk to other fields for mob runs
         #run a path in the field format
         self.runPath(f"mob_runs/{field}", fileMustExist=False)
+
+    def stingerHuntBackground(self):
+        #find vic
+        while not self.stopVic:
+            #detect which field the vic is in
+            if self.vicField is None:
+                for field in vicFields:
+                    if self.blueTextImageSearch(f"vic{field}"):
+                        self.vicField = field
+                        break
+            else:
+                if self.blueTextImageSearch("died"): self.died = True
+            
+            if self.blueTextImageSearch("vicdefeat"):
+                self.vicStatus = "defeated"
+        #time to fight vic
+    def stingerHunt(self):
+        self.vicStatus = None
+        self.vicField = None
+        self.stopVic = False
+        currField = None
+
+        stingerHuntThread = threading.Thread(target=self.stingerHuntBackground)
+        stingerHuntThread.daemon = True
+        stingerHuntThread.start()
+        #walk around and search for vic
+        for currField in vicFields:
+            #go to field
+            self.cannon()
+            self.logger.webhook("",f"Travelling to {currField} (vicious bee)","dark brown")
+            self.goToField(currField)
+            for _ in range(4): #rotate 180. The vic patterns are from v1
+                self.keyboard.press(".")
+            #walk in path
+            #between each line of code in the path, check if vic has been found
+            pathLines = open(f"../settings/paths/vic/find_vic/{currField}.py").read().split("\n")
+            for code in pathLines:
+                exec(code)
+                if self.vicField is not None: #vicious found
+                    self.logger.webhook("", "Detected vicious bee ({})".format(self.vicField.title()), "dark brown", "screen")
+                    break
+            if self.vicField is not None: break
+            self.reset(convert=False)
+        else: #unable to find vic
+            self.stopVic = True
+            return
+        
+        #kill vic
+        def goToVicField():
+            self.reset(convert=False)
+            self.logger.webhook("",f"Travelling to {self.vicField} (vicious bee)","dark brown")
+            self.goToField(currField)
+            for _ in range(4): #rotate 180, as the vic patterns are from v1
+                self.keyboard.press(".")
+
+        #first, check if vic is found in the same field as the player
+        if currField != self.vicField: goToVicField()
+        
+        #run the dodge pattern
+        #similar to the search pattern, between each line of code, check if vic has been defeated/player died
+        pathLines = open(f"../settings/paths/vic/kill_vic/{self.vicField}.py").read().split("\n")
+        loop = True
+        self.died = False
+        while loop:
+            for code in pathLines:
+                exec(code)
+                #run checks
+                if self.died or self.vicStatus is not None: break
+            if self.vicStatus == "defeated":
+                self.logger.webhook("","Vicious Bee Defeated","light green")
+            elif self.died:
+                goToVicField()
+
+        self.stopVic = False
 
     def start(self):
         #if roblox is not open, rejoin
