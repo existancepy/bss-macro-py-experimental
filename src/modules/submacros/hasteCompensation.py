@@ -74,7 +74,7 @@ def hasteCompensation(baseMoveSpeed, haste):
             if isRetina:
                 hasteEnds = currTime + (0 if hasteOut == 1 else 2)
             else:
-                hasteEnds = currTime + (4 if hasteOut == 1 else 7.5)
+                hasteEnds = currTime + (4 if hasteOut == 1 else 7)
         #there is a hasteEnd ongoing
         if currTime < hasteEnds:
             hasteOut = prevHasteEnds

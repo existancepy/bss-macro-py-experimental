@@ -4,7 +4,7 @@ import modules.misc.appManager as appManager
 import modules.misc.settingsManager as settingsManager
 import time
 import pyautogui as pag
-from modules.screen.screenshot import mssScreenshot
+from modules.screen.screenshot import mssScreenshot, mssScreenshotNP
 from modules.controls.keyboard import keyboard
 from modules.controls.sleep import sleep
 import modules.controls.mouse as mouse
@@ -101,26 +101,52 @@ class macro:
 
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
+    #TODO:
+    # MAYBE this doesnt actually need to be a thread? Check for night after each reset, when converting and when gathering
     def detectNight(self):
-        def isNight():
-            screen = pillowToCv2(mssScreenshot(0,0, self.mw, self.mh))
-            hsv = cv2.cvtColor(screen, cv2.COLOR_RGB2HSV)
+        def isNightBrightness(hsv):
             vValues = np.sum(hsv[:, :, 2])
-            area = screen.shape[0] * screen.shape[1]
+            area = hsv.shape[0] * hsv.shape[1]
             avg_brightness = vValues/area
             return 10 < avg_brightness < 110 #110 is the threshold for night. It must be > 10 to deal with cases where the player is inside a fruit or stuck against a wall 
 
+        #Detect the color of the floor
+        def isNightFloor(hsv):
+            #TODO: Add detection for 5 bee gate
+            #TODO: Move the ranges and kernel to global/self
+            # Create range (clover, 15 bee gate, 10 bee gate)
+            lower1 = np.array([80, 15, 114])
+            upper1 = np.array([100, 20, 130])
+            #Create range(starter fields, spawn, rose)
+            lower2 = np.array([99, 45, 102])
+            upper2 = np.array([105, 51, 112])
+
+            #might increase kernel size on retina
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(15,15))
+
+            mask1 = cv2.inRange(hsv, lower1, upper1)   
+            mask2 = cv2.inRange(hsv, lower2, upper2)   
+            #merge the masks
+            mask = cv2.bitwise_or(mask1, mask2)
+            mask = cv2.erode(mask, kernel, 2)
+
+            #if np.mean = 0, no color ranges are detected, is day, hence return false
+            return np.mean(mask)
+
         #return true if it detects night 3 times in a row (time apart)
-        def isNightInARow(cd=1):
-            #detect night
-            if not isNight(): return False
-            time.sleep(cd)
-            if not isNight(): return False
-            time.sleep(cd)
-            if not isNight(): return False
+        def isNight():
+            screen = mssScreenshotNP(0,0, self.mw, self.mh)
+            # Convert the image from BGRA to HSV
+            bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
+            hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+
+            #detect brightness
+            if not isNightBrightness(hsv): return False
+            #detect floor
+            if not isNightFloor(hsv): return False
             return True
         while True:
-            if self.canDetectNight and isNightInARow():
+            if self.canDetectNight and isNight():
                 self.night = True
                 self.logger.webhook("","Night detected","dark brown", "screen")
                 time.sleep(180) #wait for night to end
@@ -377,14 +403,16 @@ class macro:
             self.logger.webhook("", f"Resetting character, Attempt: {i+1}", "dark brown")
             #set mouse and execute hotkeys
             #mouse.teleport(self.mw/(self.xsm*4.11)+40,(self.mh/(9*self.ysm))+yOffset)
+            self.canDetectNight = False
             mouse.moveTo(370, 100+yOffset)
-            time.sleep(0.5)
+            time.sleep(0.1)
             self.keyboard.press('esc')
             time.sleep(0.1)
             self.keyboard.press('r')
             time.sleep(0.2)
             self.keyboard.press('enter')
             time.sleep(2)
+            self.canDetectNight = True
             emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
             st = time.time()
             #if the empty health bar disappears, player has respawned
@@ -736,11 +764,13 @@ class macro:
             self.keyboard.walk("a", (self.setdat["hive_number"]-1)*0.9)
             self.keyboard.keyDown("a")
             st = time.time()
+            self.canDetectNight = True
             while time.time()-st < 0.2*20:
                 if self.isBesideEImage("makehoney"):
                     break
             self.keyboard.keyUp("a")
             #in case we overwalked
+            time.sleep(0.15)
             for _ in range(4):
                 if self.convert():
                     break
@@ -749,7 +779,6 @@ class macro:
             else:
                 self.logger.webhook("","Can't find hive, resetting", "dark brown", "screen")
                 self.reset()
-            self.canDetectNight = True
 
         if returnType == "reset":
             self.reset()
