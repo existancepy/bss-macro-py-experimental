@@ -1145,10 +1145,10 @@ class macro:
             #all are black
             if extrema == (0, 0):
                 pag.alert(text='It seems like you have not enabled roblox scaling. The macro will not work properly. The instructions to disable it can be found in #7-enable-roblox-scaling in the discord', title='Warning', button='OK')
-            #make sure game mode is a feature (macOS 14.0 and above)
+            #make sure game mode is a feature (macOS 14.0 and above and apple chips)
             macVersion, _, _ = platform.mac_ver()
             macVersion = float('.'.join(macVersion.split('.')[:2]))
-            if macVersion >= 14:
+            if macVersion >= 14 and platform.processor() == "arm":
                 time.sleep(1.5)
                 #make sure roblox is not fullscreen
                 self.toggleFullScreen()
