@@ -12,6 +12,12 @@ import numpy as np
 from modules.screen.screenshot import mssScreenshotNP
 import time
 
+def isNightBrightness(hsv):
+            vValues = np.sum(hsv[:, :, 2])
+            area = hsv.shape[0] * hsv.shape[1]
+            avg_brightness = vValues/area
+            print(avg_brightness)
+            return 10 < avg_brightness < 120 #110 is the threshold for night. It must be > 10 to deal with cases where the player is inside a fruit or stuck against a wall 
 
 def isNightFloor(hsv):
     #TODO: Add detection for 5 bee gate
@@ -38,14 +44,19 @@ def isNightFloor(hsv):
     cv2.imshow("mask",imS)
     cv2.waitKey(0)
 
+def isNight():
+    screen = cv2.imread("wherenight.png")
+    # Convert the image from BGRA to HSV
+    #bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
+    hsv = cv2.cvtColor(screen, cv2.COLOR_BGR2HSV)
 
-screen = mssScreenshotNP(0,0, 100, 100)
-# Convert the image from BGRA to HSV
-bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
-hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-# Convert the image from BGR to HLS color space
-#hsv = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
-print(isNightFloor(hsv))
+    #detect brightness
+    if not isNightBrightness(hsv): return False
+    #detect floor
+    if not isNightFloor(hsv): return False
+    return True
+
+print(isNight())
 
 
 

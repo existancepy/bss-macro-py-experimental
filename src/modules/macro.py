@@ -107,11 +107,13 @@ class macro:
     #TODO:
     # MAYBE this doesnt actually need to be a thread? Check for night after each reset, when converting and when gathering
     def detectNight(self):
+        #detects the average brightness of the screen. This isn't very reliable since things like lights can mess it up
+        #the threshold isnt accurate
         def isNightBrightness(hsv):
             vValues = np.sum(hsv[:, :, 2])
             area = hsv.shape[0] * hsv.shape[1]
             avg_brightness = vValues/area
-            return 10 < avg_brightness < 110 #110 is the threshold for night. It must be > 10 to deal with cases where the player is inside a fruit or stuck against a wall 
+            return 10 < avg_brightness < 120 #threshold for night. It must be > 10 to deal with cases where the player is inside a fruit or stuck against a wall 
 
         #Detect the color of the floor
         def isNightFloor(hsv):
