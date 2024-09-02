@@ -92,7 +92,7 @@ class macro:
 
         #reset kernel
         if self.display_type == "retina":
-            self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(40,40)) #might need double kernel size for retina, but not sure
+            self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(30,30)) #might need double kernel size for retina, but not sure
         else:
             self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25,25))
         #field drift compensation class
@@ -154,7 +154,7 @@ class macro:
             if self.canDetectNight and isNight():
                 self.night = True
                 self.logger.webhook("","Night detected","dark brown", "screen")
-                time.sleep(180) #wait for night to end
+                time.sleep(300) #wait for night to end
                 self.night = False
 
     def isFullScreen(self):
@@ -482,7 +482,7 @@ class macro:
                     return
             self.keyboard.keyUp("d")
             self.logger.webhook("Notice", f"Could not find cannon", "dark brown", "screen")
-            self.reset()
+            self.reset(convert=False)
         else:
             self.logger.webhook("Notice", f"Failed to reach cannon too many times", "red")
     
@@ -1203,7 +1203,7 @@ class macro:
             except vicFoundException:
                 self.logger.webhook("",f"Vicious Bee detected ({self.vicField})", "dark brown") 
                 break
-
+            print(self.vicField)
             self.reset(convert=False)
         else: #unable to find vic
             self.stopVic = True

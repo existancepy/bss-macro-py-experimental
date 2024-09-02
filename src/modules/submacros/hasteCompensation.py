@@ -73,7 +73,7 @@ def hasteCompensation(baseMoveSpeed, haste):
             prevHasteEnds = prevHaste #value to set for the time compensation
             #decrease the countdown for retina (detection is more accurate)
             if isRetina:
-                hasteEnds = currTime + (0 if hasteOut == 1 else 2)
+                hasteEnds = currTime + (0 if hasteOut == 1 else 2.5)
             else:
                 hasteEnds = currTime + (4 if hasteOut == 1 else 7)
         #there is a hasteEnd ongoing
