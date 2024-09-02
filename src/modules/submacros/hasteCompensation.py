@@ -29,7 +29,7 @@ bearMorphs = []
 for i in range(5):
     bearMorphs.append(adjustBuffImage(f"./images/buffs/bearmorph{i+1}.png"))
 
-hastePlus = adjustBuffImage(f"./images/buff/haste+.png")         
+hastePlus = adjustBuffImage(f"./images/buffs/haste+.png")         
 mw, mh = pag.size()                 
 prevHaste = 0         
 prevHaste368 = 0 #tracking the previous haste to accurately determine if the haste stack is 3,6 or 8

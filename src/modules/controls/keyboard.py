@@ -33,10 +33,10 @@ class keyboard:
 
     #like press, but with walkspeed and haste compensation
     def walk(self,k,t,applyHaste = True):
-        #print(self.haste.value)
+        print(self.haste.value)
         if applyHaste:
             #move at 0.1s increments to adjust to haste mid-movement
-            for _ in range(t//0.1):
+            for _ in range(int(t/0.1)):
                 self.press(k,0.1*28/self.haste.value)
         else:
             self.press(k, t*28/self.ws)

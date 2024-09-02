@@ -44,6 +44,7 @@ def macro(status, log, haste):
     regularMobData["werewolf"] = ["pumpkin"]
     macro.start()
     setdat = macro.setdat
+
     #function to run a task
     #makes it easy to do any checks after a task is complete (like stinger hunt, rejoin every, etc)
     def runTask(func = None, args = (), resetAfter = True, convertAfter = True):

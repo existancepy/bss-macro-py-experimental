@@ -389,6 +389,9 @@ class macro:
         self.logger.webhook("", "Converting", "brown", "screen")
         while not self.isBesideE(["pollen", "flower", "field"]): 
             mouse.click()
+            if self.night and self.setdat["stinger_hunt"]:
+                self.stingerHunt()
+                return
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
         wait = self.setdat["convert_wait"]
@@ -419,7 +422,6 @@ class macro:
             closeImg = self.adjustImage("./images/menu", "close") #sticker printer
             if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
                 self.keyboard.press("e")
-            self.canDetectNight = True
             emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
             st = time.time()
             #if the empty health bar disappears, player has respawned
@@ -428,6 +430,7 @@ class macro:
                 if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
                     time.sleep(0.5)
                     break
+            self.canDetectNight = True
             #detect if player at hive. Spin a max of 4 times
             for _ in range(4):
                 screen = pillowToCv2(mssScreenshot(self.mw//2-40, self.mh-30, self.mw//2+40, 30))
@@ -1145,19 +1148,25 @@ class macro:
 
     def stingerHuntBackground(self):
         #find vic
+        #TODO: replace with vicFields after all vic screenshots are taken
+        v = ["pepper", "rose", "mountain top", "cactus", "clover"]
         while not self.stopVic:
             #detect which field the vic is in
             if self.vicField is None:
-                for field in vicFields:
+                for field in v:
                     if self.blueTextImageSearch(f"vic{field}"):
                         self.vicField = field
                         break
+                else:
+                    if self.blueTextImageSearch(f"foundvic"):
+                        mssScreenshot(self.mw*3/4, self.mh*2/3, self.mw//4,self.mh//3, save=True)
+                        self.vicField = "spider"
             else:
                 if self.blueTextImageSearch("died"): self.died = True
             
             if self.blueTextImageSearch("vicdefeat"):
                 self.vicStatus = "defeated"
-        #time to fight vic
+                
     def stingerHunt(self):
         self.vicStatus = None
         self.vicField = None
@@ -1167,26 +1176,36 @@ class macro:
         stingerHuntThread = threading.Thread(target=self.stingerHuntBackground)
         stingerHuntThread.daemon = True
         stingerHuntThread.start()
-        #walk around and search for vic
+        class vicFoundException(Exception):
+            pass
         for currField in vicFields:
             #go to field
             self.cannon()
             self.logger.webhook("",f"Travelling to {currField} (vicious bee)","dark brown")
             self.goToField(currField)
+
             for _ in range(4): #rotate 180. The vic patterns are from v1
                 self.keyboard.press(".")
+            
+            #since we can't use break/return in an exec statement, use exceptions to terminate it early
             #walk in path
-            #between each line of code in the path, check if vic has been found
+            #between each line of movement in the path, check if vic has been found
             pathLines = open(f"../settings/paths/vic/find_vic/{currField}.py").read().split("\n")
+            pathCode = ""
             for code in pathLines:
-                exec(code)
-                if self.vicField is not None: #vicious found
-                    self.logger.webhook("", "Detected vicious bee ({})".format(self.vicField.title()), "dark brown", "screen")
-                    break
-            if self.vicField is not None: break
+                pathCode += f"{code}\n"
+                if "self.keyboard.walk" in code or "sleep" in code:
+                    pathCode += "if self.vicField is not None: raise vicFoundException\n"
+            try:
+                exec(pathCode)
+            except vicFoundException:
+                self.logger.webhook("",f"Vicious Bee detected ({self.vicField})", "dark brown") 
+                break
+
             self.reset(convert=False)
         else: #unable to find vic
             self.stopVic = True
+            stingerHuntThread.join()
             return
         
         #kill vic
@@ -1212,10 +1231,14 @@ class macro:
                 if self.died or self.vicStatus is not None: break
             if self.vicStatus == "defeated":
                 self.logger.webhook("","Vicious Bee Defeated","light green")
+                loop = False
             elif self.died:
+                self.logger.webhook("","Player Died","dark brown")
                 goToVicField()
+                self.died = False
 
-        self.stopVic = False
+        self.stopVic = True
+        stingerHuntThread.join()
 
     def start(self):
         #if roblox is not open, rejoin
