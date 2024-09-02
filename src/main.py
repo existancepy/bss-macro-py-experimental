@@ -44,7 +44,6 @@ def macro(status, log, haste):
     regularMobData["werewolf"] = ["pumpkin"]
     macro.start()
     setdat = macro.setdat
-
     #function to run a task
     #makes it easy to do any checks after a task is complete (like stinger hunt, rejoin every, etc)
     def runTask(func = None, args = (), resetAfter = True, convertAfter = True):
@@ -56,10 +55,8 @@ def macro(status, log, haste):
         #do priority tasks
         if macro.night and setdat["stinger_hunt"]:
             macro.stingerHunt()
-
         if setdat["mondo_buff"]:
             macro.collectMondoBuff()
-
         if setdat["rejoin_every"]:
             if macro.hasRespawned("rejoin_every", setdat["rejoin_every"]):
                 macro.rejoin("Rejoining (Scheduled)")

@@ -1,7 +1,7 @@
 
-self.keyboard.press(",")
-self.keyboard.press(",")
-self.keyboard.press(",")
+self.keyboard.slowPress(",")
+self.keyboard.slowPress(",")
+self.keyboard.slowPress(",")
 self.keyboard.slowPress("e")
 sleep(0.3)
 self.keyboard.keyDown("w")

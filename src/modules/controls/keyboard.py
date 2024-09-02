@@ -33,7 +33,7 @@ class keyboard:
 
     #like press, but with walkspeed and haste compensation
     def walk(self,k,t,applyHaste = True):
-        print(self.haste.value)
+        #print(self.haste.value)
         if applyHaste:
             self.press(k,t*28/self.haste.value)
         else:

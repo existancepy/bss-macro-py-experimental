@@ -92,7 +92,7 @@ class macro:
 
         #reset kernel
         if self.display_type == "retina":
-            self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(30,30)) #might need double kernel size for retina, but not sure
+            self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(35,35)) #might need double kernel size for retina, but not sure
         else:
             self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25,25))
         #field drift compensation class
@@ -137,6 +137,20 @@ class macro:
 
             #if np.mean = 0, no color ranges are detected, is day, hence return false
             return np.mean(mask)
+        
+        def isNightSky(bgr):
+            y = 30
+            if self.display_type == "retina": y*=2
+            #crop the image to only the area above buff
+            bgr = bgr[0:y, 0:int(self.mw/1.8)]
+            w,h = bgr.shape[:2]
+            #check if a 15x15 area that is entirely black
+            for x in range(w-15):
+                for y in range(h-15):
+                    area = bgr[x:x+15, y:y+15]
+                    if np.all(area == [0, 0, 0]):
+                        return True
+            return False
 
         #return true if it detects night 3 times in a row (time apart)
         def isNight():
@@ -149,7 +163,10 @@ class macro:
             if not isNightBrightness(hsv): return False
             #detect floor
             if not isNightFloor(hsv): return False
+            #detect night sky
+            if not isNightSky(bgr): return False
             return True
+        
         while True:
             if self.canDetectNight and isNight():
                 self.night = True
@@ -389,12 +406,15 @@ class macro:
         st = time.time()
         time.sleep(2)
         self.logger.webhook("", "Converting", "brown", "screen")
+        if self.setdat["stinger_hunt"]: self.keyboard.press(",")
         while not self.isBesideE(["pollen", "flower", "field"]): 
             mouse.click()
             if self.night and self.setdat["stinger_hunt"]:
+                if self.setdat["stinger_hunt"]: self.keyboard.press(".")
                 self.stingerHunt()
                 return
         #deal with the extra delay
+        if self.setdat["stinger_hunt"]: self.keyboard.press(".")
         self.logger.webhook("", "Finished converting", "brown")
         wait = self.setdat["convert_wait"]
         if (wait):
@@ -412,6 +432,12 @@ class macro:
             #set mouse and execute hotkeys
             #mouse.teleport(self.mw/(self.xsm*4.11)+40,(self.mh/(9*self.ysm))+yOffset)
             self.canDetectNight = False
+
+            #close any menus if they exist
+            closeImg = self.adjustImage("./images/menu", "close") #sticker printer
+            if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
+                self.keyboard.press("e")
+
             mouse.moveTo(370, 100+yOffset)
             time.sleep(0.1)
             self.keyboard.press('esc')
@@ -419,15 +445,14 @@ class macro:
             self.keyboard.press('r')
             time.sleep(0.2)
             self.keyboard.press('enter')
-            time.sleep(2)
-            #close any menus if they exist
-            closeImg = self.adjustImage("./images/menu", "close") #sticker printer
-            if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
-                self.keyboard.press("e")
+
             emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
             st = time.time()
+            #wait for empty health bar to appear
+            while time.time() - st < 3 or not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7): pass
             #if the empty health bar disappears, player has respawned
             #max 8s in case player does not respawn
+            st = time.time()
             while time.time() - st < 7:
                 if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
                     time.sleep(0.5)
@@ -943,7 +968,6 @@ class macro:
         for i in range(3):
             self.logger.webhook("",f"Travelling: {displayName}","dark brown")
             self.cannon()
-            self.canDetectNight = False
             self.runPath(f"collect/{objective}")
             if objectiveData[1] is None:
                 reached = self.isBesideE(objectiveData[0])
@@ -956,9 +980,7 @@ class macro:
             self.logger.webhook("", f"Failed to reach {displayName}", "dark brown", "screen")
             if i != 2: self.reset(convert=False)
         
-        if not reached: 
-            self.canDetectNight = True
-            return #player failed to reach objective
+        if not reached: return #player failed to reach objective
         #player has reached, get cooldown info
         #check if on cooldown
         cooldownSeconds = objectiveData[2]
@@ -993,7 +1015,6 @@ class macro:
             self.runPath(f"collect/claim/{objective}", fileMustExist=False)
             self.logger.webhook("", f"Collected: {displayName}", "bright green", "screen")
         #update the internal cooldown
-        self.canDetectNight = True
         self.saveTiming(objective)
         self.collectCooldowns[objective] = cooldownSeconds
 
@@ -1162,7 +1183,7 @@ class macro:
                 else:
                     if self.blueTextImageSearch(f"foundvic"):
                         mssScreenshot(self.mw*3/4, self.mh*2/3, self.mw//4,self.mh//3, save=True)
-                        self.vicField = "spider"
+                        #self.vicField = "spider"
             else:
                 if self.blueTextImageSearch("died"): self.died = True
             
@@ -1226,6 +1247,7 @@ class macro:
         pathLines = open(f"../settings/paths/vic/kill_vic/{self.vicField}.py").read().split("\n")
         loop = True
         self.died = False
+        st = time.time() 
         while loop:
             for code in pathLines:
                 exec(code)
@@ -1233,12 +1255,14 @@ class macro:
                 if self.died or self.vicStatus is not None: break
             if self.vicStatus == "defeated":
                 self.logger.webhook("","Vicious Bee Defeated","light green")
-                loop = False
+                break
             elif self.died:
                 self.logger.webhook("","Player Died","dark brown")
                 goToVicField()
                 self.died = False
-
+            elif time.time()-st > 180: #max 3 mins to kill vic
+                self.logger.webhook("","Took too long to kill Vicious Bee","red", "screen")
+                break
         self.stopVic = True
         stingerHuntThread.join()
 
