@@ -171,7 +171,7 @@ class macro:
             if self.canDetectNight and isNight():
                 self.night = True
                 self.logger.webhook("","Night detected","dark brown", "screen")
-                time.sleep(300) #wait for night to end
+                time.sleep(200) #wait for night to end
                 self.night = False
 
     def isFullScreen(self):
@@ -754,6 +754,8 @@ class macro:
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
             #check for gather interrupts
             if self.night and self.setdat["stinger_hunt"]:
+                self.logger.webhook("Gathering: interrupted","Mondo Buff","dark brown")
+                self.reset()
                 self.stingerHunt()
                 break
             elif self.collectMondoBuff(gatherInterrupt=True):
@@ -1171,19 +1173,13 @@ class macro:
 
     def stingerHuntBackground(self):
         #find vic
-        #TODO: replace with vicFields after all vic screenshots are taken
-        v = ["pepper", "rose", "mountain top", "cactus", "clover"]
         while not self.stopVic:
             #detect which field the vic is in
             if self.vicField is None:
-                for field in v:
+                for field in vicFields:
                     if self.blueTextImageSearch(f"vic{field}"):
                         self.vicField = field
                         break
-                else:
-                    if self.blueTextImageSearch(f"foundvic"):
-                        mssScreenshot(self.mw*3/4, self.mh*2/3, self.mw//4,self.mh//3, save=True)
-                        #self.vicField = "spider"
             else:
                 if self.blueTextImageSearch("died"): self.died = True
             
@@ -1229,6 +1225,7 @@ class macro:
         else: #unable to find vic
             self.stopVic = True
             stingerHuntThread.join()
+            self.reset()
             return
         
         #kill vic
@@ -1265,6 +1262,7 @@ class macro:
                 break
         self.stopVic = True
         stingerHuntThread.join()
+        self.reset()
 
     def start(self):
         #if roblox is not open, rejoin
