@@ -19,7 +19,7 @@ def adjustImage(folder, imageName, display_type):
             img = Image.open(f"{folder}/{x}")
             break
     else:
-        raise FileNotFoundError(f"Could not find the image named {x} in {folder}")
+        raise FileNotFoundError(f"Could not find the image named {imageName} in {folder}")
     #get original size of image
     width, height = img.size
     #calculate the scaling value 

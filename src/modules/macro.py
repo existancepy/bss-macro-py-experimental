@@ -753,10 +753,10 @@ class macro:
             mouse.mouseUp()
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
             #check for gather interrupts
-            if self.night and self.setdat["stinger_hunt"]:
-                self.logger.webhook("Gathering: interrupted","Mondo Buff","dark brown")
-                self.reset()
-                self.stingerHunt()
+            if self.night and self.setdat["stinger_hunt"]: 
+                #rely on task function in main to execute the stinger hunt
+                self.logger.webhook("Gathering: interrupted","Stinger Hunt","dark brown")
+                self.reset(convert=False)
                 break
             elif self.collectMondoBuff(gatherInterrupt=True):
                 break
@@ -1015,6 +1015,7 @@ class macro:
                 self.keyboard.press("e")
             #run the claim path (if it exists)
             self.runPath(f"collect/claim/{objective}", fileMustExist=False)
+            time.sleep(0.1)
             self.logger.webhook("", f"Collected: {displayName}", "bright green", "screen")
         #update the internal cooldown
         self.saveTiming(objective)
@@ -1225,7 +1226,7 @@ class macro:
         else: #unable to find vic
             self.stopVic = True
             stingerHuntThread.join()
-            self.reset()
+            self.convert()
             return
         
         #kill vic
@@ -1341,8 +1342,11 @@ class macro:
         else:
             self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red", "screen")
             self.newUI = False   
-        nightDetectThread = threading.Thread(target=self.detectNight)
-        nightDetectThread.daemon = True
-        nightDetectThread.start()
+        
+        #enable night detection
+        if self.setdat["stinger_hunt"]:
+            nightDetectThread = threading.Thread(target=self.detectNight)
+            nightDetectThread.daemon = True
+            nightDetectThread.start()
         self.reset(convert=True)
         self.saveTiming("rejoin_every")
