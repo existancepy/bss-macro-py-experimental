@@ -878,6 +878,17 @@ class macro:
         elif returnType == "walk":
             walk_to_hive()
 
+    #returns the coordinates of the keep old text
+    def keepOldCheck(self):
+        region = (self.ww/3.15,self.wh/2.15,self.ww/2.7,self.wh/4.2)
+        res = ocr.customOCR(*region,0)
+        multi = 1
+        if self.display_type == "retina": multi = 2
+        for i in res:
+            if "keep" in i[1][0].lower() and "o" in i[1][0].lower():
+                return ((i[0][0][0]+region[0])//multi, (i[0][0][1]+region[1])//multi)
+        
+
     def antChallenge(self):
         self.logger.webhook("","Travelling: Ant Challenge","dark brown")
         self.cannon()
@@ -896,23 +907,17 @@ class macro:
             self.keyboard.walk("s",1.5)
             self.keyboard.walk("w",0.15)
             self.keyboard.walk("d",0.3)
-            region = (self.ww/3.15,self.wh/2.15,self.ww/2.7,self.wh/4.2)
-            multi = 1
-            if self.display_type == "retina":
-                multi = 2
             mouse.mouseDown()
-            breakLoop = False
-            while not breakLoop:
-                res = ocr.customOCR(*region,0)
-                for i in res:
-                    if "keep" in i[1][0].lower() and "o" in i[1][0].lower():
-                        mouse.mouseUp()
-                        self.logger.webhook("","Ant Challenge Complete","bright green", "screen")
-                        time.sleep(1.5)
-                        mouse.moveTo((i[0][0][0]+region[0])//multi, (i[0][0][1]+region[1])//multi)
-                        mouse.click()
-                        breakLoop = True
-                        break
+            while True:
+                keepOld = self.keepOldCheck()
+                if keepOld is not None:
+                    mouse.mouseUp()
+                    self.logger.webhook("","Ant Challenge Complete","bright green", "screen")
+                    time.sleep(1.5)
+                    mouse.moveTo(*keepOld)
+                    mouse.click()
+                    breakLoop = True
+                    break
             return
         self.logger.webhook("", "Cant start ant challenge", "red", "screen")
 
@@ -1307,6 +1312,45 @@ class macro:
         stingerHuntThread.join()
         self.reset()
 
+    def stumpSnail(self):
+        self.logger.webhook("","Travelling: Stump Snail", "dark brown")
+        self.goToField("stump")
+        self.placeSprinkler()
+        while True:
+            mouse.click()
+            keepOldData = self.keepOldCheck()
+            if keepOldData is not None:
+                mouse.mouseUp()
+                break
+        #handle the other stump snail
+        self.logger.webhook("","Stump Snail Killed","bright green", "screen")
+        def keepOld():
+            time.sleep(0.5)
+            mouse.moveTo(*keepOldData)
+            mouse.click()
+
+        def replace():
+            replaceImg = self.adjustImage("./images/menu", "replace")
+            res = locateImageOnScreen(replaceImg, self.mw/3.15,self.mh/2.15,self.mw/2.4,self.mh/4.2, 0.7)
+            if res is not None:
+                mouse.moveTo(*res[1])
+                mouse.click()
+        amulet = self.setdat["stump_snail_amulet"]
+        if amulet == "keep":
+            keepOld()
+        elif amulet == "replace":
+            replace()
+        elif amulet == "stop":
+            while self.keepOldCheck(): pass
+        elif amulet == "wait for command":
+            self.status.value = "amulet_wait"
+            #wait for user to send command to bot
+            while self.status.value == "amulet_wait": pass
+            if self.status.value == "amulet_keep":
+                keepOld()
+            elif self.status.value == "amulet_replace":
+                replace()
+
     def start(self):
         #if roblox is not open, rejoin
         if not appManager.openApp("roblox"):
@@ -1329,6 +1373,7 @@ class macro:
             macVersion, _, _ = platform.mac_ver()
             macVersion = float('.'.join(macVersion.split('.')[:2]))
             if macVersion >= 14 and platform.processor() == "arm":
+                self.logger.webhook("","Disabling game mode","dark brown")
                 time.sleep(1.5)
                 #make sure roblox is not fullscreen
                 self.toggleFullScreen()

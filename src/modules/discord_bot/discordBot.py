@@ -40,6 +40,11 @@ def discordBot(token, run):
     async def rejoin(interaction: discord.Interaction):
         run.value = 4
         await interaction.response.send_message("Macro is rejoining")
+
+    @bot.tree.command(name = "rejoin", description = "make the macro rejoin the game.")
+    async def rejoin(interaction: discord.Interaction):
+        run.value = 4
+        await interaction.response.send_message("Macro is rejoining")
         
     #start bot
     bot.run(token)

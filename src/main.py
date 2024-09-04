@@ -29,6 +29,7 @@ def disconnectCheck(run, status, display_type):
 
 #controller for the macro
 def macro(status, log, haste):
+    import pyautogui as pag
     import modules.macro as macroModule
     macro = macroModule.macro(status, log, haste)
     #invert the regularMobsInFields dict
@@ -42,8 +43,12 @@ def macro(status, log, haste):
                 regularMobData[x] = [k]
     #Limit werewolf to just pumpkin 
     regularMobData["werewolf"] = ["pumpkin"]
-    macro.start()
+    
     setdat = macro.setdat
+    if "share" in setdat["private_server_link"] and setdat["rejoin_method"] == "deeplink":
+                pag.alert(text="You entered a 'share?code' link!\n\nTo fix this:\n1. Paste the link in your browser\n2. Wait for roblox to load in\n3. Copy the link from the top of your browser.  It should now be a 'privateServerLinkCode' link", title='Unsupported private server link', button='OK')
+                return
+    macro.start()
     #function to run a task
     #makes it easy to do any checks after a task is complete (like stinger hunt, rejoin every, etc)
     def runTask(func = None, args = (), resetAfter = True, convertAfter = True):
@@ -86,6 +91,10 @@ def macro(status, log, haste):
         #ant challenge
         if setdat["ant_challenge"]: 
             runTask(macro.antChallenge)
+        
+        #stump snail
+        if setdat["stump_snail"]:
+            runTask(macro.stumpSnail)
         #gather
         for i in range(3):
             if setdat["fields_enabled"][i]:
@@ -157,8 +166,8 @@ if __name__ == "__main__":
             colorProfile = colorProfile.strip()
             if colorProfile == "missing value": colorProfile = "Color LCD"
             if not "sRGB IEC61966" in colorProfile:
-                pag.alert(text = f'Your current color profile is {colorProfile}.The recommended one is sRGB IEC61966-2.1.\
-                \n(This is optional, but some features like backpack detection wont work)\
+                pag.alert(text = f'Your current color profile is {colorProfile}.The required one is sRGB IEC61966-2.1.\
+                \nThis is necessary for the macro to work\
                 \nTVisit step 6 of the macro installation guide in the discord for instructions"')
         except:
             pass
