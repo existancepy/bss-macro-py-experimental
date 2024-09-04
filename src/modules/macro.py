@@ -76,6 +76,32 @@ resetUpper = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
 #all fields that vic can appear in
 vicFields = ["pepper", "mountain top", "rose", "cactus", "spider", "clover"]
 
+nightFloorDetectThresholds = [
+    [np.array([99, 45, 102]), np.array([105, 51, 112])], #starter fields, spawn
+    [np.array([80, 15, 114]), np.array([100, 20, 130])], #clover, 15 bee gate, 10 bee gate, 35 bee gate
+    []
+]
+locationToNightFloorType = {
+    "spawn": 0,
+    "sunflower": 0,
+    "dandelion": 0,
+    "mushroom": 0,
+    "blue_flower": 0,
+    "clover": 1,
+    "strawberry": 2,
+    "spider": 2,
+    "bamboo": 2,
+    "pineapple": 1,
+    "stump": 1,
+    "cactus": 1,
+    "pumpkin": 1,
+    "pine_tree": 1,
+    "rose": 2,
+    "mountain top": 3,
+    "pepper": 1,
+    "coconut": 1
+}
+
 class macro:
     def __init__(self, status, log, haste):
         self.status = status
@@ -101,6 +127,7 @@ class macro:
         #night detection variables
         self.canDetectNight = True
         self.night = False
+        self.location = "spawn"
 
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
@@ -115,24 +142,16 @@ class macro:
             avg_brightness = vValues/area
             return 10 < avg_brightness < 120 #threshold for night. It must be > 10 to deal with cases where the player is inside a fruit or stuck against a wall 
 
-        #Detect the color of the floor
-        def isNightFloor(hsv):
-            #TODO: Add detection for 5 bee gate
-            #TODO: Move the ranges and kernel to global/self
-            # Create range (clover, 15 bee gate, 10 bee gate)
-            lower1 = np.array([80, 15, 114])
-            upper1 = np.array([100, 20, 130])
-            #Create range(starter fields, spawn, rose)
-            lower2 = np.array([99, 45, 102])
-            upper2 = np.array([105, 51, 112])
+        #Detect the color of the floor at spawn
+        #Useful when resetting/converting
+        def isSpawnFloorNight(hsv):
+            lower = np.array([99, 45, 102])
+            upper = np.array([105, 51, 112])
 
             #might increase kernel size on retina
             kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(15,15))
 
-            mask1 = cv2.inRange(hsv, lower1, upper1)   
-            mask2 = cv2.inRange(hsv, lower2, upper2)   
-            #merge the masks
-            mask = cv2.bitwise_or(mask1, mask2)
+            mask = cv2.inRange(hsv, lower, upper)   
             mask = cv2.erode(mask, kernel, 2)
 
             #if np.mean = 0, no color ranges are detected, is day, hence return false
@@ -151,8 +170,30 @@ class macro:
                     if np.all(area == [0, 0, 0]):
                         return True
             return False
+        
+        #detect the color of the grass in fields
+        #useful when gathering
+        def isGrassNight(hsv):
+            def threshold(lower, upper):
+                kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(4,4))
+                mask = cv2.inRange(hsv, lower, upper)   
+                mask = cv2.erode(mask, kernel, 1)
+                return bool(np.mean(mask))
+            
+            def grassDay():
+                dayLower = np.array([63, 127, 140]) 
+                dayUpper = np.array([68, 165, 163])
+                return threshold(dayLower, dayUpper)
+            
+            def grassNight():
+                nightLower = np.array([65, 183, 51]) 
+                nightUpper = np.array([68, 204, 77])
+                return threshold(nightLower, nightUpper)
+            
+            if grassDay(): return False
+            if grassNight(): return True
+            return False
 
-        #return true if it detects night 3 times in a row (time apart)
         def isNight():
             screen = mssScreenshotNP(0,0, self.mw, self.mh)
             # Convert the image from BGRA to HSV
@@ -161,11 +202,9 @@ class macro:
 
             #detect brightness
             if not isNightBrightness(hsv): return False
-            #detect floor
-            if not isNightFloor(hsv): return False
-            #detect night sky
-            if not isNightSky(bgr): return False
-            return True
+            if self.location == "spawn":
+                return isSpawnFloorNight()
+            return isGrassNight()
         
         while True:
             if self.canDetectNight and isNight():
@@ -223,6 +262,7 @@ class macro:
             exec(open(pyPath).read())
     #run the path to go to a field
     def goToField(self, field):
+        self.location = field
         self.runPath(f"cannon_to_field/{field}")
 
     def isInOCR(self, name, includeList, excludeList):
@@ -398,6 +438,7 @@ class macro:
 
 
     def convert(self, bypass = False):
+        self.location = "spawn"
         if not bypass:
             #use ebutton detection, faster detection but more prone to false positives (like detecting trades)
             if not self.isBesideEImage("makehoney"): return False
@@ -458,6 +499,7 @@ class macro:
                     time.sleep(0.5)
                     break
             self.canDetectNight = True
+            self.location = "spawn"
             #detect if player at hive. Spin a max of 4 times
             for _ in range(4):
                 screen = pillowToCv2(mssScreenshot(self.mw//2-40, self.mh-30, self.mw//2+40, 30))
@@ -651,7 +693,6 @@ class macro:
             #death check
             st = time.time()
             if self.blueTextImageSearch("died"):
-                print("died")
                 self.died = True
             #mob respawn check
             self.setMobTimer(field)
@@ -1096,6 +1137,7 @@ class macro:
             self.canDetectNight = False
             exec(walkPath)
             self.canDetectNight = True
+        self.location = field
         self.logger.webhook("","Attacking: {} ({})".format(mobName.title(),field.title()),"dark brown")
         
         st = time.time()
@@ -1282,7 +1324,7 @@ class macro:
             extrema = topScreen.convert("L").getextrema()
             #all are black
             if extrema == (0, 0):
-                pag.alert(text='It seems like you have not enabled roblox scaling. The macro will not work properly. The instructions to disable it can be found in #7-enable-roblox-scaling in the discord', title='Warning', button='OK')
+                pag.alert(text='It seems like you have not enabled roblox scaling. The macro will not work properly.\n1. Close Roblox\n2. Go to finder -> applications -> right click roblox -> get info -> enable "scale to fit below built-in camera"', title='Warning', button='OK')
             #make sure game mode is a feature (macOS 14.0 and above and apple chips)
             macVersion, _, _ = platform.mac_ver()
             macVersion = float('.'.join(macVersion.split('.')[:2]))

@@ -113,6 +113,7 @@ if __name__ == "__main__":
     import modules.controls.mouse as mouse
     import modules.misc.settingsManager as settingsManager
     import modules.misc.appManager as appManager
+    from modules.discord_bot.discordBot import discordBot
     macroProc: typing.Optional[multiprocessing.Process] = None
     #set screen data
     screenData.setScreenData()
@@ -137,6 +138,7 @@ if __name__ == "__main__":
         print("stop")
         #print(sockets)
         macroProc.kill()
+        discordBotProc.kill()
         keyboardModule.releaseMovement()
         mouse.mouseUp()
         
@@ -175,10 +177,15 @@ if __name__ == "__main__":
             disconnectThread = Thread(target=disconnectCheck, args=(run, status, screenInfo["display_type"]))
             disconnectThread.daemon = True
             disconnectThread.start()
+            #haste compensation
             if setdat["haste_compensation"]:
                 hasteCompThread = Thread(target=hasteCompensationThread, args=(setdat["movespeed"],haste,))
                 hasteCompThread.daemon = True
                 hasteCompThread.start()
+            #discord bot
+            discordBotProc = multiprocessing.Process(target=discordBot, args=(setdat["discord_bot_token"], run))
+            if setdat["discord_bot"]:
+                discordBotProc.start()
             logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
             run.value = 2
             gui.toggleStartStop()

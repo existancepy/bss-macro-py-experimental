@@ -2,8 +2,9 @@ import mss
 from PIL import Image
 import mss.tools
 import time
+import pyautogui as pag
 import numpy as np
-
+mw, mh = pag.size()
 #returns an NP array, useful for cv2
 def mssScreenshotNP(x,y,w,h, save = False):
     with mss.mss() as sct:
@@ -14,7 +15,7 @@ def mssScreenshotNP(x,y,w,h, save = False):
         return sct_img
 
 
-def mssScreenshot(x,y,w,h, save = False):
+def mssScreenshot(x=0,y=0,w=mw,h=mh, save = False):
     with mss.mss() as sct:
         # The screen part to capture
         monitor = {"left": int(x), "top": int(y), "width": int(w), "height": int(h)}
