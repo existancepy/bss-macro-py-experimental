@@ -161,7 +161,7 @@ class macro:
             y = 30
             if self.display_type == "retina": y*=2
             #crop the image to only the area above buff
-            bgr = bgr[0:y, 0:int(self.mw/1.8)]
+            bgr = bgr[0:y, 0:int(self.mw)]
             w,h = bgr.shape[:2]
             #check if a 15x15 area that is entirely black
             for x in range(w-15):
@@ -203,8 +203,8 @@ class macro:
             #detect brightness
             if not isNightBrightness(hsv): return False
             if self.location == "spawn":
-                return isSpawnFloorNight()
-            return isGrassNight()
+                return isSpawnFloorNight(hsv)
+            return isGrassNight(hsv) and isNightSky(bgr)
         
         while True:
             if self.canDetectNight and isNight():

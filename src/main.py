@@ -138,7 +138,7 @@ if __name__ == "__main__":
         print("stop")
         #print(sockets)
         macroProc.kill()
-        discordBotProc.kill()
+        if discordBotProc.is_alive(): discordBotProc.kill()
         keyboardModule.releaseMovement()
         mouse.mouseUp()
         
