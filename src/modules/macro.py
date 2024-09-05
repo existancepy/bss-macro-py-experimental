@@ -1313,6 +1313,7 @@ class macro:
         self.reset()
 
     def stumpSnail(self):
+        self.cannon()
         self.logger.webhook("","Travelling: Stump Snail", "dark brown")
         self.goToField("stump")
         self.placeSprinkler()
@@ -1324,6 +1325,7 @@ class macro:
                 break
         #handle the other stump snail
         self.logger.webhook("","Stump Snail Killed","bright green", "screen")
+        self.saveTiming("stump_snail")
         def keepOld():
             time.sleep(0.5)
             mouse.moveTo(*keepOldData)

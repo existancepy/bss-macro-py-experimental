@@ -62,4 +62,5 @@ const killEmojis = {
     spider: "",
     mantis: "",
     ant_challenge: "🎯",
+    stump_snail: "🐌",
 }

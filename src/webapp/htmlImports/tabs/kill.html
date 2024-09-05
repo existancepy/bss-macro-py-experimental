@@ -134,7 +134,7 @@
                     desc: "Kill stump snail",
                     type: {
                             name: "checkbox",
-                            triggerFunction: "updateFieldEnable(this)"
+                            triggerFunction: saveProfileTriggerFunction
                         }
                 },
                 {
@@ -148,6 +148,19 @@
                             length: 12
                         }
                 },
+                
+            ])
+
+            buildStandardContainer(bossMobsParent, "Coconut Crab", "",[
+                {
+                    id: "coconut_crab",
+                    title: "Enable Task",
+                    desc: "Kill coconut crab",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                }
                 
             ])
         </script>
