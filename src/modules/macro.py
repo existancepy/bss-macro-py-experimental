@@ -117,7 +117,7 @@ class macro:
 
         #reset kernel
         if self.display_type == "retina":
-            self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(35,35)) #might need double kernel size for retina, but not sure
+            self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25,25)) #might need double kernel size for retina, but not sure
         else:
             self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25,25))
         #field drift compensation class
@@ -131,7 +131,7 @@ class macro:
         #all fields that vic can appear in
         vicFields = ["pepper", "mountain top", "rose", "cactus", "spider", "clover"]
         #filter it to only include fields the player has enabled
-        vicFields = [x for x in vicFields if self.setdat[f"stinger_{x}"]]
+        vicFields = [x for x in vicFields if self.setdat["stinger_{}".format(x.replace(" ","_"))]]
 
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
@@ -451,15 +451,12 @@ class macro:
         st = time.time()
         time.sleep(2)
         self.logger.webhook("", "Converting", "brown", "screen")
-        if self.setdat["stinger_hunt"]: self.keyboard.press(",")
         while not self.isBesideE(["pollen", "flower", "field"]): 
             mouse.click()
             if self.night and self.setdat["stinger_hunt"]:
-                if self.setdat["stinger_hunt"]: self.keyboard.press(".")
                 self.stingerHunt()
                 return
         #deal with the extra delay
-        if self.setdat["stinger_hunt"]: self.keyboard.press(".")
         self.logger.webhook("", "Finished converting", "brown")
         wait = self.setdat["convert_wait"]
         if (wait):
@@ -1360,6 +1357,7 @@ class macro:
 
     #sleep in ms, useful for implementing ahk code
     def msSleep(self, t):
+        if t <= 0: return
         time.sleep(t/1000)
 
     def coconutCrab(self):
@@ -1367,13 +1365,15 @@ class macro:
             self.cannon()
             self.logger.webhook("","Travelling: Coconut Crab","dark brown")
             self.goToField("coconut")
-            self.keyboard.walk("s", 1000)
+            for _ in range(4):
+                self.keyboard.press(".")
+            self.keyboard.walk("s", 1)
             if self.placeSprinkler():
                 break
         else:
             return
         
-        self.keyboard.walk("d", 1400)
+        self.keyboard.walk("d", 2)
         #attack crab, natro's pattern
         leftright_start = 500
         leftright_end = 19000
@@ -1386,23 +1386,25 @@ class macro:
             start_time = time.time()
             self.keyboard.tileWalk("w",4)
             t = time.time()
-            self.msSleep(leftright_start -(t-start_time)//10000)
-            for i in range(2):
+            self.msSleep(leftright_start -(t-start_time)*1000)
+            for i in range(1,3):
                 self.keyboard.tileWalk("w",1)
-                for j in range(moves):
+                for j in range(1,moves+1):
                     self.keyboard.tileWalk("a", 2)
                     t = time.time()
-                    self.msSleep(i* 2*move_delay*moves - 2*move_delay*moves-leftright_start +j* move_delay -(t-start_time)//10000)
+                    delay = i* 2*move_delay*moves - 2*move_delay*moves-leftright_start +j* move_delay - (t-start_time)*1000
+                    self.msSleep(delay)
+                    print(delay)
                 self.keyboard.tileWalk("s",1)
-                for j in range(moves):
+                for j in range(1,moves+1):
                     self.keyboard.tileWalk("d", 2)
                     t = time.time()
-                    self.msSleep(i* 2*move_delay*moves - 2*move_delay*moves-leftright_start +j* move_delay -(t-start_time)//10000)
+                    self.msSleep(i* 2*move_delay*moves - 2*move_delay*moves-leftright_start +j* move_delay - (t-start_time)*1000)
             t = time.time()
-            self.msSleep(leftright_end -(t-start_time)//10000)
+            self.msSleep(leftright_end -(t-start_time)*1000)
             self.keyboard.tileWalk("s", 6.5)
             t = time.time()
-            self.msSleep(cycle_end -(time-start_time)//10000)
+            self.msSleep(cycle_end -(t-start_time)*1000)
             
 
 

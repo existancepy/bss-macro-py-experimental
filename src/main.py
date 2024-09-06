@@ -92,7 +92,10 @@ def macro(status, log, haste):
         #ant challenge
         if setdat["ant_challenge"]: 
             runTask(macro.antChallenge)
-        
+
+        #coconut crab
+        if setdat["coconut_crab"] and macro.hasRespawned("coconut_crab", 36*60*60, applyMobRespawnBonus=True):
+            macro.coconutCrab()
         #stump snail
         if setdat["stump_snail"] and macro.hasRespawned("stump_snail", 96*60*60, applyMobRespawnBonus=True):
             runTask(macro.stumpSnail)
