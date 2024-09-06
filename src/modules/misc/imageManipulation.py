@@ -2,9 +2,13 @@ import numpy as np
 import cv2
 import os
 from PIL import Image
+import imagehash
 #accept a pillow image and return a cv2 one
 def pillowToCv2(img):
     return cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB)
+
+def pillowToHash(img):
+    return imagehash.average_hash(img)
 
 #resize the image based on the user's screen coordinates
 def adjustImage(folder, imageName, display_type):

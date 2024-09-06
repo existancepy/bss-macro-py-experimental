@@ -1,6 +1,7 @@
 import cv2
 from modules.screen.screenshot import mssScreenshot, mssScreenshotNP
 import numpy as np
+import imagehash
 
 def templateMatch(smallImg, bigImg):
     res = cv2.matchTemplate(bigImg, smallImg, cv2.TM_CCOEFF_NORMED)
@@ -23,3 +24,6 @@ def locateTransparentImageOnScreen(target, x,y,w,h, threshold = 0):
     _, max_val, _, max_loc = templateMatch(target, screen)
     if max_val < threshold: return None
     return (max_val, max_loc)
+
+def similarHashes(hash1, hash2, threshold):
+    return hash1-hash2 < threshold

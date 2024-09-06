@@ -18,13 +18,14 @@ import os
 import numpy as np
 import threading
 from modules.submacros.backpack import bpc
-from modules.screen.imageSearch import locateImageOnScreen, locateTransparentImageOnScreen
+from modules.screen.imageSearch import *
 import webbrowser
 from pynput.keyboard import Key, Controller
 import cv2
 from datetime import timedelta, datetime
-from modules.misc.imageManipulation import pillowToCv2, adjustImage
+from modules.misc.imageManipulation import *
 from PIL import Image
+from modules.misc import messageBox
 pynputKeyboard = Controller()
 #data for collectable objectives
 #[besideE text, movement key, max cooldowns]
@@ -1370,7 +1371,7 @@ class macro:
             extrema = topScreen.convert("L").getextrema()
             #all are black
             if extrema == (0, 0):
-                pag.alert(text='It seems like you have not enabled roblox scaling. The macro will not work properly.\n1. Close Roblox\n2. Go to finder -> applications -> right click roblox -> get info -> enable "scale to fit below built-in camera"', title='Warning', button='OK')
+                messageBox.msgBox(text='It seems like you have not enabled roblox scaling. The macro will not work properly.\n1. Close Roblox\n2. Go to finder -> applications -> right click roblox -> get info -> enable "scale to fit below built-in camera"', title='Roblox scaling')
             #make sure game mode is a feature (macOS 14.0 and above and apple chips)
             macVersion, _, _ = platform.mac_ver()
             macVersion = float('.'.join(macVersion.split('.')[:2]))
@@ -1421,6 +1422,7 @@ class macro:
             time.sleep(1)
 
         #detect new/old ui and set 
+        #also check for screen recording permission 
         if self.getTop(0):
             self.newUI = False
             self.logger.webhook("","Detected: Old Roblox UI","light blue")
@@ -1431,7 +1433,19 @@ class macro:
         else:
             self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red", "screen")
             self.newUI = False   
-        
+            messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Screen Recording Permission')
+
+        #check for accessibility
+        #this is done by taking 2 different screenshots
+        #if they are both the same, we assume that the keypress didnt go through and hence accessibility is not enabled
+        if sys.platform == "darwin":
+            img1 = pillowToHash(mssScreenshot())
+            self.keyboard.press(",") #don't have to rotate back, resetting will deal with it
+            time.sleep(0.1)
+            img2 = pillowToHash(mssScreenshot())
+            if similarHashes(img1, img2, 10):
+                messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Accessibility Permission')
+            
         #enable night detection
         if self.setdat["stinger_hunt"]:
             nightDetectThread = threading.Thread(target=self.detectNight)

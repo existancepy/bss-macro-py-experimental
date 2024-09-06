@@ -9,6 +9,7 @@ import time
 import sys
 import ast
 import subprocess
+from modules.misc import messageBox
 
 def hasteCompensationThread(baseSpeed, haste):
     from modules.submacros.hasteCompensation import hasteCompensation
@@ -46,7 +47,7 @@ def macro(status, log, haste):
     
     setdat = macro.setdat
     if "share" in setdat["private_server_link"] and setdat["rejoin_method"] == "deeplink":
-                pag.alert(text="You entered a 'share?code' link!\n\nTo fix this:\n1. Paste the link in your browser\n2. Wait for roblox to load in\n3. Copy the link from the top of your browser.  It should now be a 'privateServerLinkCode' link", title='Unsupported private server link', button='OK')
+                messageBox.msgBox(text="You entered a 'share?code' link!\n\nTo fix this:\n1. Paste the link in your browser\n2. Wait for roblox to load in\n3. Copy the link from the top of your browser.  It should now be a 'privateServerLinkCode' link", title='Unsupported private server link')
                 return
     macro.start()
     #function to run a task
@@ -166,9 +167,9 @@ if __name__ == "__main__":
             colorProfile = colorProfile.strip()
             if colorProfile == "missing value": colorProfile = "Color LCD"
             if not "sRGB IEC61966" in colorProfile:
-                pag.alert(text = f'Your current color profile is {colorProfile}.The required one is sRGB IEC61966-2.1.\
+                messageBox.msgBox(text = f"Your current color profile is {colorProfile}.The required one is sRGB IEC61966-2.1.\
                 \nThis is necessary for the macro to work\
-                \nTVisit step 6 of the macro installation guide in the discord for instructions"')
+                \nTVisit step 6 of the macro installation guide in the discord for instructions", title="Wrong Color Profile")
         except:
             pass
     while True:
