@@ -74,8 +74,6 @@ mobRespawnTimes = {
 resetLower = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
 resetUpper = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
 
-#all fields that vic can appear in
-vicFields = ["pepper", "mountain top", "rose", "cactus", "spider", "clover"]
 
 nightFloorDetectThresholds = [
     [np.array([99, 45, 102]), np.array([105, 51, 112])], #starter fields, spawn
@@ -129,6 +127,11 @@ class macro:
         self.canDetectNight = True
         self.night = False
         self.location = "spawn"
+
+        #all fields that vic can appear in
+        vicFields = ["pepper", "mountain top", "rose", "cactus", "spider", "clover"]
+        #filter it to only include fields the player has enabled
+        vicFields = [x for x in vicFields if self.setdat[f"stinger_{x}"]]
 
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
@@ -1013,6 +1016,7 @@ class macro:
         reached = None
         objectiveData = collectData[objective]
         displayName = objective.replace("_"," ").title()
+        self.location = "collect"
         #go to collect and check that player has reached
         for i in range(3):
             self.logger.webhook("",f"Travelling: {displayName}","dark brown")
@@ -1353,6 +1357,54 @@ class macro:
                 keepOld()
             elif self.status.value == "amulet_replace":
                 replace()
+
+    #sleep in ms, useful for implementing ahk code
+    def msSleep(self, t):
+        time.sleep(t/1000)
+
+    def coconutCrab(self):
+        for _ in range(2):
+            self.cannon()
+            self.logger.webhook("","Travelling: Coconut Crab","dark brown")
+            self.goToField("coconut")
+            self.keyboard.walk("s", 1000)
+            if self.placeSprinkler():
+                break
+        else:
+            return
+        
+        self.keyboard.walk("d", 1400)
+        #attack crab, natro's pattern
+        leftright_start = 500
+        leftright_end = 19000
+        cycle_end = 24000
+
+        #left-right movement
+        moves = 14
+        move_delay = 310
+        while True:
+            start_time = time.time()
+            self.keyboard.tileWalk("w",4)
+            t = time.time()
+            self.msSleep(leftright_start -(t-start_time)//10000)
+            for i in range(2):
+                self.keyboard.tileWalk("w",1)
+                for j in range(moves):
+                    self.keyboard.tileWalk("a", 2)
+                    t = time.time()
+                    self.msSleep(i* 2*move_delay*moves - 2*move_delay*moves-leftright_start +j* move_delay -(t-start_time)//10000)
+                self.keyboard.tileWalk("s",1)
+                for j in range(moves):
+                    self.keyboard.tileWalk("d", 2)
+                    t = time.time()
+                    self.msSleep(i* 2*move_delay*moves - 2*move_delay*moves-leftright_start +j* move_delay -(t-start_time)//10000)
+            t = time.time()
+            self.msSleep(leftright_end -(t-start_time)//10000)
+            self.keyboard.tileWalk("s", 6.5)
+            t = time.time()
+            self.msSleep(cycle_end -(time-start_time)//10000)
+            
+
 
     def start(self):
         #if roblox is not open, rejoin

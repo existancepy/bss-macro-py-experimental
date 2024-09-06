@@ -38,6 +38,7 @@ class keyboard:
             self.press(k,t*28/self.haste.value)
         else:
             self.press(k, t*28/self.ws)
+
     #like walk, but with multiple keys
     def multiWalk(self, keys, t):
         for k in keys:
@@ -47,14 +48,11 @@ class keyboard:
             pag.keyUp(k, _pause = False)
     #recreate natro's tile waiting function
     def tileWait(tiles,hasteCap=0):
-        try:
-            with open("haste.txt","r") as f:
-                ws = float(f.read())
-            f.close()
-        except:
-            settings = loadsettings.load()
-            ws = settings['walkspeed']
-        time.sleep((tiles/8.3)*28/ws)
+        time.sleep((tiles/8.3)*28/self.haste.value)
+    
+    def tileWalk(self, key, tiles):
+        self.press(key,(tiles/8.3)*28/self.haste.value)
+
     #release all movement keys (wasd, space)
     @staticmethod
     def releaseMovement():
