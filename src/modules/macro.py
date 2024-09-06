@@ -127,11 +127,10 @@ class macro:
         self.canDetectNight = True
         self.night = False
         self.location = "spawn"
-
         #all fields that vic can appear in
-        vicFields = ["pepper", "mountain top", "rose", "cactus", "spider", "clover"]
+        self.vicFields = ["pepper", "mountain top", "rose", "cactus", "spider", "clover"]
         #filter it to only include fields the player has enabled
-        vicFields = [x for x in vicFields if self.setdat["stinger_{}".format(x.replace(" ","_"))]]
+        self.vicFields = [x for x in self.vicFields if self.setdat["stinger_{}".format(x.replace(" ","_"))]]
 
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
@@ -1226,7 +1225,7 @@ class macro:
         while not self.stopVic:
             #detect which field the vic is in
             if self.vicField is None:
-                for field in vicFields:
+                for field in self.vicFields:
                     if self.blueTextImageSearch(f"vic{field}"):
                         self.vicField = field
                         break
@@ -1247,7 +1246,7 @@ class macro:
         stingerHuntThread.start()
         class vicFoundException(Exception):
             pass
-        for currField in vicFields:
+        for currField in self.vicFields:
             #go to field
             self.cannon()
             self.logger.webhook("",f"Travelling to {currField} (vicious bee)","dark brown")
@@ -1368,44 +1367,21 @@ class macro:
             for _ in range(4):
                 self.keyboard.press(".")
             self.keyboard.walk("s", 1)
-            if self.placeSprinkler():
-                break
+            break
+            #if self.placeSprinkler():
+                #break
         else:
             return
         
-        self.keyboard.walk("d", 2)
-        #attack crab, natro's pattern
-        leftright_start = 500
-        leftright_end = 19000
-        cycle_end = 24000
-
-        #left-right movement
-        moves = 14
-        move_delay = 310
+        self.keyboard.walk("d", 3)
         while True:
-            start_time = time.time()
-            self.keyboard.tileWalk("w",4)
-            t = time.time()
-            self.msSleep(leftright_start -(t-start_time)*1000)
-            for i in range(1,3):
-                self.keyboard.tileWalk("w",1)
-                for j in range(1,moves+1):
-                    self.keyboard.tileWalk("a", 2)
-                    t = time.time()
-                    delay = i* 2*move_delay*moves - 2*move_delay*moves-leftright_start +j* move_delay - (t-start_time)*1000
-                    self.msSleep(delay)
-                    print(delay)
-                self.keyboard.tileWalk("s",1)
-                for j in range(1,moves+1):
-                    self.keyboard.tileWalk("d", 2)
-                    t = time.time()
-                    self.msSleep(i* 2*move_delay*moves - 2*move_delay*moves-leftright_start +j* move_delay - (t-start_time)*1000)
-            t = time.time()
-            self.msSleep(leftright_end -(t-start_time)*1000)
-            self.keyboard.tileWalk("s", 6.5)
-            t = time.time()
-            self.msSleep(cycle_end -(t-start_time)*1000)
-            
+            #simplified version of natro's coco crab pattern
+            for i in range(2):
+                self.keyboard.walk("a",6, False)
+                self.keyboard.walk("d",6-i*1.8, False)
+            self.keyboard.walk("s",2)
+            time.sleep(4.5)
+            self.keyboard.walk("w",1)
 
 
     def start(self):
