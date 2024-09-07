@@ -37,7 +37,7 @@ collectData = {
     "treat_dispenser": [["use", "treat"], "w", 1*60*60], #1hr
     "ant_pass_dispenser": [["use", "free"], "a", 2*60*60], #2hr
     "glue_dispenser": [["use", "glue"], None, 22*60*60], #22hr
-    "stockings": [["check", "inside", "stocking"], None, 1*60*60], #1hr
+    "stockings": [["check", "inside", "stocking"], "a", 1*60*60], #1hr
     "wreath": [["admire", "honey"], "a", 30*60], #30mins
     "feast": [["dig", "beesmas"], "s", 1.5*60*60], #1.5hr
     "samovar": [["heat", "samovar"], "w", 6*60*60], #6hr
@@ -463,7 +463,7 @@ class macro:
         time.sleep(wait)
         return True
 
-    def reset(self, hiveCheck = False, convert = True):
+    def reset(self, hiveCheck = False, convert = True, firstReset = False):
         self.keyboard.releaseMovement()
         yOffset = 10 #calculate yoffset
         if self.newUI: yOffset += 20
@@ -478,6 +478,10 @@ class macro:
             closeImg = self.adjustImage("./images/menu", "close") #sticker printer
             if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
                 self.keyboard.press("e")
+            
+            #part of the accessibility check
+            if firstReset and sys.platform == "darwin":
+                img1 = pillowToHash(mssScreenshot())
 
             mouse.moveTo(370, 100+yOffset)
             time.sleep(0.1)
@@ -487,6 +491,15 @@ class macro:
             time.sleep(0.2)
             self.keyboard.press('enter')
 
+            if firstReset and sys.platform == "darwin":
+                #check for accessibility
+                #this is done by taking 2 different screenshots
+                #if they are both the same, we assume that the keypress didnt go through and hence accessibility is not enabled
+                time.sleep(0.1)
+                img2 = pillowToHash(mssScreenshot())
+                if similarHashes(img1, img2, 10):
+                    messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Accessibility Permission')
+                
             emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
             st = time.time()
             #wait for empty health bar to appear
@@ -1510,21 +1523,10 @@ class macro:
             self.newUI = False   
             messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Screen Recording Permission')
 
-        #check for accessibility
-        #this is done by taking 2 different screenshots
-        #if they are both the same, we assume that the keypress didnt go through and hence accessibility is not enabled
-        if sys.platform == "darwin":
-            img1 = pillowToHash(mssScreenshot())
-            self.keyboard.press(",") #don't have to rotate back, resetting will deal with it
-            time.sleep(0.1)
-            img2 = pillowToHash(mssScreenshot())
-            if similarHashes(img1, img2, 10):
-                messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Accessibility Permission')
-            
         #enable night detection
         if self.setdat["stinger_hunt"]:
             nightDetectThread = threading.Thread(target=self.detectNight)
             nightDetectThread.daemon = True
             nightDetectThread.start()
-        self.reset(convert=True)
+        self.reset(convert=True, firstReset = True)
         self.saveTiming("rejoin_every")
