@@ -99,6 +99,7 @@ def macro(status, log, haste):
         #stump snail
         if setdat["stump_snail"] and macro.hasRespawned("stump_snail", 96*60*60, applyMobRespawnBonus=True):
             runTask(macro.stumpSnail)
+            
         #gather
         for i in range(3):
             if setdat["fields_enabled"][i]:

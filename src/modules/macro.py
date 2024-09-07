@@ -925,7 +925,7 @@ class macro:
         self.status.value = ""
         #check if mondo can be collected (first 10mins)
         current_time = datetime.now().strftime("%H:%M:%S")
-        hour,minute,_ = [int(x) for x in current_time.split(":")]
+        _,minute,_ = [int(x) for x in current_time.split(":")]
         #set respawn time to 20mins
         #mostly just to prevent the macro from going to mondo over and over again for the 10mins
         if minute > 10 or self.hasRespawned("mondo", 20*60): return False
@@ -1334,7 +1334,7 @@ class macro:
 
         def replace():
             replaceImg = self.adjustImage("./images/menu", "replace")
-            res = locateImageOnScreen(replaceImg, self.mw/3.15,self.mh/2.15,self.mw/2.4,self.mh/4.2, 0.7)
+            res = locateImageOnScreen(replaceImg, self.mw/3.15,self.mh/2.15,self.mw/2.4,self.mh/4.2)
             if res is not None:
                 mouse.moveTo(*res[1])
                 mouse.click()
@@ -1359,7 +1359,26 @@ class macro:
         if t <= 0: return
         time.sleep(t/1000)
 
+    #implementation of natro's nm_loot function
+    def nmLoot(self, length, reps, dirKey):
+        for _ in range(reps):
+            self.keyboard.tileWalk("w", length)
+            self.keyboard.tileWalk(dirKey, 1.5)
+            self.keyboard.tileWalk("s", length)
+            self.keyboard.tileWalk(dirKey, 1.5)
+
+    def coconutCrabBackground(self):
+        while self.bossStatus is None:
+            if self.blueTextImageSearch("died"):
+                self.died = True
+            if self.blueTextImageSearch("coconutcrab_defeat"):
+                self.bossStatus = "defeated"
+        
+
     def coconutCrab(self):
+        cocoThread = threading.Thread(target=self.coconutCrabBackground)
+        cocoThread.daemon = True
+        cocoThread.start()
         for _ in range(2):
             self.cannon()
             self.logger.webhook("","Travelling: Coconut Crab","dark brown")
@@ -1367,21 +1386,45 @@ class macro:
             for _ in range(4):
                 self.keyboard.press(".")
             self.keyboard.walk("s", 1)
-            break
-            #if self.placeSprinkler():
-                #break
-        else:
-            return
-        
-        self.keyboard.walk("d", 3)
-        while True:
-            #simplified version of natro's coco crab pattern
-            for i in range(2):
-                self.keyboard.walk("a",6, False)
-                self.keyboard.walk("d",6-i*1.8, False)
-            self.keyboard.walk("s",2)
-            time.sleep(4.5)
-            self.keyboard.walk("w",1)
+            self.keyboard.walk("d", 3)
+            self.died = False
+            self.bossStatus = None
+            st = time.time()
+            while True:
+                mouse.mouseDown()
+                #simplified version of natro's coco crab pattern
+                for i in range(2):
+                    self.keyboard.walk("a",6, False)
+                    self.keyboard.walk("d",6-i*1.8, False)
+                self.keyboard.walk("s",2)
+                time.sleep(4.5)
+                self.keyboard.walk("w",1)
+                mouse.mouseUp()
+                if time.time()-st > 900: #15min time limit
+                    self.bossStatus = "timelimit"
+                if self.died or self.bossStatus is not None: break
+            
+            if self.died:
+                self.logger.webhook("", "Died to Coconut Crab", "dark brown")
+                self.reset(convert=False)
+                self.died = False
+            elif self.bossStatus is not None:
+                break
+            
+        if self.bossStatus == "timelimit":
+            self.logger.webhook("", "Time Limit: Coconut Crab", "dark brown")
+        elif self.bossStatus == "defeated":
+            self.keyboard.walk("a", 2)
+            self.logger.webhook("", "Defeated: Coconut Crab", "bright green", "screen")
+            self.nmLoot(9, 4, "d")
+            self.nmLoot(9, 4, "a")
+            self.nmLoot(9, 4, "d")
+            self.nmLoot(9, 4, "a")
+            self.nmLoot(9, 4, "d")
+            self.nmLoot(9, 4, "a")
+        cocoThread.join()
+        self.saveTiming("coconut_crab")
+
 
 
     def start(self):

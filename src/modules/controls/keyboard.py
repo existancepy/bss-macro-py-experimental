@@ -47,11 +47,11 @@ class keyboard:
         for k in keys:
             pag.keyUp(k, _pause = False)
     #recreate natro's tile waiting function
-    def tileWait(tiles,hasteCap=0):
+    def tileWait(self, tiles,hasteCap=0):
         time.sleep((tiles/8.3)*28/self.haste.value)
     
     def tileWalk(self, key, tiles):
-        self.press(key,(4000/self.haste.value*tiles)/1000)
+        self.press(key,(tiles/8.3)*28/self.haste.value)
 
     #release all movement keys (wasd, space)
     @staticmethod
