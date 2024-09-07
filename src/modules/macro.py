@@ -1376,6 +1376,7 @@ class macro:
         
 
     def coconutCrab(self):
+        self.bossStatus = None
         cocoThread = threading.Thread(target=self.coconutCrabBackground)
         cocoThread.daemon = True
         cocoThread.start()
@@ -1424,6 +1425,7 @@ class macro:
             self.nmLoot(9, 4, "a")
         cocoThread.join()
         self.saveTiming("coconut_crab")
+        self.reset()
 
 
 
