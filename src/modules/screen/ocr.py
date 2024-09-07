@@ -77,7 +77,7 @@ def imToString(m):
         honeyY = 25
     if m == "bee bear":
         #cap = screenshot(region=(ww//(3*xsm),ebY/1.1,ww//(3*xlm),wh//(15*ylm)))
-        cap = mssScreenshot(mw//2-200,ebY/1.1,400,mh//(15*ylm))
+        cap = mssScreenshot(mw//2-200,ebY/1.1,400,mh//(12*ylm))
         #cap.save("ebutton.png")
     elif m == "egg shop":
         cap = screenshot(region=(ww//(1.2*xsm),wh//(3*ysm),ww-ww//1.2,wh//5))
