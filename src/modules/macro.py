@@ -4,28 +4,29 @@ import modules.misc.appManager as appManager
 import modules.misc.settingsManager as settingsManager
 import time
 import pyautogui as pag
-from modules.screen.screenshot import mssScreenshot
+from modules.screen.screenshot import mssScreenshot, mssScreenshotNP
 from modules.controls.keyboard import keyboard
 from modules.controls.sleep import sleep
 import modules.controls.mouse as mouse
 from modules.screen.screenData import getScreenData
 import modules.logging.log as logModule
-from modules.submacros.fieldDriftCompensation import fieldDriftCompensation
+from modules.submacros.fieldDriftCompensation import fieldDriftCompensation as fieldDriftCompensationClass
 from operator import itemgetter
 import sys
+import platform
 import os
 import numpy as np
-from threading import Thread
+import threading
 from modules.submacros.backpack import bpc
-from modules.screen.imageSearch import locateImageOnScreen
+from modules.screen.imageSearch import *
 import webbrowser
 from pynput.keyboard import Key, Controller
 import cv2
 from datetime import timedelta, datetime
-from modules.misc.imageManipulation import pillowToCv2
+from modules.misc.imageManipulation import *
 from PIL import Image
+from modules.misc import messageBox
 pynputKeyboard = Controller()
-
 #data for collectable objectives
 #[besideE text, movement key, max cooldowns]
 collectData = { 
@@ -34,7 +35,7 @@ collectData = {
     "strawberry_dispenser": [["use", "dispenser"], None, 4*60*60], #4hr
     "royal_jelly_dispenser": [["claim", "royal"], "a",22*60*60], #22hr
     "treat_dispenser": [["use", "treat"], "w", 1*60*60], #1hr
-    "ant_pass_dispenser": [["use", "free"], None, 2*60*60], #2hr
+    "ant_pass_dispenser": [["use", "free"], "a", 2*60*60], #2hr
     "glue_dispenser": [["use", "glue"], None, 22*60*60], #22hr
     "stockings": [["check", "inside", "stocking"], None, 1*60*60], #1hr
     "wreath": [["admire", "honey"], "a", 30*60], #30mins
@@ -44,6 +45,62 @@ collectData = {
     "lid_art": [["gander", "onett", "art"], "s", 8*60*60], #8hr
     "candles": [["admire", "candle", "honey"], "w", 4*60*60] #4hr
 }
+
+#werewolf is a unique one. There is only one, but it can be triggered from pine, pumpkin or cactus
+regularMobInFields = {
+    "rose": ["scorpion"],
+    "pumpkin": ["werewolf"],
+    "cactus": ["werewolf"],
+    "spider": ["spider"],
+    "clover": ["ladybug", "rhinobeetle"],
+    "strawberry": ["ladybug"],
+    "bamboo": ["rhinobeetle"],
+    "mushroom": ["ladybug"],
+    "blue flower": ["rhinobeetle"],
+    "pineapple": ["mantis", "rhinobeetle"],
+    "pine tree": ["mantis", "werewolf"],
+}
+
+mobRespawnTimes = {
+    "ladybug": 5*60, #5mins
+    "rhinobeetle": 5*60, #5mins
+    "spider": 30*60, #30mins
+    "mantis": 20*60, #20mins
+    "scorpion": 20*60, #20mins
+    "werewolf": 60*60 #1hr
+}
+
+# Define the color range for reset detection (in HSL color space)
+resetLower = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
+resetUpper = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
+
+
+nightFloorDetectThresholds = [
+    [np.array([99, 45, 102]), np.array([105, 51, 112])], #starter fields, spawn
+    [np.array([80, 15, 114]), np.array([100, 20, 130])], #clover, 15 bee gate, 10 bee gate, 35 bee gate
+    []
+]
+locationToNightFloorType = {
+    "spawn": 0,
+    "sunflower": 0,
+    "dandelion": 0,
+    "mushroom": 0,
+    "blue_flower": 0,
+    "clover": 1,
+    "strawberry": 2,
+    "spider": 2,
+    "bamboo": 2,
+    "pineapple": 1,
+    "stump": 1,
+    "cactus": 1,
+    "pumpkin": 1,
+    "pine_tree": 1,
+    "rose": 2,
+    "mountain top": 3,
+    "pepper": 1,
+    "coconut": 1
+}
+
 class macro:
     def __init__(self, status, log, haste):
         self.status = status
@@ -58,31 +115,138 @@ class macro:
         self.collectCooldowns = dict([(k, v[2]) for k,v in collectData.items()])
         self.collectCooldowns["sticker_printer"] = 1*60*60
 
-    #resize the image based on the user's screen coordinates
+        #reset kernel
+        if self.display_type == "retina":
+            self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25,25)) #might need double kernel size for retina, but not sure
+        else:
+            self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25,25))
+        #field drift compensation class
+        self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
+
+        #night detection variables
+        self.canDetectNight = True
+        self.night = False
+        self.location = "spawn"
+        #all fields that vic can appear in
+        self.vicFields = ["pepper", "mountain top", "rose", "cactus", "spider", "clover"]
+        #filter it to only include fields the player has enabled
+        self.vicFields = [x for x in self.vicFields if self.setdat["stinger_{}".format(x.replace(" ","_"))]]
+
+    #thread to detect night
+    #night detection is done by converting the screenshot to hsv and checking the average brightness
+    #TODO:
+    # MAYBE this doesnt actually need to be a thread? Check for night after each reset, when converting and when gathering
+    def detectNight(self):
+        #detects the average brightness of the screen. This isn't very reliable since things like lights can mess it up
+        #the threshold isnt accurate
+        def isNightBrightness(hsv):
+            vValues = np.sum(hsv[:, :, 2])
+            area = hsv.shape[0] * hsv.shape[1]
+            avg_brightness = vValues/area
+            return 10 < avg_brightness < 120 #threshold for night. It must be > 10 to deal with cases where the player is inside a fruit or stuck against a wall 
+
+        #Detect the color of the floor at spawn
+        #Useful when resetting/converting
+        def isSpawnFloorNight(hsv):
+            lower = np.array([99, 45, 102])
+            upper = np.array([105, 51, 112])
+
+            #might increase kernel size on retina
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(15,15))
+
+            mask = cv2.inRange(hsv, lower, upper)   
+            mask = cv2.erode(mask, kernel, 2)
+
+            #if np.mean = 0, no color ranges are detected, is day, hence return false
+            return np.mean(mask)
+        
+        def isNightSky(bgr):
+            y = 30
+            if self.display_type == "retina": y*=2
+            #crop the image to only the area above buff
+            bgr = bgr[0:y, 0:int(self.mw)]
+            w,h = bgr.shape[:2]
+            #check if a 15x15 area that is entirely black
+            for x in range(w-15):
+                for y in range(h-15):
+                    area = bgr[x:x+15, y:y+15]
+                    if np.all(area == [0, 0, 0]):
+                        return True
+            return False
+        
+        #detect the color of the grass in fields
+        #useful when gathering
+        def isGrassNight(hsv):
+            def threshold(lower, upper):
+                kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(4,4))
+                mask = cv2.inRange(hsv, lower, upper)   
+                mask = cv2.erode(mask, kernel, 1)
+                return bool(np.mean(mask))
+            
+            def grassDay():
+                dayLower = np.array([63, 127, 140]) 
+                dayUpper = np.array([68, 165, 163])
+                return threshold(dayLower, dayUpper)
+            
+            def grassNight():
+                nightLower = np.array([65, 183, 51]) 
+                nightUpper = np.array([68, 204, 77])
+                return threshold(nightLower, nightUpper)
+            
+            if grassDay(): return False
+            if grassNight(): return True
+            return False
+
+        def isNight():
+            screen = mssScreenshotNP(0,0, self.mw, self.mh)
+            # Convert the image from BGRA to HSV
+            bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
+            hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+
+            #detect brightness
+            if not isNightBrightness(hsv): return False
+            if self.location == "spawn":
+                return isSpawnFloorNight(hsv)
+            return isGrassNight(hsv) and isNightSky(bgr)
+        
+        while True:
+            if self.canDetectNight and isNight():
+                self.night = True
+                self.logger.webhook("","Night detected","dark brown", "screen")
+                time.sleep(200) #wait for night to end
+                self.night = False
+
+    def isFullScreen(self):
+        menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar on mac, window bar on windows
+        print(menubarRaw)
+        menubar = ""
+        try:
+            for x in menubarRaw:
+                menubar += x[1][0]
+        except:
+            pass
+        menubar = menubar.lower()
+        print(menubar)
+        return not ("rob" in menubar or "lox" in menubar) #check if roblox can be found in menu bar
+
+    def toggleFullScreen(self):
+        if sys.platform == "darwin":
+            self.keyboard.keyDown("command")
+            time.sleep(0.05)
+            self.keyboard.keyDown("ctrl")
+            time.sleep(0.05)
+            self.keyboard.keyDown("f")
+            time.sleep(0.1)
+            self.keyboard.keyUp("command")
+            self.keyboard.keyUp("ctrl")
+            self.keyboard.keyUp("f")
+        elif sys.platform == "win32":
+            for _ in range(3):
+                self.keyboard.press("f11")
+                time.sleep(0.4)
+
     def adjustImage(self, path, imageName):
-        #get a list of all images and find the name of the one that matches
-        images = os.listdir(path)
-        for x in images:
-            #images are named in the format itemname-width
-            #width is the width of the monitor used to take the image
-            name, res = x.split(".")[0].split("-",1)
-            if name == imageName:
-                img = Image.open(f"{path}/{x}")
-                break
-        #get original size of image
-        width, height = img.size
-        #calculate the scaling value 
-        #retina has 2x more, built-in is 1x
-        if self.display_type == res:
-            scaling = 1
-        elif self.display_type == "built-in": #screen is built-in but image is retina
-            scaling = 2
-        else: #screen is retina but image is built-in
-            scaling = 0.5
-        #resize image
-        img = img.resize((int(width/scaling), int(height/scaling)))
-        #convert to cv2
-        return pillowToCv2(img)
+        return adjustImage(path, imageName, self.display_type)
         
     #run a path. Choose automater over python if it exists (except on windows)
     #file must exist: if set to False, will not attempt to run the file if it doesnt exist
@@ -101,12 +265,12 @@ class macro:
             exec(open(pyPath).read())
     #run the path to go to a field
     def goToField(self, field):
+        self.location = field
         self.runPath(f"cannon_to_field/{field}")
 
     def isInOCR(self, name, includeList, excludeList):
         #get text
         text = ocr.imToString(name).lower()
-        print(text)
         #check if text is to be rejected
         for i in excludeList:
             if i in text: return False
@@ -118,16 +282,32 @@ class macro:
     def isBesideE(self, includeList = [], excludeList = []):
         return self.isInOCR("bee bear", includeList, excludeList)
     
-    def getTiming(self,name):
-        return settingsManager.readSettingsFile("./data/user/timings.txt")[name]
+    def isBesideEImage(self, name):
+        template = self.adjustImage("./images/menu",name)
+        return locateTransparentImageOnScreen(template, self.mw//2-200,0,400,self.mh//8, 0.75)
+
+    def getTiming(self,name = None):
+        for _ in range(3):
+            data = settingsManager.readSettingsFile("./data/user/timings.txt")
+            if data: break #most likely another process is writing to the file
+            time.sleep(0.1)
+        if name is not None:
+            return data[name]
+        return data
     
     def saveTiming(self, name):
         return settingsManager.saveSettingFile(name, time.time(), "./data/user/timings.txt")
     #returns true if the cooldown is up
     #note that cooldown is in seconds
-    def hasRespawned(self, name, cooldown):
-        timing = self.getTiming(name)
-        return time.time() - timing >= cooldown 
+    def hasRespawned(self, name, cooldown, applyMobRespawnBonus = False, timing = None):
+        if timing is None: timing = self.getTiming(name)
+        mobRespawnBonus = 1
+        if applyMobRespawnBonus:
+            mobRespawnBonus -= 0.15 if self.setdat["gifted_vicious"] else 0
+            mobRespawnBonus -= self.setdat["stick_bug_amulet"]/100 
+            mobRespawnBonus -= self.setdat["icicles_beequip"]/100 
+
+        return time.time() - timing >= cooldown*mobRespawnBonus
 
     def isInBlueTexts(self, includeList = [], excludeList = []):
         return self.isInOCR("blue", includeList, excludeList)
@@ -156,8 +336,8 @@ class macro:
         times = sprinklerCount[self.setdat["sprinkler_type"]]
         #place one sprinkler and check if its in field
         self.keyboard.press(sprinklerSlot)
-        time.sleep(0.3)
-        if self.isInBlueTexts(["must", "standing"], ["cannot", "close"]):
+        time.sleep(1)
+        if self.blueTextImageSearch("notinfield"):
             return False
         #place the remaining sprinklers
         #hold jump and spam place sprinklers
@@ -174,8 +354,7 @@ class macro:
         x = self.mw/3.2
         y = self.mh/2.3
         time.sleep(0.4)
-        _, max_val, _, max_loc = locateImageOnScreen(yesImg,x,y,self.mw/2.5,self.mh/3.4)
-        bestX, bestY = max_loc
+        bestX, bestY = locateImageOnScreen(yesImg,x,y,self.mw/2.5,self.mh/3.4)[1]
         if self.display_type == "retina":
             bestX //=2
             bestY //=2
@@ -216,8 +395,7 @@ class macro:
         bestScroll, bestX, bestY = None, None, None
         valBest = 0
         for i in range(20):
-            min_val, max_val, min_loc, max_loc = locateImageOnScreen(itemImg, 0, 80, 180, self.mh-120)
-            print(max_val)
+            max_val, max_loc = locateImageOnScreen(itemImg, 0, 80, 180, self.mh-120)
             if max_val > valBest:
                 valBest = max_val
                 bestX, bestY = max_loc
@@ -263,14 +441,20 @@ class macro:
 
 
     def convert(self, bypass = False):
+        self.location = "spawn"
         if not bypass:
-            if not self.isBesideE(["make", "маке"], ["to", "pollen"]): return False
+            #use ebutton detection, faster detection but more prone to false positives (like detecting trades)
+            if not self.isBesideEImage("makehoney"): return False
+        #start convert
         self.keyboard.press("e")
         st = time.time()
         time.sleep(2)
         self.logger.webhook("", "Converting", "brown", "screen")
         while not self.isBesideE(["pollen", "flower", "field"]): 
             mouse.click()
+            if self.night and self.setdat["stinger_hunt"]:
+                self.stingerHunt()
+                return
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
         wait = self.setdat["convert_wait"]
@@ -285,42 +469,59 @@ class macro:
         if self.newUI: yOffset += 20
         #reset until player is at hive
         for i in range(5):
+            self.logger.webhook("", f"Resetting character, Attempt: {i+1}", "dark brown")
             #set mouse and execute hotkeys
-            mouse.teleport(self.mw/(self.xsm*4.11)+40,(self.mh/(9*self.ysm))+yOffset)
-            time.sleep(0.5)
+            #mouse.teleport(self.mw/(self.xsm*4.11)+40,(self.mh/(9*self.ysm))+yOffset)
+            self.canDetectNight = False
+
+            #close any menus if they exist
+            closeImg = self.adjustImage("./images/menu", "close") #sticker printer
+            if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
+                self.keyboard.press("e")
+
+            mouse.moveTo(370, 100+yOffset)
+            time.sleep(0.1)
             self.keyboard.press('esc')
             time.sleep(0.1)
             self.keyboard.press('r')
             time.sleep(0.2)
             self.keyboard.press('enter')
-            time.sleep(8)
-            #detect if player at hive
-            self.logger.webhook("", f"Resetting character, Attempt: {i+1}", "dark brown")
-            besideE = self.isBesideE(["make", "маке", "нопеу", "honey", "flower", "field"])
-            if besideE: break
-        else:
-            self.logger.webhook("Notice", f"Unable to detect that player respawned at hive, continuing", "red", "screen")
-            return False
 
-        #set the player's orientation to face hive, max 4 attempts
-        for _ in range(4):
-            pix = getPixelColor((self.ww//2)+20,self.wh-2)
-            r = [int(x) for x in pix]
-            avgDiff = (abs(r[2]-r[1])+abs(r[2]-r[0])+abs(r[1]-r[0]))/3
-            if avgDiff < 15:
-                for _ in range(8):
-                    self.keyboard.press("o")
-                #convert if enabled
-                if convert and (("make" in besideE or "маке" in besideE) and not ("to" in besideE or "pollen" in besideE)):
-                    self.convert(True)
-                return True
-            
+            emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
+            st = time.time()
+            #wait for empty health bar to appear
+            while time.time() - st < 3 or not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7): pass
+            #if the empty health bar disappears, player has respawned
+            #max 8s in case player does not respawn
+            st = time.time()
+            while time.time() - st < 7:
+                if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
+                    time.sleep(0.5)
+                    break
+            self.canDetectNight = True
+            self.location = "spawn"
+            #detect if player at hive. Spin a max of 4 times
             for _ in range(4):
-                self.keyboard.press(".")
-                time.sleep(0.05)
-        time.sleep(0.3)
-        self.logger.webhook("Notice", f"Unable to detect the direction the player is facing, continuing", "red", "screen")
-        return False
+                screen = pillowToCv2(mssScreenshot(self.mw//2-40, self.mh-30, self.mw//2+40, 30))
+                # Convert the image from BGR to HLS color space
+                hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
+                # Create a mask for the color range
+                mask = cv2.inRange(hsl, resetLower, resetUpper)   
+                mask = cv2.erode(mask, self.resetKernel, 2)
+                #get contours. If contours exist, direction is correct
+                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                if contours:
+                    for _ in range(8):
+                        self.keyboard.press("o")
+                    if convert: self.convert()
+                    return True
+                #failed to detect, spin
+                for _ in range(4):
+                    self.keyboard.press(".")
+                time.sleep(0.1)
+        else:
+            self.logger.webhook("Notice", f"Unable to detect that player respawned at hive. Ensure that terminal has accessibility and screen recording permissions", "red", "screen")
+            return False
 
     def cannon(self, fast = False):
         for i in range(3):
@@ -332,7 +533,7 @@ class macro:
             self.keyboard.slowPress("space")
             time.sleep(0.2)
             self.keyboard.keyDown("d")
-            self.keyboard.walk("w",0.25)
+            self.keyboard.walk("w",0.2)
             
             if fast:
                 self.keyboard.walk("d",0.95)
@@ -340,28 +541,34 @@ class macro:
                 return
             self.keyboard.walk("d",0.2)
             self.keyboard.walk("s",0.07)
-            for _ in range(6):
-                self.keyboard.walk("d",0.15)
-                time.sleep(0.05)
-                if self.isBesideE(["fire","red"]):
+            st = time.time()
+            self.keyboard.keyDown("d")
+            while time.time()-st < 0.15*6:
+                if self.isBesideEImage("cannon"):
+                    self.keyboard.keyUp("d")
                     return
+            self.keyboard.keyUp("d")
             self.logger.webhook("Notice", f"Could not find cannon", "dark brown", "screen")
-            self.reset()
+            self.reset(convert=False)
         else:
             self.logger.webhook("Notice", f"Failed to reach cannon too many times", "red")
     
-    def rejoin(self):
-        rejoinMethod = self.setdat["rejoin_method"]
+    def rejoin(self, rejoinMsg = "Rejoining"):
+        self.canDetectNight = False
         psLink = self.setdat["private_server_link"]
-        browserLink = "https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129"
-        self.logger.webhook("","Rejoining", "dark brown")
+        self.logger.webhook("",rejoinMsg, "dark brown")
+        mouse.mouseUp()
+        keyboard.releaseMovement()
         for i in range(3):
-            if psLink and i ==2: 
-                self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", "screen")
-            else:
-                browserLink = psLink
+            rejoinMethod = self.setdat["rejoin_method"]
+            browserLink = "https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129"
+            if psLink: 
+                if i == 2: 
+                    self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", "screen")
+                else:
+                    browserLink = psLink
             appManager.closeApp("Roblox") # close roblox
-            time.sleep(4)
+            time.sleep(8)
             #execute rejoin method
             if rejoinMethod == "deeplink":
                 deeplink = "roblox://placeID=1537690962"
@@ -369,6 +576,7 @@ class macro:
                     deeplink += f"&linkCode={psLink.lower().split('code=')[1]}"
                 appManager.openDeeplink(deeplink)
             elif rejoinMethod == "new tab":
+                print(browserLink)
                 webbrowser.open(browserLink, new = 2)
             elif rejoinMethod == "reload":
                 webbrowser.open(browserLink, new = 2)
@@ -383,31 +591,18 @@ class macro:
                 else:
                     self.keyboard.keyUp("ctrl")
             #wait for bss to load
-            time.sleep(self.setdat["rejoin_wait"])
-            appManager.openApp("roblox")
-            #run fullscreen check (mac only)
-            if sys.platform == "darwin":
-                menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar
-                menubar = ""
-                try:
-                    for x in menubarRaw:
-                        menubar += x[1][0]
-                except:
-                    pass
-                menubar = menubar.lower()
-                if "rob" in menubar or "lox" in menubar: #check if roblox can be found in menu bar
-                    self.logger.webhook("","Roblox is not in fullscreen, activating fullscreen", "dark brown")
-                    self.keyboard.keyDown("command")
-                    time.sleep(0.05)
-                    self.keyboard.keyDown("ctrl")
-                    time.sleep(0.05)
-                    self.keyboard.keyDown("f")
-                    time.sleep(0.1)
-                    self.keyboard.keyUp("command")
-                    self.keyboard.keyUp("ctrl")
-                    self.keyboard.keyUp("f")
-                else:
-                    self.logger.webhook("","Roblox is already in fullscreen, not activating fullscreen", "dark brown")
+            #if sprinkler image is found, bss is loaded
+            #max 60s of waiting
+            sprinklerImg = self.adjustImage("./images/menu", "sprinkler")
+            loadStartTime = time.time()
+            while not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.75) and time.time() - loadStartTime < 60:
+                pass
+            #run fullscreen check
+            if self.isFullScreen(): #check if roblox can be found in menu bar
+                self.logger.webhook("","Roblox is already in fullscreen, not activating fullscreen", "dark brown")
+            else:
+                self.logger.webhook("","Roblox is not in fullscreen, activating fullscreen", "dark brown")
+                self.toggleFullScreen()
 
             #if use browser to rejoin, close the browser
             if self.setdat["rejoin_method"] != "deeplink":
@@ -426,10 +621,20 @@ class macro:
                         self.keyboard.keyUp("ctrl")
                     time.sleep(0.5)
                 appManager.openApp("Roblox")
+            else:
+                #check if the user is stuck on the sign up screen
+                signUpImage = self.adjustImage("./images/menu", "signup")
+                if locateImageOnScreen(signUpImage, self.mw/4, self.mh/3, self.mw/2, self.mh*2/3, 0.7):
+                    self.logger.webhook("","Not logged into the roblox app. Rejoining via the browser. For a smoother experience, please ensure you are logged into the Roblox app beforehand.","red","screen")
+                    self.setdat["rejoin_method"] = "new tab"
+                    continue
             #find hive
+            time.sleep(2)
+            mouse.click()
+            self.keyboard.press("space")
             self.keyboard.walk("w",5+(i*0.5),0)
             self.keyboard.walk("s",0.3,0)
-            self.keyboard.walk("d",4,0)
+            self.keyboard.walk("d",5,0)
             self.keyboard.walk("s",0.3,0)
             time.sleep(0.5)
             hiveNumber = self.setdat["hive_number"]
@@ -441,8 +646,8 @@ class macro:
 
             def findHive():
                 self.keyboard.walk("a",0.4)
-                time.sleep(0.15)
-                if self.isBesideE(["claim", "hive"]):
+                #$time.sleep(0.15)
+                if self.isBesideEImage("claimhive"):
                     self.keyboard.press("e")
                     return True
                 return False
@@ -455,26 +660,52 @@ class macro:
             #find a new hive
             else:
                 self.logger.webhook("",f'Hive is {hiveNumber} already claimed, finding new hive','dark brown', "screen")
-                self.keyboard.walk("d",0.9*(hiveNumber)+1,0)
+                #walk closer to the hives so the player wont walk up the ramp
+                self.keyboard.walk("w",0.3,0)
+                self.keyboard.walk("d",0.9*(hiveNumber)+2,0)
+                self.keyboard.walk("s",0.3,0)
                 time.sleep(0.5)
                 for j in range(40):
                     if findHive():
                         hiveClaim = max(1,min(6,round((j+1)//2.5)))
                         self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", "screen")
                         rejoinSuccess = True
+                        self.setdat["hive_number"] = hiveClaim
                         break
             #after hive is claimed, convert
             if rejoinSuccess:
+                time.sleep(1)
                 self.convert()
                 #no need to reset
-                #TODO: haste compensation
+                self.canDetectNight = True
                 return
             self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
-
+    
+    def blueTextImageSearch(self, text):
+        target = self.adjustImage("./images/blue", text)
+        return locateImageOnScreen(target, self.mw*3/4, self.mh*2/3, self.mw//4,self.mh//3, 0.7)
+    #background thread for gather
+    #check if mobs have been killed and reset their timings
+    #check if player died
+    def gatherBackground(self):
+        field = self.status.value.split("_")[1]
+        while self.isGathering:
+            #death check
+            st = time.time()
+            if self.blueTextImageSearch("died"):
+                self.died = True
+            #mob respawn check
+            self.setMobTimer(field)
+        print("thread broke")
+        print(self.status.value)
+        print(self.isGathering)
+            
 
     def gather(self, field):
         fieldSetting = self.fieldSettings[field]
         for i in range(3):
+            #wait for bees to wake up
+            time.sleep(3)
             #go to field
             self.cannon()
             self.logger.webhook("",f"Travelling: {field.title()}, Attempt {i+1}", "dark brown")
@@ -545,9 +776,16 @@ class macro:
         returnType = fieldSetting["return"]
         st = time.time()
         keepGathering = True
+        self.died = False
         #time to gather
+        self.status.value = f"gather_{field}"
+        self.isGathering = True
         self.logger.webhook(f"Gathering: {field.title()}", f"Limit: {gatherTimeLimit} - {fieldSetting['shape']} - Backpack: {fieldSetting['backpack']}%", "light green")
         mouse.moveBy(10,5)
+        gatherBackgroundThread = threading.Thread(target=self.gatherBackground)
+        gatherBackgroundThread.daemon = True
+        gatherBackgroundThread.start()
+        self.keyboard.releaseMovement()
         while keepGathering:
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
             mouse.mouseDown()
@@ -555,25 +793,40 @@ class macro:
             #cycle ends
             mouse.mouseUp()
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
+            #check for gather interrupts
+            if self.night and self.setdat["stinger_hunt"]: 
+                #rely on task function in main to execute the stinger hunt
+                self.logger.webhook("Gathering: interrupted","Stinger Hunt","dark brown")
+                self.reset(convert=False)
+                break
+            elif self.collectMondoBuff(gatherInterrupt=True):
+                break
+            elif self.died:
+                self.logger.webhook("","Player died", "dark brown","screen")
+                self.reset()
+                break
+
             #check if max time is reached
             gatherTime = "{:.2f}".format((time.time() - st)/60)
             if time.time() - st > maxGatherTime:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
             #check backpack
-            if bpc(self.ww, self.newUI, self.display_type) >= fieldSetting["backpack"]:
+            if bpc(self.mw, self.newUI) >= fieldSetting["backpack"]:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Backpack - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
-            #check for gather interrupts
-            if self.collectMondoBuff(gatherInterrupt=True):
-                return
 
             #field drift compensation
             if fieldSetting["field_drift_compensation"]:
-                fieldDriftCompensation(self.display_type == "retina")
-        
+                self.fieldDriftCompensation.run()
+        self.status.value = ""
+        self.isGathering = False
+        gatherBackgroundThread.join()
+        #gathering was interrupted
+        if keepGathering: return
         #go back to hive
         def walk_to_hive():
+            nonlocal self
             #walk to hive
             #face correct direction (towards hive)
             reverseTurnTimes = 4 - fieldSetting["turn_times"]
@@ -587,24 +840,33 @@ class macro:
                     self.keyboard.press(".")
 
             #start walk
+            self.canDetectNight = False
             self.logger.webhook("",f"Walking back to hive: {field.title()}", "dark brown")
             self.runPath(f"field_to_hive/{field}")
             #find hive and convert
             self.keyboard.walk("a", (self.setdat["hive_number"]-1)*0.9)
-            for _ in range(30):
-                self.keyboard.walk("a",0.2)
-                time.sleep(0.2) #add a delay so that the E can popup
-                if self.isBesideE(["make", "маке"]):
-                    self.convert(bypass=True)
+            self.keyboard.keyDown("a")
+            st = time.time()
+            self.canDetectNight = True
+            while time.time()-st < 0.2*20:
+                if self.isBesideEImage("makehoney"):
                     break
+            self.keyboard.keyUp("a")
+            #in case we overwalked
+            time.sleep(0.15)
+            for _ in range(4):
+                if self.convert():
+                    break
+                self.keyboard.walk("d",0.2)
+                time.sleep(0.2) #add a delay so that the E can popup
             else:
-                self.logger.webhook("","Can't find hive, resetting", "dark brown")
+                self.logger.webhook("","Can't find hive, resetting", "dark brown", "screen")
                 self.reset()
 
         if returnType == "reset":
             self.reset()
         elif returnType == "rejoin":
-            pass
+            self.rejoin()
         elif returnType == "whirligig":
             self.useItemInInventory("whirligig")
             if not self.convert():
@@ -616,11 +878,22 @@ class macro:
         elif returnType == "walk":
             walk_to_hive()
 
+    #returns the coordinates of the keep old text
+    def keepOldCheck(self):
+        region = (self.ww/3.15,self.wh/2.15,self.ww/2.7,self.wh/4.2)
+        res = ocr.customOCR(*region,0)
+        multi = 1
+        if self.display_type == "retina": multi = 2
+        for i in res:
+            if "keep" in i[1][0].lower() and "o" in i[1][0].lower():
+                return ((i[0][0][0]+region[0])//multi, (i[0][0][1]+region[1])//multi)
+        
+
     def antChallenge(self):
         self.logger.webhook("","Travelling: Ant Challenge","dark brown")
         self.cannon()
         self.runPath("collect/ant_pass_dispenser")
-        self.keyboard.walk("w",4)
+        self.keyboard.walk("w",3.5)
         self.keyboard.walk("a",3)
         self.keyboard.walk("d",3)
         self.keyboard.walk("s",0.4)
@@ -634,30 +907,25 @@ class macro:
             self.keyboard.walk("s",1.5)
             self.keyboard.walk("w",0.15)
             self.keyboard.walk("d",0.3)
-            region = (self.ww/3.15,self.wh/2.15,self.ww/2.7,self.wh/4.2)
-            multi = 1
-            if self.display_type == "retina":
-                multi = 2
             mouse.mouseDown()
-            breakLoop = False
-            while not breakLoop:
-                res = ocr.customOCR(*region,0)
-                for i in res:
-                    if "keep" in i[1][0].lower():
-                        mouse.mouseUp()
-                        mouse.moveTo((i[0][0][0]+region[0])//multi, (i[0][0][1]+region[1])//multi)
-                        mouse.click()
-                        breakLoop = True
-                        break
-                    
-            self.logger.webhook("","Ant Challenge Complete","bright green", "screen")
+            while True:
+                keepOld = self.keepOldCheck()
+                if keepOld is not None:
+                    mouse.mouseUp()
+                    self.logger.webhook("","Ant Challenge Complete","bright green", "screen")
+                    time.sleep(1.5)
+                    mouse.moveTo(*keepOld)
+                    mouse.click()
+                    breakLoop = True
+                    break
             return
         self.logger.webhook("", "Cant start ant challenge", "red", "screen")
 
     def collectMondoBuff(self, gatherInterrupt = False):
+        self.status.value = ""
         #check if mondo can be collected (first 10mins)
         current_time = datetime.now().strftime("%H:%M:%S")
-        hour,minute,_ = [int(x) for x in current_time.split(":")]
+        _,minute,_ = [int(x) for x in current_time.split(":")]
         #set respawn time to 20mins
         #mostly just to prevent the macro from going to mondo over and over again for the 10mins
         if minute > 10 or self.hasRespawned("mondo", 20*60): return False
@@ -706,15 +974,15 @@ class macro:
             "mythic": 125
         }
         #click egg
+        time.sleep(2)
         eggPos = eggPosData[self.setdat["sticker_printer_egg"]]
         mouse.moveTo(self.mw//2+eggPos, 4*self.mh//10-20)
         time.sleep(0.2)
         mouse.click()
-        time.sleep(2)
+        time.sleep(1)
         #check if on cooldown
         confirmImg = self.adjustImage("./images/menu", "confirm")
-        _, max_val, _, _ = locateImageOnScreen(confirmImg, self.mw//2+150, 4*self.mh//10+160, 120, 60)
-        if max_val < 0.7:
+        if not locateImageOnScreen(confirmImg, self.mw//2+150, 4*self.mh//10+160, 120, 60, 0.7):
             self.logger.webhook(f"", "Sticker printer on cooldown", "dark brown", "screen")
             self.keyboard.press("e")
             self.saveTiming("sticker_printer")
@@ -724,11 +992,15 @@ class macro:
         time.sleep(0.1)
         mouse.click()
         time.sleep(0.2)
+        mouse.moveBy(0, 3)
+        time.sleep(0.1)
+        mouse.click()
+        time.sleep(0.2)
         #click yes
         self.clickYes()
         #wait for sticker to generate
         time.sleep(7)
-        self.logger.webhook(f"", "Claimed sticker", "light green", "sticker")
+        self.logger.webhook(f"", "Claimed sticker", "bright green", "sticker")
         self.saveTiming("sticker_printer")
         #close the inventory
         time.sleep(1)
@@ -740,8 +1012,9 @@ class macro:
         reached = None
         objectiveData = collectData[objective]
         displayName = objective.replace("_"," ").title()
+        self.location = "collect"
         #go to collect and check that player has reached
-        for _ in range(2):
+        for i in range(3):
             self.logger.webhook("",f"Travelling: {displayName}","dark brown")
             self.cannon()
             self.runPath(f"collect/{objective}")
@@ -754,7 +1027,7 @@ class macro:
                     if reached: break
             if reached: break
             self.logger.webhook("", f"Failed to reach {displayName}", "dark brown", "screen")
-            self.reset(convert=False)
+            if i != 2: self.reset(convert=False)
         
         if not reached: return #player failed to reach objective
         #player has reached, get cooldown info
@@ -768,7 +1041,7 @@ class macro:
             else:
                 cooldownRaw = reached.split("(")[1]
 
-            #clean it up, extract only valid values
+            #clean it up, extract only valid characters
             cooldownRaw = ''.join([x for x in cooldownRaw if x.isdigit() or x == ":" or x == "s"])
             cooldownSeconds = 0 #cooldown in seconds
 
@@ -789,17 +1062,442 @@ class macro:
                 self.keyboard.press("e")
             #run the claim path (if it exists)
             self.runPath(f"collect/claim/{objective}", fileMustExist=False)
-            self.logger.webhook("", f"Collected: {displayName}", "light green", "screen")
+            time.sleep(0.1)
+            self.logger.webhook("", f"Collected: {displayName}", "bright green", "screen")
         #update the internal cooldown
         self.saveTiming(objective)
         self.collectCooldowns[objective] = cooldownSeconds
+
+    #accept mob and field and return them in the format used for timings.txt file
+    #mob_field, eg ladybug_strawberry
+    #werewolf is an acception, just return "werewolf"
+    def formatMobTimingName(self, mob, field):
+        if mob == "werewolf": return mob
+        return f"{mob}_{field}"
+    
+    def hasMobRespawned(self, mob, field, timing = None):
+        return self.hasRespawned(self.formatMobTimingName(mob, field), mobRespawnTimes[mob], True, timing)
+    
+    #to be used by the mob run walk paths
+    #returns true if there are mobs in the field to be killed (enabled + respawned)
+    #returns a list of mobs that have respawned
+    def getRespawnedMobs(self, field):
+        mobs = regularMobInFields[field]
+        out = []
+        for m in mobs:
+            if self.setdat[m] and self.hasMobRespawned(m, field):
+                out.append(m)
+        return out
+    
+    #check which mobs have respawned in the field and reset their timings
+    def setMobTimer(self, field):
+        if not field in regularMobInFields: return
+        timings = self.getTiming()
+        mobs = regularMobInFields[field]
+        for m in mobs:
+            timingName = self.formatMobTimingName(m, field)
+            #check respawn
+            if self.hasMobRespawned(m, field, timings[timingName]):
+                timings[timingName] = time.time()
+        settingsManager.saveDict("./data/user/timings.txt", timings)
+
+    #background thread function to determine if player has defeated the mob
+    #time limit of 20s
+    def mobRunAttackingBackground(self):
+        st = time.time()
+        while True:
+            if self.blueTextImageSearch("died"):
+                self.mobRunStatus = "dead"
+                break
+            elif self.blueTextImageSearch("defeated"):
+                self.mobRunStatus = "looting"
+                break
+            elif time.time() - st > 20:
+                self.mobRunStatus = "timeout"
+                break
+    #background thread to check if token link is collected or the macro runs out of time (max 15s)
+    def mobRunLootingBackground(self):
+        st = time.time()
+        while time.time() - st < 20:
+           if self.blueTextImageSearch("tokenlink"): break
+        self.mobRunStatus = "done"
+
+    def killMob(self, mob, field, walkPath = None):
+        mobName = mob
+        if mob == "rhinobeetle": mobName = "rhino beetle"
+        self.status.value = "bugrun"
+        self.logger.webhook("","{}: {} ({})".format("Travelling" if walkPath is None else "Walking", mobName.title(),field.title()),"dark brown")
+        self.mobRunStatus = "attacking"
+        attackThread = threading.Thread(target=self.mobRunAttackingBackground)
+        attackThread.daemon = True
+        if walkPath is None:
+            #wait for bees to respawn
+            time.sleep(10)
+            self.cannon()
+            self.goToField(field)
+            #attack the mob
+            attackThread.start()
+        else:
+            #attack the mob
+            #attack thread will start in the path
+            self.canDetectNight = False
+            exec(walkPath)
+            self.canDetectNight = True
+        self.location = field
+        self.logger.webhook("","Attacking: {} ({})".format(mobName.title(),field.title()),"dark brown")
         
+        st = time.time()
+        #move in squares to evade attacks
+        #save the last entered side and front keys. This will be used for the looting pattern
+        distance = 0.7
+        lastSideKey = "d"
+        lastFrontKey = "s"
+        def dodgeWalk(k,t):
+            nonlocal lastSideKey, lastFrontKey
+            if k in ["w", "s"]: lastFrontKey = k
+            elif k in ["a","d"]: lastSideKey = k
+            self.keyboard.walk(k, t)
+        while True:
+            dodgeWalk("s", distance*1.2)
+            if self.mobRunStatus != "attacking": break
+            dodgeWalk("a", distance*1.8)
+            if self.mobRunStatus != "attacking": break
+            dodgeWalk("w", distance*1.2)
+            if self.mobRunStatus != "attacking": break
+            dodgeWalk("d", distance*1.8)
+            if self.mobRunStatus != "attacking": break
+
+        attackThread.join()
+        if self.mobRunStatus == "dead":
+            self.logger.webhook("","Player died", "dark brown","screen")
+            return
+        elif self.mobRunStatus == "timeout":
+            self.setMobTimer(field)
+            self.logger.webhook("","Could not kill {} in time. Maybe it hasn't respawned?".format(mobName.title()), "dark brown", "screen")
+            return
+        time.sleep(1.5)
+        #loot
+        self.logger.webhook("", "Looting: {}".format(mobName.title()), "bright green", "screen")
+        #start another background thread to check for token link/time limit
+        lootThread = threading.Thread(target=self.mobRunLootingBackground)
+        lootThread.daemon = True
+        lootThread.start()
+        def lootPattern(f, s):
+            if lastSideKey == "a":
+                startSideKey = "d"
+            elif lastSideKey == "d":
+                startSideKey = "a"
+
+            if lastFrontKey == "w":
+                startFrontKey = "s"
+            elif lastFrontKey == "s":
+                startFrontKey = "w"
+
+            while True:
+                for _ in range(2):
+                    self.keyboard.walk(startFrontKey, 0.72*f)
+                    if self.mobRunStatus == "done": return
+                    self.keyboard.walk(startSideKey, 0.1*s)
+                    if self.mobRunStatus == "done": return
+                    self.keyboard.walk(lastFrontKey, 0.72*f)
+                    if self.mobRunStatus == "done": return
+                    self.keyboard.walk(startSideKey, 0.1*s)
+                    if self.mobRunStatus == "done": return
+                for _ in range(2):
+                    self.keyboard.walk(startFrontKey, 0.72*f)
+                    if self.mobRunStatus == "done": return
+                    self.keyboard.walk(lastSideKey, 0.1*s)
+                    if self.mobRunStatus == "done": return
+                    self.keyboard.walk(lastFrontKey, 0.72*f)
+                    if self.mobRunStatus == "done": return
+                    self.keyboard.walk(lastSideKey, 0.1*s)
+                    if self.mobRunStatus == "done": return
+        lootPattern(1.35, 2.5)
+        self.setMobTimer(field)
+        self.status.value = ""
+        lootThread.join()
+        #check if there are paths for the macro to walk to other fields for mob runs
+        #run a path in the field format
+        self.runPath(f"mob_runs/{field}", fileMustExist=False)
+
+    def stingerHuntBackground(self):
+        #find vic
+        while not self.stopVic:
+            #detect which field the vic is in
+            if self.vicField is None:
+                for field in self.vicFields:
+                    if self.blueTextImageSearch(f"vic{field}"):
+                        self.vicField = field
+                        break
+            else:
+                if self.blueTextImageSearch("died"): self.died = True
+            
+            if self.blueTextImageSearch("vicdefeat"):
+                self.vicStatus = "defeated"
+                
+    def stingerHunt(self):
+        self.vicStatus = None
+        self.vicField = None
+        self.stopVic = False
+        currField = None
+
+        stingerHuntThread = threading.Thread(target=self.stingerHuntBackground)
+        stingerHuntThread.daemon = True
+        stingerHuntThread.start()
+        class vicFoundException(Exception):
+            pass
+        for currField in self.vicFields:
+            #go to field
+            self.cannon()
+            self.logger.webhook("",f"Travelling to {currField} (vicious bee)","dark brown")
+            self.goToField(currField)
+
+            for _ in range(4): #rotate 180. The vic patterns are from v1
+                self.keyboard.press(".")
+            
+            #since we can't use break/return in an exec statement, use exceptions to terminate it early
+            #walk in path
+            #between each line of movement in the path, check if vic has been found
+            pathLines = open(f"../settings/paths/vic/find_vic/{currField}.py").read().split("\n")
+            pathCode = ""
+            for code in pathLines:
+                pathCode += f"{code}\n"
+                if "self.keyboard.walk" in code or "sleep" in code:
+                    pathCode += "if self.vicField is not None: raise vicFoundException\n"
+            try:
+                exec(pathCode)
+            except vicFoundException:
+                self.logger.webhook("",f"Vicious Bee detected ({self.vicField})", "dark brown") 
+                break
+            print(self.vicField)
+            self.reset(convert=False)
+        else: #unable to find vic
+            self.stopVic = True
+            stingerHuntThread.join()
+            self.convert()
+            return
+        
+        #kill vic
+        def goToVicField():
+            self.reset(convert=False)
+            self.logger.webhook("",f"Travelling to {self.vicField} (vicious bee)","dark brown")
+            self.goToField(currField)
+            for _ in range(4): #rotate 180, as the vic patterns are from v1
+                self.keyboard.press(".")
+
+        #first, check if vic is found in the same field as the player
+        if currField != self.vicField: goToVicField()
+        
+        #run the dodge pattern
+        #similar to the search pattern, between each line of code, check if vic has been defeated/player died
+        pathLines = open(f"../settings/paths/vic/kill_vic/{self.vicField}.py").read().split("\n")
+        loop = True
+        self.died = False
+        st = time.time() 
+        while loop:
+            for code in pathLines:
+                exec(code)
+                #run checks
+                if self.died or self.vicStatus is not None: break
+            if self.vicStatus == "defeated":
+                self.logger.webhook("","Vicious Bee Defeated","light green")
+                break
+            elif self.died:
+                self.logger.webhook("","Player Died","dark brown")
+                goToVicField()
+                self.died = False
+            elif time.time()-st > 180: #max 3 mins to kill vic
+                self.logger.webhook("","Took too long to kill Vicious Bee","red", "screen")
+                break
+        self.stopVic = True
+        stingerHuntThread.join()
+        self.reset()
+
+    def stumpSnail(self):
+        self.cannon()
+        self.logger.webhook("","Travelling: Stump Snail", "dark brown")
+        self.goToField("stump")
+        self.placeSprinkler()
+        while True:
+            mouse.click()
+            keepOldData = self.keepOldCheck()
+            if keepOldData is not None:
+                mouse.mouseUp()
+                break
+        #handle the other stump snail
+        self.logger.webhook("","Stump Snail Killed","bright green", "screen")
+        self.saveTiming("stump_snail")
+        def keepOld():
+            time.sleep(0.5)
+            mouse.moveTo(*keepOldData)
+            mouse.click()
+
+        def replace():
+            replaceImg = self.adjustImage("./images/menu", "replace")
+            res = locateImageOnScreen(replaceImg, self.mw/3.15,self.mh/2.15,self.mw/2.4,self.mh/4.2)
+            if res is not None:
+                mouse.moveTo(*res[1])
+                mouse.click()
+        amulet = self.setdat["stump_snail_amulet"]
+        if amulet == "keep":
+            keepOld()
+        elif amulet == "replace":
+            replace()
+        elif amulet == "stop":
+            while self.keepOldCheck(): pass
+        elif amulet == "wait for command":
+            self.status.value = "amulet_wait"
+            #wait for user to send command to bot
+            while self.status.value == "amulet_wait": pass
+            if self.status.value == "amulet_keep":
+                keepOld()
+            elif self.status.value == "amulet_replace":
+                replace()
+
+    #sleep in ms, useful for implementing ahk code
+    def msSleep(self, t):
+        if t <= 0: return
+        time.sleep(t/1000)
+
+    #implementation of natro's nm_loot function
+    def nmLoot(self, length, reps, dirKey):
+        for _ in range(reps):
+            self.keyboard.tileWalk("w", length)
+            self.keyboard.tileWalk(dirKey, 1.5)
+            self.keyboard.tileWalk("s", length)
+            self.keyboard.tileWalk(dirKey, 1.5)
+
+    def coconutCrabBackground(self):
+        while self.bossStatus is None:
+            if self.blueTextImageSearch("died"):
+                self.died = True
+            if self.blueTextImageSearch("coconutcrab_defeat"):
+                self.bossStatus = "defeated"
+        
+
+    def coconutCrab(self):
+        self.bossStatus = None
+        cocoThread = threading.Thread(target=self.coconutCrabBackground)
+        cocoThread.daemon = True
+        cocoThread.start()
+        for _ in range(2):
+            self.cannon()
+            self.logger.webhook("","Travelling: Coconut Crab","dark brown")
+            self.goToField("coconut")
+            for _ in range(4):
+                self.keyboard.press(".")
+            self.keyboard.walk("s", 1)
+            self.keyboard.walk("d", 3)
+            self.died = False
+            self.bossStatus = None
+            st = time.time()
+            while True:
+                mouse.mouseDown()
+                #simplified version of natro's coco crab pattern
+                for i in range(2):
+                    self.keyboard.walk("a",6, False)
+                    self.keyboard.walk("d",6-i*1.8, False)
+                self.keyboard.walk("s",2)
+                time.sleep(4.5)
+                self.keyboard.walk("w",1)
+                mouse.mouseUp()
+                if time.time()-st > 900: #15min time limit
+                    self.bossStatus = "timelimit"
+                if self.died or self.bossStatus is not None: break
+            
+            if self.died:
+                self.logger.webhook("", "Died to Coconut Crab", "dark brown")
+                self.reset(convert=False)
+                self.died = False
+            elif self.bossStatus is not None:
+                break
+            
+        if self.bossStatus == "timelimit":
+            self.logger.webhook("", "Time Limit: Coconut Crab", "dark brown")
+        elif self.bossStatus == "defeated":
+            self.keyboard.walk("a", 2)
+            self.logger.webhook("", "Defeated: Coconut Crab", "bright green", "screen")
+            self.nmLoot(9, 4, "d")
+            self.nmLoot(9, 4, "a")
+            self.nmLoot(9, 4, "d")
+            self.nmLoot(9, 4, "a")
+            self.nmLoot(9, 4, "d")
+            self.nmLoot(9, 4, "a")
+        cocoThread.join()
+        self.saveTiming("coconut_crab")
+        self.reset()
+
+
+
     def start(self):
         #if roblox is not open, rejoin
         if not appManager.openApp("roblox"):
             self.rejoin()
-        time.sleep(2)
+        else:
+            #toggle fullscreen
+            if not self.isFullScreen():
+                self.toggleFullScreen()
+        #disable game mode
+        if sys.platform == "darwin":
+            time.sleep(1)
+            #check roblox scaling
+            #this is done by checking if all pixels at the top of the screen are black
+            topScreen = mssScreenshot(0, 0, self.mw, 2)
+            extrema = topScreen.convert("L").getextrema()
+            #all are black
+            if extrema == (0, 0):
+                messageBox.msgBox(text='It seems like you have not enabled roblox scaling. The macro will not work properly.\n1. Close Roblox\n2. Go to finder -> applications -> right click roblox -> get info -> enable "scale to fit below built-in camera"', title='Roblox scaling')
+            #make sure game mode is a feature (macOS 14.0 and above and apple chips)
+            macVersion, _, _ = platform.mac_ver()
+            macVersion = float('.'.join(macVersion.split('.')[:2]))
+            if macVersion >= 14 and platform.processor() == "arm":
+                self.logger.webhook("","Disabling game mode","dark brown")
+                time.sleep(1.5)
+                #make sure roblox is not fullscreen
+                self.toggleFullScreen()
+                    
+                #find the game mode button
+                lightGameMode = self.adjustImage("./images/mac", "gamemodelight")
+                darkGameMode = self.adjustImage("./images/mac", "gamemodedark")
+                x = self.mw/2.3
+                time.sleep(2)
+                #find light mode
+                res = locateImageOnScreen(lightGameMode,x, 0, self.mw-x, 60, 0.7)
+                if res is None: #cant find light, find dark
+                    res = locateImageOnScreen(darkGameMode,x, 0, self.mw-x, 60, 0.7)
+                #found either light or dark
+                if not res is None:
+                    gx, gy = res[1]
+                    if self.display_type == "retina":
+                        gx //= 2
+                        gy //= 2
+                    mouse.moveTo(gx+x, gy)
+                    time.sleep(0.1)
+                    mouse.fastClick()
+                    time.sleep(2)
+                    #check if game mode is enabled
+                    screen = mssScreenshot(x, 0, self.mw-x, 150)
+                    ocrRes = ocr.ocrRead(screen)
+                    for i in ocrRes:
+                        if "mode off" in i[1][0].lower():
+                            #disable game mode
+                            bX, bY = ocr.getCenter(i[0])
+                            if self.display_type == "retina":
+                                bX //= 2
+                                bY //= 2
+                            mouse.moveTo(x+bX, bY)
+                            mouse.click()                        
+                            break
+                    else: #game mode is already disabled/couldnt be found
+                        mouse.moveTo(x+gx, gy)
+                        mouse.click()
+                #fullscreen back roblox
+                appManager.openApp("roblox")
+                self.toggleFullScreen()
+            time.sleep(1)
+
         #detect new/old ui and set 
+        #also check for screen recording permission 
         if self.getTop(0):
             self.newUI = False
             self.logger.webhook("","Detected: Old Roblox UI","light blue")
@@ -810,4 +1508,23 @@ class macro:
         else:
             self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red", "screen")
             self.newUI = False   
+            messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Screen Recording Permission')
+
+        #check for accessibility
+        #this is done by taking 2 different screenshots
+        #if they are both the same, we assume that the keypress didnt go through and hence accessibility is not enabled
+        if sys.platform == "darwin":
+            img1 = pillowToHash(mssScreenshot())
+            self.keyboard.press(",") #don't have to rotate back, resetting will deal with it
+            time.sleep(0.1)
+            img2 = pillowToHash(mssScreenshot())
+            if similarHashes(img1, img2, 10):
+                messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Accessibility Permission')
+            
+        #enable night detection
+        if self.setdat["stinger_hunt"]:
+            nightDetectThread = threading.Thread(target=self.detectNight)
+            nightDetectThread.daemon = True
+            nightDetectThread.start()
         self.reset(convert=True)
+        self.saveTiming("rejoin_every")

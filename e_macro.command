@@ -28,6 +28,6 @@ if [ -d bin ]; then
    printf "activating virtual environment"
 fi
 cd src
-python3.7 main.py
-python3.8 main.py
+python3.7 main.py > /dev/null 2>&1
+python3.8 main.py > /dev/null 2>&1
 python3.9 main.py

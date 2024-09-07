@@ -29,3 +29,7 @@ def click():
     mouseDown()
     time.sleep(0.04)
     mouseUp()
+
+def fastClick():
+    pynputMouse.press(Button.left)
+    pynputMouse.release(Button.left)

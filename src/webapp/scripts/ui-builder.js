@@ -103,7 +103,7 @@ function buildStandardContainer(parentElement,title,desc,settings){
         out += `
         <form style="display: flex; align-items:flex-start; justify-content: space-between; padding-right: ${inputPadding[e.type.name]}; ${i? "margin-top:1rem": ""}";>
             <div style="width: 70%;">
-                <label for="${e.id}">${e.title}</label>
+                <label>${e.title}</label>
                 <p>${e.desc}</p>
             </div>
             ${buildInput(e.id,e.type)}

@@ -28,7 +28,8 @@ hasteStacks = list(enumerate(hasteStacks))[::-1]
 bearMorphs = []
 for i in range(5):
     bearMorphs.append(adjustBuffImage(f"./images/buffs/bearmorph{i+1}.png"))
-                       
+
+hastePlus = adjustBuffImage(f"./images/buffs/haste+.png")         
 mw, mh = pag.size()                 
 prevHaste = 0         
 prevHaste368 = 0 #tracking the previous haste to accurately determine if the haste stack is 3,6 or 8
@@ -72,9 +73,9 @@ def hasteCompensation(baseMoveSpeed, haste):
             prevHasteEnds = prevHaste #value to set for the time compensation
             #decrease the countdown for retina (detection is more accurate)
             if isRetina:
-                hasteEnds = currTime + (2 if hasteOut == 1 else 4)
+                hasteEnds = currTime + (0 if hasteOut == 1 else 2)
             else:
-                hasteEnds = currTime + (4 if hasteOut == 1 else 7.5)
+                hasteEnds = currTime + (4 if hasteOut == 1 else 7)
         #there is a hasteEnd ongoing
         if currTime < hasteEnds:
             hasteOut = prevHasteEnds
@@ -85,8 +86,12 @@ def hasteCompensation(baseMoveSpeed, haste):
     bearMorph = any(thresholdMatch(x, screen)[0] for x in bearMorphs)
     if bearMorph: 
         bearMorph = 4
-        print("bear morph active")
-    if hasteOut: print(f"Haste stacks: {hasteOut}")
+        #print("bear morph active")
+    
+    #match haste+
+    if thresholdMatch(hastePlus, screen):
+        hasteOut += 2
+    #if hasteOut: print(f"Haste stacks: {hasteOut}")
     out = (baseMoveSpeed+bearMorph)*(1+(0.1*hasteOut))
     haste.value = out
 

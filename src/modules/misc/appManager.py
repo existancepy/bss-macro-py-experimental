@@ -29,8 +29,9 @@ class WindowMgr:
         #send the alt key. For some reason this is required to make it run consistently
         shell = win32com.client.Dispatch("WScript.Shell")
         shell.SendKeys('%')
-        win32gui.ShowWindow(self._handle, win32con.SW_NORMAL) #in case window is minimised
         win32gui.SetForegroundWindow(self._handle) #switch to window
+        win32gui.ShowWindow(self._handle, win32con.SW_MINIMIZE)
+        win32gui.ShowWindow(self._handle, win32con.SW_MAXIMIZE)
     
 
 
@@ -60,6 +61,10 @@ def openDeeplink(link):
 def closeApp(app):
     if sys.platform == "darwin":
         subprocess.call(["pkill", app])
+        cmd = """
+            osascript -e 'quit application "Roblox"'
+        """
+        os.system(cmd)
     else:
         if app.lower() == "roblox":
             app = "RobloxPlayerBeta"

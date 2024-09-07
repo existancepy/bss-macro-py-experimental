@@ -3,9 +3,7 @@ side = 2.8
 back = 0.9
 
 for _ in range(4):
-    keyboard.press(",")
-    time.sleep(0.03)
-    keyboard.release(",")
+    self.keyboard.press(",")
 self.keyboard.walk("w",3)
 self.keyboard.walk("a",3)
 self.keyboard.walk("d",0.6)

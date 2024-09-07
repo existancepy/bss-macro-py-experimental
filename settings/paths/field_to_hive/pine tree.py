@@ -1,7 +1,7 @@
 self.keyboard.walk("d",5)
 self.keyboard.walk("s",7)
 self.keyboard.press('space')
-self.keyboard.walk("a",11)
+self.keyboard.walk("a",12,False)
 self.keyboard.walk("w",8)
 self.keyboard.walk("d",3)
 self.keyboard.walk("s",0.5)

@@ -177,13 +177,12 @@ main{
     display: flex;
     align-items: center;  
     font-weight: 400;
+    margin-bottom: 0.1rem;
 }
 
 .standard-container p{
     font-size: 0.95rem;
     color: #adb4bc;
-    display: flex;
-    align-items: center;  
     width: 100%;
     font-weight: 400;
 }
@@ -253,12 +252,23 @@ main{
     color: #1898F4;
 }
 
-#field-nav div.active{
+.sub-nav-bar{
+    width: 7rem; 
+    height: 100%;
+    margin-top: 0; 
+    font-size: 1.1rem; 
+    padding-top: 3rem; 
+    padding-left: 2rem; 
+    flex-direction: column; 
+    gap: 2rem;
+}
+
+.sub-nav-bar div.active{
     color: var(--active-text);
     font-weight: 500;
 }
 
-#field-nav div{
+.sub-nav-bar div{
     display: flex;
     gap: 1rem;
     align-items: center;
