@@ -37,7 +37,7 @@ collectData = {
     "treat_dispenser": [["use", "treat"], "w", 1*60*60], #1hr
     "ant_pass_dispenser": [["use", "free"], "a", 2*60*60], #2hr
     "glue_dispenser": [["use", "glue"], None, 22*60*60], #22hr
-    "stockings": [["check", "inside", "stocking"], None, 1*60*60], #1hr
+    "stockings": [["check", "inside", "stocking"], "a", 1*60*60], #1hr
     "wreath": [["admire", "honey"], "a", 30*60], #30mins
     "feast": [["dig", "beesmas"], "s", 1.5*60*60], #1.5hr
     "samovar": [["heat", "samovar"], "w", 6*60*60], #6hr
@@ -486,7 +486,6 @@ class macro:
             self.keyboard.press('r')
             time.sleep(0.2)
             self.keyboard.press('enter')
-
             emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
             st = time.time()
             #wait for empty health bar to appear
@@ -494,10 +493,11 @@ class macro:
             #if the empty health bar disappears, player has respawned
             #max 8s in case player does not respawn
             st = time.time()
-            while time.time() - st < 7:
+            while time.time() - st < 5:
                 if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
                     time.sleep(0.5)
                     break
+
             self.canDetectNight = True
             self.location = "spawn"
             #detect if player at hive. Spin a max of 4 times
@@ -1515,12 +1515,14 @@ class macro:
         #if they are both the same, we assume that the keypress didnt go through and hence accessibility is not enabled
         if sys.platform == "darwin":
             img1 = pillowToHash(mssScreenshot())
-            self.keyboard.press(",") #don't have to rotate back, resetting will deal with it
-            time.sleep(0.1)
+            self.keyboard.press("esc")
+            time.sleep(0.5)
             img2 = pillowToHash(mssScreenshot())
+            self.keyboard.press("esc")
             if similarHashes(img1, img2, 10):
                 messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Accessibility Permission')
-            
+
+
         #enable night detection
         if self.setdat["stinger_hunt"]:
             nightDetectThread = threading.Thread(target=self.detectNight)
