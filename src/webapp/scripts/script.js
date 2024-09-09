@@ -31,6 +31,9 @@ function getInputValue(id){
     //dropdown
     } else if (ele.tagName == "SELECT"){
         return ele.value.toLowerCase()
+    //slider
+    } else if (ele.tagName == "INPUT" && ele.type == "range"){
+        return ele.value
     }
 }
 

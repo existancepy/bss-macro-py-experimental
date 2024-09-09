@@ -180,6 +180,20 @@ main{
     margin-bottom: 0.1rem;
 }
 
+.standard-container h3{
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;  
+    font-weight: 400;
+    margin-bottom: 0.1rem;
+}
+
+.standard-container h4{
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;  
+}
+
 .standard-container p{
     font-size: 0.95rem;
     color: #adb4bc;
@@ -194,6 +208,13 @@ main{
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
     margin-left: -0.7rem;
+}
+
+.standard-container table {
+    width: 100%;
+    border-collapse:separate;
+    border-spacing:0rem 1rem;
+
 }
 
 .purple-button{
@@ -381,4 +402,22 @@ option{
 
 .textbox:focus{
     border-width: 3px;
+}
+
+/*Slider style*/
+.slider {
+    accent-color: #7A77BB;
+}
+
+/*Manual Planter styles*/
+.manual-planters-field, .manual-planters-planters{
+    width: 10rem;
+}
+
+.cycle-spacing{
+    display: flex; 
+    gap: 5rem; 
+    margin-left: 3rem;
+    margin-top: -0.7rem;
+    align-items: center;
 }
