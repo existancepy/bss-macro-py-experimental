@@ -29,9 +29,19 @@ function loadPlanters(){
         <table style="margin-top: 1rem; row-gap: 1rem;">
             <tr>
                 <td><h4 class="poppins-regular">Planters:</h4></td>
-                <td><select id="cycle${i}_1_planter" onchange="saveSetting(this, 'profile')" class="poppins-regular manual-planters-planters"></select></td>
-                <td><select id="cycle${i}_2_planter" onchange="saveSetting(this, 'profile')" class="poppins-regular manual-planters-planters"></select></td>
-                <td><select id="cycle${i}_3_planter" onchange="saveSetting(this, 'profile')" class="poppins-regular manual-planters-planters"></select></td>
+                <td>
+                    <select id="cycle${i}_1_planter" onchange="saveSetting(this, 'profile')" class="poppins-regular manual-planters-planters" size="1">
+                        <option value="sunflower" data-image="./assets/icons/refreshing.png">Sunflower</option>
+                    </select>
+                </td>
+                <td>
+                    <select id="cycle${i}_2_planter" onchange="saveSetting(this, 'profile')" class="poppins-regular manual-planters-planters">
+                    </select>
+                </td>
+                <td>
+                    <select id="cycle${i}_3_planter" onchange="saveSetting(this, 'profile')" class="poppins-regular manual-planters-planters">
+                    </select>
+                </td>
             </tr>
             <tr>
                 <td><h4 class="poppins-regular">Fields:</h4></td>
@@ -51,6 +61,24 @@ function loadPlanters(){
                 </label></td>
                 <td><label class="checkbox-container" style="margin-top:-0.6rem">
                     <input type="checkbox" id = "cycle${i}_3_gather" onchange="saveSetting(this, 'profile')">
+                    <span class="checkmark"></span>
+                </label></td>
+            </tr>
+            <tr>
+                <td>
+                    <h4 class="poppins-regular">Glitter:</h4>
+                    <div class="poppins-regular" style="font-size:0.9rem; color: #adb4bc">Use Glitter when the placing a planter.<br>Speeds up planter growth by 25%</div>
+                </td>
+                <td><label class="checkbox-container" style="margin-top:-1.2rem">
+                    <input type="checkbox" id = "cycle${i}_1_glitter" onchange="saveSetting(this, 'profile')">
+                    <span class="checkmark"></span>
+                </label></td>
+                <td><label class="checkbox-container" style="margin-top:-1.2rem">
+                    <input type="checkbox" id = "cycle${i}_2_glitter" onchange="saveSetting(this, 'profile')">
+                    <span class="checkmark"></span>
+                </label></td>
+                <td><label class="checkbox-container" style="margin-top:-1.2rem">
+                    <input type="checkbox" id = "cycle${i}_3_glitter" onchange="saveSetting(this, 'profile')">
                     <span class="checkmark"></span>
                 </label></td>
             </tr>

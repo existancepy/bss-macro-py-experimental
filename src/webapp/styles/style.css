@@ -422,3 +422,8 @@ option{
     margin-top: -0.7rem;
     align-items: center;
 }
+
+.emoji-text{
+    display: flex;
+    align-items: center;
+}
