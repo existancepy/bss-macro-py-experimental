@@ -128,6 +128,8 @@ class macro:
         #filter it to only include fields the player has enabled
         self.vicFields = [x for x in self.vicFields if self.setdat["stinger_{}".format(x.replace(" ","_"))]]
 
+        self.newUI = False
+
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
     #TODO:
@@ -392,31 +394,32 @@ class macro:
         #open inventory
         self.toggleInventory()
         time.sleep(0.3)
-        self.keyboard.press("s")
+        mouse.moveTo(312, 200)
+        mouse.click()
+        #scroll to top
+        for _ in range(80):
+            mouse.scroll(100)
         #scroll down, note the best match
         bestScroll, bestX, bestY = None, None, None
         valBest = 0
-        for i in range(20):
+        time.sleep(0.3)
+        for i in range(60):
             max_val, max_loc = locateImageOnScreen(itemImg, 0, 80, 180, self.mh-120)
             if max_val > valBest:
                 valBest = max_val
                 bestX, bestY = max_loc
                 bestScroll = i
-            for j in range(4):
-                pynputKeyboard.press(Key.page_down)
-                pynputKeyboard.release(Key.page_down)
-                if j > 1: time.sleep(0.05)
+            mouse.scroll(-40, True)
+            time.sleep(0.08)
         #scroll to the top
-        for _ in range(100):
-            pynputKeyboard.press(Key.page_up)
-            pynputKeyboard.release(Key.page_up)
-        time.sleep(0.1)
+        for _ in range(80):
+            mouse.scroll(100)
+        time.sleep(0.3)
         #scroll to item
-        for _ in range(bestScroll*4):
-            pynputKeyboard.press(Key.page_down)
-            pynputKeyboard.release(Key.page_down)
+        print(bestScroll)
+        for _ in range(bestScroll):
+            mouse.scroll(-40, True)
         #close UI navigation
-        self.keyboard.press("\\")
         if self.display_type == "retina":
             mouse.moveTo(bestX//2+20, bestY//2+80+20)
         else:
@@ -428,18 +431,6 @@ class macro:
         self.clickYes()
         #close inventory
         self.toggleInventory()
-        #close UI navigation
-        self.keyboard.press("\\")
-        #adjust camera
-        for _ in range(20):
-            pynputKeyboard.press(Key.page_down)
-            pynputKeyboard.release(Key.page_down)
-
-        for _ in range(5):
-            pynputKeyboard.press(Key.page_up)
-            time.sleep(0.05)
-            pynputKeyboard.release(Key.page_up)
-            time.sleep(0.01)
 
 
     def convert(self, bypass = False):
@@ -1444,7 +1435,7 @@ class macro:
             if not self.isFullScreen():
                 self.toggleFullScreen()
         #disable game mode
-        mouse.moveTo(100, 120)
+        self.moveMouseToDefault()
         if sys.platform == "darwin":
             time.sleep(1)
             #check roblox scaling
@@ -1501,6 +1492,7 @@ class macro:
                 appManager.openApp("roblox")
                 self.toggleFullScreen()
             time.sleep(1)
+            self.moveMouseToDefault()
 
         #detect new/old ui and set 
         #also check for screen recording permission 
@@ -1512,9 +1504,13 @@ class macro:
             self.logger.webhook("","Detected: New Roblox UI","light blue")
             ocr.newUI = True
         else:
-            self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red", "screen")
+            self.logger.webhook("","Unable to detect Roblox UI","red", "screen")
             self.newUI = False   
-            messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Screen Recording Permission')
+            #2nd check for screen recording perms by checking for sprinkler icon
+            if sys.platform == "darwin":
+                sprinklerImg = self.adjustImage("./images/menu", "sprinkler")
+                if not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.75):
+                    messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Screen Recording Permission')
 
         #check for accessibility
         #this is done by taking 2 different screenshots
@@ -1522,7 +1518,8 @@ class macro:
         if sys.platform == "darwin":
             img1 = pillowToHash(mssScreenshot())
             self.keyboard.press("esc")
-            time.sleep(0.6)
+            time.sleep(0.1)
+            time.sleep(0.5)
             img2 = pillowToHash(mssScreenshot())
             self.keyboard.press("esc")
             if similarHashes(img1, img2, 10):

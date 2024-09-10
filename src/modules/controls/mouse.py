@@ -33,3 +33,6 @@ def click():
 def fastClick():
     pynputMouse.press(Button.left)
     pynputMouse.release(Button.left)
+
+def scroll(clicks, pause = False):
+    pag.scroll(clicks, _pause = pause)

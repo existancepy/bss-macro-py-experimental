@@ -27,5 +27,5 @@ rhinobeetle_blue flower=1724737871.1896079
 rhinobeetle_bamboo=1724737902.8093796
 rhinobeetle_pineapple=1724737948.6795413
 rhinobeetle_clover=1724737859.0668948
-rejoin_every=1725845283.254173
+rejoin_every=1725932794.522583
 coconut_crab=1725686154.046121

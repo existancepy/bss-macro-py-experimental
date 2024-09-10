@@ -192,6 +192,7 @@ main{
     font-size: 1.1rem;
     display: flex;
     align-items: center;  
+    /*color: #b4bac2;*/
 }
 
 .standard-container p{
