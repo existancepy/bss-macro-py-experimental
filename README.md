@@ -13,7 +13,7 @@ This is where you can receive update news, guides, support/troubleshooting help 
 ## Features
 - Gathering
     - Gather up to 3 fields
-    - Choose from pre-built patterns or import your own
+    - Choose from preset patterns or import your own
     - Settings align with [natro's](https://github.com/NatroTeam/NatroMacro)
 - Collect
     - Claim dispensers like wealth clock, glue dispenser and more
