@@ -14,7 +14,7 @@ This is where you can receive update news, guides, support/troubleshooting help 
 - Gathering
     - Gather up to 3 fields
     - Choose from pre-built patterns or import your own
-    - Settings align [natro's](https://github.com/NatroTeam/NatroMacro)
+    - Settings align with [natro's](https://github.com/NatroTeam/NatroMacro)
 - Collect
     - Claim dispensers like wealth clock, glue dispenser and more
     - Collect the Mondo Chick's Buff
