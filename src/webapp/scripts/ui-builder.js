@@ -38,10 +38,10 @@ function setDropdownData(id, data){
     //create the html
     html = ""
     data.forEach(x => {
-        html += `<option value="${x}">${x}</option>`
+        html += `<div class = "option" data-value = "${x}">${x}</div>`
     })
     //add it to the element
-    document.getElementById(id).innerHTML = html
+    document.getElementById(id).children[1].children[0].innerHTML = html
 }
 
 function buildInput(id, type){
@@ -51,13 +51,23 @@ function buildInput(id, type){
                     <span class="checkmark"></span>
                 </label>`
     }else if (type.name == "dropdown"){
-        let html = `<select id="${id}" style="width: ${type.length? type.length: 10}rem; margin-top: 0.6rem;" onchange="${type.triggerFunction}" class="poppins-regular">`
+        let html = `
+        <div data-onchange="${type.triggerFunction}" id = ${id} class="custom-select poppins-regular" style="width: ${type.length? type.length: 10}rem; margin-top: 0.6rem;">
+            <div class="select-area">
+                <div class = "value" data-value="none">None</div>
+                <div class = "chevron">></div>
+            </div>
+            <div class="select-menu-relative">
+                <div class="select-menu" style="display: none;">
+        `
         type.data.forEach(x => {
             let value = x
             if ($.type(value) === "string") value = value.replace(/[^\p{L}\p{N}\p{P}\p{Z}^$\n]/gu, '').trim().toLowerCase() //remove emojis and leading/trailing white space, also set to lowercase
-            html += `<option value="${value}">${x}</option>`
+            html += `<div class = "option" data-value = "${value}">${x}</div>`
         })
-        html += "</select>"
+        html += `</div>
+            </div>
+        </div>`
         return html
     }
     else if (type.name == "textbox"){
