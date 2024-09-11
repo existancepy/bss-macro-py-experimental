@@ -4,8 +4,7 @@ Bee Swarm Macro with GUI, written primarily in python, designed for MacOS and Wi
 
 Existance Macro is a free open source software, link: https://github.com/existancepy/bss-macro-py-experimental
 
-![gui](https://raw.githubusercontent.com/existancepy/bss-macro-py-experimental/docs/assets/gui.png)
-
+![gui](https://raw.githubusercontent.com/existancepy/bss-macro-py-experimental/3b6d5fa0c9110f4ae1baad9bac3c1f393eeed74f/docs/assets/gui.png)
 ## Community
 [Join the Discord!](https://discord.gg/FTB8b2vB6y)
 
