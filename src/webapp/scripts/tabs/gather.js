@@ -13,7 +13,7 @@ async function saveEnabled(){
 function saveField(){
     const fieldProperties = ["shift_lock","field_drift_compensation", "shape", "size","width","invert_lr","invert_fb","turn","turn_times","mins","backpack","return", "start_location", "distance"]
     const fieldData = generateSettingObject(fieldProperties)
-    eel.saveField(document.getElementById("field").value,fieldData)
+    eel.saveField(getInputValue("field"),fieldData)
 }
 //save the fields_enabled
 async function updateFieldEnable(ele){
@@ -25,11 +25,11 @@ async function updateFieldEnable(ele){
 
 //load the field selected in the dropdown
 async function loadAndSaveField(ele){
-    const data = (await eel.loadFields()())[ele.value]
+    const data = (await eel.loadFields()())[getDropdownValue(ele)]
     loadInputs(data)
     //save
     const fields = (await loadSettings()).fields
-    fields[fieldNo-1] = ele.value
+    fields[fieldNo-1] = getDropdownValue(ele)
     eel.saveProfileSetting("fields",fields)
 }
 
@@ -49,7 +49,7 @@ async function switchGatherTab(target){
     //load the fields
     const settings = await loadSettings()
     const fieldDropdown = document.getElementById("field")
-    fieldDropdown.value = settings.fields[fieldNo-1]
+    setDropdownValue(fieldDropdown, settings.fields[fieldNo-1])
     document.getElementById("field_enable").checked = settings.fields_enabled[fieldNo-1]
     //get the pattern list
     const patterns = await eel.getPatterns()()

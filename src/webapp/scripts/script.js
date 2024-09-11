@@ -28,9 +28,12 @@ function getInputValue(id){
         if (!value && (ele.dataset.inputType == "float" || ele.dataset.inputType == "int")) return 0
         if (!value) return ""
         return value
-    //dropdown
-    } else if (ele.tagName == "SELECT"){
-        return ele.value.toLowerCase()
+    //custom dropdown
+    } else if (ele.tagName == "DIV" && ele.className.includes("custom-select")){
+        return getDropdownValue(ele).toLowerCase()
+    //slider
+    } else if (ele.tagName == "INPUT" && ele.type == "range"){
+        return ele.value
     }
 }
 
@@ -73,6 +76,8 @@ function loadInputs(obj){
         if (!ele) continue
         if (ele.type == "checkbox"){
             ele.checked = v
+        }else if (ele.className.includes("custom-select")){
+            setDropdownValue(ele, v)
         }else{
             ele.value = v
         }
@@ -144,3 +149,93 @@ window.addEventListener("keydown", (event) => {
     return false
 }
 })
+
+/*
+=============================================
+Custom Select
+=============================================
+*/
+
+//pass an optionEle to set the select-area
+function updateDropDownDisplay(optionEle){
+    const parentEle = optionEle.parentElement.parentElement.parentElement
+    //set the data-value attribute of the select
+    const selectEle = parentEle.children[0].children[0]
+    selectEle.dataset.value = optionEle.dataset.value
+    //set the display to match the option
+    selectEle.innerHTML = optionEle.innerHTML
+}
+//document click event
+function dropdownClicked(event){
+    //get the element that was clicked
+    const ele = event.target
+    if (!ele) return
+    //toggle dropdown
+    if (ele.className.includes("select-area")){
+        //get the associated custom-select parent element
+        parent = ele.parentElement
+        const optionsEle = parent.children[1].children[0]
+        closeAllDropdowns(optionsEle) //close all other dropdowns
+        //toggle the dropdown menu
+        if (optionsEle.style.display == "none"){ //open it
+            optionsEle.style.display = "block"
+            const currValue = parent.children[0].children[0].dataset.value
+            //highlight the corresponding value option
+            //ie if the value of the dropdown is "none", highlight the "none option"
+            Array.from(optionsEle.children).forEach(x => {
+                x.dataset.value == currValue ? x.classList.add("selected") : x.classList.remove("selected")
+        })
+        }
+        else{ //close it
+            optionsEle.style.display = "none"
+        }
+    }
+    else{
+        //close all dropdowns, because an option was selected or the user clicked elsewhere
+        closeAllDropdowns()
+        if (ele.className.includes("option")){
+            updateDropDownDisplay(ele)
+            const parentEle = ele.parentElement.parentElement.parentElement
+            let funcParams = parentEle.dataset.onchange.replace("this", "parentEle")
+            eval(funcParams)
+        }
+        else{
+            //try again, but with the parent element
+            //this creates a recursive loop to account for children elements (could be expensive)
+            dropdownClicked({target: ele.parentElement})
+        }
+    }
+}
+
+function getDropdownValue(ele){
+    return ele.children[0].children[0].dataset.value
+}
+
+function setDropdownValue(ele, value){
+    const optionsEle = ele.children[1].children[0]
+    for (let i = 0; i < optionsEle.children.length; i++){
+        const x = optionsEle.children[i]
+        if (x.dataset.value == value){
+            updateDropDownDisplay(x)
+            break
+        }
+    }
+}
+//close all other dropdown menus
+//if ele is undefined, close all menus
+function closeAllDropdowns(ele){
+    Array.from(document.getElementsByClassName("select-menu")).forEach(x => {
+        if (ele !== x) x.style.display="none"
+    })
+}
+function dropdownHover(event){
+    const ele = event.target
+    if (ele.className.includes("option")){
+        Array.from(document.getElementsByClassName("option")).forEach(x => {
+            x.classList.remove("selected")
+        })
+        ele.classList.add("selected")
+    }
+}
+document.addEventListener("click", dropdownClicked);
+document.addEventListener("mouseover", dropdownHover);

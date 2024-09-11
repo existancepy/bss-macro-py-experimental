@@ -15,7 +15,6 @@ function switchKillTab(target){
     target.classList.add("active")
     target.innerHTML = `<div class = "select-indicator" id = "kill-select"></div>` + target.innerHTML
     //show tab
-    console.log(target.id)
     tab = document.getElementById(`${target.id}-tab`)
     tab.style.display = "block"
     //scroll back to top

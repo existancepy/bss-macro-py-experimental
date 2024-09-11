@@ -73,6 +73,7 @@ mobRespawnTimes = {
 # Define the color range for reset detection (in HSL color space)
 resetLower = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
 resetUpper = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
+resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(16,10))
 
 
 nightFloorDetectThresholds = [
@@ -115,11 +116,6 @@ class macro:
         self.collectCooldowns = dict([(k, v[2]) for k,v in collectData.items()])
         self.collectCooldowns["sticker_printer"] = 1*60*60
 
-        #reset kernel
-        if self.display_type == "retina":
-            self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25,25)) #might need double kernel size for retina, but not sure
-        else:
-            self.resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25,25))
         #field drift compensation class
         self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
 
@@ -131,6 +127,8 @@ class macro:
         self.vicFields = ["pepper", "mountain top", "rose", "cactus", "spider", "clover"]
         #filter it to only include fields the player has enabled
         self.vicFields = [x for x in self.vicFields if self.setdat["stinger_{}".format(x.replace(" ","_"))]]
+
+        self.newUI = False
 
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
@@ -364,57 +362,64 @@ class macro:
         time.sleep(0.1)
         for _ in range(2):
             mouse.click()
-
+    
     def toggleInventory(self):
-            self.keyboard.press("\\")
-            #align with first buff
-            for _ in range(7):
+        mouse.moveTo(30, 113)
+        mouse.click()
+        time.sleep(0.1)
+        self.moveMouseToDefault()
+        '''
+        self.keyboard.press("\\")
+        #align with first buff
+        for _ in range(7):
+            self.keyboard.press("w")
+        for _ in range(20):
+            self.keyboard.press("a")
+        #open inventory
+        if sys.platform == "darwin":
+            for _ in range(5):
                 self.keyboard.press("w")
-            for _ in range(20):
-                self.keyboard.press("a")
-            #open inventory
-            if sys.platform == "darwin":
-                for _ in range(5):
-                    self.keyboard.press("w")
-                    time.sleep(0.1)
-                self.keyboard.press("s")
-                self.keyboard.press("a")
                 time.sleep(0.1)
-                self.keyboard.press("enter")
-            else:
-                self.keyboard.press("s")
-                self.keyboard.press("enter")
+            self.keyboard.press("s")
+            self.keyboard.press("a")
+            time.sleep(0.1)
+            self.keyboard.press("enter")
+        else:
+            self.keyboard.press("s")
+            self.keyboard.press("enter")
+        '''
 
     def useItemInInventory(self, itemName):
         itemImg = self.adjustImage("./images/inventory", itemName)
         #open inventory
         self.toggleInventory()
         time.sleep(0.3)
-        self.keyboard.press("s")
+        mouse.moveTo(312, 200)
+        mouse.click()
+        #scroll to top
+        for _ in range(80):
+            mouse.scroll(100)
         #scroll down, note the best match
         bestScroll, bestX, bestY = None, None, None
         valBest = 0
-        for i in range(20):
+        time.sleep(0.3)
+        for i in range(60):
             max_val, max_loc = locateImageOnScreen(itemImg, 0, 80, 180, self.mh-120)
             if max_val > valBest:
                 valBest = max_val
                 bestX, bestY = max_loc
                 bestScroll = i
-            for j in range(4):
-                pynputKeyboard.press(Key.page_down)
-                pynputKeyboard.release(Key.page_down)
-                if j > 1: time.sleep(0.05)
+            mouse.scroll(-40, True)
+            time.sleep(0.08)
         #scroll to the top
-        for _ in range(100):
-            pynputKeyboard.press(Key.page_up)
-            pynputKeyboard.release(Key.page_up)
-        time.sleep(0.1)
+        for _ in range(80):
+            mouse.scroll(100)
+        time.sleep(0.3)
         #scroll to item
-        for _ in range(bestScroll*4):
-            pynputKeyboard.press(Key.page_down)
-            pynputKeyboard.release(Key.page_down)
+        print(bestScroll)
+        for _ in range(bestScroll):
+            mouse.scroll(-40, True)
         #close UI navigation
-        self.keyboard.press("\\")
         if self.display_type == "retina":
             mouse.moveTo(bestX//2+20, bestY//2+80+20)
         else:
@@ -426,18 +431,6 @@ class macro:
         self.clickYes()
         #close inventory
         self.toggleInventory()
-        #close UI navigation
-        self.keyboard.press("\\")
-        #adjust camera
-        for _ in range(20):
-            pynputKeyboard.press(Key.page_down)
-            pynputKeyboard.release(Key.page_down)
-
-        for _ in range(5):
-            pynputKeyboard.press(Key.page_up)
-            time.sleep(0.05)
-            pynputKeyboard.release(Key.page_up)
-            time.sleep(0.01)
 
 
     def convert(self, bypass = False):
@@ -463,10 +456,14 @@ class macro:
         time.sleep(wait)
         return True
 
+    def moveMouseToDefault(self):
+        yOffset = 0
+        if self.newUI: yOffset += 20
+        mouse.moveTo(370, 100+yOffset)
+
     def reset(self, hiveCheck = False, convert = True):
         self.keyboard.releaseMovement()
-        yOffset = 10 #calculate yoffset
-        if self.newUI: yOffset += 20
+
         #reset until player is at hive
         for i in range(5):
             self.logger.webhook("", f"Resetting character, Attempt: {i+1}", "dark brown")
@@ -479,7 +476,7 @@ class macro:
             if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
                 self.keyboard.press("e")
 
-            mouse.moveTo(370, 100+yOffset)
+            self.moveMouseToDefault()
             time.sleep(0.1)
             self.keyboard.press('esc')
             time.sleep(0.1)
@@ -500,14 +497,14 @@ class macro:
 
             self.canDetectNight = True
             self.location = "spawn"
-            #detect if player at hive. Spin a max of 4 times
+            #detect if player is at hive. Spin a max of 4 times
             for _ in range(4):
-                screen = pillowToCv2(mssScreenshot(self.mw//2-40, self.mh-30, self.mw//2+40, 30))
+                screen = pillowToCv2(mssScreenshot(self.mw//2-100, self.mh-10, 200, 10))
                 # Convert the image from BGR to HLS color space
                 hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
                 # Create a mask for the color range
                 mask = cv2.inRange(hsl, resetLower, resetUpper)   
-                mask = cv2.erode(mask, self.resetKernel, 2)
+                mask = cv2.erode(mask, resetKernel, 2)
                 #get contours. If contours exist, direction is correct
                 contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 if contours:
@@ -681,9 +678,9 @@ class macro:
                 return
             self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
     
-    def blueTextImageSearch(self, text):
+    def blueTextImageSearch(self, text, threshold=0.7):
         target = self.adjustImage("./images/blue", text)
-        return locateImageOnScreen(target, self.mw*3/4, self.mh*2/3, self.mw//4,self.mh//3, 0.7)
+        return locateImageOnScreen(target, self.mw*3/4, self.mh*2/3, self.mw//4,self.mh//3, threshold)
     #background thread for gather
     #check if mobs have been killed and reset their timings
     #check if player died
@@ -1344,11 +1341,11 @@ class macro:
         elif amulet == "replace":
             replace()
         elif amulet == "stop":
-            while self.keepOldCheck(): pass
+            while self.keepOldCheck(): mouse.click()
         elif amulet == "wait for command":
             self.status.value = "amulet_wait"
             #wait for user to send command to bot
-            while self.status.value == "amulet_wait": pass
+            while self.status.value == "amulet_wait": mouse.click()
             if self.status.value == "amulet_keep":
                 keepOld()
             elif self.status.value == "amulet_replace":
@@ -1438,6 +1435,7 @@ class macro:
             if not self.isFullScreen():
                 self.toggleFullScreen()
         #disable game mode
+        self.moveMouseToDefault()
         if sys.platform == "darwin":
             time.sleep(1)
             #check roblox scaling
@@ -1452,7 +1450,6 @@ class macro:
             macVersion = float('.'.join(macVersion.split('.')[:2]))
             if macVersion >= 14 and platform.processor() == "arm":
                 self.logger.webhook("","Disabling game mode","dark brown")
-                time.sleep(1.5)
                 #make sure roblox is not fullscreen
                 self.toggleFullScreen()
                     
@@ -1460,7 +1457,7 @@ class macro:
                 lightGameMode = self.adjustImage("./images/mac", "gamemodelight")
                 darkGameMode = self.adjustImage("./images/mac", "gamemodedark")
                 x = self.mw/2.3
-                time.sleep(2)
+                time.sleep(1.2)
                 #find light mode
                 res = locateImageOnScreen(lightGameMode,x, 0, self.mw-x, 60, 0.7)
                 if res is None: #cant find light, find dark
@@ -1474,7 +1471,7 @@ class macro:
                     mouse.moveTo(gx+x, gy)
                     time.sleep(0.1)
                     mouse.fastClick()
-                    time.sleep(2)
+                    time.sleep(0.5)
                     #check if game mode is enabled
                     screen = mssScreenshot(x, 0, self.mw-x, 150)
                     ocrRes = ocr.ocrRead(screen)
@@ -1495,6 +1492,7 @@ class macro:
                 appManager.openApp("roblox")
                 self.toggleFullScreen()
             time.sleep(1)
+            self.moveMouseToDefault()
 
         #detect new/old ui and set 
         #also check for screen recording permission 
@@ -1506,9 +1504,13 @@ class macro:
             self.logger.webhook("","Detected: New Roblox UI","light blue")
             ocr.newUI = True
         else:
-            self.logger.webhook("","Unable to detect Roblox UI. Ensure that terminal has the screen recording permission","red", "screen")
+            self.logger.webhook("","Unable to detect Roblox UI","red", "screen")
             self.newUI = False   
-            messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Screen Recording Permission')
+            #2nd check for screen recording perms by checking for sprinkler icon
+            if sys.platform == "darwin":
+                sprinklerImg = self.adjustImage("./images/menu", "sprinkler")
+                if not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.75):
+                    messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Screen Recording Permission')
 
         #check for accessibility
         #this is done by taking 2 different screenshots
@@ -1516,6 +1518,7 @@ class macro:
         if sys.platform == "darwin":
             img1 = pillowToHash(mssScreenshot())
             self.keyboard.press("esc")
+            time.sleep(0.1)
             time.sleep(0.5)
             img2 = pillowToHash(mssScreenshot())
             self.keyboard.press("esc")
