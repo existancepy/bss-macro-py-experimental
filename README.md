@@ -1,6 +1,6 @@
 # Existance Macro
 ![Discord](https://img.shields.io/discord/1065032948119769118?label=Discord&color=7289da&logo=discord&logoColor=white&link=https://discord.gg/WdbWgFewqx)
-![GitHub Repo stars](https://img.shields.io/github/stars/existancepy/bss-macro-py?style=plastic)
+![GitHub Repo stars](https://img.shields.io/github/stars/existancepy/bss-macro-py?style=for-the-badge)
 
 Bee Swarm Macro with GUI, written primarily in python, designed for MacOS and Windows.
 
