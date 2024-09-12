@@ -1,3 +1,5 @@
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/existancepy/bss-macro-py/total)
+
 # Existance Macro
 
 Bee Swarm Macro with GUI, written primarily in python, designed for MacOS and Windows.
