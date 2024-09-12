@@ -1,4 +1,3 @@
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/existancepy/bss-macro-py/total)
 ![Discord](https://img.shields.io/discord/1065032948119769118?label=Discord&color=7289da&logo=discord&logoColor=white&link=https://discord.gg/WdbWgFewqx)
 
 # Existance Macro
