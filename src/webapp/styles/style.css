@@ -461,6 +461,8 @@ option{
     position: absolute;
     width: 100%;
     z-index: 999;
+    overflow-y: auto;
+    max-height: 40vh; /*Customise the max height of the dropdown menu*/
 }
 
 .option, .value{
@@ -481,6 +483,6 @@ option{
 }
 
 .custom-select img {
-    height: calc(var(--dd-font-size) * 0.9);
-    margin: 0 calc(var(--dd-font-size) * 0.3);
+    height: calc(var(--dd-font-size) * 1); /*Customise the height scaling of icons*/
+    margin: 0 calc(var(--dd-font-size) * 0.3); /*Customise the spacing of icons*/
 }

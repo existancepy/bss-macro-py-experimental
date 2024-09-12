@@ -65,3 +65,24 @@ const killEmojis = {
     coconut_crab: "",
     stump_snail: "🐌",
 }
+
+const fieldNectarIcons = {
+    none: null,
+    sunflower: "satisfying",
+    dandelion: "comforting",
+    mushroom: "motivating",
+    blue_flower: "refreshing",
+    clover: "invigorating",
+    strawberry: "refreshing",
+    spider: "motivating",
+    bamboo: "comforting",
+    pineapple: "satisfying",
+    stump: "motivating",
+    cactus: "invigorating",
+    pumpkin: "satisfying",
+    pine_tree: "comforting",
+    rose: "motivating",
+    mountain_top: "invigorating",
+    pepper: "invigorating",
+    coconut: "refreshing"
+}

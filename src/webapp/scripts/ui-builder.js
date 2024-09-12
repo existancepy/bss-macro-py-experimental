@@ -16,6 +16,8 @@ const slotArray = [1,2,3,4,5,6,7]
     type: {
         name: "dropdown",
         data: ["a","b","c"],
+        icons: ["./assets/icon/saturator.png", "./assets/icon/refreshing.png"], //array of path of image to put in the dropdown options, optional. Must have same length as data array. null values are accepted (there will be no image)
+        iconDirection: "left", //if the icon should appear on the left or right of the text. Defaults to left
         triggerFunction: "saveData()",
         length: 13 //in rem units, defaults to 10 if not included
     }
@@ -60,11 +62,22 @@ function buildInput(id, type){
             <div class="select-menu-relative">
                 <div class="select-menu" style="display: none;">
         `
-        type.data.forEach(x => {
+        if (type.icons && type.data && (type.data.length != type.icons.length))
+            throw new Error ("icon and data array lengths are not the same")
+        for (let i = 0; i < type.data.length; i++){
+            const x = type.data[i]
             let value = x
             if ($.type(value) === "string") value = value.replace(/[^\p{L}\p{N}\p{P}\p{Z}^$\n]/gu, '').trim().toLowerCase() //remove emojis and leading/trailing white space, also set to lowercase
-            html += `<div class = "option" data-value = "${value}">${x}</div>`
-        })
+            let iconHTML = ""
+            if (type.icons && type.icons[i]) iconHTML = `<img src="${type.icons[i]}">`
+
+            if (type.iconDirection == "right"){
+                html += `<div class = "option" data-value = "${value}">${x}${iconHTML}</div>`
+            }
+            else{
+                html += `<div class = "option" data-value = "${value}">${iconHTML}${x}</div>`
+            }
+        }
         html += `</div>
             </div>
         </div>`
