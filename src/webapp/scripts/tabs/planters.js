@@ -105,5 +105,14 @@ function loadPlanters(){
     changePlanterMode()
 }
 
+function clearManualPlantersData(){
+    const btn = document.getElementById("manual-planters-reset-btn")
+    if (btn.classList.contains("active")) return
+    eel.clearManualPlanters()
+    btn.classList.add("active")
+    setTimeout(() => {
+        btn.classList.remove("active")
+      }, 700)
+}
 $("#planters-placeholder")
 .load("../htmlImports/tabs/planters.html", loadPlanters) 
