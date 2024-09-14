@@ -19,25 +19,13 @@ function changePlanterMode(){
     
 }
 
-const planterNames = ["none", "paper", "ticket", "festive", "sticker", "plastic", "candy", "red_clay", "blue_clay", "tacky", "pesticide", "heat-treated", "hydroponic", "petal", "planter_of_plenty"]
-const planterArray = []
-const planterIconsArray = []
-planterNames.forEach(x => {
-    planterArray.push(x === "heat-treated" ? "Heat-Treated" : toTitleCase(x.replaceAll("_"," ")))
-    planterIconsArray.push(x === "none" ? null : `./assets/icons/${x}_planter.png`)
-})
-const fieldArray = []
-const fieldNectarIconsArray = []
-for (const [k,v] of Object.entries(fieldNectarIcons)) {
-    fieldArray.push(toTitleCase(k.replaceAll("_"," ")))
-    fieldNectarIconsArray.push(v? `./assets/icons/${v}.png` : null)
-}
+const planterArray = toImgArray(planterIcons)
+const fieldNectarArray = toImgArray(fieldNectarIcons, true)
+
 function fieldDropDownHTML(id){
     return buildInput(id,{
         name: "dropdown",
-        data: fieldArray,
-        icons: fieldNectarIconsArray,
-        iconDirection: "right",
+        data: fieldNectarArray,
         triggerFunction: "saveSetting(this, 'profile')",
         length: 11.5    
     })
@@ -46,8 +34,6 @@ function planterDropDownHTML(id){
     return buildInput(id,{
         name: "dropdown",
         data: planterArray,
-        icons: planterIconsArray,
-        iconDirection: "left",
         triggerFunction: "saveSetting(this, 'profile')",
         length: 11.5
     })

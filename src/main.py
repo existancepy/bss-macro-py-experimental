@@ -30,7 +30,7 @@ def disconnectCheck(run, status, display_type):
 
 #controller for the macro
 def macro(status, log, haste):
-    import pyautogui as pag
+    import modules.misc.settingsManager as settingsManager
     import modules.macro as macroModule
     macro = macroModule.macro(status, log, haste)
     #invert the regularMobsInFields dict
@@ -50,11 +50,13 @@ def macro(status, log, haste):
                 messageBox.msgBox(text="You entered a 'share?code' link!\n\nTo fix this:\n1. Paste the link in your browser\n2. Wait for roblox to load in\n3. Copy the link from the top of your browser.  It should now be a 'privateServerLinkCode' link", title='Unsupported private server link')
                 return
     macro.start()
+    #macro.useItemInInventory("blueclayplanter")
     #function to run a task
     #makes it easy to do any checks after a task is complete (like stinger hunt, rejoin every, etc)
     def runTask(func = None, args = (), resetAfter = True, convertAfter = True):
         #execute the task
-        if not func is None: func(*args)
+        returnVal = None
+        if not func is None: returnVal = func(*args)
         #task done
         if resetAfter: macro.reset(convert=convertAfter)
 
@@ -64,10 +66,11 @@ def macro(status, log, haste):
         if setdat["mondo_buff"]:
             macro.collectMondoBuff()
         if setdat["rejoin_every"]:
-            if macro.hasRespawned("rejoin_every", setdat["rejoin_every"]):
+            if macro.hasRespawned("rejoin_every", setdat["rejoin_every"]*60*60):
                 macro.rejoin("Rejoining (Scheduled)")
                 macro.saveTiming("rejoin_every")
         status.value = ""
+        return returnVal
 
     #macro.rejoin()
     while True:
@@ -82,7 +85,39 @@ def macro(status, log, haste):
 
         if setdat["sticker_printer"] and macro.hasRespawned("sticker_printer", macro.collectCooldowns["sticker_printer"]):
             runTask(macro.collectStickerPrinter)
-        
+
+        #planters
+        def goToNextCycle(cycle):
+            #go to the next cycle
+            while True:
+                cycle += 1
+                if cycle > 5:
+                    cycle = 1
+                for i in range(3): #make sure the cycle is occupied
+                    if setdat[f"cycle{cycle}_{i+1}_planter"] != "none" and setdat[f"cycle{cycle}_{i+1}_field"] != "none":
+                        return cycle
+        planterDataRaw = None
+        if setdat["manual_planters_collect_every"]:
+            with open("./data/user/manualplanters.txt", "r") as f:
+                planterDataRaw = f.read()
+            f.close()
+            cycle = goToNextCycle(0)
+            if not planterDataRaw: #check if planter data exists
+                #place planters in cycle
+                runTask(macro.placePlanterCycle, args = (cycle,),resetAfter=False)
+            else: #planter data does exist, check if its time to collect them
+                planterData = ast.literal_eval(planterDataRaw)
+                cycle = planterData["cycle"]
+                if time.time() > planterData["harvestTime"]:
+                    #Collect planters
+                    for i in range(len(planterData["planters"])):
+                        runTask(macro.collectPlanter, args=(planterData["planters"][i], planterData["fields"][i]))
+                    settingsManager.clearFile("./data/user/manualplanters.txt")
+                    #go to the next cycle
+                    cycle = goToNextCycle(cycle)
+                    #place them
+                    runTask(macro.placePlanterCycle, args = (cycle,),resetAfter=False)
+                
         #mob runs
         for mob, fields in regularMobData.items():
             if not setdat[mob]: continue
@@ -96,14 +131,22 @@ def macro(status, log, haste):
         #coconut crab
         if setdat["coconut_crab"] and macro.hasRespawned("coconut_crab", 36*60*60, applyMobRespawnBonus=True):
             macro.coconutCrab()
+            
         #stump snail
         if setdat["stump_snail"] and macro.hasRespawned("stump_snail", 96*60*60, applyMobRespawnBonus=True):
             runTask(macro.stumpSnail)
             
-        #gather
+        #gather tab
+        gatherFields = []
         for i in range(3):
             if setdat["fields_enabled"][i]:
-                runTask(macro.gather, args=(setdat["fields"][i],), resetAfter=False)
+                gatherFields.append(setdat["fields"][i])
+
+        planterGatherFields = ast.literal_eval(planterDataRaw)["gatherFields"] if planterDataRaw else []
+
+        gatherFields.extend([x for x in planterGatherFields if x not in gatherFields])
+        for field in gatherFields:
+            runTask(macro.gather, args=(field,), resetAfter=False)
 
 def watch_for_hotkeys(run):
     def on_press(key):
@@ -125,8 +168,8 @@ if __name__ == "__main__":
     from modules.controls.keyboard import keyboard as keyboardModule
     import modules.logging.log as logModule
     import modules.controls.mouse as mouse
-    import modules.misc.settingsManager as settingsManager
     import modules.misc.appManager as appManager
+    import modules.misc.settingsManager as settingsManager
     from modules.discord_bot.discordBot import discordBot
     macroProc: typing.Optional[multiprocessing.Process] = None
     #set screen data

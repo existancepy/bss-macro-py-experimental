@@ -1,0 +1,1 @@
+{'cycle': 3, 'planters': ['candy', 'tacky', 'plastic'], 'fields': ['spider', 'dandelion', 'blue flower'], 'gatherFields': [], 'harvestTime': 1726311828.141173}

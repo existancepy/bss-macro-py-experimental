@@ -16,6 +16,9 @@ function toTitleCase(str) {
     );
 }
 
+//javascript function to remove html tags
+const stripHTMLTags = str => str.replace(/<[^>]*>/g, '');
+
 /*
 =============================================
 UI

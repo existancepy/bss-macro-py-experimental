@@ -102,6 +102,25 @@ locationToNightFloorType = {
     "coconut": 1
 }
 
+#store planter's growth data
+#[growth time in secs, (list of bonus fields), bonus growth from fields]
+planterGrowthData = {
+    "paper": [1*60*60, ()], #1hr
+    "ticket": [2*60*60, ()], #2hr
+    "festive": [4*60*60, ()], #4hr
+    "sticker": [3*60*60, ()], #3hr
+    "plastic": [2*60*60, ()], #2hr
+    "candy": [4*60*60, ("strawberry", "pineapple", "coconut"), 0.25], #4hr
+    "red clay": [6*60*60, ("sunflower", "dandelion", "mushroom", "clover", "strawberry", "pineapple", "stump", "cactus", "pumpkin", "rose", "mountain top", "pepper", "coconut"), 0.25], #6hr
+    "blue clay": [6*60*60, ("sunflower", "dandelion", "blue flower", "clover", "bamboo", "pineapple", "stump", "cactus", "pumpkin", "pine tree", "mountain top", "coconut"), 0.25], #6hr
+    "tacky": [8*60*60, ("sunflower", "dandelion", "mushroom", "blue flower", "clover"), 0.25], #8hr
+    "pesticide": [10*60*60, ("bamboo", "spider", "strawberry"), 0.3], #10hr
+    "heat-treated": [12*60*60, ("sunflower", "dandelion", "mushroom", "clover", "strawberry", "pineapple", "stump", "cactus", "pumpkin", "rose", "mountain top", "pepper", "coconut"), 0.5], #12hr
+    "hydroponic": [12*60*60, ("sunflower", "dandelion", "blue flower", "clover", "bamboo", "pineapple", "stump", "cactus", "pumpkin", "pine tree", "mountain top", "coconut"), 0.5], #12hr
+    "petal": [14*60*60, ("sunflower", "dandelion", "blue flower", "mushroom" "clover", "bamboo", "strawberry", "pineapple", "stump", "cactus", "pumpkin", "pine tree", "rose", "mountain top", "coconut", "pepper"), 0.5], #14hrs
+    "planter of plenty": [16*60*60, ("pepper", "stump", "coconut", "mountain top"), 0.5] #16hr
+}
+
 class macro:
     def __init__(self, status, log, haste):
         self.status = status
@@ -129,6 +148,8 @@ class macro:
         self.vicFields = [x for x in self.vicFields if self.setdat["stinger_{}".format(x.replace(" ","_"))]]
 
         self.newUI = False
+
+        self.planterCooldowns = {}
 
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
@@ -389,7 +410,8 @@ class macro:
             self.keyboard.press("enter")
         '''
 
-    def useItemInInventory(self, itemName):
+    #scroll to an item in the inventory and return the x,y coordinates
+    def findItemInInventory(self, itemName):
         itemImg = self.adjustImage("./images/inventory", itemName)
         #open inventory
         self.toggleInventory()
@@ -402,28 +424,47 @@ class macro:
         #scroll down, note the best match
         bestScroll, bestX, bestY = None, None, None
         valBest = 0
+        foundEarly = False #if the max_val > 0.9, end searching early to save time
         time.sleep(0.3)
         for i in range(60):
-            max_val, max_loc = locateImageOnScreen(itemImg, 0, 80, 180, self.mh-120)
+            max_val, max_loc = locateImageOnScreen(itemImg, 0, 90, 120, self.mh-180)
             if max_val > valBest:
                 valBest = max_val
                 bestX, bestY = max_loc
                 bestScroll = i
+                if max_val > 0.9:
+                    foundEarly = True
+                    break
             mouse.scroll(-40, True)
-            time.sleep(0.08)
-        #scroll to the top
-        for _ in range(80):
-            mouse.scroll(100)
-        time.sleep(0.3)
-        #scroll to item
-        print(bestScroll)
-        for _ in range(bestScroll):
-            mouse.scroll(-40, True)
-        #close UI navigation
+            time.sleep(0.04)
+        if valBest < 0.55:
+            self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
+            return None
+        if not foundEarly:
+            #scroll to the top
+            for _ in range(80):
+                mouse.scroll(100)
+            time.sleep(0.3)
+            #scroll to item
+            for _ in range(bestScroll):
+                mouse.scroll(-40, True)
         if self.display_type == "retina":
-            mouse.moveTo(bestX//2+20, bestY//2+80+20)
-        else:
-            mouse.moveTo(bestX+20, bestY+80+20)
+            bestX //= 2
+            bestY //= 2
+        return (bestX+20, bestY+80+20)
+    
+    #click at the specified coordinates to use an item in the inventory
+    #if x/y is not provided, find the item in inventory
+    def useItemInInventory(self, itemName = None, x = None, y = None):
+        if x is None or y is None:
+            if itemName is None: raise Exception("tried searching for item but no item name is provided")
+            res = self.findItemInInventory(itemName)
+            if res is None:
+                self.toggleInventory()
+                return False
+            x, y = res
+        #close UI navigation
+        mouse.moveTo(x, y)
         for _ in range(2):
             mouse.click()
         mouse.moveBy(10,10)
@@ -431,6 +472,7 @@ class macro:
         self.clickYes()
         #close inventory
         self.toggleInventory()
+        return True
 
 
     def convert(self, bypass = False):
@@ -486,11 +528,11 @@ class macro:
             emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
             st = time.time()
             #wait for empty health bar to appear
-            while time.time() - st < 3 or not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7): pass
+            while time.time() - st < 3 and not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7): pass
             #if the empty health bar disappears, player has respawned
             #max 8s in case player does not respawn
             st = time.time()
-            while time.time() - st < 5:
+            while time.time() - st < 9:
                 if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
                     time.sleep(0.5)
                     break
@@ -783,22 +825,29 @@ class macro:
         gatherBackgroundThread.daemon = True
         gatherBackgroundThread.start()
         self.keyboard.releaseMovement()
-        while keepGathering:
+        def turnOffShitLock():
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
+            self.moveMouseToDefault()
+
+        if fieldSetting["shift_lock"]: self.keyboard.press('shift')
+        while keepGathering:
             mouse.mouseDown()
             exec(open(f"../settings/patterns/{fieldSetting['shape']}.py").read())
             #cycle ends
             mouse.mouseUp()
-            if fieldSetting["shift_lock"]: self.keyboard.press('shift')
+
             #check for gather interrupts
             if self.night and self.setdat["stinger_hunt"]: 
                 #rely on task function in main to execute the stinger hunt
+                turnOffShitLock()
                 self.logger.webhook("Gathering: interrupted","Stinger Hunt","dark brown")
                 self.reset(convert=False)
                 break
             elif self.collectMondoBuff(gatherInterrupt=True):
+                turnOffShitLock()
                 break
             elif self.died:
+                turnOffShitLock()
                 self.logger.webhook("","Player died", "dark brown","screen")
                 self.reset()
                 break
@@ -820,7 +869,10 @@ class macro:
         self.isGathering = False
         gatherBackgroundThread.join()
         #gathering was interrupted
-        if keepGathering: return
+        if keepGathering: 
+            return
+        else: turnOffShitLock()
+
         #go back to hive
         def walk_to_hive():
             nonlocal self
@@ -850,7 +902,7 @@ class macro:
                     break
             self.keyboard.keyUp("a")
             #in case we overwalked
-            time.sleep(0.15)
+            time.sleep(0.25)
             for _ in range(4):
                 if self.convert():
                     break
@@ -1424,8 +1476,100 @@ class macro:
         self.saveTiming("coconut_crab")
         self.reset()
 
+    
+    def goToPlanter(self, planter, field, method):
+        global finalKey
+        self.cannon()
+        self.logger.webhook("", f"Travelling: {planter.title()} Planter ({field.title()})", "dark brown")
+        self.goToField(field)
+        #move from center of field to planter spot
+        finalKey = None
+        path = f"../settings/paths/planters/{field}.py"
+        if os.path.isfile(path): #not all fields have a planter path
+            exec(open(path).read())
+        #go to the planter
+        if method == "collect": #return true if the planter can be found
+            if finalKey is not None:
+                st = time.time()
+                while time.time()-st < (finalKey[1]+1):
+                    self.keyboard.walk(finalKey[0],0.25)
+                    if self.isBesideEImage("ebutton"): return True
+            elif self.isBesideEImage("ebutton"):
+                return True
+            return False
+        else: #place, just walk there
+            if finalKey is not None: self.keyboard.walk(finalKey[0], finalKey[1])
+            return True
+    
+    #place the planter and return the time it would take for the planter to grow (in secs)
+    def placePlanter(self, planter, field, harvestFull, glitter):
+        self.goToPlanter(planter, field, "place")
+        name = planter.lower().replace(" ","").replace("-","")
+        if glitter: self.useItemInInventory("glitter") #use glitter
+        if not self.useItemInInventory(f"{name}planter"):
+            return 
+        self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
+        #calculate growth time. If the user didnt select harvest when full, return the harvest every X hours instead
+        if harvestFull:
+            baseGrowthTime, bonusFields, fieldGrowthBonus = planterGrowthData[planter]
+            bonusTime = 0
+            if glitter: bonusTime += 0.25
+            if field in bonusFields: bonusTime += fieldGrowthBonus
+            return (baseGrowthTime*(1-bonusTime))*60*60 #calculate the new growth time and convert to hrs
 
+        else:
+            return self.setdat["manual_planters_collect_every"]*60*60 
 
+    def collectPlanter(self, planter, field):
+        if not self.goToPlanter(planter, field, "collect"):
+            self.logger.webhook("",f"Unable to find Planter: {planter.title()}", "dark brown", "screen")
+            return
+        self.keyboard.press("e")
+        self.clickYes()
+        self.logger.webhook("",f"Looting: {planter.title()} planter","bright green", "screen")
+        self.keyboard.multiWalk(["s","d"], 0.87)
+        self.nmLoot(9, 5, "a")
+
+    #iterate through all 3 slots in a cycle
+    def placePlanterCycle(self, cycle):
+        collectFull = self.setdat["manual_planters_collect_full"]
+        planterGrowthMaxTime = 0
+        planterData = { #planter data to be stored in a file
+            "cycle": cycle,
+            "planters": [],
+            "fields": [],
+            "gatherFields": [],
+            "harvestTime": 0
+        }
+        for i in range(3):
+            planter = self.setdat[f"cycle{cycle}_{i+1}_planter"]
+            field = self.setdat[f"cycle{cycle}_{i+1}_field"]
+            if planter == "none" or field == "none": continue #check that both the planter and field are present
+            glitter = self.setdat[f"cycle{cycle}_{i+1}_glitter"]
+            #set the cooldown for planters and place them
+            planterGrowthTime = self.placePlanter(planter,field, collectFull, glitter)
+            if not planterGrowthTime: continue #make sure the planter was placed
+            #get the maximum planter growth time
+            if planterGrowthTime > planterGrowthMaxTime:
+                planterGrowthMaxTime = planterGrowthTime
+            planterData["planters"].append(planter)
+            planterData["fields"].append(field)
+            #set which fields to gather in
+            if self.setdat[f"cycle{cycle}_{i+1}_gather"]: 
+                planterData["gatherFields"].append(field)
+            self.reset()
+
+        planterData["harvestTime"] = time.time() + planterGrowthMaxTime
+        #convert planter growth max time to hrs, mins, secs readable format
+        planterReady = time.strftime("%H:%M:%S", time.gmtime(planterGrowthMaxTime))
+        self.logger.webhook("", f"Planters will be ready in: {planterReady}", "light blue")
+        
+        #save the planter data
+        with open("./data/user/manualplanters.txt", "w") as f:
+            f.write(str(planterData))
+        f.close()
+    
+    
     def start(self):
         #if roblox is not open, rejoin
         if not appManager.openApp("roblox"):
@@ -1522,7 +1666,7 @@ class macro:
             time.sleep(0.5)
             img2 = pillowToHash(mssScreenshot())
             self.keyboard.press("esc")
-            if similarHashes(img1, img2, 10):
+            if similarHashes(img1, img2, 3):
                 messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Accessibility Permission')
 
 
