@@ -13,6 +13,7 @@ def teleport(x,y):
 
 def moveTo(x,y):
     pag.moveTo(int(x),int(y),0.1)
+    pynputMouse.position = (int(x), int(y))
 
 def mouseDown():
     pynputMouse.press(Button.left)
@@ -34,5 +35,14 @@ def fastClick():
     pynputMouse.press(Button.left)
     pynputMouse.release(Button.left)
 
-def scroll(clicks, pause = False):
+def winScroll(clicks, pause = False):
+    pynputMouse.scroll(0, clicks)
+    if pause: time.sleep(0.05)
+
+def macScroll(clicks, pause = False):
     pag.scroll(clicks, _pause = pause)
+
+if sys.platform == "win32":
+    scroll = winScroll
+else:
+    scroll = macScroll

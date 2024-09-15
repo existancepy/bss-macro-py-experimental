@@ -386,8 +386,9 @@ class macro:
     
     def toggleInventory(self):
         mouse.moveTo(30, 113)
-        mouse.click()
         time.sleep(0.1)
+        mouse.click()
+        time.sleep(0.2)
         self.moveMouseToDefault()
         '''
         self.keyboard.press("\\")
@@ -1420,7 +1421,7 @@ class macro:
         while self.bossStatus is None:
             if self.blueTextImageSearch("died"):
                 self.died = True
-            if self.blueTextImageSearch("coconutcrab_defeat"):
+            if self.blueTextImageSearch("coconutcrab_defeat", 0.8):
                 self.bossStatus = "defeated"
         
 
@@ -1548,7 +1549,9 @@ class macro:
             glitter = self.setdat[f"cycle{cycle}_{i+1}_glitter"]
             #set the cooldown for planters and place them
             planterGrowthTime = self.placePlanter(planter,field, collectFull, glitter)
-            if not planterGrowthTime: continue #make sure the planter was placed
+            if not planterGrowthTime: #make sure the planter was placed
+                self.reset()
+                continue 
             #get the maximum planter growth time
             if planterGrowthTime > planterGrowthMaxTime:
                 planterGrowthMaxTime = planterGrowthTime
