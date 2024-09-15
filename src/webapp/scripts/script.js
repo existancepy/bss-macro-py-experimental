@@ -155,7 +155,7 @@ window.addEventListener("keydown", (event) => {
 Custom Select
 =============================================
 */
-
+dropdownOpen = false
 //pass an optionEle to set the select-area
 function updateDropDownDisplay(optionEle){
     const parentEle = optionEle.parentElement.parentElement.parentElement
@@ -169,25 +169,44 @@ function updateDropDownDisplay(optionEle){
 function dropdownClicked(event){
     //get the element that was clicked
     const ele = event.target
-    if (!ele) return
+    if (!ele){
+        dropdownOpen = false
+        return
+    } 
     //toggle dropdown
     if (ele.className.includes("select-area")){
         //get the associated custom-select parent element
-        parent = ele.parentElement
+        const parent = ele.parentElement
         const optionsEle = parent.children[1].children[0]
         closeAllDropdowns(optionsEle) //close all other dropdowns
         //toggle the dropdown menu
-        if (optionsEle.style.display == "none"){ //open it
+        if (dropdownOpen !== optionsEle){ //open it
+            dropdownOpen = optionsEle
             optionsEle.style.display = "block"
             const currValue = parent.children[0].children[0].dataset.value
             //highlight the corresponding value option
             //ie if the value of the dropdown is "none", highlight the "none option"
             Array.from(optionsEle.children).forEach(x => {
                 x.dataset.value == currValue ? x.classList.add("selected") : x.classList.remove("selected")
-        })
+            })
+            //check if its going below the screen and render the menu above
+            parent.style.transform = "none"
+            optionsEle.style.transform = "none"
+            ele.style.transform = "none"
+            const height = optionsEle.getBoundingClientRect().height
+            const y = optionsEle.getBoundingClientRect().top
+            //check if it goes below the screen
+            //if it is flipped and goes above the screen, prioritise rendering the dropdown down
+            if (height + y > window.innerHeight && y > height){
+                parent.style.transform = "rotate(180deg)" //render the dropdown menu above
+                //flip everything to face the correct direction
+                optionsEle.style.transform = "rotate(180deg)"
+                ele.style.transform = "rotate(180deg)"
+            }
         }
         else{ //close it
             optionsEle.style.display = "none"
+            dropdownOpen = false
         }
     }
     else{
@@ -198,6 +217,7 @@ function dropdownClicked(event){
             const parentEle = ele.parentElement.parentElement.parentElement
             let funcParams = parentEle.dataset.onchange.replace("this", "parentEle")
             eval(funcParams)
+            dropdownOpen = false
         }
         else{
             //try again, but with the parent element

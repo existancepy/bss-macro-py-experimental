@@ -21,6 +21,9 @@ def stop():
 @eel.expose
 def getPatterns():
     return [x.replace(".py","") for x in os.listdir("../settings/patterns") if ".py" in x]
+@eel.expose
+def clearManualPlanters():
+    settingsManager.clearFile("./data/user/manualplanters.txt")
 
 def log(time = "", msg = "", color = ""):
     eel.log(time, msg, color)

@@ -60,11 +60,16 @@ function buildInput(id, type){
             <div class="select-menu-relative">
                 <div class="select-menu" style="display: none;">
         `
-        type.data.forEach(x => {
+        for (let i = 0; i < type.data.length; i++){
+            const x = type.data[i]
             let value = x
-            if ($.type(value) === "string") value = value.replace(/[^\p{L}\p{N}\p{P}\p{Z}^$\n]/gu, '').trim().toLowerCase() //remove emojis and leading/trailing white space, also set to lowercase
+            if ($.type(value) === "string"){ 
+                value = stripHTMLTags(value)
+                value = value.replace(/[^\p{L}\p{N}\p{P}\p{Z}^$\n]/gu, '') //remove emojis
+                value = value.trim().toLowerCase() //remove leading/trailing white space, also set to lowercase
+            }
             html += `<div class = "option" data-value = "${value}">${x}</div>`
-        })
+        }
         html += `</div>
             </div>
         </div>`

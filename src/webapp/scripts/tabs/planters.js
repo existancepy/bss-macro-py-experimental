@@ -19,6 +19,26 @@ function changePlanterMode(){
     
 }
 
+const planterArray = toImgArray(planterIcons)
+const fieldNectarArray = toImgArray(fieldNectarIcons, true)
+
+function fieldDropDownHTML(id){
+    return buildInput(id,{
+        name: "dropdown",
+        data: fieldNectarArray,
+        triggerFunction: "saveSetting(this, 'profile')",
+        length: 11.5    
+    })
+}
+function planterDropDownHTML(id){
+    return buildInput(id,{
+        name: "dropdown",
+        data: planterArray,
+        triggerFunction: "saveSetting(this, 'profile')",
+        length: 11.5
+    })
+}
+
 function loadPlanters(){
     const cycleElement = document.getElementById("manual-planters-cycles")
     for (i=1; i < 6;i++){
@@ -29,28 +49,22 @@ function loadPlanters(){
         <table style="margin-top: 1rem; row-gap: 1rem;">
             <tr>
                 <td><h4 class="poppins-regular">Planters:</h4></td>
-                <td>
-                    <select id="cycle${i}_1_planter" onchange="saveSetting(this, 'profile')" class="poppins-regular manual-planters-planters" size="1">
-                        <option value="sunflower" data-image="./assets/icons/refreshing.png">Sunflower</option>
-                    </select>
-                </td>
-                <td>
-                    <select id="cycle${i}_2_planter" onchange="saveSetting(this, 'profile')" class="poppins-regular manual-planters-planters">
-                    </select>
-                </td>
-                <td>
-                    <select id="cycle${i}_3_planter" onchange="saveSetting(this, 'profile')" class="poppins-regular manual-planters-planters">
-                    </select>
-                </td>
+                <td>${planterDropDownHTML(`cycle${i}_1_planter`)}</td>
+                <td>${planterDropDownHTML(`cycle${i}_2_planter`)}</td>
+                <td>${planterDropDownHTML(`cycle${i}_3_planter`)}</td>
             </tr>
             <tr>
                 <td><h4 class="poppins-regular">Fields:</h4></td>
-                <td><select id="cycle${i}_1_field" onchange="saveSetting(this, 'profile')" class="poppins-regular manual-planters-field"></select></td>
-                <td><select id="cycle${i}_2_field" onchange="saveSetting(this, 'profile')" class="poppins-regular manual-planters-field"></select></td>
-                <td><select id="cycle${i}_3_field" onchange="saveSetting(this, 'profile')" class="poppins-regular manual-planters-field"></select></td>
+                <td>${fieldDropDownHTML(`cycle${i}_1_field`)}</td>
+                <td>${fieldDropDownHTML(`cycle${i}_2_field`)}</td>
+                <td>${fieldDropDownHTML(`cycle${i}_3_field`)}</td>
             </tr>
             <tr>
-                <td><h4 class="poppins-regular">Gather in Planter Field:</h4></td>
+                <td>
+                    <h4 class="poppins-regular">Gather in Planter Field:</h4>
+                    <div class="poppins-regular" style="font-size:0.9rem; color: #adb4bc">The field's gather settings match<br>those in the gather tab</div>
+                </td>
+                
                 <td><label class="checkbox-container" style="margin-top:-0.6rem">
                     <input type="checkbox" id = "cycle${i}_1_gather" onchange="saveSetting(this, 'profile')">
                     <span class="checkmark"></span>
@@ -91,5 +105,14 @@ function loadPlanters(){
     changePlanterMode()
 }
 
+function clearManualPlantersData(){
+    const btn = document.getElementById("manual-planters-reset-btn")
+    if (btn.classList.contains("active")) return
+    eel.clearManualPlanters()
+    btn.classList.add("active")
+    setTimeout(() => {
+        btn.classList.remove("active")
+      }, 700)
+}
 $("#planters-placeholder")
 .load("../htmlImports/tabs/planters.html", loadPlanters) 

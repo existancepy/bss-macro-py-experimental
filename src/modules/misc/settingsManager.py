@@ -67,3 +67,7 @@ def loadSettings():
 #return a dict containing all settings except field (general, profile, planters)
 def loadAllSettings():
     return {**loadSettings(), **readSettingsFile("../settings/generalsettings.txt")}
+
+#clear a file
+def clearFile(filePath):
+    open(filePath, 'w').close()

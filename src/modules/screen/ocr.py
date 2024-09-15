@@ -6,6 +6,7 @@ import os
 import time
 import mss
 from modules.screen.screenData import getScreenData
+import io
 
 useOCRMac = False
 useLangPref = True
@@ -50,8 +51,11 @@ def ocrMac_(img):
     return [ [paddleBounding(x[2]),(x[0],x[1]) ] for x in result]
 
 def ocrPaddle(img):
-    img = np.asarray(img) 
-    result = ocrP.ocr(img, cls=False)[0]
+    #img = np.asarray(img) 
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format='PNG')
+    img_byte_arr = img_byte_arr.getvalue()
+    result = ocrP.ocr(img_byte_arr, cls=False)[0]
     return result
 
 def screenshot(**kwargs):
