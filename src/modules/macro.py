@@ -707,7 +707,10 @@ class macro:
                 time.sleep(0.5)
                 for j in range(40):
                     if findHive():
-                        hiveClaim = max(1,min(6,round((j+1)//2.5)))
+                        guessedSlot = max(1,min(6, round((j+1)//2.5)))
+                        hiveClaim = guessedSlot
+                        if  1 < guessedSlot < 6:
+                            hiveClaim += 1
                         self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", "screen")
                         rejoinSuccess = True
                         self.setdat["hive_number"] = hiveClaim
@@ -736,9 +739,6 @@ class macro:
                 self.died = True
             #mob respawn check
             self.setMobTimer(field)
-        print("thread broke")
-        print(self.status.value)
-        print(self.isGathering)
             
 
     def gather(self, field):
@@ -1516,7 +1516,7 @@ class macro:
             bonusTime = 0
             if glitter: bonusTime += 0.25
             if field in bonusFields: bonusTime += fieldGrowthBonus
-            return (baseGrowthTime*(1-bonusTime))*60*60 #calculate the new growth time and convert to hrs
+            return (baseGrowthTime*(1-bonusTime))
 
         else:
             return self.setdat["manual_planters_collect_every"]*60*60 

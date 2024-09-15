@@ -1,1 +1,0 @@
-{'cycle': 2, 'planters': ['tacky', 'red clay', 'blue clay'], 'fields': ['sunflower', 'mushroom', 'bamboo'], 'gatherFields': ['bamboo'], 'harvestTime': 1726390070.1947703}
