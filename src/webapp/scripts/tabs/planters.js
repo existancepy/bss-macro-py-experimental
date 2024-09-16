@@ -13,6 +13,7 @@ function changePlanterMode(){
         1: "manual",
         2: "auto"
     }
+    console.log(ele.value)
     Array.from(document.getElementsByClassName("planter-tab")).forEach(x => x.style.display="none")
     //ele.value doesnt
     if (ele.value > 0) document.getElementById(`planters-${planterMode[ele.value]}`).style.display = "block"
@@ -39,7 +40,7 @@ function planterDropDownHTML(id){
     })
 }
 
-function loadPlanters(){
+async function loadPlanters(){
     const cycleElement = document.getElementById("manual-planters-cycles")
     for (i=1; i < 6;i++){
         const html = 
@@ -100,7 +101,9 @@ function loadPlanters(){
         `
         cycleElement.innerHTML += html
     }
-    //no need to call the load function, another tab will call it 
+    //load inputs
+    const settings = await loadAllSettings()
+    loadInputs(settings)
     //show the planter tab
     changePlanterMode()
 }
