@@ -89,23 +89,26 @@ def macro(status, log, haste):
         #planters
         def goToNextCycle(cycle):
             #go to the next cycle
-            while True:
+            for _ in range(6):
                 cycle += 1
                 if cycle > 5:
                     cycle = 1
                 for i in range(3): #make sure the cycle is occupied
                     if setdat[f"cycle{cycle}_{i+1}_planter"] != "none" and setdat[f"cycle{cycle}_{i+1}_field"] != "none":
                         return cycle
+            else: 
+                return False
         planterDataRaw = None
-        if setdat["manual_planters_collect_every"]:
+        if setdat["planters_mode"] == 1:
             with open("./data/user/manualplanters.txt", "r") as f:
                 planterDataRaw = f.read()
             f.close()
             cycle = goToNextCycle(0)
-            if not planterDataRaw: #check if planter data exists
+            #Ensure that there is at least 1 valid slot
+            if not planterDataRaw and cycle: #check if planter data exists
                 #place planters in cycle
                 runTask(macro.placePlanterCycle, args = (cycle,),resetAfter=False)
-            else: #planter data does exist, check if its time to collect them
+            elif cycle: #planter data does exist, check if its time to collect them
                 planterData = ast.literal_eval(planterDataRaw)
                 cycle = planterData["cycle"]
                 if time.time() > planterData["harvestTime"]:
@@ -116,8 +119,7 @@ def macro(status, log, haste):
                     #go to the next cycle
                     cycle = goToNextCycle(cycle)
                     #place them
-                    runTask(macro.placePlanterCycle, args = (cycle,),resetAfter=False)
-                
+                    runTask(macro.placePlanterCycle, args = (cycle,),resetAfter=False) 
         #mob runs
         for mob, fields in regularMobData.items():
             if not setdat[mob]: continue
@@ -141,12 +143,12 @@ def macro(status, log, haste):
         for i in range(3):
             if setdat["fields_enabled"][i]:
                 gatherFields.append(setdat["fields"][i])
-
         planterGatherFields = ast.literal_eval(planterDataRaw)["gatherFields"] if planterDataRaw else []
 
         gatherFields.extend([x for x in planterGatherFields if x not in gatherFields])
         for field in gatherFields:
             runTask(macro.gather, args=(field,), resetAfter=False)
+        print("cycle done")
 
 def watch_for_hotkeys(run):
     def on_press(key):

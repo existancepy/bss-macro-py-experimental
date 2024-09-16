@@ -52,6 +52,11 @@ async function loadTasks(){
         if (!setdat[k]) continue
         out += taskHTML("Collect", `${v} ${toTitleCase(k.replaceAll("_", " "))}`)
     }
+    //planters
+    if (setdat["planters_mode"]){
+        const type = setdat["planters_mode"] == 1 ? "Manual" : "Auto"
+        out += taskHTML("Planters", type)
+    }
     //load kill
     for (let [k, v] of Object.entries(killEmojis)) {
         if (!setdat[k]) continue
