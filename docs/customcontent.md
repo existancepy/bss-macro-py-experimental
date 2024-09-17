@@ -28,7 +28,7 @@ They are already defined in the gather function, so there is no need to define t
 
 `size` is a float that represents `sizeword` (eg, xs -> 0.25)
 
-This is the default mapping of sizeword to size. You can create your own custom mapping for the size. 
+This is the default mapping of sizeword to size. You can create your own custom mapping for the size in your pattern's code.
 ```python
 {
     "xs": 0.25,
@@ -38,7 +38,7 @@ This is the default mapping of sizeword to size. You can create your own custom 
     "xl": 2
 }
 ```
-Here is an example of a custom sizing map (cornerxe_lol.py)
+Here is an example of a custom size (cornerxe_lol.py)
 
 ```python
 if sizeword.lower() == "xs":
