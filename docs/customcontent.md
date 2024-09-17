@@ -3,17 +3,18 @@
 Disclaimer: Python/Automator knowledge is required
 
 ## Patterns
-Patterns are stored as python files in settings -> patterns
-To make your own pattern, create a new .py file (name is up to you) and start coding!
+Patterns are stored as python files in settings -> patterns<br>
+To make your own pattern, create a new .py file (name is up to you) in the patterns folder and start coding!<br>
+You can reference other patterns in the folder to see how its done<br>
 
 ### How patterns are run
-Patterns are ran using the [exec](https://www.geeksforgeeks.org/exec-in-python/) function within a class function
+Patterns are ran using [exec](https://www.geeksforgeeks.org/exec-in-python/) within a class function
 
 Below is a simplified version:
 ```python
 def gather(self):
     while True:
-        exec(open(f"../settings/patterns/pattername.py").read())
+        exec(open(f"../settings/patterns/pattern.py").read())
 ```
 
 ### Size and Width
@@ -22,22 +23,25 @@ The variables `size`, `sizeword` and `width` can be used for the pattern's size 
 
 They are already defined in the gather function, so there is no need to define them in your own pattern.
 
-`width` refers setting's width
+`width` refers to the setting's width
 
 `sizeword` refers to the setting's size (eg, xs, s, etc)
 
-`size` is a float that represents `sizeword` (eg, xs -> 0.25)
+`size` is a float that represents the size (`sizeword`) converted to a number
 
-This is the default mapping of sizeword to size. You can create your own custom mapping for the size in your pattern's code.
+This is the default mapping of sizeword to size.
 ```python
-{
+sizeData = {
     "xs": 0.25,
     "s": 0.5,
     "m": 1,
     "l": 1.5,
     "xl": 2
 }
+size = sizeData[sizeword]
 ```
+You can create your own custom mapping for the size in the pattern's code by overriding the `size` variable
+
 Here is an example of a custom size (cornerxe_lol.py)
 
 ```python
@@ -105,13 +109,12 @@ Presses a key for a specified duration
   self.keyboard.press("a", 1) #press down the a key for 1s, then release it
 ```
 
-#### self.keyboard.walk(k,t,applyHaste = True)
+#### self.keyboard.walk(k, t, applyHaste = True)
 **Description:**  
 
-Presses a key for a specified duration, but accounts for the player's walkspeed and compensates the timing accordingly 
+Presses a key for a specified duration, but accounts for the player's walkspeed and compensates the duration accordingly 
 
-The formula for calculating the duration:
-t*28/player_movespeed
+The formula for calculating the duration: newT = t*28/player_movespeed
 
 **Parameters:**  
 
@@ -132,7 +135,7 @@ Presses multiple keys for a specified duration, accounts for the player's walksp
 
 The formula for calculating the duration is the same as keyboard.walk
 
-Note: this function does not a applyHaste parameter, it will always compensation for haste
+Note: this function does not have a applyHaste parameter, it will always compensation for haste
 
 **Parameters:**  
 
@@ -150,9 +153,9 @@ Note: this function does not a applyHaste parameter, it will always compensation
 
 Presses a key for a specified number of in-game tiles, accounts for the player's walkspeed and compensates the timing accordingly. A tile is a grass tile
 
-Note: this function does not a applyHaste parameter, it will always compensation for haste
+Note: this function does not have a applyHaste parameter, it will always compensation for haste
 
-This function converts the tiles into seconds, then presses the key for that duration
+This function converts the tiles into seconds, then presses the key for that duration.
 The formula is: secs = tiles/8.3
 
 **Parameters:**  
