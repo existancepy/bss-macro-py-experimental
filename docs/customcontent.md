@@ -57,7 +57,7 @@ else:
 
 Movement is done through the keyboard module (src -> modules -> controls -> keyboard.py)
 
-##### self.keyboard.keyDown(key, pause = True)
+#### self.keyboard.keyDown(key, pause = True)
 **Description:**  
 
 Presses the specified key down
@@ -73,7 +73,7 @@ Presses the specified key down
   self.keyboard.keyDown("a") #press down the a key
 ```
 
-##### self.keyboard.keyUp(key, pause = True)
+#### self.keyboard.keyUp(key, pause = True)
 **Description:**  
 
 Releases the specified key
@@ -89,7 +89,7 @@ Releases the specified key
   self.keyboard.keyUp("a") #release the a key
 ```
 
-##### self.keyboard.press(key, delay = 0.02)
+#### self.keyboard.press(key, delay = 0.02)
 **Description:**  
 
 Presses a key for a specified duration 
@@ -105,7 +105,7 @@ Presses a key for a specified duration
   self.keyboard.press("a", 1) #press down the a key for 1s, then release it
 ```
 
-##### self.keyboard.walk(k,t,applyHaste = True)
+#### self.keyboard.walk(k,t,applyHaste = True)
 **Description:**  
 
 Presses a key for a specified duration, but accounts for the player's walkspeed and compensates the timing accordingly 
@@ -125,7 +125,7 @@ t*28/player_movespeed
   self.keyboard.walk("a", 1) #press down the a key for 1s, then release it
 ```
 
-##### self.keyboard.multiWalk(keys, t)
+#### self.keyboard.multiWalk(keys, t)
 **Description:**  
 
 Presses multiple keys for a specified duration, accounts for the player's walkspeed and compensates the timing accordingly 
@@ -145,7 +145,7 @@ Note: this function does not a applyHaste parameter, it will always compensation
   self.keyboard.multiWalk(["a", "d"], time) #press down the a and d keys for 1s, then release them
 ```
 
-##### self.keyboard.tileWalk(key, tiles)
+#### self.keyboard.tileWalk(key, tiles)
 **Description:**  
 
 Presses a key for a specified number of in-game tiles, accounts for the player's walkspeed and compensates the timing accordingly. A tile is a grass tile
