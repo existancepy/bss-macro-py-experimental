@@ -2,6 +2,8 @@ import eel
 import webbrowser
 import modules.misc.settingsManager as settingsManager
 import os
+from modules.misc.update import update as updateFunc
+import sys
 
 eel.init('webapp')
 run = None
@@ -26,7 +28,9 @@ def clearManualPlanters():
     settingsManager.clearFile("./data/user/manualplanters.txt")
 @eel.expose
 def update():
-    pass
+    updateFunc()
+    eel.closeWindow()
+    sys.exit()
 
 def log(time = "", msg = "", color = ""):
     eel.log(time, msg, color)

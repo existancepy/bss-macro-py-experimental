@@ -1,1 +1,3 @@
-import modules.misc.update as update
+from modules.misc.update import update
+
+update()
