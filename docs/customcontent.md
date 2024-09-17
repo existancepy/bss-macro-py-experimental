@@ -3,9 +3,11 @@
 Disclaimer: Python/Automator knowledge is required
 
 ## Patterns
-Patterns are stored as python files in settings -> patterns<br>
-To make your own pattern, create a new .py file (name is up to you) in the patterns folder and start coding!<br>
-You can reference other patterns in the folder to see how its done<br>
+Patterns are stored as python files in settings -> patterns
+
+To make your own pattern, create a new .py file (name is up to you) in the patterns folder and start coding!
+
+You can reference other patterns in the folder to see how its done
 
 ### How patterns are run
 Patterns are ran using [exec](https://www.geeksforgeeks.org/exec-in-python/) within a class function
@@ -23,11 +25,9 @@ The variables `size`, `sizeword` and `width` can be used for the pattern's size 
 
 They are already defined in the gather function, so there is no need to define them in your own pattern.
 
-`width` refers to the setting's width
-
-`sizeword` refers to the setting's size (eg, xs, s, etc)
-
-`size` is a float that represents the size (`sizeword`) converted to a number
+- `width` refers to the setting's width
+- `sizeword` refers to the setting's size (eg, xs, s, etc)
+- `size` is a float that represents the size (`sizeword`) converted to a number
 
 This is the default mapping of sizeword to size.
 ```python
