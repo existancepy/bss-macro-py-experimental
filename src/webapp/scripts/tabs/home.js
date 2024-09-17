@@ -89,3 +89,11 @@ $("#home-placeholder")
         eel.start()
     }
 })
+.on("click", "#start-btn",(event) => { //start button
+    //no need to change display, python will trigger toggleStartStop
+    if (event.currentTarget.classList.contains("active")){
+        
+    }else{
+        eel.update()
+    }
+})

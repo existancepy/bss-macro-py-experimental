@@ -24,6 +24,9 @@ def getPatterns():
 @eel.expose
 def clearManualPlanters():
     settingsManager.clearFile("./data/user/manualplanters.txt")
+@eel.expose
+def update():
+    pass
 
 def log(time = "", msg = "", color = ""):
     eel.log(time, msg, color)

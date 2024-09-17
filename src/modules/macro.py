@@ -600,11 +600,13 @@ class macro:
         mouse.mouseUp()
         keyboard.releaseMovement()
         for i in range(3):
+            joinPS = bool(psLink) #join public server?
             rejoinMethod = self.setdat["rejoin_method"]
             browserLink = "https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129"
-            if psLink: 
+            if joinPS: 
                 if i == 2: 
                     self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", "screen")
+                    joinPS = False
                 else:
                     browserLink = psLink
             appManager.closeApp("Roblox") # close roblox
@@ -612,7 +614,7 @@ class macro:
             #execute rejoin method
             if rejoinMethod == "deeplink":
                 deeplink = "roblox://placeID=1537690962"
-                if psLink:
+                if joinPS:
                     deeplink += f"&linkCode={psLink.lower().split('code=')[1]}"
                 appManager.openDeeplink(deeplink)
             elif rejoinMethod == "new tab":
