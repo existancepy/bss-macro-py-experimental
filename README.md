@@ -1,10 +1,11 @@
 # Existance Macro
 ![Discord](https://img.shields.io/discord/1065032948119769118?label=Discord&color=7289da&logo=discord&logoColor=white&link=https://discord.gg/WdbWgFewqx)
 ![GitHub Repo stars](https://img.shields.io/github/stars/existancepy/bss-macro-py?style=flat&label=Stars&color=fff240&logo=github&logocolor=white&link=https://github.com/existancepy/bss-macro-py/stargazers)
+![Repo Size](https://img.shields.io/github/repo-size/existancepy/bss-macro-py?label=Repo%20Size&logo=github&logoColor=white)
 
-Bee Swarm Macro with GUI, written primarily in python, designed for MacOS and Windows.
+A Macro for [Bee Swarm Simulator](https://www.roblox.com/games/1537690962/Bee-Swarm-Simulator) with a GUI designed for MacOS and Windows.
 
-Existance Macro is a free open source software, link: https://github.com/existancepy/bss-macro-py-experimental
+Existance Macro is a free open source software, link: https://github.com/existancepy/bss-macro-py
 
 ![gui](https://raw.githubusercontent.com/existancepy/bss-macro-py-experimental/3b6d5fa0c9110f4ae1baad9bac3c1f393eeed74f/docs/assets/gui.png)
 ## Community

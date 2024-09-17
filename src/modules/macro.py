@@ -1057,7 +1057,6 @@ class macro:
         #close the inventory
         time.sleep(1)
         self.toggleInventory()
-        self.keyboard.press("\\")
 
 
     def collect(self, objective):
