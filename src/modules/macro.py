@@ -393,16 +393,16 @@ class macro:
         def clickInv():
             mouse.moveTo(30, 113)
             time.sleep(0.1)
+            mouse.moveBy(0,3)
+            time.sleep(0.1)
             mouse.click()
-            time.sleep(0.2)
+            time.sleep(0.1)
 
         if mode == "open" and open: #already open
             #close and reopen
             for _ in range(2):
                 clickInv()
-                time.sleep(0.2)
-        elif mode == "close" and not open: #already closed
-            return
+                time.sleep(0.1)
         else:
             clickInv()
         self.moveMouseToDefault()
