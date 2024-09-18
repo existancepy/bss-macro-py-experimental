@@ -5,6 +5,24 @@ import zipfile
 import shutil
 from io import BytesIO
 from modules.misc.messageBox import msgBox
+
+#merge 2 folders together
+#if the item already exists, do not replace it
+def merge(scr_path, dir_path):
+  files = next(os.walk(scr_path))[2]
+  folders = next(os.walk(scr_path))[1]
+  for file in files: # Copy the files
+    scr_file = scr_path + "/" + file
+    dir_file = dir_path + "/" + file
+    if not os.path.exists(dir_file):
+        shutil.copy(scr_file, dir_file)
+  for folder in folders: # Merge again with the subdirectories
+    scr_folder = scr_path + "/" + folder
+    dir_folder = dir_path + "/" + folder
+    if not os.path.exists(dir_folder): # Create the subdirectories if dont already exist
+      os.mkdir(dir_folder)
+    merge(scr_folder, dir_folder)
+
 def update(t = "e"):
     protectedFolders = ["settings"] #folders that should not be replaced
     protectedFiles = [".git"] #files that should not be replaces
@@ -38,7 +56,7 @@ def update(t = "e"):
         if file in protectedFiles: continue
         file_name = os.path.join(source, file) 
         if file in protectedFolders: #merge the contents of the folders
-            shutil.copytree(file_name, f"{destination}/{file}", dirs_exist_ok=True)
+            merge(file_name, f"{destination}/{file}")
         else:
             shutil.move(file_name, destination) 
     print("Files Moved")

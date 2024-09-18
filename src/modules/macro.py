@@ -71,8 +71,12 @@ mobRespawnTimes = {
 }
 
 # Define the color range for reset detection (in HSL color space)
-resetLower = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
-resetUpper = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
+#white color respawn pad
+resetLower1 = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
+resetUpper1 = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
+#balloon color
+resetLower2 = np.array([110, 229, 153])  # Lower bound of the color (H, L, S)
+resetUpper2 = np.array([115, 255, 204])  # Upper bound of the color (H, L, S)
 resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(16,10))
 
 
@@ -553,47 +557,33 @@ class macro:
                 if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
                     time.sleep(0.5)
                     break
-            #check that player is at hive
-            if self.isBesideEImage("makehoney") or self.isBesideEImage("nopollen"): break
 
             self.canDetectNight = True
             self.location = "spawn"
-        else:
-            self.logger.webhook("Notice", f"Unable to detect that player respawned at hive. Ensure that terminal has accessibility and screen recording permissions", "red", "screen")
-            return False
-        
-        #detect the player direction. Spin a max of 4 times
-        hiveImg = self.adjustImage("./images/misc", "hive")
-        for _ in range(4):
-            if locateImageOnScreen(hiveImg, 0, self.mh*3/4, self.mw, self.mh/4, 0.8):
+            #detect if player is at hive. Spin a max of 4 times
+            for _ in range(4):
+                screen = pillowToCv2(mssScreenshot(self.mw//2-100, self.mh-10, 200, 10))
+                # Convert the image from BGR to HLS color space
+                hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
+                # Create a mask for the color range
+                mask1 = cv2.inRange(hsl, resetLower1, resetUpper1)  
+                mask2 = cv2.inRange(hsl, resetLower2, resetUpper2)    
+                mask = cv2.bitwise_or(mask1, mask2)
+                mask = cv2.erode(mask, resetKernel)
+                #get contours. If contours exist, direction is correct
+                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                if contours:
+                    for _ in range(8):
+                        self.keyboard.press("o")
+                    if convert: self.convert()
+                    return True
+                #failed to detect, spin
                 for _ in range(4):
                     self.keyboard.press(".")
-                for _ in range(8):
-                    self.keyboard.press("o")
-                if convert: self.convert()
-                return True
-            for _ in range(4):
-                self.keyboard.press(".")
-            time.sleep(0.08)
-            '''
-            screen = pillowToCv2(mssScreenshot(self.mw//2-100, self.mh-10, 200, 10))
-            # Convert the image from BGR to HLS color space
-            hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
-            # Create a mask for the color range
-            mask = cv2.inRange(hsl, resetLower, resetUpper)   
-            mask = cv2.erode(mask, resetKernel, 2)
-            #get contours. If contours exist, direction is correct
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            if contours:
-                for _ in range(8):
-                    self.keyboard.press("o")
-                if convert: self.convert()
-                return True
-            #failed to detect, spin
-            for _ in range(4):
-                self.keyboard.press(".")
-            time.sleep(0.1)
-            '''
+                time.sleep(0.1)
+        else:
+            self.logger.webhook("", "Unable to detect that player respawned at hive", "dark brown", "screen")
+            return False
 
     def cannon(self, fast = False):
         for i in range(3):
