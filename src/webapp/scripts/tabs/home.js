@@ -73,6 +73,11 @@ async function loadTasks(){
     document.getElementById("task-list").innerHTML = out
 }
 
+eel.expose(closeWindow)
+function closeWindow() {
+    let new_window = open(location, '_self');
+    new_window.top.close();
+}
 
 
 $("#home-placeholder")
@@ -87,5 +92,11 @@ $("#home-placeholder")
         eel.stop()
     }else{
         eel.start()
+    }
+})
+.on("click", "#update-btn", async (event) => { //start button
+    if (!event.currentTarget.classList.contains("active")){
+        purpleButtonToggle(event.currentTarget, ["Update","Updating"])
+        await eel.update()
     }
 })

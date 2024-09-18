@@ -71,8 +71,12 @@ mobRespawnTimes = {
 }
 
 # Define the color range for reset detection (in HSL color space)
-resetLower = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
-resetUpper = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
+#white color respawn pad
+resetLower1 = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
+resetUpper1 = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
+#balloon color
+resetLower2 = np.array([110, 229, 153])  # Lower bound of the color (H, L, S)
+resetUpper2 = np.array([115, 255, 204])  # Upper bound of the color (H, L, S)
 resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(16,10))
 
 
@@ -384,12 +388,29 @@ class macro:
         for _ in range(2):
             mouse.click()
     
-    def toggleInventory(self):
-        mouse.moveTo(30, 113)
-        time.sleep(0.1)
-        mouse.click()
-        time.sleep(0.2)
+    def toggleInventory(self, mode):
+        invOpenImg = self.adjustImage("./images/menu", "inventoryopen")
+        open = False
+        if locateImageOnScreen(invOpenImg, 0, 10, 100, 180, 0.8):
+            open = True
+        
+        def clickInv():
+            mouse.moveTo(30, 113)
+            time.sleep(0.1)
+            mouse.moveBy(0,3)
+            time.sleep(0.1)
+            mouse.click()
+            time.sleep(0.1)
+
+        if mode == "open" and open: #already open
+            #close and reopen
+            for _ in range(2):
+                clickInv()
+                time.sleep(0.1)
+        else:
+            clickInv()
         self.moveMouseToDefault()
+        time.sleep(0.3)
         '''
         self.keyboard.press("\\")
         #align with first buff
@@ -415,7 +436,7 @@ class macro:
     def findItemInInventory(self, itemName):
         itemImg = self.adjustImage("./images/inventory", itemName)
         #open inventory
-        self.toggleInventory()
+        self.toggleInventory("open")
         time.sleep(0.3)
         mouse.moveTo(312, 200)
         mouse.click()
@@ -461,7 +482,7 @@ class macro:
             if itemName is None: raise Exception("tried searching for item but no item name is provided")
             res = self.findItemInInventory(itemName)
             if res is None:
-                self.toggleInventory()
+                self.toggleInventory("close")
                 return False
             x, y = res
         #close UI navigation
@@ -472,7 +493,7 @@ class macro:
         mouse.click()
         self.clickYes()
         #close inventory
-        self.toggleInventory()
+        self.toggleInventory("close")
         return True
 
 
@@ -546,8 +567,10 @@ class macro:
                 # Convert the image from BGR to HLS color space
                 hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
                 # Create a mask for the color range
-                mask = cv2.inRange(hsl, resetLower, resetUpper)   
-                mask = cv2.erode(mask, resetKernel, 2)
+                mask1 = cv2.inRange(hsl, resetLower1, resetUpper1)  
+                mask2 = cv2.inRange(hsl, resetLower2, resetUpper2)    
+                mask = cv2.bitwise_or(mask1, mask2)
+                mask = cv2.erode(mask, resetKernel)
                 #get contours. If contours exist, direction is correct
                 contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 if contours:
@@ -560,7 +583,7 @@ class macro:
                     self.keyboard.press(".")
                 time.sleep(0.1)
         else:
-            self.logger.webhook("Notice", f"Unable to detect that player respawned at hive. Ensure that terminal has accessibility and screen recording permissions", "red", "screen")
+            self.logger.webhook("", "Unable to detect that player respawned at hive", "dark brown", "screen")
             return False
 
     def cannon(self, fast = False):
@@ -600,11 +623,13 @@ class macro:
         mouse.mouseUp()
         keyboard.releaseMovement()
         for i in range(3):
+            joinPS = bool(psLink) #join public server?
             rejoinMethod = self.setdat["rejoin_method"]
             browserLink = "https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129"
-            if psLink: 
+            if joinPS: 
                 if i == 2: 
                     self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", "screen")
+                    joinPS = False
                 else:
                     browserLink = psLink
             appManager.closeApp("Roblox") # close roblox
@@ -612,7 +637,7 @@ class macro:
             #execute rejoin method
             if rejoinMethod == "deeplink":
                 deeplink = "roblox://placeID=1537690962"
-                if psLink:
+                if joinPS:
                     deeplink += f"&linkCode={psLink.lower().split('code=')[1]}"
                 appManager.openDeeplink(deeplink)
             elif rejoinMethod == "new tab":
@@ -1054,7 +1079,7 @@ class macro:
         self.saveTiming("sticker_printer")
         #close the inventory
         time.sleep(1)
-        self.toggleInventory()
+        self.toggleInventory("close")
 
 
     def collect(self, objective):
