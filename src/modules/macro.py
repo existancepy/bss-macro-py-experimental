@@ -364,7 +364,7 @@ class macro:
             return False
         #place the remaining sprinklers
         #hold jump and spam place sprinklers
-        if times > 1:
+        if times > 2:
             self.keyboard.keyDown("space")
             st = time.time()
             while time.time() - st < times*2:
