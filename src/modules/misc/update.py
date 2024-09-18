@@ -6,7 +6,8 @@ import shutil
 from io import BytesIO
 from modules.misc.messageBox import msgBox
 def update(t = "e"):
-    protectedFiles = ["settings", ".git"] #files/folders that should not be replaced
+    protectedFolders = ["settings"] #folders that should not be replaced
+    protectedFiles = [".git"] #files that should not be replaces
     destination = os.getcwd().replace("/src","") #the target folder to replace the files. Should be the parent directory of the /src folder
     
     link = "https://github.com/existancepy/bss-macro-py/archive/master.zip"
@@ -20,7 +21,7 @@ def update(t = "e"):
     print(os.listdir(destination))
     #delete all files
     for f in os.listdir(destination):
-        if f in protectedFiles: continue
+        if f in protectedFolders or f in protectedFiles: continue
         if "." in f:
             os.remove(f"{destination}/{f}")
         else:
@@ -36,9 +37,12 @@ def update(t = "e"):
     for file in files: 
         if file in protectedFiles: continue
         file_name = os.path.join(source, file) 
-        shutil.move(file_name, destination) 
+        if file in protectedFolders: #merge the contents of the folders
+            shutil.copytree(file_name, f"{destination}/{file}", dirs_exist_ok=True)
+        else:
+            shutil.move(file_name, destination) 
     print("Files Moved")
-
+    
     #delete the download folder
     shutil.rmtree(source)
     
