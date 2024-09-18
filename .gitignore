@@ -7,3 +7,4 @@ lib
 share
 /src/node_modules
 src/webapp/test.html
+src/webhookScreenshot.png
