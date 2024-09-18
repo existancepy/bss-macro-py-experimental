@@ -410,6 +410,7 @@ class macro:
         else:
             clickInv()
         self.moveMouseToDefault()
+        time.sleep(0.3)
         '''
         self.keyboard.press("\\")
         #align with first buff
