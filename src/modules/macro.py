@@ -384,11 +384,27 @@ class macro:
         for _ in range(2):
             mouse.click()
     
-    def toggleInventory(self):
-        mouse.moveTo(30, 113)
-        time.sleep(0.1)
-        mouse.click()
-        time.sleep(0.2)
+    def toggleInventory(self, mode):
+        invOpenImg = self.adjustImage("./images/menu", "inventoryopen")
+        open = False
+        if locateImageOnScreen(invOpenImg, 0, 10, 100, 180, 0.8):
+            open = True
+        
+        def clickInv():
+            mouse.moveTo(30, 113)
+            time.sleep(0.1)
+            mouse.click()
+            time.sleep(0.2)
+
+        if mode == "open" and open: #already open
+            #close and reopen
+            for _ in range(2):
+                clickInv()
+                time.sleep(0.2)
+        elif mode == "close" and not open: #already closed
+            return
+        else:
+            clickInv()
         self.moveMouseToDefault()
         '''
         self.keyboard.press("\\")
@@ -415,7 +431,7 @@ class macro:
     def findItemInInventory(self, itemName):
         itemImg = self.adjustImage("./images/inventory", itemName)
         #open inventory
-        self.toggleInventory()
+        self.toggleInventory("open")
         time.sleep(0.3)
         mouse.moveTo(312, 200)
         mouse.click()
@@ -461,7 +477,7 @@ class macro:
             if itemName is None: raise Exception("tried searching for item but no item name is provided")
             res = self.findItemInInventory(itemName)
             if res is None:
-                self.toggleInventory()
+                self.toggleInventory("close")
                 return False
             x, y = res
         #close UI navigation
@@ -472,7 +488,7 @@ class macro:
         mouse.click()
         self.clickYes()
         #close inventory
-        self.toggleInventory()
+        self.toggleInventory("close")
         return True
 
 
@@ -537,31 +553,47 @@ class macro:
                 if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
                     time.sleep(0.5)
                     break
+            #check that player is at hive
+            if self.isBesideEImage("makehoney") or self.isBesideEImage("nopollen"): break
 
             self.canDetectNight = True
             self.location = "spawn"
-            #detect if player is at hive. Spin a max of 4 times
-            for _ in range(4):
-                screen = pillowToCv2(mssScreenshot(self.mw//2-100, self.mh-10, 200, 10))
-                # Convert the image from BGR to HLS color space
-                hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
-                # Create a mask for the color range
-                mask = cv2.inRange(hsl, resetLower, resetUpper)   
-                mask = cv2.erode(mask, resetKernel, 2)
-                #get contours. If contours exist, direction is correct
-                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                if contours:
-                    for _ in range(8):
-                        self.keyboard.press("o")
-                    if convert: self.convert()
-                    return True
-                #failed to detect, spin
-                for _ in range(4):
-                    self.keyboard.press(".")
-                time.sleep(0.1)
         else:
             self.logger.webhook("Notice", f"Unable to detect that player respawned at hive. Ensure that terminal has accessibility and screen recording permissions", "red", "screen")
             return False
+        
+        #detect the player direction. Spin a max of 4 times
+        hiveImg = self.adjustImage("./images/misc", "hive")
+        for _ in range(4):
+            if locateImageOnScreen(hiveImg, 0, self.mh*3/4, self.mw, self.mh/4, 0.8):
+                for _ in range(4):
+                    self.keyboard.press(".")
+                for _ in range(8):
+                    self.keyboard.press("o")
+                if convert: self.convert()
+                return True
+            for _ in range(4):
+                self.keyboard.press(".")
+            time.sleep(0.08)
+            '''
+            screen = pillowToCv2(mssScreenshot(self.mw//2-100, self.mh-10, 200, 10))
+            # Convert the image from BGR to HLS color space
+            hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
+            # Create a mask for the color range
+            mask = cv2.inRange(hsl, resetLower, resetUpper)   
+            mask = cv2.erode(mask, resetKernel, 2)
+            #get contours. If contours exist, direction is correct
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if contours:
+                for _ in range(8):
+                    self.keyboard.press("o")
+                if convert: self.convert()
+                return True
+            #failed to detect, spin
+            for _ in range(4):
+                self.keyboard.press(".")
+            time.sleep(0.1)
+            '''
 
     def cannon(self, fast = False):
         for i in range(3):
@@ -1056,7 +1088,7 @@ class macro:
         self.saveTiming("sticker_printer")
         #close the inventory
         time.sleep(1)
-        self.toggleInventory()
+        self.toggleInventory("close")
 
 
     def collect(self, objective):
