@@ -26,6 +26,8 @@ from datetime import timedelta, datetime
 from modules.misc.imageManipulation import *
 from PIL import Image
 from modules.misc import messageBox
+from modules.submacros.memoryMatch import solveMemoryMatch
+
 pynputKeyboard = Controller()
 #data for collectable objectives
 #[besideE text, movement key, max cooldowns]
@@ -43,7 +45,12 @@ collectData = {
     "samovar": [["heat", "samovar"], "w", 6*60*60], #6hr
     "snow_machine": [["activate"], None, 2*60*60], #2hr
     "lid_art": [["gander", "onett", "art"], "s", 8*60*60], #8hr
-    "candles": [["admire", "candle", "honey"], "w", 4*60*60] #4hr
+    "candles": [["admire", "candle", "honey"], "w", 4*60*60], #4hr
+    "memory_match": [["spend", "play"], "a", 2*60*60], #2hr
+    "mega_memory_match": [["spend", "play"], "s", 4*60*60], #4hr
+    #"night_memory_match": [["spend", "play"], "w", 8*60*60], #8hr
+    "extreme_memory_match": [["spend", "play"], "w", 8*60*60], #8hr
+    "winter_memory_match": [["spend", "play"], "a", 4*60*60], #4hr
 }
 
 #werewolf is a unique one. There is only one, but it can be triggered from pine, pumpkin or cactus

@@ -100,3 +100,7 @@ cycle5_3_gather=False
 cycle5_1_glitter=False
 cycle5_2_glitter=False
 cycle5_3_glitter=False
+memory_match=False
+mega_memory_match=False
+extreme_memory_match=False
+winter_memory_match=False

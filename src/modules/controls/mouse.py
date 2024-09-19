@@ -11,8 +11,8 @@ pynputMouse = Controller()
 def teleport(x,y):
     pag.moveTo(int(x),int(y))
 
-def moveTo(x,y):
-    pag.moveTo(int(x),int(y),0.1)
+def moveTo(x,y, delay = 0.1):
+    pag.moveTo(int(x),int(y), delay)
     pynputMouse.position = (int(x), int(y))
 
 def mouseDown():

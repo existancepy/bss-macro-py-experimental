@@ -65,6 +65,11 @@ const collectEmojis = {
     wreath: "🎄",
     sticker_printer: "🖨️",
     mondo_buff: "🐣",
+    memory_match: "🍍",
+    mega_memory_match: "🌟",
+    extreme_memory_match: "🌶️",
+    winter_memory_match: "❄️"
+
 }
 
 const killEmojis = {
