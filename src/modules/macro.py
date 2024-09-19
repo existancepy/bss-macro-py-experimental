@@ -839,12 +839,14 @@ class macro:
         maxGatherTime = fieldSetting["mins"]*60
         gatherTimeLimit = "{:.2f}".format(fieldSetting["mins"])
         returnType = fieldSetting["return"]
+        pattern = fieldSetting['shape']
         st = time.time()
         keepGathering = True
         self.died = False
         #time to gather
         self.status.value = f"gather_{field}"
         self.isGathering = True
+        firstPattern = True
         self.logger.webhook(f"Gathering: {field.title()}", f"Limit: {gatherTimeLimit} - {fieldSetting['shape']} - Backpack: {fieldSetting['backpack']}%", "light green")
         mouse.moveBy(10,5)
         gatherBackgroundThread = threading.Thread(target=self.gatherBackground)
@@ -858,7 +860,15 @@ class macro:
         if fieldSetting["shift_lock"]: self.keyboard.press('shift')
         while keepGathering:
             mouse.mouseDown()
-            exec(open(f"../settings/patterns/{fieldSetting['shape']}.py").read())
+            #ensure that the pattern works
+            try:
+                exec(open(f"../settings/patterns/{pattern}.py").read())
+            except Exception as e:
+                print(e)
+                if firstPattern:
+                    pattern = "e_lol"
+                    self.logger.webhook("Incompatible pattern", f"The pattern {pattern} is incompatible with the macro. Defaulting to e_lol instead. Avoid using this pattern in the future. If you are the creator of this pattern, the error can be found in terminal", "red")
+            firstPattern = False
             #cycle ends
             mouse.mouseUp()
 
