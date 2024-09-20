@@ -27,6 +27,7 @@ from modules.misc.imageManipulation import *
 from PIL import Image
 from modules.misc import messageBox
 from modules.submacros.memoryMatch import solveMemoryMatch
+import math
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -132,6 +133,21 @@ planterGrowthData = {
     "planter of plenty": [16*60*60, ("pepper", "stump", "coconut", "mountain top"), 0.5] #16hr
 }
 
+#a list of all items that can be crafted by the blender in order
+blenderItems = ["red_extract", "blue_extract", "enzymes", "oil", "glue", "tropical_drink", "gumdrops", "moon_charm",
+    "glitter",
+    "star_jelly",
+    "purple_potion",
+    "soft_wax",
+    "hard_wax",
+    "swirled_wax",
+    "caustic_wax",
+    "field_dice",
+    "smooth_dice",
+    "loaded_dice",
+    "super_smoothie",
+    "turpentine"]
+
 class macro:
     def __init__(self, status, log, haste):
         self.status = status
@@ -161,6 +177,9 @@ class macro:
         self.newUI = False
 
         self.planterCooldowns = {}
+
+        #memory match
+        self.latestMM = "normal"
 
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
@@ -548,6 +567,10 @@ class macro:
             closeImg = self.adjustImage("./images/menu", "close") #sticker printer
             if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
                 self.keyboard.press("e")
+            
+            mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
+            if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
+                solveMemoryMatch(self.latestMM)
 
             self.moveMouseToDefault()
             time.sleep(0.1)
@@ -1108,7 +1131,33 @@ class macro:
         time.sleep(1)
         self.toggleInventory("close")
 
+    #convert bss' cooldown text into seconds
+    def cdTextToSecs(self, rawText):
+        closePos = rawText.find(")")
+        #get cooldown if close bracket is present or not
+        if closePos >= 0:
+            cooldownRaw = rawText[rawText.find("(")+1:closePos]
+        else:
+            cooldownRaw = rawText.split("(")[1]
 
+        #clean it up, extract only valid characters
+        cooldownRaw = ''.join([x for x in cooldownRaw if x.isdigit() or x == ":" or x == "s"])
+        cooldownSeconds = None #cooldown in seconds
+
+        #check if its days, hour, mins or seconds
+        if cooldownRaw.count(":") == 3: #days
+            d, hr, mins, s = [int(x) for x in cooldownRaw.split(":")]
+            cooldownSeconds = d*24*60*60, hr*60*60 + mins*60 + s
+        elif cooldownRaw.count(":") == 2: #hours
+            hr, mins, s = [int(x) for x in cooldownRaw.split(":")]
+            cooldownSeconds = hr*60*60 + mins*60 + s
+        elif cooldownRaw.count(":") == 1: #mins
+            mins, s = [int(x) for x in cooldownRaw.split(":")]
+            cooldownSeconds = mins*60 + s
+        elif "s" in cooldownRaw: #seconds
+            cooldownSeconds = int(''.join([x for x in cooldownRaw if x.isdigit()]))
+        return cooldownSeconds
+    
     def collect(self, objective):
         reached = None
         objectiveData = collectData[objective]
@@ -1135,27 +1184,8 @@ class macro:
         #check if on cooldown
         cooldownSeconds = objectiveData[2]
         if "(" and ":" in reached:
-            closePos = reached.find(")")
-            #get cooldown if close bracket is present or not
-            if closePos >= 0:
-                cooldownRaw = reached[reached.find("(")+1:closePos]
-            else:
-                cooldownRaw = reached.split("(")[1]
-
-            #clean it up, extract only valid characters
-            cooldownRaw = ''.join([x for x in cooldownRaw if x.isdigit() or x == ":" or x == "s"])
-            cooldownSeconds = 0 #cooldown in seconds
-
-            #check if its hour, mins or seconds
-            if cooldownRaw.count(":") == 2: #hours
-                hr, mins, s = [int(x) for x in cooldownRaw.split(":")]
-                cooldownSeconds = hr*60*60 + mins*60 + s
-            elif cooldownRaw.count(":") == 1: #mins
-                mins, s = [int(x) for x in cooldownRaw.split(":")]
-                cooldownSeconds = mins*60 + s
-            elif "s" in cooldownRaw: #seconds
-                cooldownSeconds = int(''.join([x for x in cooldownRaw if x.isdigit()]))
-
+            cd = self.cdTextToSecs(reached)
+            if cd: cooldownSeconds = cd
             cooldownFormat = timedelta(seconds=cooldownSeconds)
             self.logger.webhook("", f"{displayName} is on cooldown ({cooldownFormat} remaining)", "dark brown", "screen")
         else: #not on cooldown
@@ -1163,6 +1193,15 @@ class macro:
                 self.keyboard.press("e")
             #run the claim path (if it exists)
             self.runPath(f"collect/claim/{objective}", fileMustExist=False)
+            #memory match
+            if "memory_match" in objective:
+                if objective == "memory_match":
+                    mmType = "normal"
+                else:
+                    mmType = objective.split("_")[0]
+                self.latestMM = mmType
+                self.logger.webhook("", f"Solving: ${displayName}", "dark brown", "screen")
+                solveMemoryMatch(mmType)
             time.sleep(0.1)
             self.logger.webhook("", f"Collected: {displayName}", "bright green", "screen")
         #update the internal cooldown
@@ -1623,9 +1662,98 @@ class macro:
             f.write(str(planterData))
         f.close()
     
-    def blender(self):
-        self.logger.webhook("","Travelling: Blender","dark brown")
-        self.cannon()
+    def blender(self, itemNo):
+        for _ in range(2):
+            self.logger.webhook("","Travelling: Blender","dark brown")
+            self.cannon()
+            self.runPath("collect/blender.py")
+            for _ in range(6):
+                self.keyboard.walk("d", 0.2)
+                reached = self.isBesideE(["open"])
+                if reached: break
+            if reached: break
+        else:
+            self.logger.webhook("","Failed to reach Blender", "dark brown", "screen")
+            return
+
+        def closeGUI():
+            mouse.moveTo(self.mw/2-250, math.floor(self.mh*0.48)-200)
+            time.sleep(0.1)
+            mouse.click()
+
+        self.keyboard.press("e")
+        time.sleep(1)
+        #check if blender is done and click on end crafting
+        doneImg = self.adjustImage("images/menu", "blenderdone")
+        x = self.mw/3
+        y = self.mw/4
+        res = locateImageOnScreen(doneImg, x, y, 560, 480)
+        if res:
+            rx, ry = res[1]
+            mouse.moveTo(rx+x, ry+y)
+            time.sleep(0.1)
+            mouse.click()
+            mouse.moveBy(2,2)
+            time.sleep(0.1)
+            mouse.click()
+            #close and reopen gui
+            time.sleep(0.1)
+            closeGUI()
+            time.sleep(0.3)
+            self.keyboard.press("e")
+
+        #check if still crafting and get cd
+        notDoneImg = self.adjustImage("images/menu", "blenderend")
+        x = self.mw/3
+        y = self.mw/4
+        res = locateImageOnScreen(notDoneImg, x, y, 560, 480)
+
+        def cancelCraft():
+            self.logger.webhook("", "Unable to detect remaining crafting time, ending craft", "dark brown", "screen")
+            #mouse.moveTo(self.mw/2-120, math.floor(self.mh*0.48)+120)
+            rx, ry = res[1]
+            mouse.moveTo(rx+x, ry+y)
+            time.sleep(0.1)
+            mouse.click()
+            mouse.moveBy(2,2)
+            time.sleep(0.1)
+            mouse.click()
+            #close and reopen gui
+            time.sleep(0.1)
+            closeGUI()
+            time.sleep(0.3)
+            self.keyboard.press("e")
+
+        if res:
+            cdRaw = ocr.customOCR(self.mw/2-130, math.floor(self.mh*0.48)-70, 400, 65, False)
+            cdRaw = ''.join([x[1][0] for x in cdRaw])
+            if ":" in cdRaw and "(" in cdRaw:
+                cd = self.cdTextToSecs(cdRaw)
+                if cd:
+                    cooldownFormat = timedelta(seconds=cd)
+                    self.logger.webhook("", f"Blender is currently crafting an item, ({cooldownFormat} remaining)", "dark brown", "screen")
+                    #set the target time and quit
+                    closeGUI()
+                    return
+                else: #cant detect cd, just cancel craft
+                    cancelCraft()
+            else: #cant detect cd, just cancel the craft
+                cancelCraft()
+        
+        #time to craft
+        #click to the item
+        item = self.setdat[f"blender_item_{itemNo}"]
+        itemDisplay = item.replace("_"," ").title()
+        mouse.moveTo(self.mw/2+240, math.floor(self.mh*0.48)+128)
+        for _ in range(blenderItems.index(item)):
+            mouse.click()
+            time.sleep(0.05)
+        #check if the item can be crafted
+        canMake = self.adjustImage("images/menu", "blendermake")
+        if not locateImageOnScreen(canMake, x, y, 560, 480, 0.8):
+            self.logger.webhook("", f"Unable to craft {itemDisplay}", "dark brown", "screen")
+        #open the crafting menu
+
     
     def start(self):
         #if roblox is not open, rejoin
