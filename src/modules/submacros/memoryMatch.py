@@ -19,14 +19,24 @@ def solveMemoryMatch(mmType=""):
     #wait for the tile to flip over
     #compensates for lag
     def waitForTileShow(x, y):
-        st = time.time()
-        while time.time()-st < 1.4: #max 1.4s of waiting
-            tile = screenshotItem(x,y)
-            if not similarImages(tile, blankTile): #if the tile is the same as the reference, it has flipped
-                time.sleep(0.2) #wait for the tile flip animation
-                tile = screenshotItem(x,y) #get a new screenshot
-                break
-        return tile
+        tileFlipped = False
+
+        def waitForImg():
+            nonlocal tileFlipped
+            st = time.time()
+            while time.time()-st < 3: #max 3s of waiting
+                tile = screenshotItem(x,y)
+                if not similarImages(tile, blankTile): #if the tile is the same as the reference, it has flipped
+                    time.sleep(0.2) #wait for the tile flip animation
+                    tile = screenshotItem(x,y) #get a new screenshot
+                    tileFlipped = True
+                    break
+            return tile
+        res = waitForImg()
+        if tileFlipped: #maybe the click failed
+            mmclick(x,y)
+            res = waitForImg()
+        return res
     
     #return true if img1 and img2 are similar
     #img1, img2 are hash values of the images

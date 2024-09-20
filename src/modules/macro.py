@@ -1612,6 +1612,9 @@ class macro:
             f.write(str(planterData))
         f.close()
     
+    def blender(self):
+        self.logger.webhook("","Travelling: Blender","dark brown")
+        self.cannon()
     
     def start(self):
         #if roblox is not open, rejoin

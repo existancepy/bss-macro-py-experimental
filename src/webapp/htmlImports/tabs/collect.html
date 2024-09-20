@@ -254,7 +254,7 @@
                 const blenderItemHTML = `
                     <div class="seperator" style="margin-bottom: 1rem;"></div>
                     <h3 class="poppins-semibold" style = "margin-bottom: 0.9rem;">Item ${i}</h3>
-                    <div style="display:flex; justify-content:space-between; align-items: flex-start;">
+                    <div style="display:flex; justify-content:space-between; align-items: flex-start; flex-wrap: wrap">
                         <div style="display:flex; align-items: flex-end">
                             <h4 class="poppins-regular" style = "margin-right: 0.7rem">Item:</h4>
                             ${buildInput(`blender_item_${i}`,{
@@ -268,7 +268,10 @@
                             <div>
                                 ${buildInput(`blender_quantity_${i}`, {name: "textbox", triggerFunction: "saveSetting(this, 'profile')", inputType: "int", length:7})}
                                 <div style="display:flex; margin-top: 0.3rem; width:100%; justify-content: space-between">
-                                    <h4 class="poppins-regular" style = "margin-top:0.5rem">Max:</h4>
+                                    <div>
+                                        <h4 class="poppins-regular" style = "margin-top:0.5rem">Max:</h4>
+                                        <div class="poppins-regular" style="font-size:0.9rem; color: #adb4bc">Craft the<br>max quantity</div>
+                                    </div>
                                     ${buildInput(`blender_quantity_max_${i}`, {name: "checkbox", triggerFunction: "saveSetting(this, 'profile')"})}
                                 </div>
                             </div>
@@ -276,9 +279,12 @@
                         <div style="display:flex; align-items: flex-start;">
                             <h4 class="poppins-regular" style = "margin-right: 0.7rem; margin-top: 0.7rem;">Repeat:</h4>
                             <div>
-                                ${buildInput(`blender_repeat_${i}`, {name: "textbox", triggerFunction: "saveSetting(this, 'profile')", inputType: "int", length:5})}
-                                <div style="display:flex; margin-top: 0.3rem; width:100%; justify-content: space-between">
-                                    <h4 class="poppins-regular" style = "margin-top:0.5rem">Inf:</h4>
+                                ${buildInput(`blender_repeat_${i}`, {name: "textbox", triggerFunction: "saveSetting(this, 'profile')", inputType: "int", length:6})}
+                                <div style="display:flex; margin-top: 0.3rem; width:calc(100% + 1rem); justify-content: space-between">
+                                    <div>
+                                        <h4 class="poppins-regular" style = "margin-top:0.5rem">Inf:</h4>
+                                        <div class="poppins-regular" style="font-size:0.9rem; color: #adb4bc">Repeat<br>infinitely</div>
+                                    </div>
                                     ${buildInput(`blender_repeat_inf_${i}`, {name: "checkbox", triggerFunction: "saveSetting(this, 'profile')"})}
                                 </div>
                             </div>
