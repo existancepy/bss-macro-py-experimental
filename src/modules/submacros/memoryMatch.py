@@ -5,14 +5,29 @@ from modules.screen.screenshot import mssScreenshot
 import pyautogui as pag
 import random
 from modules.screen.ocr import ocrRead
+from PIL import Image
 
+#TODO: clean up the code, really messy, lots of copy paste
 mw, mh = pag.size()
 def solveMemoryMatch(mmType=""):
+    blankTile = imagehash.average_hash(Image.open("./images/menu/mmempty.png"))
     def mmclick(x,y):
         mouse.moveTo(x, y, 0.2)
         time.sleep(0.3)
         mouse.click()
 
+    #wait for the tile to flip over
+    #compensates for lag
+    def waitForTileShow(x, y):
+        st = time.time()
+        while time.time()-st < 1.4: #max 1.4s of waiting
+            tile = screenshotItem(x,y)
+            if not similarImages(tile, blankTile): #if the tile is the same as the reference, it has flipped
+                time.sleep(0.2) #wait for the tile flip animation
+                tile = screenshotItem(x,y) #get a new screenshot
+                break
+        return tile
+    
     #return true if img1 and img2 are similar
     #img1, img2 are hash values of the images
     def similarImages(img1,img2):
@@ -76,9 +91,8 @@ def solveMemoryMatch(mmType=""):
             y = yr-offsetY
             mmclick(x,y)
             time.sleep(0.1)
-            pag.moveTo(x = middleX, y = middleY-190) #move the mouse out of the way of the img
-            time.sleep(0.6)
-            tileImg = screenshotItem(x,y)
+            mouse.moveTo(x = middleX, y = middleY-190) #move the mouse out of the way of the img
+            tileImg = waitForTileShow(x,y)
             checkedCoords.add((xr,yr))
             #check if the image matches with anything
             for j,img in enumerate(mmData):
@@ -93,12 +107,13 @@ def solveMemoryMatch(mmType=""):
             firstTile = i
             break
         
-        time.sleep(0.8)
+        time.sleep(0.8) 
         #second tile
 
         if matchFound:
             print("match found, 1st tile")
-            mmclick(*gridCoords[matchFound])
+            x,y  = gridCoords[matchFound]
+            mmclick(x-offsetX, y-offsetY)
         else:
             for i,e in enumerate(gridCoords):
                 xr,yr = e
@@ -107,9 +122,8 @@ def solveMemoryMatch(mmType=""):
                 y = yr-offsetY
                 mmclick(x,y)
                 time.sleep(0.1)
-                pag.moveTo(x = middleX, y = middleY-190) #move the mouse out of the way of the img
-                time.sleep(0.3)
-                tileImg = screenshotItem(x,y)
+                mouse.moveTo(x = middleX, y = middleY-190) #move the mouse out of the way of the img
+                tileImg = waitForTileShow(x,y)
                 checkedCoords.add((xr,yr))
                 #check if the image matches with anything
                 for j,img in enumerate(mmData):

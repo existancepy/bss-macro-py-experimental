@@ -123,3 +123,27 @@ const planterIcons = {
     petal: "petal_planter",
     planter_of_plenty: "planter_of_plenty_planter"
 }
+
+const blenderIcons = {
+    none: null,
+    red_extract: "red_extract",
+    blue_extract: "blue_extract",
+    enzymes: "enzymes",
+    oil: "oil",
+    glue: "glue",
+    tropical_drink: "tropical_drink",
+    gumdrops: "gumdrops",
+    moon_charm: "moon_charm",
+    glitter: "glitter",
+    star_jelly: "star_jelly",
+    purple_potion: "purple_potion",
+    soft_wax: "soft_wax",
+    hard_wax: "hard_wax",
+    swirled_wax: "swirled_wax",
+    caustic_wax: "caustic_wax",
+    field_dice: "field_dice",
+    smooth_dice: "smooth_dice",
+    loaded_dice: "loaded_dice",
+    super_smoothie: "super_smoothie",
+    turpentine: "turpentine"
+}

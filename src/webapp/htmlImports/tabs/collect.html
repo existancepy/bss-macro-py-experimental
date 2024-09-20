@@ -230,6 +230,63 @@
                         }
                 }
             ])
+            buildStandardContainer(parentCollect,"Blender", "",[
+                {
+                        id: "blender_enable",
+                        title: "Enable Blender",
+                        desc: "Craft and collect items from the blender",
+                        type: {
+                                name: "checkbox",
+                                triggerFunction: saveProfileTriggerFunction
+                            }
+                }
+            ])
+            function blenderItemDropDownHTML(id){
+                return buildInput(id,{
+                    name: "dropdown",
+                    data: fieldNectarArray,
+                    triggerFunction: "saveSetting(this, 'profile')",   
+                })
+            }
+            const blenderItemsArray = toImgArray(blenderIcons)
+            const blenderParent = document.getElementById("blender").parentElement
+            for (let i = 1; i < 4; i++){
+                const blenderItemHTML = `
+                    <div class="seperator" style="margin-bottom: 1rem;"></div>
+                    <h3 class="poppins-semibold" style = "margin-bottom: 0.9rem;">Item ${i}</h3>
+                    <div style="display:flex; justify-content:space-between; align-items: flex-start;">
+                        <div style="display:flex; align-items: flex-end">
+                            <h4 class="poppins-regular" style = "margin-right: 0.7rem">Item:</h4>
+                            ${buildInput(`blender_item_${i}`,{
+                                name: "dropdown",
+                                data: blenderItemsArray,
+                                triggerFunction: "saveSetting(this, 'profile')",   
+                            })}
+                        </div>
+                        <div style="display:flex; align-items: flex-start;">
+                            <h4 class="poppins-regular" style = "margin-right: 0.7rem; margin-top: 0.7rem;">Quantity:</h4>
+                            <div>
+                                ${buildInput(`blender_quantity_${i}`, {name: "textbox", triggerFunction: "saveSetting(this, 'profile')", inputType: "int", length:7})}
+                                <div style="display:flex; margin-top: 0.3rem; width:100%; justify-content: space-between">
+                                    <h4 class="poppins-regular" style = "margin-top:0.5rem">Max:</h4>
+                                    ${buildInput(`blender_quantity_max_${i}`, {name: "checkbox", triggerFunction: "saveSetting(this, 'profile')"})}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items: flex-start;">
+                            <h4 class="poppins-regular" style = "margin-right: 0.7rem; margin-top: 0.7rem;">Repeat:</h4>
+                            <div>
+                                ${buildInput(`blender_repeat_${i}`, {name: "textbox", triggerFunction: "saveSetting(this, 'profile')", inputType: "int", length:5})}
+                                <div style="display:flex; margin-top: 0.3rem; width:100%; justify-content: space-between">
+                                    <h4 class="poppins-regular" style = "margin-top:0.5rem">Inf:</h4>
+                                    ${buildInput(`blender_repeat_inf_${i}`, {name: "checkbox", triggerFunction: "saveSetting(this, 'profile')"})}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ` 
+                blenderParent.innerHTML += blenderItemHTML
+            }
        </script>
     </div>
 </div>
