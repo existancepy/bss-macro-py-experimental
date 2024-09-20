@@ -26,6 +26,8 @@ from datetime import timedelta, datetime
 from modules.misc.imageManipulation import *
 from PIL import Image
 from modules.misc import messageBox
+from modules.submacros.memoryMatch import solveMemoryMatch
+
 pynputKeyboard = Controller()
 #data for collectable objectives
 #[besideE text, movement key, max cooldowns]
@@ -43,7 +45,12 @@ collectData = {
     "samovar": [["heat", "samovar"], "w", 6*60*60], #6hr
     "snow_machine": [["activate"], None, 2*60*60], #2hr
     "lid_art": [["gander", "onett", "art"], "s", 8*60*60], #8hr
-    "candles": [["admire", "candle", "honey"], "w", 4*60*60] #4hr
+    "candles": [["admire", "candle", "honey"], "w", 4*60*60], #4hr
+    "memory_match": [["spend", "play"], "a", 2*60*60], #2hr
+    "mega_memory_match": [["spend", "play"], "w", 4*60*60], #4hr
+    #"night_memory_match": [["spend", "play"], "w", 8*60*60], #8hr
+    "extreme_memory_match": [["spend", "play"], "w", 8*60*60], #8hr
+    "winter_memory_match": [["spend", "play"], "a", 4*60*60], #4hr
 }
 
 #werewolf is a unique one. There is only one, but it can be triggered from pine, pumpkin or cactus
@@ -512,6 +519,8 @@ class macro:
             if self.night and self.setdat["stinger_hunt"]:
                 self.stingerHunt()
                 return
+            if time.time()-st > 30*60: #30mins max
+                self.logger.webhook("","Converting timeout (30mins max)", "brown", "screen")
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
         wait = self.setdat["convert_wait"]
@@ -548,16 +557,23 @@ class macro:
             time.sleep(0.2)
             self.keyboard.press('enter')
             emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
+            healthBar = False #check if the health bar appears when the player resets. For some reason, the empty health bar doesnt always appear
             st = time.time()
             #wait for empty health bar to appear
-            while time.time() - st < 3 and not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7): pass
-            #if the empty health bar disappears, player has respawned
-            #max 8s in case player does not respawn
-            st = time.time()
-            while time.time() - st < 9:
-                if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
-                    time.sleep(0.5)
+            while time.time() - st < 3: 
+                if locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
+                    healthBar = True
                     break
+            if healthBar: #check if the health bar has been detected. If it hasnt, just wait for a flat 6s
+                #if the empty health bar disappears, player has respawned
+                #max 9s in case player does not respawn
+                st = time.time()
+                while time.time() - st < 9:
+                    if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
+                        time.sleep(0.5)
+                        break
+            else:
+                time.sleep(6)
 
             self.canDetectNight = True
             self.location = "spawn"
