@@ -876,14 +876,15 @@ class macro:
         if fieldSetting["shift_lock"]: self.keyboard.press('shift')
         while keepGathering:
             mouse.mouseDown()
-            #ensure that the pattern works
+            #ensure that the pattern works  
             try:
                 exec(open(f"../settings/patterns/{pattern}.py").read())
             except Exception as e:
                 print(e)
                 if firstPattern:
                     pattern = "e_lol"
-                    self.logger.webhook("Incompatible pattern", f"The pattern {pattern} is incompatible with the macro. Defaulting to e_lol instead. Avoid using this pattern in the future. If you are the creator of this pattern, the error can be found in terminal", "red")
+                    self.logger.webhook("Incompatible pattern", f"The pattern {pattern} is incompatible with the macro. Defaulting to e_lol instead.\
+                                        Avoid using this pattern in the future. If you are the creator of this pattern, the error can be found in terminal", "red")
             firstPattern = False
             #cycle ends
             mouse.mouseUp()
