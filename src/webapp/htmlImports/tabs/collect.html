@@ -232,14 +232,25 @@
             ])
             buildStandardContainer(parentCollect,"Blender", "",[
                 {
-                        id: "blender_enable",
-                        title: "Enable Blender",
-                        desc: "Craft and collect items from the blender",
-                        type: {
-                                name: "checkbox",
-                                triggerFunction: saveProfileTriggerFunction
-                            }
+                    id: "blender_enable",
+                    title: "Enable Blender",
+                    desc: "Craft and collect items from the blender",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "blender-reset",
+                    title: "Reset Blender Timers",
+                    desc: "Resets the macro's tracking data on blender items",
+                    type: {
+                        name: "button",
+                        text: "Reset",
+                        triggerFunction: "clearBlenderData(this)"
+                    }
                 }
+
             ])
             function blenderItemDropDownHTML(id){
                 return buildInput(id,{

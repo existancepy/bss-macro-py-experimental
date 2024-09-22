@@ -1,6 +1,8 @@
-from modules.submacros.memoryMatch import solveMemoryMatch
-from modules.misc.appManager import openApp
-import time
-openApp("roblox")
-time.sleep(2)
-solveMemoryMatch()
+blenderData = {
+    "item": 1,
+    "collectTime": 0
+}
+with open("data/user/blender.txt", "w") as f:
+    f.write(str(blenderData))
+f.close()
+print(blenderData)

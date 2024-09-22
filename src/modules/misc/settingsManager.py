@@ -58,6 +58,16 @@ def saveField(field, settings):
 def saveProfileSetting(setting, value):
     saveSettingFile(setting, value, f"../settings/profiles/{profileName}/settings.txt")
 
+#increment a setting, and return the dictionary for the setting
+def incrementProfileSetting(setting, incrValue):
+    #get the dictionary
+    data = readSettingsFile(f"../settings/profiles/{profileName}/settings.txt")
+    #update the dictionary
+    data[setting] += incrValue
+    #write it
+    saveDict(f"../settings/profiles/{profileName}/settings.txt", data)
+    return data
+
 def saveGeneralSetting(setting, value):
     saveSettingFile(setting, value, "../settings/generalsettings.txt")
 

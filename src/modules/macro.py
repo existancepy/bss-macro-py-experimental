@@ -134,18 +134,18 @@ planterGrowthData = {
 }
 
 #a list of all items that can be crafted by the blender in order
-blenderItems = ["red_extract", "blue_extract", "enzymes", "oil", "glue", "tropical_drink", "gumdrops", "moon_charm",
+blenderItems = ["red extract", "blue extract", "enzymes", "oil", "glue", "tropical drink", "gumdrops", "moon charm",
     "glitter",
-    "star_jelly",
-    "purple_potion",
-    "soft_wax",
-    "hard_wax",
-    "swirled_wax",
-    "caustic_wax",
-    "field_dice",
-    "smooth_dice",
-    "loaded_dice",
-    "super_smoothie",
+    "star jelly",
+    "purple potion",
+    "soft wax",
+    "hard wax",
+    "swirled wax",
+    "caustic wax",
+    "field dice",
+    "smooth dice",
+    "loaded dice",
+    "super smoothie",
     "turpentine"]
 
 class macro:
@@ -571,6 +571,10 @@ class macro:
             mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
                 solveMemoryMatch(self.latestMM)
+
+            mmImg = self.adjustImage("./images/menu", "blenderclose") #blender
+            if locateImageOnScreen(mmImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
+                self.closeBlenderGUI()
 
             self.moveMouseToDefault()
             time.sleep(0.1)
@@ -1132,14 +1136,17 @@ class macro:
         self.toggleInventory("close")
 
     #convert bss' cooldown text into seconds
-    def cdTextToSecs(self, rawText):
-        closePos = rawText.find(")")
-        #get cooldown if close bracket is present or not
-        if closePos >= 0:
-            cooldownRaw = rawText[rawText.find("(")+1:closePos]
+    #brackets: account for brackets in the text, where the cooldown value is between said brackets
+    def cdTextToSecs(self, rawText, brackets):
+        if brackets:
+            closePos = rawText.find(")")
+            #get cooldown if close bracket is present or not
+            if closePos >= 0:
+                cooldownRaw = rawText[rawText.find("(")+1:closePos]
+            else:
+                cooldownRaw = rawText.split("(")[1]
         else:
-            cooldownRaw = rawText.split("(")[1]
-
+            cooldownRaw = rawText
         #clean it up, extract only valid characters
         cooldownRaw = ''.join([x for x in cooldownRaw if x.isdigit() or x == ":" or x == "s"])
         cooldownSeconds = None #cooldown in seconds
@@ -1184,7 +1191,7 @@ class macro:
         #check if on cooldown
         cooldownSeconds = objectiveData[2]
         if "(" and ":" in reached:
-            cd = self.cdTextToSecs(reached)
+            cd = self.cdTextToSecs(reached, True)
             if cd: cooldownSeconds = cd
             cooldownFormat = timedelta(seconds=cooldownSeconds)
             self.logger.webhook("", f"{displayName} is on cooldown ({cooldownFormat} remaining)", "dark brown", "screen")
@@ -1662,11 +1669,16 @@ class macro:
             f.write(str(planterData))
         f.close()
     
-    def blender(self, itemNo):
+    def closeBlenderGUI(self):
+        mouse.moveTo(self.mw/2-250, math.floor(self.mh*0.48)-200)
+        time.sleep(0.1)
+        mouse.click()
+        
+    def blender(self, blenderData):
         for _ in range(2):
             self.logger.webhook("","Travelling: Blender","dark brown")
             self.cannon()
-            self.runPath("collect/blender.py")
+            self.runPath("collect/blender")
             for _ in range(6):
                 self.keyboard.walk("d", 0.2)
                 reached = self.isBesideE(["open"])
@@ -1675,84 +1687,151 @@ class macro:
         else:
             self.logger.webhook("","Failed to reach Blender", "dark brown", "screen")
             return
+        itemNo = blenderData["item"]
+        x = self.mw/3
+        y = self.mw/4
+        def saveBlenderData():
+            with open("./data/user/blender.txt", "w") as f:
+                f.write(str(blenderData))
+            f.close()
 
-        def closeGUI():
-            mouse.moveTo(self.mw/2-250, math.floor(self.mh*0.48)-200)
+        def clickOnBlenderElement(cx, cy):
+            if self.display_type == "retina":
+                cx //= 2
+                cy //= 2
+            mouse.moveTo(cx+x, cy+y)
             time.sleep(0.1)
             mouse.click()
+            mouse.moveBy(2,2)
+            time.sleep(0.1)
+            mouse.click()
+            #close and reopen gui
+            time.sleep(0.1)
+            self.closeBlenderGUI()
+            time.sleep(0.3)
+            self.keyboard.press("e")
 
         self.keyboard.press("e")
         time.sleep(1)
         #check if blender is done and click on end crafting
         doneImg = self.adjustImage("images/menu", "blenderdone")
-        x = self.mw/3
-        y = self.mw/4
-        res = locateImageOnScreen(doneImg, x, y, 560, 480)
+        res = locateImageOnScreen(doneImg, x, y, 560, 480, 0.75)
         if res:
-            rx, ry = res[1]
-            mouse.moveTo(rx+x, ry+y)
-            time.sleep(0.1)
-            mouse.click()
-            mouse.moveBy(2,2)
-            time.sleep(0.1)
-            mouse.click()
-            #close and reopen gui
-            time.sleep(0.1)
-            closeGUI()
-            time.sleep(0.3)
-            self.keyboard.press("e")
+            print("done")
+            clickOnBlenderElement(*res[1])
+        
+        #check for cancel button
+        cancelImg = self.adjustImage("images/menu", "blendercancel")
+        res = locateImageOnScreen(cancelImg, x, y, 560, 480, 0.75)
+        if res:
+            print("cancel")
+            clickOnBlenderElement(*res[1])
 
         #check if still crafting and get cd
         notDoneImg = self.adjustImage("images/menu", "blenderend")
-        x = self.mw/3
-        y = self.mw/4
-        res = locateImageOnScreen(notDoneImg, x, y, 560, 480)
+        res = locateImageOnScreen(notDoneImg, x, y, 560, 480, 0.75)
 
         def cancelCraft():
             self.logger.webhook("", "Unable to detect remaining crafting time, ending craft", "dark brown", "screen")
             #mouse.moveTo(self.mw/2-120, math.floor(self.mh*0.48)+120)
-            rx, ry = res[1]
-            mouse.moveTo(rx+x, ry+y)
-            time.sleep(0.1)
-            mouse.click()
-            mouse.moveBy(2,2)
-            time.sleep(0.1)
-            mouse.click()
-            #close and reopen gui
-            time.sleep(0.1)
-            closeGUI()
-            time.sleep(0.3)
-            self.keyboard.press("e")
+            clickOnBlenderElement(*res[1])
 
         if res:
-            cdRaw = ocr.customOCR(self.mw/2-130, math.floor(self.mh*0.48)-70, 400, 65, False)
+            cdImg = mssScreenshot(self.mw/2-130, math.floor(self.mh*0.48)-70, 400, 65, True)
+            cdRaw = ocr.ocrRead(cdImg)
             cdRaw = ''.join([x[1][0] for x in cdRaw])
-            if ":" in cdRaw and "(" in cdRaw:
-                cd = self.cdTextToSecs(cdRaw)
-                if cd:
-                    cooldownFormat = timedelta(seconds=cd)
-                    self.logger.webhook("", f"Blender is currently crafting an item, ({cooldownFormat} remaining)", "dark brown", "screen")
-                    #set the target time and quit
-                    closeGUI()
-                    return
-                else: #cant detect cd, just cancel craft
-                    cancelCraft()
-            else: #cant detect cd, just cancel the craft
+            cd = self.cdTextToSecs(cdRaw, False)
+            if cd:
+                cooldownFormat = timedelta(seconds=cd)
+                self.logger.webhook("", f"Blender is currently crafting an item ({cooldownFormat} remaining)", "dark brown", "screen")
+                #set the target time and quit
+                self.closeBlenderGUI()
+                blenderData["collectTime"] = time.time() + cd
+                saveBlenderData()
+                return
+            else: #cant detect cd, just cancel craft
                 cancelCraft()
         
         #time to craft
+        if not itemNo: #if itemNo is 0, there are no items to craft. The macro has collected the last item to craft
+            self.closeBlenderGUI()
+            blenderData["collectTime"] = -1 #set collectTime to -1 (disable blender)
+            saveBlenderData()
+            return
         #click to the item
         item = self.setdat[f"blender_item_{itemNo}"]
-        itemDisplay = item.replace("_"," ").title()
+        itemDisplay = item.title()
         mouse.moveTo(self.mw/2+240, math.floor(self.mh*0.48)+128)
         for _ in range(blenderItems.index(item)):
             mouse.click()
-            time.sleep(0.05)
+            sleep(0.06)
         #check if the item can be crafted
         canMake = self.adjustImage("images/menu", "blendermake")
         if not locateImageOnScreen(canMake, x, y, 560, 480, 0.8):
             self.logger.webhook("", f"Unable to craft {itemDisplay}", "dark brown", "screen")
         #open the crafting menu
+        mouse.moveTo(self.mw/2, math.floor(self.mh*0.48)+130)
+        time.sleep(0.1)
+        mouse.click()
+        #set the quantity
+        mouse.moveTo(self.mw/2-60, math.floor(self.mh*0.48)+140)
+        #check if max
+        if self.setdat[f"blender_quantity_max_{itemNo}"]:
+            #get a screenshot of the quantity
+            #add more
+            #get another screenshot
+            #if both screenshots are the same, break
+
+            def quantityScreenshot(save = False):
+                return imagehash.average_hash(mssScreenshot(self.mw/2-60-140, math.floor(self.mh*0.48)+140-20, 110, 20*2, save))
+            quantity1Img = quantityScreenshot()
+            while True:
+                for _ in range(5): #add 5 quantity
+                    mouse.click()
+                    sleep(0.03)
+                quantity2Img = quantityScreenshot()
+                if quantity2Img - quantity1Img < 2: #check if screenshots are similar
+                    break
+                #update the quantity
+                quantity1Img = quantity2Img
+            quantity = int(''.join([x[1][0] for x in ocr.ocrRead(quantity2Img) if x.isdigit()]))
+        else: 
+            #normal quantity
+            quantity = self.setdat[f"blender_quantity_{itemNo}"]
+            for _ in range(quantity-1): #-1 because the quantity starts from 1
+                mouse.click()
+                sleep(0.03)
+        #confirm
+        mouse.moveTo(self.mw/2 + 70, math.floor(self.mh*0.48)+130)
+        time.sleep(0.1)
+        mouse.click()
+        #go to next item
+        #decrement the repeat count
+        if not self.setdat[f"blender_repeat_inf_{itemNo}"]:
+            self.setdat = {**self.setdat, **settingsManager.incrementProfileSetting(f"blender_repeat_{itemNo}", -1)}
+        nextItem = itemNo
+        for _ in range(4):
+            nextItem += 1
+            if nextItem > 3:
+                nextItem = 1
+            #item must be set and have repeats
+            if (self.setdat[f"blender_item_{nextItem}"] != "none") and (self.setdat[f"blender_repeat_{nextItem}"] > 0 or self.setdat[f"blender_repeat_inf_{nextItem}"]):
+                break
+        else:
+            print("no items")
+            nextItem = 0 #no items to craft
+        blenderData["item"] = nextItem
+        #calculate the time to collect the blender
+        craftTime = quantity*5*60 #5mins per item
+        blenderData["collectTime"] = time.time() + craftTime
+        time.sleep(1) #add a delay here before taking a screenshot, since bss displays the crafting screen with default values for a bit
+        self.logger.webhook("", f"Crafted: {itemDisplay} x{quantity}, Ready in: {timedelta(seconds=craftTime)}", "bright green", "screen")
+        #store the data
+        saveBlenderData()
+        self.closeBlenderGUI()
+
+
+
 
     
     def start(self):

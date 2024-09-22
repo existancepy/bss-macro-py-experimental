@@ -85,7 +85,16 @@ def macro(status, log, haste):
 
         if setdat["sticker_printer"] and macro.hasRespawned("sticker_printer", macro.collectCooldowns["sticker_printer"]):
             runTask(macro.collectStickerPrinter)
-
+        #blender
+        if setdat["blender_enable"]:
+            with open("./data/user/blender.txt", "r") as f:
+                blenderData = ast.literal_eval(f.read())
+            f.close()
+            #collectTime: time where the blender is done crafting
+            #item: the next item number to craft
+            #check if its time to collect the previous item
+            if blenderData["collectTime"] > -1 and time.time() > blenderData["collectTime"]:
+                runTask(macro.blender, args=(blenderData,))
         #planters
         def goToNextCycle(cycle):
             #go to the next cycle
