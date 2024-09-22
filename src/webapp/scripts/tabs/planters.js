@@ -13,7 +13,6 @@ function changePlanterMode(){
         1: "manual",
         2: "auto"
     }
-    console.log(ele.value)
     Array.from(document.getElementsByClassName("planter-tab")).forEach(x => x.style.display="none")
     //ele.value doesnt
     if (ele.value > 0) document.getElementById(`planters-${planterMode[ele.value]}`).style.display = "block"

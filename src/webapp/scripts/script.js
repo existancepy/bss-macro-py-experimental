@@ -69,6 +69,7 @@ function generateSettingObject(properties){
 }
 
 //load fields based on the obj data
+eel.expose(loadInputs)
 function loadInputs(obj){
     for (const [k,v] of Object.entries(obj)) {
         const ele = document.getElementById(k)

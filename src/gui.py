@@ -55,10 +55,13 @@ eel.expose(settingsManager.loadAllSettings)
 eel.expose(settingsManager.saveProfileSetting)
 eel.expose(settingsManager.saveGeneralSetting)
 
-
+def updateGUI():
+    settings = settingsManager.loadAllSettings()
+    eel.loadInputs(settings)
 
 def toggleStartStop():
     eel.toggleStartStop()
 
 def launch():
     eel.start('index.html',app_mode = True,block = False, cmdline_args=["--incognito", "--new-window"])
+    

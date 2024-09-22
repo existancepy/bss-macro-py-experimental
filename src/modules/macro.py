@@ -149,8 +149,9 @@ blenderItems = ["red extract", "blue extract", "enzymes", "oil", "glue", "tropic
     "turpentine"]
 
 class macro:
-    def __init__(self, status, log, haste):
+    def __init__(self, status, log, haste, updateGUI):
         self.status = status
+        self.updateGUI = updateGUI
         self.setdat = settingsManager.loadAllSettings()
         self.fieldSettings = settingsManager.loadFields()
         self.mw, self.mh = pag.size()
@@ -1675,6 +1676,31 @@ class macro:
         mouse.click()
         
     def blender(self, blenderData):
+        itemNo = blenderData["item"]
+        def saveBlenderData():
+            with open("./data/user/blender.txt", "w") as f:
+                f.write(str(blenderData))
+            f.close()
+        
+        def getNextItem():
+            nextItem = itemNo
+            for _ in range(4):
+                nextItem += 1
+                if nextItem > 3:
+                    nextItem = 1
+                #item must be set and have repeats
+                if (self.setdat[f"blender_item_{nextItem}"] != "none") and (self.setdat[f"blender_repeat_{nextItem}"] > 0 or self.setdat[f"blender_repeat_inf_{nextItem}"]):
+                    return nextItem
+            else:
+                return 0 #no items to craft
+        if blenderData["collectTime"] == 0: #first blender of the session
+            itemNo = getNextItem() #get the first item
+            if not itemNo: #no items available
+                blenderData["item"] = itemNo
+                blenderData["collectTime"] = -1
+                saveBlenderData()
+                return
+            
         for _ in range(2):
             self.logger.webhook("","Travelling: Blender","dark brown")
             self.cannon()
@@ -1687,13 +1713,9 @@ class macro:
         else:
             self.logger.webhook("","Failed to reach Blender", "dark brown", "screen")
             return
-        itemNo = blenderData["item"]
+        
         x = self.mw/3
         y = self.mw/4
-        def saveBlenderData():
-            with open("./data/user/blender.txt", "w") as f:
-                f.write(str(blenderData))
-            f.close()
 
         def clickOnBlenderElement(cx, cy):
             if self.display_type == "retina":
@@ -1809,18 +1831,8 @@ class macro:
         #decrement the repeat count
         if not self.setdat[f"blender_repeat_inf_{itemNo}"]:
             self.setdat = {**self.setdat, **settingsManager.incrementProfileSetting(f"blender_repeat_{itemNo}", -1)}
-        nextItem = itemNo
-        for _ in range(4):
-            nextItem += 1
-            if nextItem > 3:
-                nextItem = 1
-            #item must be set and have repeats
-            if (self.setdat[f"blender_item_{nextItem}"] != "none") and (self.setdat[f"blender_repeat_{nextItem}"] > 0 or self.setdat[f"blender_repeat_inf_{nextItem}"]):
-                break
-        else:
-            print("no items")
-            nextItem = 0 #no items to craft
-        blenderData["item"] = nextItem
+            self.updateGUI.value = 1
+        blenderData["item"] = getNextItem()
         #calculate the time to collect the blender
         craftTime = quantity*5*60 #5mins per item
         blenderData["collectTime"] = time.time() + craftTime
