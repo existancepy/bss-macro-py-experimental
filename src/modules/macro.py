@@ -1667,14 +1667,16 @@ class macro:
             exec(open(path).read())
         #go to the planter
         if method == "collect": #return true if the planter can be found
+            time.sleep(1)
             if finalKey is not None:
                 st = time.time()
                 while time.time()-st < (finalKey[1]+1):
                     self.keyboard.walk(finalKey[0],0.25)
                     if self.isBesideEImage("ebutton"): return True
-            elif self.isBesideEImage("ebutton"):
-                return True
-            return False
+                return False
+            else:
+                time.sleep(1)
+                return self.isBesideEImage("ebutton")
         else: #place, just walk there
             if finalKey is not None: self.keyboard.walk(finalKey[0], finalKey[1])
             return True
