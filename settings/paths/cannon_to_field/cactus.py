@@ -12,8 +12,8 @@ self.keyboard.slowPress(",")
 sleep(0.35)
 self.keyboard.slowPress("space")
 self.keyboard.keyUp("w")
-self.keyboard.press(".")
-self.keyboard.press(".")
+self.keyboard.press(",")
+self.keyboard.press(",")
 sleep(0.8)
 
 

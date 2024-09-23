@@ -37,7 +37,7 @@ sleep(0.2)
 self.keyboard.keyUp("d")
 self.keyboard.walk("d",1.9)
 self.keyboard.walk("s",2.9)
-for _ in range(4):
+for _ in range(2):
     self.keyboard.press(".")
 
 

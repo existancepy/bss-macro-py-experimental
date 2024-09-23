@@ -148,6 +148,69 @@ blenderItems = ["red extract", "blue extract", "enzymes", "oil", "glue", "tropic
     "super smoothie",
     "turpentine"]
 
+#a list of keys to press to face north after running the cannon_to_field path
+fieldFaceNorthKeys = {
+    "sunflower": ["."]*2,
+    "dandelion": [","]*2,
+    "mushroom": None,
+    "blue flower": [","]*2,
+    "clover": ["."]*4,
+    "strawberry": ["."]*2,
+    "spider": None,
+    "bamboo": [","]*2,
+    "pineapple": None,
+    "stump": [","]*2,
+    "cactus": ["."]*4,
+    "pumpkin": None,
+    "pine tree": None,
+    "rose": ["."]*2,
+    "mountain top": ["."]*4,
+    "pepper": ["."]*2,
+    "coconut": ["."]*4
+}
+
+fieldFaceNorthKeys = {
+    "sunflower": ["."]*2,
+    "dandelion": [","]*2,
+    "mushroom": None,
+    "blue flower": [","]*2,
+    "clover": ["."]*4,
+    "strawberry": ["."]*2,
+    "spider": None,
+    "bamboo": [","]*2,
+    "pineapple": None,
+    "stump": [","]*2,
+    "cactus": ["."]*4,
+    "pumpkin": None,
+    "pine tree": None,
+    "rose": ["."]*2,
+    "mountain top": ["."]*4,
+    "pepper": ["."]*2,
+    "coconut": ["."]*4
+}
+
+#the field dimensions taken from natro
+#[length, width]
+startLocationDimensions = {
+    "sunflower": [1250, 2000],
+    "dandelion": [2500, 1000],
+    "mushroom": [1250, 1750],
+    "blue flower": [2750, 750],
+    "clover": [2000, 1500],
+    "strawberry": [1500, 2000],
+    "spider": [2000, 2000],
+    "bamboo": [3000, 1250],
+    "pineapple": [1750, 3000],
+    "stump": [1500, 1500],
+    "cactus": [1500, 2500],
+    "pumpkin": [1500, 2500],
+    "pine tree": [2500, 1700],
+    "rose": [2500, 1500],
+    "mountain top": [2250, 1500],
+    "pepper": [1500, 2250],
+    "coconut": [1500, 2250]
+}
+
 class macro:
     def __init__(self, status, log, haste, updateGUI):
         self.status = status
@@ -313,10 +376,26 @@ class macro:
             #ensure that path exists
             if not fileMustExist and not os.path.isfile(pyPath): return
             exec(open(pyPath).read())
+
     #run the path to go to a field
-    def goToField(self, field):
+    #faceDir what direction to face after landing in a field (default, north, south)
+    def goToField(self, field, faceDir = "default"):
         self.location = field
         self.runPath(f"cannon_to_field/{field}")
+        if faceDir == "default": return
+
+        keys = fieldFaceNorthKeys[field]
+        if faceDir == "south": #invert the keys
+            if len(keys) == 4:
+                keys = None
+            elif keys is None:
+                keys = ["."]*4
+            else:
+                keys = ["." if x == "," else "," for x in keys]
+        
+        if keys is not None:
+            for k in keys:
+                self.keyboard.press(k)
 
     def isInOCR(self, name, includeList, excludeList):
         #get text
@@ -808,7 +887,11 @@ class macro:
                 self.died = True
             #mob respawn check
             self.setMobTimer(field)
-            
+    #use the accurate sleep and sleep for ms
+    def sleepMSMove(self, key, time):
+        self.keyboard.keyDown(key, False)
+        sleep(time/1000)
+        self.keyboard.keyUp(key, False)
 
     def gather(self, field):
         fieldSetting = self.fieldSettings[field]
@@ -819,19 +902,21 @@ class macro:
             self.cannon()
             self.logger.webhook("",f"Travelling: {field.title()}, Attempt {i+1}", "dark brown")
             self.goToField(field)
-            #go to start location
-            startLocationData = {
-                "center": [],
-                "upper right": ["w","d"],
-                "right": ["d"],
-                "lower right": ["s","d"],
-                "bottom": ["s"],
-                "lower left": ["s","a"],
-                "left": ["a"],
-                "upper left": ["w","a"],
-                "top": ["w"]
-            }
-            self.keyboard.multiWalk(startLocationData[fieldSetting["start_location"]], fieldSetting["distance"]/4)
+            #go to start location (match natro's)
+            startLocation = fieldSetting["start_location"]
+            moveSpeedFactor = 18/self.setdat["movespeed"]
+            flen, fwid = [x*fieldSetting["distance"]/10 for x in startLocationDimensions[field]]
+            if "upper" in startLocation:
+                self.sleepMSMove("w", flen*moveSpeedFactor)
+            elif "lower" in startLocation:
+                 self.sleepMSMove("s", flen*moveSpeedFactor)
+
+            if "left" in startLocation:
+                 self.sleepMSMove("a", fwid*moveSpeedFactor)
+            elif "right" in startLocation:
+                 self.sleepMSMove("d", fwid*moveSpeedFactor)
+
+            time.sleep(0.4)
             #place sprinkler + check if in field
             if self.placeSprinkler(): 
                 break
@@ -1267,7 +1352,7 @@ class macro:
     def mobRunLootingBackground(self):
         st = time.time()
         while time.time() - st < 20:
-           if self.blueTextImageSearch("tokenlink"): break
+           if self.blueTextImageSearch("tokenlink", 0.8): break
         self.mobRunStatus = "done"
 
     def killMob(self, mob, field, walkPath = None):
@@ -1282,7 +1367,7 @@ class macro:
             #wait for bees to respawn
             time.sleep(10)
             self.cannon()
-            self.goToField(field)
+            self.goToField(field, "north")
             #attack the mob
             attackThread.start()
         else:
@@ -1398,11 +1483,8 @@ class macro:
             #go to field
             self.cannon()
             self.logger.webhook("",f"Travelling to {currField} (vicious bee)","dark brown")
-            self.goToField(currField)
+            self.goToField(currField, "south")
 
-            for _ in range(4): #rotate 180. The vic patterns are from v1
-                self.keyboard.press(".")
-            
             #since we can't use break/return in an exec statement, use exceptions to terminate it early
             #walk in path
             #between each line of movement in the path, check if vic has been found
@@ -1429,9 +1511,7 @@ class macro:
         def goToVicField():
             self.reset(convert=False)
             self.logger.webhook("",f"Travelling to {self.vicField} (vicious bee)","dark brown")
-            self.goToField(currField)
-            for _ in range(4): #rotate 180, as the vic patterns are from v1
-                self.keyboard.press(".")
+            self.goToField(currField, "south")
 
         #first, check if vic is found in the same field as the player
         if currField != self.vicField: goToVicField()
@@ -1532,8 +1612,6 @@ class macro:
             self.cannon()
             self.logger.webhook("","Travelling: Coconut Crab","dark brown")
             self.goToField("coconut")
-            for _ in range(4):
-                self.keyboard.press(".")
             self.keyboard.walk("s", 1)
             self.keyboard.walk("d", 3)
             self.died = False
@@ -1580,7 +1658,7 @@ class macro:
         global finalKey
         self.cannon()
         self.logger.webhook("", f"Travelling: {planter.title()} Planter ({field.title()})", "dark brown")
-        self.goToField(field)
+        self.goToField(field, "north")
         #move from center of field to planter spot
         finalKey = None
         path = f"../settings/paths/planters/{field}.py"
@@ -1659,7 +1737,7 @@ class macro:
             if self.setdat[f"cycle{cycle}_{i+1}_gather"]: 
                 planterData["gatherFields"].append(field)
             self.reset()
-
+    
         planterData["harvestTime"] = time.time() + planterGrowthMaxTime
         #convert planter growth max time to hrs, mins, secs readable format
         planterReady = time.strftime("%H:%M:%S", time.gmtime(planterGrowthMaxTime))

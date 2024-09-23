@@ -13,7 +13,7 @@ The update button deletes the current macro version and downloads the latest ver
 The task list is a easy way for you to see what tasks you have enabled. It also represents the general order that the tasks are done in. (The higher up the task, the earlier it will be done). Certain tasks (mondo chick and stinger hunt) are high priority, meaning that they do not follow the order dictated by the task list. These tasks are done right after each task.
 
 ## 2. Gather
-The gather tab allows you to enable up to 3 fields for the macro to gather in.
+The gather tab allows you to enable up to 3 fields for the macro to gather in. The gather settings are the same as natro macro, so the settings should work the same
 
 ### Use shift lock
 Use shift lock when gathering. The macro will toggle it on before gathering, then toggle it off afterwards.
@@ -39,7 +39,26 @@ Invert forward and backward keys of the pattern. Instead of going forwards, the 
 ### Direction
 The direction to turn the camera in before gathering. The initial direction the macro faces varies from field to field. Below is a table of fields and their initial direction. It is the same as Natro Macro
 
-*Note: North refers to the direction in which the player is facing away from the hive*
+*Note: North is the direction in which the player faces away from the hive*
+| Field | Initial Direction |
+| --- | --- |
+| Sunflower | West |
+| Dandelion | East |
+| Mushroom | North |
+| Blue Flower| East |
+| Clover | South |
+| Strawberry | West |
+| Spider | North |
+| Bamboo | East |
+| Pineapple | North |
+| Stump | East |
+| Cactus | South |
+| Pumpkin | North |
+| Pine Tree | North |
+| Rose | West |
+| Mountain Top | South |
+| Pepper | West |
+| Coconut | South |
 
 ### Turn X times
 The number of times to turn in the specified direction
@@ -93,6 +112,6 @@ The macro can craft and collect up to 3 items in the blender. Note that if there
 This tab is focused on killing mobs and bosses
 
 ### Settings
-This is where you can enter any respawn modifiers that you may have for the macro to use when calculating respawn times
+This is where you can enter any respawn modifiers that you may have. The macro will account for them when calculating respawn times
 
 

@@ -1,5 +1,5 @@
 exec(open("../settings/paths/cannon_to_field/blue flower.py").read())
-for _ in range(4):
+for _ in range(2):
     self.keyboard.press(".")
 self.keyboard.press("space")
 self.keyboard.walk("s",3)
