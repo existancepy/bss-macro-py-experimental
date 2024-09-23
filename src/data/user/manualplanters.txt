@@ -1,0 +1,1 @@
+{'cycle': 1, 'planters': ['paper'], 'fields': ['sunflower'], 'gatherFields': [], 'harvestTime': 1727070466.024181}

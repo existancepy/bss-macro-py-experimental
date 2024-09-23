@@ -1,0 +1,28 @@
+<div class="poppins-regular standard-container sub-nav-bar" id = "kill-nav">
+    <div id = "kill-settings" class = "boost-hotbar-item">Hotbar</div>
+    <div id = "kill-regular" class="boost-buffs-item">Buffs</div>
+</div>
+<div style="display: flex; justify-content: center; width: 100%;">
+    <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="boost-hotbar-tab">
+        <script>
+            const hotbarParent = document.getElementById("boost-hotbar-tab")
+        </script>
+    </div>
+
+    <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="boost-buffs-tab">
+        <script>
+            const buffsParent = document.getElementById("boost-buffs-tab")
+            buildStandardContainer(buffsParent,"Field Boosters", "",[
+                {
+                    id: "ant_challenge",
+                    title: "Enable Task",
+                    desc: "Complete ant challenges. Recommended only for quests. The macro will keep the ant amulet",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+            ])
+        </script>
+    </div>
+</div>

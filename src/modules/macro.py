@@ -83,8 +83,8 @@ mobRespawnTimes = {
 resetLower1 = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
 resetUpper1 = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
 #balloon color
-resetLower2 = np.array([110, 229, 153])  # Lower bound of the color (H, L, S)
-resetUpper2 = np.array([115, 255, 204])  # Upper bound of the color (H, L, S)
+resetLower2 = np.array([105, 210, 140])  # Lower bound of the color (H, L, S)
+resetUpper2 = np.array([120, 255, 210])  # Upper bound of the color (H, L, S)
 resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(16,10))
 
 
@@ -117,11 +117,11 @@ locationToNightFloorType = {
 #store planter's growth data
 #[growth time in secs, (list of bonus fields), bonus growth from fields]
 planterGrowthData = {
-    "paper": [1*60*60, ()], #1hr
-    "ticket": [2*60*60, ()], #2hr
-    "festive": [4*60*60, ()], #4hr
-    "sticker": [3*60*60, ()], #3hr
-    "plastic": [2*60*60, ()], #2hr
+    "paper": [1*60*60, (), 0], #1hr
+    "ticket": [2*60*60, (), 0], #2hr
+    "festive": [4*60*60, (), 0], #4hr
+    "sticker": [3*60*60, (), 0], #3hr
+    "plastic": [2*60*60, (), 0], #2hr
     "candy": [4*60*60, ("strawberry", "pineapple", "coconut"), 0.25], #4hr
     "red clay": [6*60*60, ("sunflower", "dandelion", "mushroom", "clover", "strawberry", "pineapple", "stump", "cactus", "pumpkin", "rose", "mountain top", "pepper", "coconut"), 0.25], #6hr
     "blue clay": [6*60*60, ("sunflower", "dandelion", "blue flower", "clover", "bamboo", "pineapple", "stump", "cactus", "pumpkin", "pine tree", "mountain top", "coconut"), 0.25], #6hr
@@ -1488,6 +1488,7 @@ class macro:
             #since we can't use break/return in an exec statement, use exceptions to terminate it early
             #walk in path
             #between each line of movement in the path, check if vic has been found
+            time.sleep(0.8)
             pathLines = open(f"../settings/paths/vic/find_vic/{currField}.py").read().split("\n")
             pathCode = ""
             for code in pathLines:
@@ -1684,7 +1685,7 @@ class macro:
         name = planter.lower().replace(" ","").replace("-","")
         if glitter: self.useItemInInventory("glitter") #use glitter
         if not self.useItemInInventory(f"{name}planter"):
-            return 
+            return None
         self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
         #calculate growth time. If the user didnt select harvest when full, return the harvest every X hours instead
         if harvestFull:
@@ -1709,7 +1710,6 @@ class macro:
 
     #iterate through all 3 slots in a cycle
     def placePlanterCycle(self, cycle):
-        collectFull = self.setdat["manual_planters_collect_full"]
         planterGrowthMaxTime = 0
         planterData = { #planter data to be stored in a file
             "cycle": cycle,
@@ -1724,8 +1724,9 @@ class macro:
             if planter == "none" or field == "none": continue #check that both the planter and field are present
             glitter = self.setdat[f"cycle{cycle}_{i+1}_glitter"]
             #set the cooldown for planters and place them
-            planterGrowthTime = self.placePlanter(planter,field, collectFull, glitter)
-            if not planterGrowthTime: #make sure the planter was placed
+            planterGrowthTime = self.placePlanter(planter,field, self.setdat["manual_planters_collect_full"], glitter)
+            print(planterGrowthTime)
+            if planterGrowthTime is None: #make sure the planter was placed
                 self.reset()
                 continue 
             #get the maximum planter growth time
