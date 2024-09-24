@@ -54,6 +54,14 @@ collectData = {
     "winter_memory_match": [["spend", "play"], "a", 4*60*60], #4hr
 }
 
+fieldBoosterData = {
+    "blue_booster": [["use", "booster"], "w", 45*60], #45mins
+    "red_booster": [["use", "booster"], "s", 45*60], #45mins
+    "mountain_booster": [["use", "booster"], None, 45*60], #45mins
+}
+
+mergedCollectData = {**collectData, **fieldBoosterData}
+
 #werewolf is a unique one. There is only one, but it can be triggered from pine, pumpkin or cactus
 regularMobInFields = {
     "rose": ["scorpion"],
@@ -223,9 +231,9 @@ class macro:
         self.keyboard = keyboard(self.setdat["movespeed"], haste)
         self.logger = logModule.log(log, self.setdat["enable_webhook"], self.setdat["webhook_link"])
         #setup an internal cooldown tracker. The cooldowns can be modified
-        self.collectCooldowns = dict([(k, v[2]) for k,v in collectData.items()])
+        self.collectCooldowns = dict([(k, v[2]) for k,v in mergedCollectData.items()])
         self.collectCooldowns["sticker_printer"] = 1*60*60
-
+        self.collectCooldowns["sticker_stack"] = 0 #unknown
         #field drift compensation class
         self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
 
@@ -377,25 +385,28 @@ class macro:
             if not fileMustExist and not os.path.isfile(pyPath): return
             exec(open(pyPath).read())
 
-    #run the path to go to a field
-    #faceDir what direction to face after landing in a field (default, north, south)
-    def goToField(self, field, faceDir = "default"):
-        self.location = field
-        self.runPath(f"cannon_to_field/{field}")
-        if faceDir == "default": return
-
+    #
+    def faceDirection(self, field, dir):
         keys = fieldFaceNorthKeys[field]
-        if faceDir == "south": #invert the keys
-            if len(keys) == 4:
-                keys = None
-            elif keys is None:
+        if dir == "south": #invert the keys
+            if keys is None:
                 keys = ["."]*4
+            elif len(keys) == 4:
+                keys = None
             else:
                 keys = ["." if x == "," else "," for x in keys]
         
         if keys is not None:
             for k in keys:
                 self.keyboard.press(k)
+
+    #run the path to go to a field
+    #faceDir what direction to face after landing in a field (default, north, south)
+    def goToField(self, field, faceDir = "default"):
+        self.location = field
+        self.runPath(f"cannon_to_field/{field}")
+        if faceDir == "default": return
+        self.faceDirection(field, faceDir)
 
     def isInOCR(self, name, includeList, excludeList):
         #get text
@@ -673,7 +684,7 @@ class macro:
                     break
             if healthBar: #check if the health bar has been detected. If it hasnt, just wait for a flat 6s
                 #if the empty health bar disappears, player has respawned
-                #max 9s in case player does not respawn
+                #max 9s of waiting
                 st = time.time()
                 while time.time() - st < 9:
                     if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
@@ -713,7 +724,8 @@ class macro:
         for i in range(3):
             #Move to canon:
             self.keyboard.walk("w",0.8)
-            self.keyboard.walk("d",0.9*(self.setdat["hive_number"]+1))
+            fieldDist = 0.9
+            self.keyboard.walk("d",1.2*(self.setdat["hive_number"]), False)
             self.keyboard.keyDown("d")
             time.sleep(0.5)
             self.keyboard.slowPress("space")
@@ -734,6 +746,12 @@ class macro:
                     self.keyboard.keyUp("d")
                     return
             self.keyboard.keyUp("d")
+            time.sleep(0.04)
+            #check if overrun cannon
+            for _ in range(3):
+                if self.isBesideEImage("cannon"):
+                    return
+                self.keyboard.walk("a",0.2)
             self.logger.webhook("Notice", f"Could not find cannon", "dark brown", "screen")
             self.reset(convert=False)
         else:
@@ -865,6 +883,9 @@ class macro:
                         break
             #after hive is claimed, convert
             if rejoinSuccess:
+                for _ in range(8):
+                    self.keyboard.press("o")
+                self.moveMouseToDefault()
                 time.sleep(1)
                 self.convert()
                 #no need to reset
@@ -1009,8 +1030,7 @@ class macro:
                 self.logger.webhook("Gathering: interrupted","Stinger Hunt","dark brown")
                 self.reset(convert=False)
                 break
-            elif self.collectMondoBuff(gatherInterrupt=True):
-                turnOffShitLock()
+            elif self.collectMondoBuff(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
                 break
             elif self.died:
                 turnOffShitLock()
@@ -1045,15 +1065,13 @@ class macro:
             #walk to hive
             #face correct direction (towards hive)
             reverseTurnTimes = 4 - fieldSetting["turn_times"]
-            if fieldSetting["turn"] == "none":
-                reverseTurnTimes = 4
             if fieldSetting["turn"] == "left":
-                for _ in range(reverseTurnTimes):
-                    self.keyboard.press(",")
-            else: #right or none
-                for _ in range(reverseTurnTimes):
+                for _ in range(fieldSetting["turn_times"]):
                     self.keyboard.press(".")
-
+            elif fieldSetting["turn"] == "right":
+                for _ in range(fieldSetting["turn_times"]):
+                    self.keyboard.press(",")
+            self.faceDirection(field, "south")
             #start walk
             self.canDetectNight = False
             self.logger.webhook("",f"Walking back to hive: {field.title()}", "dark brown")
@@ -1136,17 +1154,19 @@ class macro:
             return
         self.logger.webhook("", "Cant start ant challenge", "red", "screen")
 
-    def collectMondoBuff(self, gatherInterrupt = False):
-        self.status.value = ""
+    def collectMondoBuff(self, gatherInterrupt = False, turnOffShiftLock = False):
         #check if mondo can be collected (first 10mins)
         current_time = datetime.now().strftime("%H:%M:%S")
         _,minute,_ = [int(x) for x in current_time.split(":")]
         #set respawn time to 20mins
         #mostly just to prevent the macro from going to mondo over and over again for the 10mins
-        if minute > 10 or self.hasRespawned("mondo", 20*60): return False
+        if minute > 10 or not self.hasRespawned("mondo", 20*60): return False
         if gatherInterrupt:
+            if not self.setdat["mondo_buff_interrupt_gathering"]: return
+            if turnOffShiftLock: self.keyboard.press("shift")
             self.logger.webhook("Gathering: interrupted","Mondo Buff","dark brown")
-            self.reset()
+            self.reset(convert=False)
+        self.status.value = ""
         st = time.perf_counter()
         self.logger.webhook("","Travelling: Mondo Buff","dark brown")
         #go to mondo buff
@@ -1253,7 +1273,7 @@ class macro:
     
     def collect(self, objective):
         reached = None
-        objectiveData = collectData[objective]
+        objectiveData = mergedCollectData[objective]
         displayName = objective.replace("_"," ").title()
         self.location = "collect"
         #go to collect and check that player has reached
@@ -1276,6 +1296,7 @@ class macro:
         #player has reached, get cooldown info
         #check if on cooldown
         cooldownSeconds = objectiveData[2]
+        returnVal = None #a return value
         if "(" and ":" in reached:
             cd = self.cdTextToSecs(reached, True)
             if cd: cooldownSeconds = cd
@@ -1295,11 +1316,32 @@ class macro:
                 self.latestMM = mmType
                 self.logger.webhook("", f"Solving: ${displayName}", "dark brown", "screen")
                 solveMemoryMatch(mmType)
-            time.sleep(0.1)
-            self.logger.webhook("", f"Collected: {displayName}", "bright green", "screen")
+            elif objective in fieldBoosterData:
+                sleep(3)
+                bluetexts = ""
+                #get the blue texts 4 times to avoid missing the field
+                for _ in range(4):
+                    bluetexts += ocr.imToString("blue").lower()
+                #find which field is in blue texts
+                #note: fields is set in the collect path of the boosters
+                boostedField = ""
+                for f in fields:
+                    sub_name = f.split(" ")
+                    for sn in sub_name:
+                        if sn in bluetexts:
+                            boostedField = f
+                            break
+                    if boostedField: break
+                returnVal = boostedField
+                self.logger.webhook("", f"Collected: {displayName}, Boosted Field: {boostedField}", "bright green", "screen")
+                self.saveTiming("last_booster")
+            else:
+                time.sleep(0.1)
+                self.logger.webhook("", f"Collected: {displayName}", "bright green", "screen")
         #update the internal cooldown
         self.saveTiming(objective)
         self.collectCooldowns[objective] = cooldownSeconds
+        return returnVal
 
     #accept mob and field and return them in the format used for timings.txt file
     #mob_field, eg ladybug_strawberry

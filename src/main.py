@@ -146,15 +146,35 @@ def macro(status, log, haste, updateGUI):
         #stump snail
         if setdat["stump_snail"] and macro.hasRespawned("stump_snail", 96*60*60, applyMobRespawnBonus=True):
             runTask(macro.stumpSnail)
-            
-        #gather tab
+        
+        #field boosters
+        boostedGatherFields = []
+        for k, _ in macroModule.fieldBoosterData.items():
+            #check if the cooldown is up
+            if setdat[k] and macro.hasRespawned(k, macro.collectCooldowns[k]) and macro.hasRespawned("last_booster", setdat["boost_seperate"]*60):
+                boostedField = runTask(macro.collect, args=(k,))
+                if setdat["gather_boosted"] and boostedField:
+                    boostedGatherFields.append(boostedField)
+        #gather in boosted fields
+        #gather for the entire 15min duration
+        for field in boostedGatherFields:
+            st = time.time()
+            while time.time() - st < 15*60:
+                runTask(macro.gather, args=(field,), resetAfter=False)
+
+        #add gather tab fields
         gatherFields = []
         for i in range(3):
             if setdat["fields_enabled"][i]:
                 gatherFields.append(setdat["fields"][i])
+        
+        #add planter gather fields
         planterGatherFields = ast.literal_eval(planterDataRaw)["gatherFields"] if planterDataRaw else []
-
         gatherFields.extend([x for x in planterGatherFields if x not in gatherFields])
+
+        #remove fields that are already in boosted fields
+        gatherFields = [x for x in gatherFields if not x in boostedGatherFields]
+        
         for field in gatherFields:
             runTask(macro.gather, args=(field,), resetAfter=False)
         print("cycle done")

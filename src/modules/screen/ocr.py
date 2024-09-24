@@ -86,7 +86,7 @@ def imToString(m):
     elif m == "egg shop":
         cap = screenshot(region=(ww//(1.2*xsm),wh//(3*ysm),ww-ww//1.2,wh//5))
     elif m == "blue":
-        cap = mssScreenshot(region=(mw*3//4, mh//3*2, mw//4,mh//3))
+        cap = mssScreenshot(mw*3//4, mh//3*2, mw//4,mh//3)
     elif m == "chat":
         cap = screenshot(region=(ww*3//4, 0, ww//4,wh//3))
     elif m == "ebutton":

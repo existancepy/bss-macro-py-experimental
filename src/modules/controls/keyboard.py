@@ -51,8 +51,11 @@ class keyboard:
     def tileWait(self, tiles,hasteCap=0):
         time.sleep((tiles/8.3)*28/self.haste.value)
     
-    def tileWalk(self, key, tiles):
-        self.press(key,(tiles/8.3)*28/self.haste.value)
+    def tileWalk(self, key, tiles, applyHaste = True):
+        if applyHaste:
+            self.press(key,(tiles/8.3)*28/self.ws)
+        else:
+            self.press(key,(tiles/8.3)*28/self.haste.value)
 
     #release all movement keys (wasd, space)
     @staticmethod
