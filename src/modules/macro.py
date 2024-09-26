@@ -28,6 +28,7 @@ from PIL import Image
 from modules.misc import messageBox
 from modules.submacros.memoryMatch import solveMemoryMatch
 import math
+import re
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -61,6 +62,7 @@ fieldBoosterData = {
 }
 
 mergedCollectData = {**collectData, **fieldBoosterData}
+mergedCollectData["sticker_stack"] = [["add", "sticker"], None, 0]
 
 #werewolf is a unique one. There is only one, but it can be triggered from pine, pumpkin or cactus
 regularMobInFields = {
@@ -233,7 +235,6 @@ class macro:
         #setup an internal cooldown tracker. The cooldowns can be modified
         self.collectCooldowns = dict([(k, v[2]) for k,v in mergedCollectData.items()])
         self.collectCooldowns["sticker_printer"] = 1*60*60
-        self.collectCooldowns["sticker_stack"] = 0 #unknown
         #field drift compensation class
         self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
 
@@ -489,12 +490,20 @@ class macro:
             self.keyboard.keyUp("space")
         return True
     
-    def clickYes(self):
+    #click the yes popup
+    #if detect is set to true, the macro will check if the yes button is there
+    #if detectOnly is set to true, the macro will not click 
+    def clickYes(self, detect = False, detectOnly = False, clickOnce=False):
         yesImg = self.adjustImage("./images/menu", "yes")
         x = self.mw/3.2
         y = self.mh/2.3
         time.sleep(0.4)
-        bestX, bestY = locateImageOnScreen(yesImg,x,y,self.mw/2.5,self.mh/3.4)[1]
+        threshold = 0
+        if detect or detectOnly: threshold = 0.75
+        res = locateImageOnScreen(yesImg,x,y,self.mw/2.5,self.mh/3.4, threshold)
+        if res is None: return False
+        if detectOnly: return True
+        bestX, bestY = res[1]
         if self.display_type == "retina":
             bestX //=2
             bestY //=2
@@ -502,8 +511,9 @@ class macro:
         time.sleep(0.2)
         mouse.moveBy(5, 5)
         time.sleep(0.1)
-        for _ in range(2):
+        for _ in range(1 if clickOnce else 2):
             mouse.click()
+        return True
     
     def toggleInventory(self, mode):
         invOpenImg = self.adjustImage("./images/menu", "inventoryopen")
@@ -764,25 +774,23 @@ class macro:
         mouse.mouseUp()
         keyboard.releaseMovement()
         for i in range(3):
-            joinPS = bool(psLink) #join public server?
+            joinPS = bool(psLink) #join private server?
             rejoinMethod = self.setdat["rejoin_method"]
             browserLink = "https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129"
-            if joinPS: 
-                if i == 2: 
-                    self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", "screen")
-                    joinPS = False
-                else:
-                    browserLink = psLink
+            if i == 2 and joinPS: 
+                self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", "screen")
+                joinPS = False
             appManager.closeApp("Roblox") # close roblox
             time.sleep(8)
             #execute rejoin method
+            if joinPS:
+                browserLink = psLink
             if rejoinMethod == "deeplink":
                 deeplink = "roblox://placeID=1537690962"
                 if joinPS:
                     deeplink += f"&linkCode={psLink.lower().split('code=')[1]}"
                 appManager.openDeeplink(deeplink)
             elif rejoinMethod == "new tab":
-                print(browserLink)
                 webbrowser.open(browserLink, new = 2)
             elif rejoinMethod == "reload":
                 webbrowser.open(browserLink, new = 2)
@@ -803,6 +811,7 @@ class macro:
             loadStartTime = time.time()
             while not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.75) and time.time() - loadStartTime < 60:
                 pass
+            appManager.openApp("Roblox")
             #run fullscreen check
             if self.isFullScreen(): #check if roblox can be found in menu bar
                 self.logger.webhook("","Roblox is already in fullscreen, not activating fullscreen", "dark brown")
@@ -875,7 +884,7 @@ class macro:
                     if findHive():
                         guessedSlot = max(1,min(6, round((j+1)//2.5)))
                         hiveClaim = guessedSlot
-                        if  1 < guessedSlot < 6:
+                        if 2 < guessedSlot < 6:
                             hiveClaim += 1
                         self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", "screen")
                         rejoinSuccess = True
@@ -1060,7 +1069,7 @@ class macro:
         else: turnOffShitLock()
 
         #go back to hive
-        def walk_to_hive():
+        def walkToHive():
             nonlocal self
             #walk to hive
             #face correct direction (towards hive)
@@ -1104,12 +1113,12 @@ class macro:
             self.useItemInInventory("whirligig")
             if not self.convert():
                 self.logger.webhook("","Whirligigs failed, walking to hive", "dark brown", "screen")
-                walk_to_hive()
+                walkToHive()
                 return
             #whirligig sucessful
             self.reset(convert=False)
         elif returnType == "walk":
-            walk_to_hive()
+            walkToHive()
 
     #returns the coordinates of the keep old text
     def keepOldCheck(self):
@@ -1335,6 +1344,11 @@ class macro:
                 returnVal = boostedField
                 self.logger.webhook("", f"Collected: {displayName}, Boosted Field: {boostedField}", "bright green", "screen")
                 self.saveTiming("last_booster")
+            elif objective == "sticker_stack":
+                if "your" in reached or "activated" in reached:
+                    self.logger.webhook("", "Sticker Stack on cooldown", "dark brown", "screen")
+                    return
+                self.claimStickerStack()
             else:
                 time.sleep(0.1)
                 self.logger.webhook("", f"Collected: {displayName}", "bright green", "screen")
@@ -1964,8 +1978,93 @@ class macro:
         #store the data
         saveBlenderData()
         self.closeBlenderGUI()
+        
+    def claimStickerStack(self):
+        time.sleep(1)
+        x = self.mw//2-275
+        y = 4*self.mh//10
 
+        #detect sticker stack boost time
+        screen = mssScreenshot(x+550/2,y,550/2,40)
+        ocrRes = ''.join([x[1][0] for x in ocr.ocrRead(screen)])
+        ocrRes = re.findall(r"\(.*?\)", ocrRes) #get text between brackets
+        finalTime = None
+        def cantDetectTime():
+            self.logger.webhook("", "Failed to detect sticker stack buff duration", "red", "screen")
+        if ocrRes:
+            times = []
+            if "x" in ocrRes[0]: #number of stickers
+                stickerCount = int(''.join([x for x in ocrRes[0] if x.isdigit()]))
+                times.append(15*60 + 10*stickerCount)
+                ocrRes.pop(0)
+            if ":" in ocrRes[0]: #direct
+                times.append(self.cdTextToSecs(ocrRes[0], True))
+            if times:
+                finalTime = max(times)
+            else:
+                cantDetectTime()
+        else:
+            cantDetectTime()
 
+        stickerUsed = False
+        #use sticker
+        if "sticker" in self.setdat["sticker_stack_item"]:
+            regularSticker = self.adjustImage("images/sticker_stack", "regularsticker")
+            hiveSticker = self.adjustImage("images/sticker_stack", "hivesticker")
+            stickerLoc = locateTransparentImageOnScreen(regularSticker, x, y, 550, 220, 0.7)
+            if self.setdat["hive_skin"] and stickerLoc is None: #cant find regular sticker, use hive skin
+                stickerLoc = locateTransparentImageOnScreen(hiveSticker, x, y, 550, 220, 0.7)
+            if stickerLoc: #found a available sticker
+                xr, yr = stickerLoc[1]
+                if self.display_type == "retina":
+                    xr//= 2
+                    yr//= 2
+                mouse.moveTo(x+xr, y+yr)
+                time.sleep(0.1)
+                mouse.moveBy(2,-2)
+                mouse.click()
+                stickerUsed = True
+            elif not "/" in self.setdat["sticker_stack_item"]:
+                self.logger.webhook("", "No Stickers left to stack, Sticker Stack has been disabled", "red", "screen")
+                self.setdat["sticker_stack"] = False
+                self.keyboard.press("e")
+                return
+        if "ticket" in self.setdat["sticker_stack_item"] and not stickerUsed:
+                mouse.moveTo(self.mw//2+105, 4*self.mh//10-78)
+                time.sleep(0.1)
+                mouse.moveBy(1,1)
+                mouse.click()
+
+        #click yes
+        yesPopup = False
+        #check if there are 4 yes/no popups
+        for _ in range(4): 
+            if not self.clickYes(detect=True, clickOnce=True): 
+                break
+            else:
+                yesPopup = True
+                time.sleep(0.4)
+        else: #4 yes/no popups, either cub/hive skin
+            if not self.setdat["hive_skin"] and not self.setdat["cub_skin"]: #do not use cub and hive stickers
+                self.logger.webhook("", "A hive/cub sticker has been wrongly selected, aborting", "red", "screen")
+                self.keyboard.press("e")
+                return
+        
+        if "ticket" in self.setdat["sticker_stack_item"] and not yesPopup: #if no popup appears, ran out of tickets
+            self.logger.webhook("", "No Tickets left, Sticker Stack has been disabled", "red", "screen")
+            self.setdat["sticker_stack"] = False
+            self.keyboard.press("e")
+            return
+        if finalTime is not None:
+            if stickerUsed: finalTime += 10
+            self.logger.webhook("", f"Activated Sticker Stack, Buff Duration: {timedelta(seconds=finalTime)}", "bright green")
+        else:
+            finalTime = 60*60 #default to 1hr
+            self.logger.webhook("", f"Activated Sticker Stack, Buff Duration: {timedelta(seconds=finalTime)} (Defaulted to 1hr)", "bright green")
+        self.keyboard.press("e")
+        with open("./data/user/sticker_stack.txt", "w") as f:
+            f.write(str(finalTime))
+        f.close()
 
 
     

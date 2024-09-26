@@ -1,5 +1,5 @@
 fields_enabled=[True, False, False]
-fields=['strawberry', 'sunflower', 'dandelion']
+fields=['pine tree', 'sunflower', 'dandelion']
 wealth_clock=False
 blueberry_dispenser=False
 strawberry_dispenser=False
@@ -127,3 +127,5 @@ gather_boosted=False
 boost_seperate=20
 sticker_stack=True
 sticker_stack_item=sticker
+hive_skin=False
+cub_skin=False

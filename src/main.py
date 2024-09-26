@@ -74,6 +74,7 @@ def macro(status, log, haste, updateGUI):
 
     #macro.rejoin()
     while True:
+        setdat = macro.setdat
         #run empty task
         #this is in case no other settings are selected 
         runTask(resetAfter=False)
@@ -147,6 +148,13 @@ def macro(status, log, haste, updateGUI):
         if setdat["stump_snail"] and macro.hasRespawned("stump_snail", 96*60*60, applyMobRespawnBonus=True):
             runTask(macro.stumpSnail)
         
+        #sticker stack
+        if setdat["sticker_stack"]:
+            with open("./data/user/sticker_stack.txt", "r") as f:
+                stickerStackCD = int(f.read())
+            f.close()
+            if macro.hasRespawned("sticker_stack", stickerStackCD):
+                runTask(macro.collect, args=("sticker_stack",))
         #field boosters
         boostedGatherFields = []
         for k, _ in macroModule.fieldBoosterData.items():

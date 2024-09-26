@@ -33,7 +33,7 @@ function taskHTML(title, desc=""){
     const html = `
     <div style="margin-top: 1rem;">
         <div style="font-size: 1.1rem;">${title}</div>
-        <div style="font-size: 0.9rem; color: #ADB5BD;">${desc.includes('<img') ? desc : toTitleCase(desc)}</div>
+        <div style="font-size: 0.9rem; color: #ADB5BD; display:flex; align-items:center;">${desc.includes('<img') ? desc : toTitleCase(desc)}</div>
         <div style="background-color: #949393; height: 1px; width: 95%; margin-top: 0.4rem;"></div>
     </div>
     `
@@ -52,7 +52,7 @@ async function loadTasks(){
         if (!setdat[k]) continue
         out += taskHTML("Collect", `${v} ${toTitleCase(k.replaceAll("_", " "))}`)
     }
-    //planters
+    //blender
     if (setdat["blender_enable"]){
         const selectedBlenderItems = {}
         for (let i = 1; i < 4; i++){
@@ -62,7 +62,7 @@ async function loadTasks(){
         }
         out += taskHTML("Blender", toImgArray(selectedBlenderItems).join("<br>"))
     }
-    //
+    //planters
     if (setdat["planters_mode"]){
         const type = setdat["planters_mode"] == 1 ? "Manual" : "Auto"
         out += taskHTML("Planters", type)
@@ -72,6 +72,16 @@ async function loadTasks(){
         if (!setdat[k]) continue
         if (k == "rhinobeetle") k = "rhino beetle"
         out += taskHTML("Kill", `${v} ${toTitleCase(k.replaceAll("_", " "))}`)
+    }
+    //load field boosters
+    for (const [k, v] of Object.entries(fieldBoosterEmojis)) {
+        if (!setdat[k]) continue
+        out += taskHTML("Collect Buff", `${v} ${toTitleCase(k.replaceAll("_", " "))}`)
+    }
+    //load sticker stack
+    for (const [k, v] of Object.entries(stickerStackIcon)) {
+        if (!setdat[k]) continue
+        out += taskHTML("Collect Buff", toImgArray(stickerStackIcon).join("<br>"))
     }
     //load the gather
     for(let i = setdat.fields_enabled.length-1; i >= 0; i--){

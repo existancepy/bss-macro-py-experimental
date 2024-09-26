@@ -147,3 +147,13 @@ const blenderIcons = {
     super_smoothie: "super_smoothie",
     turpentine: "turpentine"
 }
+
+const fieldBoosterEmojis = {
+    blue_booster: "🔵",
+    red_booster: "🔴",
+    mountain_booster: "⚪"
+}
+
+const stickerStackIcon = {
+    sticker_stack: "sticker_stack"
+}
