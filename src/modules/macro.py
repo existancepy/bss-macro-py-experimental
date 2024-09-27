@@ -29,6 +29,7 @@ from modules.misc import messageBox
 from modules.submacros.memoryMatch import solveMemoryMatch
 import math
 import re
+import ast
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -331,12 +332,11 @@ class macro:
                 return isSpawnFloorNight(hsv)
             return isGrassNight(hsv) and isNightSky(bgr)
         
-        while True:
-            if self.canDetectNight and isNight():
-                self.night = True
-                self.logger.webhook("","Night detected","dark brown", "screen")
-                time.sleep(200) #wait for night to end
-                self.night = False
+        if self.canDetectNight and isNight():
+            self.night = True
+            self.logger.webhook("","Night detected","dark brown", "screen")
+            time.sleep(200) #wait for night to end
+            self.night = False
 
     def isFullScreen(self):
         menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar on mac, window bar on windows
@@ -630,6 +630,7 @@ class macro:
             if not self.isBesideEImage("makehoney"): return False
         #start convert
         self.keyboard.press("e")
+        self.status.value = "converting"
         st = time.time()
         time.sleep(2)
         self.logger.webhook("", "Converting", "brown", "screen")
@@ -640,6 +641,7 @@ class macro:
                 return
             if time.time()-st > 30*60: #30mins max
                 self.logger.webhook("","Converting timeout (30mins max)", "brown", "screen")
+        self.status.value = ""
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
         wait = self.setdat["convert_wait"]
@@ -770,6 +772,7 @@ class macro:
         self.canDetectNight = False
         psLink = self.setdat["private_server_link"]
         self.logger.webhook("",rejoinMsg, "dark brown")
+        self.status.value = "rejoining"
         mouse.mouseUp()
         keyboard.releaseMovement()
         for i in range(3):
@@ -862,6 +865,11 @@ class macro:
                 self.keyboard.walk("a",0.4)
                 #$time.sleep(0.15)
                 if self.isBesideEImage("claimhive"):
+                    #check for overrun
+                    time.sleep(0.12)
+                    for _ in range(4):
+                        if self.isBesideEImage("claimhive"): break
+                        self.keyboard.walk("d",0.2)
                     self.keyboard.press("e")
                     return True
                 return False
@@ -898,8 +906,10 @@ class macro:
                 self.convert()
                 #no need to reset
                 self.canDetectNight = True
+                self.status.value = ""
                 return
             self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
+        self.status.value = ""
     
     def blueTextImageSearch(self, text, threshold=0.7):
         target = self.adjustImage("./images/blue", text)
@@ -1041,6 +1051,7 @@ class macro:
             elif self.collectMondoBuff(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
                 break
             elif self.died:
+                self.status.value = ""
                 turnOffShitLock()
                 self.logger.webhook("","Player died", "dark brown","screen")
                 self.reset()
@@ -1223,6 +1234,7 @@ class macro:
         time.sleep(0.2)
         mouse.click()
         time.sleep(1)
+        #TODO: check if the player ran out of eggs
         #check if on cooldown
         confirmImg = self.adjustImage("./images/menu", "confirm")
         if not locateImageOnScreen(confirmImg, self.mw//2+150, 4*self.mh//10+160, 120, 60, 0.7):
@@ -1528,6 +1540,7 @@ class macro:
         self.vicField = None
         self.stopVic = False
         currField = None
+        self.status.value = ""
 
         stingerHuntThread = threading.Thread(target=self.stingerHuntBackground)
         stingerHuntThread.daemon = True
@@ -2060,14 +2073,47 @@ class macro:
             if stickerUsed: finalTime += 10
             self.logger.webhook("", f"Activated Sticker Stack, Buff Duration: {timedelta(seconds=finalTime)}", "bright green")
         else:
-            finalTime = 60*60 #default to 1hr
+            with open("./data/user/sticker_stack.txt", "r") as f: #get the cooldown from the prev detection
+                stickerStackCD = int(f.read())
+            f.close()
+            if stickerStackCD > 15*60: #make sure the time is valid
+                finalTime = stickerStackCD + 10
+            else:
+                finalTime = 60*60 #default to 1hr
             self.logger.webhook("", f"Activated Sticker Stack, Buff Duration: {timedelta(seconds=finalTime)} (Defaulted to 1hr)", "bright green")
         self.keyboard.press("e")
         with open("./data/user/sticker_stack.txt", "w") as f:
             f.write(str(finalTime))
         f.close()
 
-
+    def nightAndHotbarBackground(self):
+        while True:
+            with open("./data/user/hotbar_timings.txt", "r") as f:
+                hotbarSlotTimings = ast.literal_eval(f.read())
+            f.close()
+            #night detection
+            if self.setdat["stinger_hunt"]:
+                self.detectNight()
+            #hotbar
+            for i in range(1,8):
+                slotUseWhen = self.setdat[f"hotbar{i}_use_when"]
+                #check if use when is correct
+                if slotUseWhen == "never": continue
+                elif self.status.value == "rejoining": continue
+                elif slotUseWhen == "gathering" and not "gather_" in self.status.value: continue 
+                elif slotUseWhen == "converting" and not self.status.value == "converting": continue 
+                #check cd
+                if time.time() - hotbarSlotTimings[i] < (self.setdat[f"hotbar{i}_use_every"]*60): continue
+                print(f"pressed hotbar {i}")
+                #press the key
+                for _ in range(2):
+                    keyboard.pagPress(str(i))
+                #update the time pressed
+                hotbarSlotTimings[i] = time.time()
+                with open("./data/user/hotbar_timings.txt", "w") as f:
+                    f.write(str(hotbarSlotTimings))
+                f.close()
+                time.sleep(0.2)
     
     def start(self):
         #if roblox is not open, rejoin
@@ -2169,10 +2215,9 @@ class macro:
                 messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Accessibility Permission')
 
 
-        #enable night detection
-        if self.setdat["stinger_hunt"]:
-            nightDetectThread = threading.Thread(target=self.detectNight)
-            nightDetectThread.daemon = True
-            nightDetectThread.start()
+        #enable night detection and hotbar
+        nightAndHotbarThread = threading.Thread(target=self.nightAndHotbarBackground)
+        nightAndHotbarThread.daemon = True
+        nightAndHotbarThread.start()
         self.reset(convert=True)
         self.saveTiming("rejoin_every")

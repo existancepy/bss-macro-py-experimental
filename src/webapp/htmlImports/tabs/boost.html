@@ -6,6 +6,36 @@
     <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="boost-hotbar-tab">
         <script>
             const hotbarParent = document.getElementById("boost-hotbar-tab")
+            buildStandardContainer(hotbarParent,"Hotbar", "Use your hotbar slots",[])
+            const hotbar = document.getElementById("hotbar").parentElement
+            for (let i = 1; i <= 7; i++){
+                const html =  `
+                    ${i>1 ? '<div class="seperator" style="margin-bottom: 1rem;"></div>' : ""}
+                    <h3 class="poppins-semibold">Slot ${i}</h3>
+                    <table style="width: 70%;">
+                        <tr>
+                            <td>
+                                <h4 class="poppins-regular" style="margin-top:1rem">Use When:</h4>
+                                <div class="poppins-regular" style="font-size:0.9rem; color: #adb4bc">When to use the slot</div>
+                            </td>
+                            <td valign="top" style="padding-top: 0.8rem">
+                                ${buildInput(`hotbar${i}_use_when`, {name: "dropdown", data: ["Never", "Always", "Gathering", "Converting"], triggerFunction: saveProfileTriggerFunction})}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <h4 class="poppins-regular" style="margin-top:1rem">Use every X mins:</h4>
+                                <div class="poppins-regular" style="font-size:0.9rem; color: #adb4bc">How often the slot should be used<br>(decimals are accepted)</div>
+                            </td>
+                            <td valign="top">
+                                ${buildInput(`hotbar${i}_use_every`, {name: "textbox", inputType: "float", triggerFunction: saveProfileTriggerFunction})}
+                            </td>
+                        </tr>
+                    </table>
+                    `
+                hotbar.innerHTML += html
+            }
+
         </script>
     </div>
 
@@ -61,7 +91,7 @@
                     }
                 },
             ])
-            buildStandardContainer(buffsParent,"Sticker Stack", "",[
+            buildStandardContainer(buffsParent,"Sticker Stack <img src='./assets/icons/sticker_stack.png' style='margin-left:0.4rem; height: 1.3rem;'>", "",[
                 {
                     id: "sticker_stack",
                     title: "Enable Task",
@@ -74,7 +104,7 @@
                 {
                     id: "sticker_stack_item",
                     title: "Item",
-                    desc: "Which item (sticker/ticket) the macro should use to activate the sticker stack.<br>Note: If sticker is selected, it is recommended to trade any valuable stickers to an alt account to prevent it being used by the macro",
+                    desc: "Which item (sticker/ticket) the macro should use to activate the sticker stack.<br>Note: If sticker is selected, it is recommended to trade any valuable stickers to an alt account to prevent them from being used by the macro",
                     type: {
                         name: "dropdown",
                         data: ["Sticker","Ticket","Sticker/Ticket"],
