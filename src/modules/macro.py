@@ -614,10 +614,9 @@ class macro:
             x, y = res
         #close UI navigation
         mouse.moveTo(x, y)
+        mouse.moveBy(10,15)
         for _ in range(2):
             mouse.click()
-        mouse.moveBy(10,10)
-        mouse.click()
         self.clickYes()
         #close inventory
         self.toggleInventory("close")
@@ -1783,7 +1782,6 @@ class macro:
             glitter = self.setdat[f"cycle{cycle}_{i+1}_glitter"]
             #set the cooldown for planters and place them
             planterGrowthTime = self.placePlanter(planter,field, self.setdat["manual_planters_collect_full"], glitter)
-            print(planterGrowthTime)
             if planterGrowthTime is None: #make sure the planter was placed
                 self.reset()
                 continue 
@@ -1896,7 +1894,7 @@ class macro:
             clickOnBlenderElement(*res[1])
 
         if res:
-            cdImg = mssScreenshot(self.mw/2-130, math.floor(self.mh*0.48)-70, 400, 65, True)
+            cdImg = mssScreenshot(self.mw/2-130, math.floor(self.mh*0.48)-70, 400, 65)
             cdRaw = ocr.ocrRead(cdImg)
             cdRaw = ''.join([x[1][0] for x in cdRaw])
             cd = self.cdTextToSecs(cdRaw, False)
@@ -1987,6 +1985,7 @@ class macro:
         #detect sticker stack boost time
         screen = mssScreenshot(x+550/2,y,550/2,40)
         ocrRes = ''.join([x[1][0] for x in ocr.ocrRead(screen)])
+        print(ocrRes)
         ocrRes = re.findall(r"\(.*?\)", ocrRes) #get text between brackets
         finalTime = None
         def cantDetectTime():
@@ -2005,7 +2004,6 @@ class macro:
                 cantDetectTime()
         else:
             cantDetectTime()
-
         stickerUsed = False
         #use sticker
         if "sticker" in self.setdat["sticker_stack_item"]:
@@ -2021,7 +2019,8 @@ class macro:
                     yr//= 2
                 mouse.moveTo(x+xr, y+yr)
                 time.sleep(0.1)
-                mouse.moveBy(2,-2)
+                mouse.moveBy(3,-3)
+                time.sleep(0.2)
                 mouse.click()
                 stickerUsed = True
             elif not "/" in self.setdat["sticker_stack_item"]:
@@ -2032,7 +2031,9 @@ class macro:
         if "ticket" in self.setdat["sticker_stack_item"] and not stickerUsed:
                 mouse.moveTo(self.mw//2+105, 4*self.mh//10-78)
                 time.sleep(0.1)
-                mouse.moveBy(1,1)
+                mouse.click()
+                time.sleep(0.1)
+                mouse.moveBy(2,2)
                 mouse.click()
 
         #click yes

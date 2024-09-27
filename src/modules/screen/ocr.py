@@ -141,7 +141,10 @@ def customOCR(X1,Y1,W1,H1,applym=1):
 
 #accept pillow img
 def ocrRead(img):
-    return ocrFunc(img)
+    out = ocrFunc(img)
+    if out is None:
+        return [[[""],["",0]]]
+    return out
     
 if useOCRMac:
     ocrFunc = ocrMac_
