@@ -239,6 +239,15 @@ if __name__ == "__main__":
     generalSettingsReference = settingsManager.readSettingsFile("./data/default_settings/generalsettings.txt")
     settingsManager.saveDict("../settings/generalsettings.txt", {**generalSettingsReference, **generalSettings})
 
+    #check if the user updated the paths (update 6)
+    #TODO: remove this on the actual release
+    with open("../settings/paths/cannon_to_field/blue flower.py", "r") as f:
+        blueFlowerPath = f.read()
+    f.close()
+
+    compareBlueFlowerPath = '\nself.keyboard.press(",")\nself.keyboard.press(",")\nself.keyboard.slowPress("e")\nsleep(0.08)\nself.keyboard.keyDown("w")\nself.keyboard.slowPress("space")\nself.keyboard.slowPress("space")\nsleep(3)\nself.keyboard.keyUp("w")\nself.keyboard.slowPress("space")\nsleep(0.8)'
+    if blueFlowerPath != compareBlueFlowerPath:
+        messageBox.msgBox("Warning", "It looks like you did not update your paths for update 6. The macro will not work properly. Refer to update 6's instructions in #updates")
     def stopApp(page= None, sockets = None):
         global stopThreads
         stopThreads = True

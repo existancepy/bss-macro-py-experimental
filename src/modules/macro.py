@@ -1962,11 +1962,12 @@ class macro:
                     mouse.click()
                     sleep(0.03)
                 quantity2Img = quantityScreenshot()
-                if quantity2Img - quantity1Img < 2: #check if screenshots are similar
+                if quantity2Img == quantity1Img: #check if screenshots are similar
                     break
                 #update the quantity
                 quantity1Img = quantity2Img
-            quantity = int(''.join([x[1][0] for x in ocr.ocrRead(quantity2Img) if x.isdigit()]))
+            quantity = ''.join([x[1][0] for x in ocr.ocrRead(mssScreenshot(self.mw/2-60-140, math.floor(self.mh*0.48)+140-20, 110, 23*2))])
+            quantity = int(''.join([x for x in quantity if x.isdigit()]))
         else: 
             #normal quantity
             quantity = self.setdat[f"blender_quantity_{itemNo}"]
