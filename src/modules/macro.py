@@ -94,8 +94,8 @@ mobRespawnTimes = {
 resetLower1 = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
 resetUpper1 = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
 #balloon color
-resetLower2 = np.array([105, 210, 140])  # Lower bound of the color (H, L, S)
-resetUpper2 = np.array([120, 255, 210])  # Upper bound of the color (H, L, S)
+resetLower2 = np.array([105, 140, 210])  # Lower bound of the color (H, L, S)
+resetUpper2 = np.array([120, 220, 255])  # Upper bound of the color (H, L, S)
 resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(16,10))
 
 
@@ -240,6 +240,7 @@ class macro:
         self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
 
         #night detection variables
+        self.enableNightDetection = True if self.setdat["stinger_hunt"] else False
         self.canDetectNight = True
         self.night = False
         self.location = "spawn"
@@ -329,7 +330,7 @@ class macro:
             #detect brightness
             if not isNightBrightness(hsv): return False
             if self.location == "spawn":
-                return isSpawnFloorNight(hsv)
+                return isNightSky(bgr) and isSpawnFloorNight(hsv)
             return isGrassNight(hsv) and isNightSky(bgr)
         
         if self.canDetectNight and isNight():
@@ -634,9 +635,12 @@ class macro:
         st = time.time()
         time.sleep(2)
         self.logger.webhook("", "Converting", "brown", "screen")
+        if self.enableNightDetection:
+            self.keyboard.press(",")
         while not self.isBesideE(["pollen", "flower", "field"]): 
             mouse.click()
             if self.night and self.setdat["stinger_hunt"]:
+                self.keyboard.press(".")
                 self.stingerHunt()
                 return
             if time.time()-st > 30*60: #30mins max
@@ -645,6 +649,8 @@ class macro:
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
         wait = self.setdat["convert_wait"]
+        if self.enableNightDetection:
+            self.keyboard.press(".")
         if (wait):
             self.logger.webhook("", f'Waiting for an additional {wait} seconds', "light green")
         time.sleep(wait)
@@ -2101,7 +2107,7 @@ class macro:
                 hotbarSlotTimings = ast.literal_eval(f.read())
             f.close()
             #night detection
-            if self.setdat["stinger_hunt"]:
+            if self.enableNightDetection:
                 self.detectNight()
             #hotbar
             for i in range(1,8):
