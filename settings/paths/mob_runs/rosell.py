@@ -1,4 +1,5 @@
-#go to pine tree
+#Note: this path has been renamed to avoid being used by the macro
+# go to pine tree
 pineTreeMobs = self.getRespawnedMobs("pine tree")
 if pineTreeMobs:
     self.killMob(pineTreeMobs[0], "pine tree", walkPath=

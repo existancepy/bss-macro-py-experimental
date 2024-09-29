@@ -672,7 +672,7 @@ class macro:
             
             mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
-                solveMemoryMatch(self.latestMM)
+                solveMemoryMatch(self.latestMM, self.display_type)
 
             mmImg = self.adjustImage("./images/menu", "blenderclose") #blender
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
@@ -1334,7 +1334,7 @@ class macro:
                     mmType = objective.split("_")[0]
                 self.latestMM = mmType
                 self.logger.webhook("", f"Solving: ${displayName}", "dark brown", "screen")
-                solveMemoryMatch(mmType)
+                solveMemoryMatch(mmType, self.display_type)
             elif objective in fieldBoosterData:
                 sleep(3)
                 bluetexts = ""
