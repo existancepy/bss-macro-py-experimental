@@ -328,9 +328,8 @@ class macro:
             hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
             #detect brightness
-            if not isNightBrightness(hsv): return False
             if self.location == "spawn":
-                return isNightSky(bgr) and isSpawnFloorNight(hsv)
+                return isNightSky(bgr)
             return isGrassNight(hsv) and isNightSky(bgr)
         
         if self.canDetectNight and isNight():
