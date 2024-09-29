@@ -229,6 +229,16 @@ if __name__ == "__main__":
     watch_for_hotkeys(run)
     logger = logModule.log(log, False, None)
 
+    #update settings
+    profileSettings = settingsManager.loadSettings()
+    profileSettingsReference = settingsManager.readSettingsFile("./data/default_settings/settings.txt")
+    settingsManager.saveDict("../settings/profiles/a/settings.txt", {**profileSettingsReference, **profileSettings})
+
+    #update general settings
+    generalSettings = settingsManager.readSettingsFile("../settings/generalsettings.txt")
+    generalSettingsReference = settingsManager.readSettingsFile("./data/default_settings/generalsettings.txt")
+    settingsManager.saveDict("../settings/generalsettings.txt", {**generalSettingsReference, **generalSettings})
+
     def stopApp(page= None, sockets = None):
         global stopThreads
         stopThreads = True
