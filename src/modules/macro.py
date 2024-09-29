@@ -94,8 +94,8 @@ mobRespawnTimes = {
 resetLower1 = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
 resetUpper1 = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
 #balloon color
-resetLower2 = np.array([105, 210, 140])  # Lower bound of the color (H, L, S)
-resetUpper2 = np.array([120, 255, 210])  # Upper bound of the color (H, L, S)
+resetLower2 = np.array([105, 140, 210])  # Lower bound of the color (H, L, S)
+resetUpper2 = np.array([120, 220, 255])  # Upper bound of the color (H, L, S)
 resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(16,10))
 
 
@@ -240,6 +240,7 @@ class macro:
         self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
 
         #night detection variables
+        self.enableNightDetection = True if self.setdat["stinger_hunt"] else False
         self.canDetectNight = True
         self.night = False
         self.location = "spawn"
@@ -329,7 +330,7 @@ class macro:
             #detect brightness
             if not isNightBrightness(hsv): return False
             if self.location == "spawn":
-                return isSpawnFloorNight(hsv)
+                return isNightSky(bgr) and isSpawnFloorNight(hsv)
             return isGrassNight(hsv) and isNightSky(bgr)
         
         if self.canDetectNight and isNight():
@@ -634,9 +635,12 @@ class macro:
         st = time.time()
         time.sleep(2)
         self.logger.webhook("", "Converting", "brown", "screen")
+        if self.enableNightDetection:
+            self.keyboard.press(",")
         while not self.isBesideE(["pollen", "flower", "field"]): 
             mouse.click()
             if self.night and self.setdat["stinger_hunt"]:
+                self.keyboard.press(".")
                 self.stingerHunt()
                 return
             if time.time()-st > 30*60: #30mins max
@@ -645,6 +649,8 @@ class macro:
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
         wait = self.setdat["convert_wait"]
+        if self.enableNightDetection:
+            self.keyboard.press(".")
         if (wait):
             self.logger.webhook("", f'Waiting for an additional {wait} seconds', "light green")
         time.sleep(wait)
@@ -672,7 +678,7 @@ class macro:
             
             mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
-                solveMemoryMatch(self.latestMM)
+                solveMemoryMatch(self.latestMM, self.display_type)
 
             mmImg = self.adjustImage("./images/menu", "blenderclose") #blender
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
@@ -1334,7 +1340,7 @@ class macro:
                     mmType = objective.split("_")[0]
                 self.latestMM = mmType
                 self.logger.webhook("", f"Solving: ${displayName}", "dark brown", "screen")
-                solveMemoryMatch(mmType)
+                solveMemoryMatch(mmType, self.display_type)
             elif objective in fieldBoosterData:
                 sleep(3)
                 bluetexts = ""
@@ -1962,11 +1968,17 @@ class macro:
                     mouse.click()
                     sleep(0.03)
                 quantity2Img = quantityScreenshot()
-                if quantity2Img - quantity1Img < 2: #check if screenshots are similar
+                if quantity2Img == quantity1Img: #check if screenshots are similar
                     break
                 #update the quantity
                 quantity1Img = quantity2Img
-            quantity = int(''.join([x[1][0] for x in ocr.ocrRead(quantity2Img) if x.isdigit()]))
+            quantity = ''.join([x[1][0] for x in ocr.ocrRead(mssScreenshot(self.mw/2-60-140, math.floor(self.mh*0.48)+140-20, 110, 23*2))])
+            quantity = ''.join([x for x in quantity if x.isdigit()])
+            if quantity:
+                quantity = int(quantity)
+            else:
+                self.logger.webhook("", "Failed to detect the quantity of items crafted. The macro will get the crafting time on the next visit", "dark brown")
+                quantity = 0
         else: 
             #normal quantity
             quantity = self.setdat[f"blender_quantity_{itemNo}"]
@@ -2095,7 +2107,7 @@ class macro:
                 hotbarSlotTimings = ast.literal_eval(f.read())
             f.close()
             #night detection
-            if self.setdat["stinger_hunt"]:
+            if self.enableNightDetection:
                 self.detectNight()
             #hotbar
             for i in range(1,8):

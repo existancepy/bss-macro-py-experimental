@@ -6,10 +6,12 @@ import pyautogui as pag
 import random
 from modules.screen.ocr import ocrRead
 from PIL import Image
+from modules.misc.imageManipulation import adjustImage
+from modules.screen.imageSearch import locateImageOnScreen
 
 #TODO: clean up the code, really messy, lots of copy paste
 mw, mh = pag.size()
-def solveMemoryMatch(mmType=""):
+def solveMemoryMatch(mmType, displayType):
     blankTile = imagehash.average_hash(Image.open("./images/menu/mmempty.png"))
     def mmclick(x,y):
         mouse.moveTo(x, y, 0.2)
@@ -76,11 +78,14 @@ def solveMemoryMatch(mmType=""):
             
     matchFound = None #store the value of the match
     skipAttempt = False
-    for _ in range(attempts):
+    for currAttempt in range(attempts):
         if skipAttempt:
             skipAttempt = False
             continue
-
+        if currAttempt > attempts//2:
+            mmImg = adjustImage("./images/menu", "mmopen", displayType) #memory match
+            if not locateImageOnScreen(mmImg, mw/4, mh/4, mw/4, mh/3.5, 0.8):
+                break
         firstTile = None
         matchFound = None
         #open first tile
