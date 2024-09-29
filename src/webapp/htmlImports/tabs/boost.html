@@ -24,11 +24,12 @@
                         </tr>
                         <tr>
                             <td>
-                                <h4 class="poppins-regular" style="margin-top:1rem">Use every X mins:</h4>
-                                <div class="poppins-regular" style="font-size:0.9rem; color: #adb4bc">How often the slot should be used<br>(decimals are accepted)</div>
+                                <h4 class="poppins-regular" style="margin-top:1rem">Use every X secs/mins:</h4>
+                                <div class="poppins-regular" style="font-size:0.9rem; color: #adb4bc">How often the slot should be used</div>
                             </td>
-                            <td valign="top">
-                                ${buildInput(`hotbar${i}_use_every`, {name: "textbox", inputType: "float", triggerFunction: saveProfileTriggerFunction})}
+                            <td valign="top" style="display:flex; gap: 0.5rem">
+                                ${buildInput(`hotbar${i}_use_every_value`, {name: "textbox", inputType: "float", triggerFunction: saveProfileTriggerFunction})}
+                                ${buildInput(`hotbar${i}_use_every_format`, {name: "dropdown", data: ["Secs", "Mins"], triggerFunction: saveProfileTriggerFunction, length: 5}).replace("0.6rem", "0.75rem")}
                             </td>
                         </tr>
                     </table>

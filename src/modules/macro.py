@@ -1841,7 +1841,10 @@ class macro:
                     return nextItem
             else:
                 return 0 #no items to craft
-        if blenderData["collectTime"] == 0: #first blender of the session
+
+        #check if item is none (settings got changed but user did not reset the blender data)
+        #or first blender of the reset
+        if blenderData["collectTime"] == 0 or (itemNo and self.setdat[f"blender_item_{itemNo}"] == "none"): 
             itemNo = getNextItem() #get the first item
             if not itemNo: #no items available
                 blenderData["item"] = itemNo
@@ -1923,13 +1926,13 @@ class macro:
                 cancelCraft()
         
         #time to craft
+        item = self.setdat[f"blender_item_{itemNo}"]
         if not itemNo: #if itemNo is 0, there are no items to craft. The macro has collected the last item to craft
             self.closeBlenderGUI()
             blenderData["collectTime"] = -1 #set collectTime to -1 (disable blender)
             saveBlenderData()
             return
         #click to the item
-        item = self.setdat[f"blender_item_{itemNo}"]
         itemDisplay = item.title()
         mouse.moveTo(self.mw/2+240, math.floor(self.mh*0.48)+128)
         for _ in range(blenderItems.index(item)):
@@ -2087,6 +2090,7 @@ class macro:
         f.close()
 
     def nightAndHotbarBackground(self):
+
         while True:
             with open("./data/user/hotbar_timings.txt", "r") as f:
                 hotbarSlotTimings = ast.literal_eval(f.read())
@@ -2103,11 +2107,15 @@ class macro:
                 elif slotUseWhen == "gathering" and not "gather_" in self.status.value: continue 
                 elif slotUseWhen == "converting" and not self.status.value == "converting": continue 
                 #check cd
-                if time.time() - hotbarSlotTimings[i] < (self.setdat[f"hotbar{i}_use_every"]*60): continue
+                cdSecs = self.setdat[f"hotbar{i}_use_every_value"]
+                if self.setdat[f"hotbar{i}_use_every_format"] == "mins": 
+                    cdSecs *= 60
+                if time.time() - hotbarSlotTimings[i] < cdSecs: continue
                 print(f"pressed hotbar {i}")
                 #press the key
                 for _ in range(2):
                     keyboard.pagPress(str(i))
+                    time.sleep(0.5)
                 #update the time pressed
                 hotbarSlotTimings[i] = time.time()
                 with open("./data/user/hotbar_timings.txt", "w") as f:
