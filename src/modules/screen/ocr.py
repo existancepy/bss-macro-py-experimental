@@ -86,7 +86,7 @@ def imToString(m):
     elif m == "egg shop":
         cap = screenshot(region=(ww//(1.2*xsm),wh//(3*ysm),ww-ww//1.2,wh//5))
     elif m == "blue":
-        cap = mssScreenshot(region=(mw*3//4, mh//3*2, mw//4,mh//3))
+        cap = mssScreenshot(mw*3//4, mh//3*2, mw//4,mh//3)
     elif m == "chat":
         cap = screenshot(region=(ww*3//4, 0, ww//4,wh//3))
     elif m == "ebutton":
@@ -141,7 +141,10 @@ def customOCR(X1,Y1,W1,H1,applym=1):
 
 #accept pillow img
 def ocrRead(img):
-    return ocrFunc(img)
+    out = ocrFunc(img)
+    if out is None:
+        return [[[""],["",0]]]
+    return out
     
 if useOCRMac:
     ocrFunc = ocrMac_

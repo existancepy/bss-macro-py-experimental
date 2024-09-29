@@ -54,7 +54,3 @@ class log:
         if not self.enableWebhook: return
         webhookThread = threading.Thread(target=sendWebhook, args=(self.webhookURL, title, desc, logData["time"], colors[color], ss))
         webhookThread.start()
-        
-
-
-    

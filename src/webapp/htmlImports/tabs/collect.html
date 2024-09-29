@@ -192,7 +192,118 @@
                 },
             ])
 
-           
+            buildStandardContainer(parentCollect,"Memory Match 💭", "",[
+                {
+                    id: "memory_match",
+                    title: "Memory Match",
+                    desc: "Complete the memory match in front of pro shop",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "mega_memory_match",
+                    title: "Mega Memory Match",
+                    desc: "Complete the memory match inside the badge bearer guild",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "extreme_memory_match",
+                    title: "Extreme Memory Match",
+                    desc: "Complete the memory match near pepper field",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "winter_memory_match",
+                    title: "Winter Memory Match",
+                    desc: "Collect the memory match near honey bee",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                }
+            ])
+            buildStandardContainer(parentCollect,"Blender", "",[
+                {
+                    id: "blender_enable",
+                    title: "Enable Task",
+                    desc: "Craft and collect items from the blender",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "blender-reset",
+                    title: "Reset Blender Timers",
+                    desc: "Resets the macro's tracking data on blender items",
+                    type: {
+                        name: "button",
+                        text: "Reset",
+                        triggerFunction: "clearBlenderData(this)"
+                    }
+                }
+
+            ])
+            function blenderItemDropDownHTML(id){
+                return buildInput(id,{
+                    name: "dropdown",
+                    data: fieldNectarArray,
+                    triggerFunction: "saveSetting(this, 'profile')",   
+                })
+            }
+            const blenderItemsArray = toImgArray(blenderIcons)
+            const blenderParent = document.getElementById("blender").parentElement
+            for (let i = 1; i < 4; i++){
+                const blenderItemHTML = `
+                    <div class="seperator" style="margin-bottom: 1rem;"></div>
+                    <h3 class="poppins-semibold" style = "margin-bottom: 0.9rem;">Item ${i}</h3>
+                    <div style="display:flex; justify-content:space-between; align-items: flex-start; flex-wrap: wrap">
+                        <div style="display:flex; align-items: flex-end">
+                            <h4 class="poppins-regular" style = "margin-right: 0.7rem">Item:</h4>
+                            ${buildInput(`blender_item_${i}`,{
+                                name: "dropdown",
+                                data: blenderItemsArray,
+                                triggerFunction: "saveSetting(this, 'profile')",   
+                            })}
+                        </div>
+                        <div style="display:flex; align-items: flex-start;">
+                            <h4 class="poppins-regular" style = "margin-right: 0.7rem; margin-top: 0.7rem;">Quantity:</h4>
+                            <div>
+                                ${buildInput(`blender_quantity_${i}`, {name: "textbox", triggerFunction: "saveSetting(this, 'profile')", inputType: "int", length:7})}
+                                <div style="display:flex; margin-top: 0.3rem; width:100%; justify-content: space-between">
+                                    <div>
+                                        <h4 class="poppins-regular" style = "margin-top:0.5rem">Max:</h4>
+                                        <div class="poppins-regular" style="font-size:0.9rem; color: #adb4bc">Craft the<br>max quantity</div>
+                                    </div>
+                                    ${buildInput(`blender_quantity_max_${i}`, {name: "checkbox", triggerFunction: "saveSetting(this, 'profile')"})}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items: flex-start;">
+                            <h4 class="poppins-regular" style = "margin-right: 0.7rem; margin-top: 0.7rem;">Repeat:</h4>
+                            <div>
+                                ${buildInput(`blender_repeat_${i}`, {name: "textbox", triggerFunction: "saveSetting(this, 'profile')", inputType: "int", length:6})}
+                                <div style="display:flex; margin-top: 0.3rem; width:calc(100% + 1rem); justify-content: space-between">
+                                    <div>
+                                        <h4 class="poppins-regular" style = "margin-top:0.5rem">Inf:</h4>
+                                        <div class="poppins-regular" style="font-size:0.9rem; color: #adb4bc">Repeat<br>infinitely</div>
+                                    </div>
+                                    ${buildInput(`blender_repeat_inf_${i}`, {name: "checkbox", triggerFunction: "saveSetting(this, 'profile')"})}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ` 
+                blenderParent.innerHTML += blenderItemHTML
+            }
        </script>
     </div>
 </div>

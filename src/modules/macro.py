@@ -26,6 +26,11 @@ from datetime import timedelta, datetime
 from modules.misc.imageManipulation import *
 from PIL import Image
 from modules.misc import messageBox
+from modules.submacros.memoryMatch import solveMemoryMatch
+import math
+import re
+import ast
+
 pynputKeyboard = Controller()
 #data for collectable objectives
 #[besideE text, movement key, max cooldowns]
@@ -43,8 +48,22 @@ collectData = {
     "samovar": [["heat", "samovar"], "w", 6*60*60], #6hr
     "snow_machine": [["activate"], None, 2*60*60], #2hr
     "lid_art": [["gander", "onett", "art"], "s", 8*60*60], #8hr
-    "candles": [["admire", "candle", "honey"], "w", 4*60*60] #4hr
+    "candles": [["admire", "candle", "honey"], "w", 4*60*60], #4hr
+    "memory_match": [["spend", "play"], "a", 2*60*60], #2hr
+    "mega_memory_match": [["spend", "play"], "w", 4*60*60], #4hr
+    #"night_memory_match": [["spend", "play"], "w", 8*60*60], #8hr
+    "extreme_memory_match": [["spend", "play"], "w", 8*60*60], #8hr
+    "winter_memory_match": [["spend", "play"], "a", 4*60*60], #4hr
 }
+
+fieldBoosterData = {
+    "blue_booster": [["use", "booster"], "w", 45*60], #45mins
+    "red_booster": [["use", "booster"], "s", 45*60], #45mins
+    "mountain_booster": [["use", "booster"], None, 45*60], #45mins
+}
+
+mergedCollectData = {**collectData, **fieldBoosterData}
+mergedCollectData["sticker_stack"] = [["add", "sticker"], None, 0]
 
 #werewolf is a unique one. There is only one, but it can be triggered from pine, pumpkin or cactus
 regularMobInFields = {
@@ -75,8 +94,8 @@ mobRespawnTimes = {
 resetLower1 = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
 resetUpper1 = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
 #balloon color
-resetLower2 = np.array([110, 229, 153])  # Lower bound of the color (H, L, S)
-resetUpper2 = np.array([115, 255, 204])  # Upper bound of the color (H, L, S)
+resetLower2 = np.array([105, 210, 140])  # Lower bound of the color (H, L, S)
+resetUpper2 = np.array([120, 255, 210])  # Upper bound of the color (H, L, S)
 resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(16,10))
 
 
@@ -109,11 +128,11 @@ locationToNightFloorType = {
 #store planter's growth data
 #[growth time in secs, (list of bonus fields), bonus growth from fields]
 planterGrowthData = {
-    "paper": [1*60*60, ()], #1hr
-    "ticket": [2*60*60, ()], #2hr
-    "festive": [4*60*60, ()], #4hr
-    "sticker": [3*60*60, ()], #3hr
-    "plastic": [2*60*60, ()], #2hr
+    "paper": [1*60*60, (), 0], #1hr
+    "ticket": [2*60*60, (), 0], #2hr
+    "festive": [4*60*60, (), 0], #4hr
+    "sticker": [3*60*60, (), 0], #3hr
+    "plastic": [2*60*60, (), 0], #2hr
     "candy": [4*60*60, ("strawberry", "pineapple", "coconut"), 0.25], #4hr
     "red clay": [6*60*60, ("sunflower", "dandelion", "mushroom", "clover", "strawberry", "pineapple", "stump", "cactus", "pumpkin", "rose", "mountain top", "pepper", "coconut"), 0.25], #6hr
     "blue clay": [6*60*60, ("sunflower", "dandelion", "blue flower", "clover", "bamboo", "pineapple", "stump", "cactus", "pumpkin", "pine tree", "mountain top", "coconut"), 0.25], #6hr
@@ -125,9 +144,88 @@ planterGrowthData = {
     "planter of plenty": [16*60*60, ("pepper", "stump", "coconut", "mountain top"), 0.5] #16hr
 }
 
+#a list of all items that can be crafted by the blender in order
+blenderItems = ["red extract", "blue extract", "enzymes", "oil", "glue", "tropical drink", "gumdrops", "moon charm",
+    "glitter",
+    "star jelly",
+    "purple potion",
+    "soft wax",
+    "hard wax",
+    "swirled wax",
+    "caustic wax",
+    "field dice",
+    "smooth dice",
+    "loaded dice",
+    "super smoothie",
+    "turpentine"]
+
+#a list of keys to press to face north after running the cannon_to_field path
+fieldFaceNorthKeys = {
+    "sunflower": ["."]*2,
+    "dandelion": [","]*2,
+    "mushroom": None,
+    "blue flower": [","]*2,
+    "clover": ["."]*4,
+    "strawberry": ["."]*2,
+    "spider": None,
+    "bamboo": [","]*2,
+    "pineapple": None,
+    "stump": [","]*2,
+    "cactus": ["."]*4,
+    "pumpkin": None,
+    "pine tree": None,
+    "rose": ["."]*2,
+    "mountain top": ["."]*4,
+    "pepper": ["."]*2,
+    "coconut": ["."]*4
+}
+
+fieldFaceNorthKeys = {
+    "sunflower": ["."]*2,
+    "dandelion": [","]*2,
+    "mushroom": None,
+    "blue flower": [","]*2,
+    "clover": ["."]*4,
+    "strawberry": ["."]*2,
+    "spider": None,
+    "bamboo": [","]*2,
+    "pineapple": None,
+    "stump": [","]*2,
+    "cactus": ["."]*4,
+    "pumpkin": None,
+    "pine tree": None,
+    "rose": ["."]*2,
+    "mountain top": ["."]*4,
+    "pepper": ["."]*2,
+    "coconut": ["."]*4
+}
+
+#the field dimensions taken from natro
+#[length, width]
+startLocationDimensions = {
+    "sunflower": [1250, 2000],
+    "dandelion": [2500, 1000],
+    "mushroom": [1250, 1750],
+    "blue flower": [2750, 750],
+    "clover": [2000, 1500],
+    "strawberry": [1500, 2000],
+    "spider": [2000, 2000],
+    "bamboo": [3000, 1250],
+    "pineapple": [1750, 3000],
+    "stump": [1500, 1500],
+    "cactus": [1500, 2500],
+    "pumpkin": [1500, 2500],
+    "pine tree": [2500, 1700],
+    "rose": [2500, 1500],
+    "mountain top": [2250, 1500],
+    "pepper": [1500, 2250],
+    "coconut": [1500, 2250]
+}
+
 class macro:
-    def __init__(self, status, log, haste):
+    def __init__(self, status, log, haste, updateGUI):
         self.status = status
+        self.updateGUI = updateGUI
         self.setdat = settingsManager.loadAllSettings()
         self.fieldSettings = settingsManager.loadFields()
         self.mw, self.mh = pag.size()
@@ -136,9 +234,8 @@ class macro:
         self.keyboard = keyboard(self.setdat["movespeed"], haste)
         self.logger = logModule.log(log, self.setdat["enable_webhook"], self.setdat["webhook_link"])
         #setup an internal cooldown tracker. The cooldowns can be modified
-        self.collectCooldowns = dict([(k, v[2]) for k,v in collectData.items()])
+        self.collectCooldowns = dict([(k, v[2]) for k,v in mergedCollectData.items()])
         self.collectCooldowns["sticker_printer"] = 1*60*60
-
         #field drift compensation class
         self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
 
@@ -154,6 +251,9 @@ class macro:
         self.newUI = False
 
         self.planterCooldowns = {}
+
+        #memory match
+        self.latestMM = "normal"
 
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
@@ -232,12 +332,11 @@ class macro:
                 return isSpawnFloorNight(hsv)
             return isGrassNight(hsv) and isNightSky(bgr)
         
-        while True:
-            if self.canDetectNight and isNight():
-                self.night = True
-                self.logger.webhook("","Night detected","dark brown", "screen")
-                time.sleep(200) #wait for night to end
-                self.night = False
+        if self.canDetectNight and isNight():
+            self.night = True
+            self.logger.webhook("","Night detected","dark brown", "screen")
+            time.sleep(200) #wait for night to end
+            self.night = False
 
     def isFullScreen(self):
         menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar on mac, window bar on windows
@@ -286,10 +385,29 @@ class macro:
             #ensure that path exists
             if not fileMustExist and not os.path.isfile(pyPath): return
             exec(open(pyPath).read())
+
+    #
+    def faceDirection(self, field, dir):
+        keys = fieldFaceNorthKeys[field]
+        if dir == "south": #invert the keys
+            if keys is None:
+                keys = ["."]*4
+            elif len(keys) == 4:
+                keys = None
+            else:
+                keys = ["." if x == "," else "," for x in keys]
+        
+        if keys is not None:
+            for k in keys:
+                self.keyboard.press(k)
+
     #run the path to go to a field
-    def goToField(self, field):
+    #faceDir what direction to face after landing in a field (default, north, south)
+    def goToField(self, field, faceDir = "default"):
         self.location = field
         self.runPath(f"cannon_to_field/{field}")
+        if faceDir == "default": return
+        self.faceDirection(field, faceDir)
 
     def isInOCR(self, name, includeList, excludeList):
         #get text
@@ -372,12 +490,20 @@ class macro:
             self.keyboard.keyUp("space")
         return True
     
-    def clickYes(self):
+    #click the yes popup
+    #if detect is set to true, the macro will check if the yes button is there
+    #if detectOnly is set to true, the macro will not click 
+    def clickYes(self, detect = False, detectOnly = False, clickOnce=False):
         yesImg = self.adjustImage("./images/menu", "yes")
         x = self.mw/3.2
         y = self.mh/2.3
         time.sleep(0.4)
-        bestX, bestY = locateImageOnScreen(yesImg,x,y,self.mw/2.5,self.mh/3.4)[1]
+        threshold = 0
+        if detect or detectOnly: threshold = 0.75
+        res = locateImageOnScreen(yesImg,x,y,self.mw/2.5,self.mh/3.4, threshold)
+        if res is None: return False
+        if detectOnly: return True
+        bestX, bestY = res[1]
         if self.display_type == "retina":
             bestX //=2
             bestY //=2
@@ -385,8 +511,9 @@ class macro:
         time.sleep(0.2)
         mouse.moveBy(5, 5)
         time.sleep(0.1)
-        for _ in range(2):
+        for _ in range(1 if clickOnce else 2):
             mouse.click()
+        return True
     
     def toggleInventory(self, mode):
         invOpenImg = self.adjustImage("./images/menu", "inventoryopen")
@@ -487,10 +614,9 @@ class macro:
             x, y = res
         #close UI navigation
         mouse.moveTo(x, y)
+        mouse.moveBy(10,15)
         for _ in range(2):
             mouse.click()
-        mouse.moveBy(10,10)
-        mouse.click()
         self.clickYes()
         #close inventory
         self.toggleInventory("close")
@@ -504,6 +630,7 @@ class macro:
             if not self.isBesideEImage("makehoney"): return False
         #start convert
         self.keyboard.press("e")
+        self.status.value = "converting"
         st = time.time()
         time.sleep(2)
         self.logger.webhook("", "Converting", "brown", "screen")
@@ -512,6 +639,9 @@ class macro:
             if self.night and self.setdat["stinger_hunt"]:
                 self.stingerHunt()
                 return
+            if time.time()-st > 30*60: #30mins max
+                self.logger.webhook("","Converting timeout (30mins max)", "brown", "screen")
+        self.status.value = ""
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
         wait = self.setdat["convert_wait"]
@@ -539,6 +669,14 @@ class macro:
             closeImg = self.adjustImage("./images/menu", "close") #sticker printer
             if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
                 self.keyboard.press("e")
+            
+            mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
+            if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
+                solveMemoryMatch(self.latestMM)
+
+            mmImg = self.adjustImage("./images/menu", "blenderclose") #blender
+            if locateImageOnScreen(mmImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
+                self.closeBlenderGUI()
 
             self.moveMouseToDefault()
             time.sleep(0.1)
@@ -548,16 +686,23 @@ class macro:
             time.sleep(0.2)
             self.keyboard.press('enter')
             emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
+            healthBar = False #check if the health bar appears when the player resets. For some reason, the empty health bar doesnt always appear
             st = time.time()
             #wait for empty health bar to appear
-            while time.time() - st < 3 and not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7): pass
-            #if the empty health bar disappears, player has respawned
-            #max 8s in case player does not respawn
-            st = time.time()
-            while time.time() - st < 9:
-                if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
-                    time.sleep(0.5)
+            while time.time() - st < 3: 
+                if locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
+                    healthBar = True
                     break
+            if healthBar: #check if the health bar has been detected. If it hasnt, just wait for a flat 6s
+                #if the empty health bar disappears, player has respawned
+                #max 9s of waiting
+                st = time.time()
+                while time.time() - st < 9:
+                    if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
+                        time.sleep(0.5)
+                        break
+            else:
+                time.sleep(6)
 
             self.canDetectNight = True
             self.location = "spawn"
@@ -590,7 +735,8 @@ class macro:
         for i in range(3):
             #Move to canon:
             self.keyboard.walk("w",0.8)
-            self.keyboard.walk("d",0.9*(self.setdat["hive_number"]+1))
+            fieldDist = 0.9
+            self.keyboard.walk("d",1.2*(self.setdat["hive_number"]), False)
             self.keyboard.keyDown("d")
             time.sleep(0.5)
             self.keyboard.slowPress("space")
@@ -611,6 +757,12 @@ class macro:
                     self.keyboard.keyUp("d")
                     return
             self.keyboard.keyUp("d")
+            time.sleep(0.04)
+            #check if overrun cannon
+            for _ in range(3):
+                if self.isBesideEImage("cannon"):
+                    return
+                self.keyboard.walk("a",0.2)
             self.logger.webhook("Notice", f"Could not find cannon", "dark brown", "screen")
             self.reset(convert=False)
         else:
@@ -620,28 +772,27 @@ class macro:
         self.canDetectNight = False
         psLink = self.setdat["private_server_link"]
         self.logger.webhook("",rejoinMsg, "dark brown")
+        self.status.value = "rejoining"
         mouse.mouseUp()
         keyboard.releaseMovement()
         for i in range(3):
-            joinPS = bool(psLink) #join public server?
+            joinPS = bool(psLink) #join private server?
             rejoinMethod = self.setdat["rejoin_method"]
             browserLink = "https://www.roblox.com/games/4189852503?privateServerLinkCode=87708969133388638466933925137129"
-            if joinPS: 
-                if i == 2: 
-                    self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", "screen")
-                    joinPS = False
-                else:
-                    browserLink = psLink
+            if i == 2 and joinPS: 
+                self.logger.webhook("", "Failed rejoining too many times, falling back to a public server", "red", "screen")
+                joinPS = False
             appManager.closeApp("Roblox") # close roblox
             time.sleep(8)
             #execute rejoin method
+            if joinPS:
+                browserLink = psLink
             if rejoinMethod == "deeplink":
                 deeplink = "roblox://placeID=1537690962"
                 if joinPS:
                     deeplink += f"&linkCode={psLink.lower().split('code=')[1]}"
                 appManager.openDeeplink(deeplink)
             elif rejoinMethod == "new tab":
-                print(browserLink)
                 webbrowser.open(browserLink, new = 2)
             elif rejoinMethod == "reload":
                 webbrowser.open(browserLink, new = 2)
@@ -662,6 +813,7 @@ class macro:
             loadStartTime = time.time()
             while not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.75) and time.time() - loadStartTime < 60:
                 pass
+            appManager.openApp("Roblox")
             #run fullscreen check
             if self.isFullScreen(): #check if roblox can be found in menu bar
                 self.logger.webhook("","Roblox is already in fullscreen, not activating fullscreen", "dark brown")
@@ -713,6 +865,11 @@ class macro:
                 self.keyboard.walk("a",0.4)
                 #$time.sleep(0.15)
                 if self.isBesideEImage("claimhive"):
+                    #check for overrun
+                    time.sleep(0.12)
+                    for _ in range(4):
+                        if self.isBesideEImage("claimhive"): break
+                        self.keyboard.walk("d",0.2)
                     self.keyboard.press("e")
                     return True
                 return False
@@ -734,7 +891,7 @@ class macro:
                     if findHive():
                         guessedSlot = max(1,min(6, round((j+1)//2.5)))
                         hiveClaim = guessedSlot
-                        if  1 < guessedSlot < 6:
+                        if 2 < guessedSlot < 6:
                             hiveClaim += 1
                         self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", "screen")
                         rejoinSuccess = True
@@ -742,12 +899,17 @@ class macro:
                         break
             #after hive is claimed, convert
             if rejoinSuccess:
+                for _ in range(8):
+                    self.keyboard.press("o")
+                self.moveMouseToDefault()
                 time.sleep(1)
                 self.convert()
                 #no need to reset
                 self.canDetectNight = True
+                self.status.value = ""
                 return
             self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
+        self.status.value = ""
     
     def blueTextImageSearch(self, text, threshold=0.7):
         target = self.adjustImage("./images/blue", text)
@@ -764,7 +926,11 @@ class macro:
                 self.died = True
             #mob respawn check
             self.setMobTimer(field)
-            
+    #use the accurate sleep and sleep for ms
+    def sleepMSMove(self, key, time):
+        self.keyboard.keyDown(key, False)
+        sleep(time/1000)
+        self.keyboard.keyUp(key, False)
 
     def gather(self, field):
         fieldSetting = self.fieldSettings[field]
@@ -775,19 +941,21 @@ class macro:
             self.cannon()
             self.logger.webhook("",f"Travelling: {field.title()}, Attempt {i+1}", "dark brown")
             self.goToField(field)
-            #go to start location
-            startLocationData = {
-                "center": [],
-                "upper right": ["w","d"],
-                "right": ["d"],
-                "lower right": ["s","d"],
-                "bottom": ["s"],
-                "lower left": ["s","a"],
-                "left": ["a"],
-                "upper left": ["w","a"],
-                "top": ["w"]
-            }
-            self.keyboard.multiWalk(startLocationData[fieldSetting["start_location"]], fieldSetting["distance"]/4)
+            #go to start location (match natro's)
+            startLocation = fieldSetting["start_location"]
+            moveSpeedFactor = 18/self.setdat["movespeed"]
+            flen, fwid = [x*fieldSetting["distance"]/10 for x in startLocationDimensions[field]]
+            if "upper" in startLocation:
+                self.sleepMSMove("w", flen*moveSpeedFactor)
+            elif "lower" in startLocation:
+                 self.sleepMSMove("s", flen*moveSpeedFactor)
+
+            if "left" in startLocation:
+                 self.sleepMSMove("a", fwid*moveSpeedFactor)
+            elif "right" in startLocation:
+                 self.sleepMSMove("d", fwid*moveSpeedFactor)
+
+            time.sleep(0.4)
             #place sprinkler + check if in field
             if self.placeSprinkler(): 
                 break
@@ -839,12 +1007,14 @@ class macro:
         maxGatherTime = fieldSetting["mins"]*60
         gatherTimeLimit = "{:.2f}".format(fieldSetting["mins"])
         returnType = fieldSetting["return"]
+        pattern = fieldSetting['shape']
         st = time.time()
         keepGathering = True
         self.died = False
         #time to gather
         self.status.value = f"gather_{field}"
         self.isGathering = True
+        firstPattern = True
         self.logger.webhook(f"Gathering: {field.title()}", f"Limit: {gatherTimeLimit} - {fieldSetting['shape']} - Backpack: {fieldSetting['backpack']}%", "light green")
         mouse.moveBy(10,5)
         gatherBackgroundThread = threading.Thread(target=self.gatherBackground)
@@ -858,7 +1028,16 @@ class macro:
         if fieldSetting["shift_lock"]: self.keyboard.press('shift')
         while keepGathering:
             mouse.mouseDown()
-            exec(open(f"../settings/patterns/{fieldSetting['shape']}.py").read())
+            #ensure that the pattern works  
+            try:
+                exec(open(f"../settings/patterns/{pattern}.py").read())
+            except Exception as e:
+                print(e)
+                if firstPattern:
+                    pattern = "e_lol"
+                    self.logger.webhook("Incompatible pattern", f"The pattern {pattern} is incompatible with the macro. Defaulting to e_lol instead.\
+                                        Avoid using this pattern in the future. If you are the creator of this pattern, the error can be found in terminal", "red")
+            firstPattern = False
             #cycle ends
             mouse.mouseUp()
 
@@ -869,10 +1048,10 @@ class macro:
                 self.logger.webhook("Gathering: interrupted","Stinger Hunt","dark brown")
                 self.reset(convert=False)
                 break
-            elif self.collectMondoBuff(gatherInterrupt=True):
-                turnOffShitLock()
+            elif self.collectMondoBuff(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
                 break
             elif self.died:
+                self.status.value = ""
                 turnOffShitLock()
                 self.logger.webhook("","Player died", "dark brown","screen")
                 self.reset()
@@ -900,20 +1079,18 @@ class macro:
         else: turnOffShitLock()
 
         #go back to hive
-        def walk_to_hive():
+        def walkToHive():
             nonlocal self
             #walk to hive
             #face correct direction (towards hive)
             reverseTurnTimes = 4 - fieldSetting["turn_times"]
-            if fieldSetting["turn"] == "none":
-                reverseTurnTimes = 4
             if fieldSetting["turn"] == "left":
-                for _ in range(reverseTurnTimes):
-                    self.keyboard.press(",")
-            else: #right or none
-                for _ in range(reverseTurnTimes):
+                for _ in range(fieldSetting["turn_times"]):
                     self.keyboard.press(".")
-
+            elif fieldSetting["turn"] == "right":
+                for _ in range(fieldSetting["turn_times"]):
+                    self.keyboard.press(",")
+            self.faceDirection(field, "south")
             #start walk
             self.canDetectNight = False
             self.logger.webhook("",f"Walking back to hive: {field.title()}", "dark brown")
@@ -946,12 +1123,12 @@ class macro:
             self.useItemInInventory("whirligig")
             if not self.convert():
                 self.logger.webhook("","Whirligigs failed, walking to hive", "dark brown", "screen")
-                walk_to_hive()
+                walkToHive()
                 return
             #whirligig sucessful
             self.reset(convert=False)
         elif returnType == "walk":
-            walk_to_hive()
+            walkToHive()
 
     #returns the coordinates of the keep old text
     def keepOldCheck(self):
@@ -996,17 +1173,19 @@ class macro:
             return
         self.logger.webhook("", "Cant start ant challenge", "red", "screen")
 
-    def collectMondoBuff(self, gatherInterrupt = False):
-        self.status.value = ""
+    def collectMondoBuff(self, gatherInterrupt = False, turnOffShiftLock = False):
         #check if mondo can be collected (first 10mins)
         current_time = datetime.now().strftime("%H:%M:%S")
         _,minute,_ = [int(x) for x in current_time.split(":")]
         #set respawn time to 20mins
         #mostly just to prevent the macro from going to mondo over and over again for the 10mins
-        if minute > 10 or self.hasRespawned("mondo", 20*60): return False
+        if minute > 10 or not self.hasRespawned("mondo", 20*60): return False
         if gatherInterrupt:
+            if not self.setdat["mondo_buff_interrupt_gathering"]: return
+            if turnOffShiftLock: self.keyboard.press("shift")
             self.logger.webhook("Gathering: interrupted","Mondo Buff","dark brown")
-            self.reset()
+            self.reset(convert=False)
+        self.status.value = ""
         st = time.perf_counter()
         self.logger.webhook("","Travelling: Mondo Buff","dark brown")
         #go to mondo buff
@@ -1055,6 +1234,7 @@ class macro:
         time.sleep(0.2)
         mouse.click()
         time.sleep(1)
+        #TODO: check if the player ran out of eggs
         #check if on cooldown
         confirmImg = self.adjustImage("./images/menu", "confirm")
         if not locateImageOnScreen(confirmImg, self.mw//2+150, 4*self.mh//10+160, 120, 60, 0.7):
@@ -1081,10 +1261,39 @@ class macro:
         time.sleep(1)
         self.toggleInventory("close")
 
+    #convert bss' cooldown text into seconds
+    #brackets: account for brackets in the text, where the cooldown value is between said brackets
+    def cdTextToSecs(self, rawText, brackets):
+        if brackets:
+            closePos = rawText.find(")")
+            #get cooldown if close bracket is present or not
+            if closePos >= 0:
+                cooldownRaw = rawText[rawText.find("(")+1:closePos]
+            else:
+                cooldownRaw = rawText.split("(")[1]
+        else:
+            cooldownRaw = rawText
+        #clean it up, extract only valid characters
+        cooldownRaw = ''.join([x for x in cooldownRaw if x.isdigit() or x == ":" or x == "s"])
+        cooldownSeconds = None #cooldown in seconds
 
+        #check if its days, hour, mins or seconds
+        if cooldownRaw.count(":") == 3: #days
+            d, hr, mins, s = [int(x) for x in cooldownRaw.split(":")]
+            cooldownSeconds = d*24*60*60, hr*60*60 + mins*60 + s
+        elif cooldownRaw.count(":") == 2: #hours
+            hr, mins, s = [int(x) for x in cooldownRaw.split(":")]
+            cooldownSeconds = hr*60*60 + mins*60 + s
+        elif cooldownRaw.count(":") == 1: #mins
+            mins, s = [int(x) for x in cooldownRaw.split(":")]
+            cooldownSeconds = mins*60 + s
+        elif "s" in cooldownRaw: #seconds
+            cooldownSeconds = int(''.join([x for x in cooldownRaw if x.isdigit()]))
+        return cooldownSeconds
+    
     def collect(self, objective):
         reached = None
-        objectiveData = collectData[objective]
+        objectiveData = mergedCollectData[objective]
         displayName = objective.replace("_"," ").title()
         self.location = "collect"
         #go to collect and check that player has reached
@@ -1107,28 +1316,10 @@ class macro:
         #player has reached, get cooldown info
         #check if on cooldown
         cooldownSeconds = objectiveData[2]
+        returnVal = None #a return value
         if "(" and ":" in reached:
-            closePos = reached.find(")")
-            #get cooldown if close bracket is present or not
-            if closePos >= 0:
-                cooldownRaw = reached[reached.find("(")+1:closePos]
-            else:
-                cooldownRaw = reached.split("(")[1]
-
-            #clean it up, extract only valid characters
-            cooldownRaw = ''.join([x for x in cooldownRaw if x.isdigit() or x == ":" or x == "s"])
-            cooldownSeconds = 0 #cooldown in seconds
-
-            #check if its hour, mins or seconds
-            if cooldownRaw.count(":") == 2: #hours
-                hr, mins, s = [int(x) for x in cooldownRaw.split(":")]
-                cooldownSeconds = hr*60*60 + mins*60 + s
-            elif cooldownRaw.count(":") == 1: #mins
-                mins, s = [int(x) for x in cooldownRaw.split(":")]
-                cooldownSeconds = mins*60 + s
-            elif "s" in cooldownRaw: #seconds
-                cooldownSeconds = int(''.join([x for x in cooldownRaw if x.isdigit()]))
-
+            cd = self.cdTextToSecs(reached, True)
+            if cd: cooldownSeconds = cd
             cooldownFormat = timedelta(seconds=cooldownSeconds)
             self.logger.webhook("", f"{displayName} is on cooldown ({cooldownFormat} remaining)", "dark brown", "screen")
         else: #not on cooldown
@@ -1136,11 +1327,46 @@ class macro:
                 self.keyboard.press("e")
             #run the claim path (if it exists)
             self.runPath(f"collect/claim/{objective}", fileMustExist=False)
-            time.sleep(0.1)
-            self.logger.webhook("", f"Collected: {displayName}", "bright green", "screen")
+            #memory match
+            if "memory_match" in objective:
+                if objective == "memory_match":
+                    mmType = "normal"
+                else:
+                    mmType = objective.split("_")[0]
+                self.latestMM = mmType
+                self.logger.webhook("", f"Solving: ${displayName}", "dark brown", "screen")
+                solveMemoryMatch(mmType)
+            elif objective in fieldBoosterData:
+                sleep(3)
+                bluetexts = ""
+                #get the blue texts 4 times to avoid missing the field
+                for _ in range(4):
+                    bluetexts += ocr.imToString("blue").lower()
+                #find which field is in blue texts
+                #note: fields is set in the collect path of the boosters
+                boostedField = ""
+                for f in fields:
+                    sub_name = f.split(" ")
+                    for sn in sub_name:
+                        if sn in bluetexts:
+                            boostedField = f
+                            break
+                    if boostedField: break
+                returnVal = boostedField
+                self.logger.webhook("", f"Collected: {displayName}, Boosted Field: {boostedField}", "bright green", "screen")
+                self.saveTiming("last_booster")
+            elif objective == "sticker_stack":
+                if "your" in reached or "activated" in reached:
+                    self.logger.webhook("", "Sticker Stack on cooldown", "dark brown", "screen")
+                    return
+                self.claimStickerStack()
+            else:
+                time.sleep(0.1)
+                self.logger.webhook("", f"Collected: {displayName}", "bright green", "screen")
         #update the internal cooldown
         self.saveTiming(objective)
         self.collectCooldowns[objective] = cooldownSeconds
+        return returnVal
 
     #accept mob and field and return them in the format used for timings.txt file
     #mob_field, eg ladybug_strawberry
@@ -1193,7 +1419,7 @@ class macro:
     def mobRunLootingBackground(self):
         st = time.time()
         while time.time() - st < 20:
-           if self.blueTextImageSearch("tokenlink"): break
+           if self.blueTextImageSearch("tokenlink", 0.8): break
         self.mobRunStatus = "done"
 
     def killMob(self, mob, field, walkPath = None):
@@ -1208,7 +1434,7 @@ class macro:
             #wait for bees to respawn
             time.sleep(10)
             self.cannon()
-            self.goToField(field)
+            self.goToField(field, "north")
             #attack the mob
             attackThread.start()
         else:
@@ -1314,6 +1540,7 @@ class macro:
         self.vicField = None
         self.stopVic = False
         currField = None
+        self.status.value = ""
 
         stingerHuntThread = threading.Thread(target=self.stingerHuntBackground)
         stingerHuntThread.daemon = True
@@ -1324,14 +1551,12 @@ class macro:
             #go to field
             self.cannon()
             self.logger.webhook("",f"Travelling to {currField} (vicious bee)","dark brown")
-            self.goToField(currField)
+            self.goToField(currField, "south")
 
-            for _ in range(4): #rotate 180. The vic patterns are from v1
-                self.keyboard.press(".")
-            
             #since we can't use break/return in an exec statement, use exceptions to terminate it early
             #walk in path
             #between each line of movement in the path, check if vic has been found
+            time.sleep(0.8)
             pathLines = open(f"../settings/paths/vic/find_vic/{currField}.py").read().split("\n")
             pathCode = ""
             for code in pathLines:
@@ -1355,9 +1580,7 @@ class macro:
         def goToVicField():
             self.reset(convert=False)
             self.logger.webhook("",f"Travelling to {self.vicField} (vicious bee)","dark brown")
-            self.goToField(currField)
-            for _ in range(4): #rotate 180, as the vic patterns are from v1
-                self.keyboard.press(".")
+            self.goToField(currField, "south")
 
         #first, check if vic is found in the same field as the player
         if currField != self.vicField: goToVicField()
@@ -1458,8 +1681,6 @@ class macro:
             self.cannon()
             self.logger.webhook("","Travelling: Coconut Crab","dark brown")
             self.goToField("coconut")
-            for _ in range(4):
-                self.keyboard.press(".")
             self.keyboard.walk("s", 1)
             self.keyboard.walk("d", 3)
             self.died = False
@@ -1506,7 +1727,7 @@ class macro:
         global finalKey
         self.cannon()
         self.logger.webhook("", f"Travelling: {planter.title()} Planter ({field.title()})", "dark brown")
-        self.goToField(field)
+        self.goToField(field, "north")
         #move from center of field to planter spot
         finalKey = None
         path = f"../settings/paths/planters/{field}.py"
@@ -1514,14 +1735,16 @@ class macro:
             exec(open(path).read())
         #go to the planter
         if method == "collect": #return true if the planter can be found
+            time.sleep(1)
             if finalKey is not None:
                 st = time.time()
                 while time.time()-st < (finalKey[1]+1):
                     self.keyboard.walk(finalKey[0],0.25)
                     if self.isBesideEImage("ebutton"): return True
-            elif self.isBesideEImage("ebutton"):
-                return True
-            return False
+                return False
+            else:
+                time.sleep(1)
+                return self.isBesideEImage("ebutton")
         else: #place, just walk there
             if finalKey is not None: self.keyboard.walk(finalKey[0], finalKey[1])
             return True
@@ -1532,7 +1755,7 @@ class macro:
         name = planter.lower().replace(" ","").replace("-","")
         if glitter: self.useItemInInventory("glitter") #use glitter
         if not self.useItemInInventory(f"{name}planter"):
-            return 
+            return None
         self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
         #calculate growth time. If the user didnt select harvest when full, return the harvest every X hours instead
         if harvestFull:
@@ -1557,7 +1780,6 @@ class macro:
 
     #iterate through all 3 slots in a cycle
     def placePlanterCycle(self, cycle):
-        collectFull = self.setdat["manual_planters_collect_full"]
         planterGrowthMaxTime = 0
         planterData = { #planter data to be stored in a file
             "cycle": cycle,
@@ -1572,8 +1794,8 @@ class macro:
             if planter == "none" or field == "none": continue #check that both the planter and field are present
             glitter = self.setdat[f"cycle{cycle}_{i+1}_glitter"]
             #set the cooldown for planters and place them
-            planterGrowthTime = self.placePlanter(planter,field, collectFull, glitter)
-            if not planterGrowthTime: #make sure the planter was placed
+            planterGrowthTime = self.placePlanter(planter,field, self.setdat["manual_planters_collect_full"], glitter)
+            if planterGrowthTime is None: #make sure the planter was placed
                 self.reset()
                 continue 
             #get the maximum planter growth time
@@ -1585,7 +1807,7 @@ class macro:
             if self.setdat[f"cycle{cycle}_{i+1}_gather"]: 
                 planterData["gatherFields"].append(field)
             self.reset()
-
+    
         planterData["harvestTime"] = time.time() + planterGrowthMaxTime
         #convert planter growth max time to hrs, mins, secs readable format
         planterReady = time.strftime("%H:%M:%S", time.gmtime(planterGrowthMaxTime))
@@ -1596,6 +1818,310 @@ class macro:
             f.write(str(planterData))
         f.close()
     
+    def closeBlenderGUI(self):
+        mouse.moveTo(self.mw/2-250, math.floor(self.mh*0.48)-200)
+        time.sleep(0.1)
+        mouse.click()
+        
+    def blender(self, blenderData):
+        itemNo = blenderData["item"]
+        def saveBlenderData():
+            with open("./data/user/blender.txt", "w") as f:
+                f.write(str(blenderData))
+            f.close()
+        
+        def getNextItem():
+            nextItem = itemNo
+            for _ in range(4):
+                nextItem += 1
+                if nextItem > 3:
+                    nextItem = 1
+                #item must be set and have repeats
+                if (self.setdat[f"blender_item_{nextItem}"] != "none") and (self.setdat[f"blender_repeat_{nextItem}"] > 0 or self.setdat[f"blender_repeat_inf_{nextItem}"]):
+                    return nextItem
+            else:
+                return 0 #no items to craft
+
+        #check if item is none (settings got changed but user did not reset the blender data)
+        #or first blender of the reset
+        if blenderData["collectTime"] == 0 or (itemNo and self.setdat[f"blender_item_{itemNo}"] == "none"): 
+            itemNo = getNextItem() #get the first item
+            if not itemNo: #no items available
+                blenderData["item"] = itemNo
+                blenderData["collectTime"] = -1
+                saveBlenderData()
+                return
+            
+        for _ in range(2):
+            self.logger.webhook("","Travelling: Blender","dark brown")
+            self.cannon()
+            self.runPath("collect/blender")
+            for _ in range(6):
+                self.keyboard.walk("d", 0.2)
+                reached = self.isBesideE(["open"])
+                if reached: break
+            if reached: break
+        else:
+            self.logger.webhook("","Failed to reach Blender", "dark brown", "screen")
+            return
+        
+        x = self.mw/3
+        y = self.mw/4
+
+        def clickOnBlenderElement(cx, cy):
+            if self.display_type == "retina":
+                cx //= 2
+                cy //= 2
+            mouse.moveTo(cx+x, cy+y)
+            time.sleep(0.1)
+            mouse.click()
+            mouse.moveBy(2,2)
+            time.sleep(0.1)
+            mouse.click()
+            #close and reopen gui
+            time.sleep(0.1)
+            self.closeBlenderGUI()
+            time.sleep(0.3)
+            self.keyboard.press("e")
+
+        self.keyboard.press("e")
+        time.sleep(1)
+        #check if blender is done and click on end crafting
+        doneImg = self.adjustImage("images/menu", "blenderdone")
+        res = locateImageOnScreen(doneImg, x, y, 560, 480, 0.75)
+        if res:
+            print("done")
+            clickOnBlenderElement(*res[1])
+        
+        #check for cancel button
+        cancelImg = self.adjustImage("images/menu", "blendercancel")
+        res = locateImageOnScreen(cancelImg, x, y, 560, 480, 0.75)
+        if res:
+            print("cancel")
+            clickOnBlenderElement(*res[1])
+
+        #check if still crafting and get cd
+        notDoneImg = self.adjustImage("images/menu", "blenderend")
+        res = locateImageOnScreen(notDoneImg, x, y, 560, 480, 0.75)
+
+        def cancelCraft():
+            self.logger.webhook("", "Unable to detect remaining crafting time, ending craft", "dark brown", "screen")
+            #mouse.moveTo(self.mw/2-120, math.floor(self.mh*0.48)+120)
+            clickOnBlenderElement(*res[1])
+
+        if res:
+            cdImg = mssScreenshot(self.mw/2-130, math.floor(self.mh*0.48)-70, 400, 65)
+            cdRaw = ocr.ocrRead(cdImg)
+            cdRaw = ''.join([x[1][0] for x in cdRaw])
+            cd = self.cdTextToSecs(cdRaw, False)
+            if cd:
+                cooldownFormat = timedelta(seconds=cd)
+                self.logger.webhook("", f"Blender is currently crafting an item ({cooldownFormat} remaining)", "dark brown", "screen")
+                #set the target time and quit
+                self.closeBlenderGUI()
+                blenderData["collectTime"] = time.time() + cd
+                saveBlenderData()
+                return
+            else: #cant detect cd, just cancel craft
+                cancelCraft()
+        
+        #time to craft
+        item = self.setdat[f"blender_item_{itemNo}"]
+        if not itemNo: #if itemNo is 0, there are no items to craft. The macro has collected the last item to craft
+            self.closeBlenderGUI()
+            blenderData["collectTime"] = -1 #set collectTime to -1 (disable blender)
+            saveBlenderData()
+            return
+        #click to the item
+        itemDisplay = item.title()
+        mouse.moveTo(self.mw/2+240, math.floor(self.mh*0.48)+128)
+        for _ in range(blenderItems.index(item)):
+            mouse.click()
+            sleep(0.06)
+        #check if the item can be crafted
+        canMake = self.adjustImage("images/menu", "blendermake")
+        if not locateImageOnScreen(canMake, x, y, 560, 480, 0.8):
+            self.logger.webhook("", f"Unable to craft {itemDisplay}", "dark brown", "screen")
+        #open the crafting menu
+        mouse.moveTo(self.mw/2, math.floor(self.mh*0.48)+130)
+        time.sleep(0.1)
+        mouse.click()
+        #set the quantity
+        mouse.moveTo(self.mw/2-60, math.floor(self.mh*0.48)+140)
+        #check if max
+        if self.setdat[f"blender_quantity_max_{itemNo}"]:
+            #get a screenshot of the quantity
+            #add more
+            #get another screenshot
+            #if both screenshots are the same, break
+
+            def quantityScreenshot(save = False):
+                return imagehash.average_hash(mssScreenshot(self.mw/2-60-140, math.floor(self.mh*0.48)+140-20, 110, 20*2, save))
+            quantity1Img = quantityScreenshot()
+            while True:
+                for _ in range(5): #add 5 quantity
+                    mouse.click()
+                    sleep(0.03)
+                quantity2Img = quantityScreenshot()
+                if quantity2Img - quantity1Img < 2: #check if screenshots are similar
+                    break
+                #update the quantity
+                quantity1Img = quantity2Img
+            quantity = int(''.join([x[1][0] for x in ocr.ocrRead(quantity2Img) if x.isdigit()]))
+        else: 
+            #normal quantity
+            quantity = self.setdat[f"blender_quantity_{itemNo}"]
+            for _ in range(quantity-1): #-1 because the quantity starts from 1
+                mouse.click()
+                sleep(0.03)
+        #confirm
+        mouse.moveTo(self.mw/2 + 70, math.floor(self.mh*0.48)+130)
+        time.sleep(0.1)
+        mouse.click()
+        #go to next item
+        #decrement the repeat count
+        if not self.setdat[f"blender_repeat_inf_{itemNo}"]:
+            self.setdat = {**self.setdat, **settingsManager.incrementProfileSetting(f"blender_repeat_{itemNo}", -1)}
+            self.updateGUI.value = 1
+        blenderData["item"] = getNextItem()
+        #calculate the time to collect the blender
+        craftTime = quantity*5*60 #5mins per item
+        blenderData["collectTime"] = time.time() + craftTime
+        time.sleep(1) #add a delay here before taking a screenshot, since bss displays the crafting screen with default values for a bit
+        self.logger.webhook("", f"Crafted: {itemDisplay} x{quantity}, Ready in: {timedelta(seconds=craftTime)}", "bright green", "screen")
+        #store the data
+        saveBlenderData()
+        self.closeBlenderGUI()
+        
+    def claimStickerStack(self):
+        time.sleep(1)
+        x = self.mw//2-275
+        y = 4*self.mh//10
+
+        #detect sticker stack boost time
+        screen = mssScreenshot(x+550/2,y,550/2,40)
+        ocrRes = ''.join([x[1][0] for x in ocr.ocrRead(screen)])
+        print(ocrRes)
+        ocrRes = re.findall(r"\(.*?\)", ocrRes) #get text between brackets
+        finalTime = None
+        def cantDetectTime():
+            self.logger.webhook("", "Failed to detect sticker stack buff duration", "red", "screen")
+        if ocrRes:
+            times = []
+            if "x" in ocrRes[0]: #number of stickers
+                stickerCount = int(''.join([x for x in ocrRes[0] if x.isdigit()]))
+                times.append(15*60 + 10*stickerCount)
+                ocrRes.pop(0)
+            if ":" in ocrRes[0]: #direct
+                times.append(self.cdTextToSecs(ocrRes[0], True))
+            if times:
+                finalTime = max(times)
+            else:
+                cantDetectTime()
+        else:
+            cantDetectTime()
+        stickerUsed = False
+        #use sticker
+        if "sticker" in self.setdat["sticker_stack_item"]:
+            regularSticker = self.adjustImage("images/sticker_stack", "regularsticker")
+            hiveSticker = self.adjustImage("images/sticker_stack", "hivesticker")
+            stickerLoc = locateTransparentImageOnScreen(regularSticker, x, y, 550, 220, 0.7)
+            if self.setdat["hive_skin"] and stickerLoc is None: #cant find regular sticker, use hive skin
+                stickerLoc = locateTransparentImageOnScreen(hiveSticker, x, y, 550, 220, 0.7)
+            if stickerLoc: #found a available sticker
+                xr, yr = stickerLoc[1]
+                if self.display_type == "retina":
+                    xr//= 2
+                    yr//= 2
+                mouse.moveTo(x+xr, y+yr)
+                time.sleep(0.1)
+                mouse.moveBy(3,-3)
+                time.sleep(0.2)
+                mouse.click()
+                stickerUsed = True
+            elif not "/" in self.setdat["sticker_stack_item"]:
+                self.logger.webhook("", "No Stickers left to stack, Sticker Stack has been disabled", "red", "screen")
+                self.setdat["sticker_stack"] = False
+                self.keyboard.press("e")
+                return
+        if "ticket" in self.setdat["sticker_stack_item"] and not stickerUsed:
+                mouse.moveTo(self.mw//2+105, 4*self.mh//10-78)
+                time.sleep(0.1)
+                mouse.click()
+                time.sleep(0.1)
+                mouse.moveBy(2,2)
+                mouse.click()
+
+        #click yes
+        yesPopup = False
+        #check if there are 4 yes/no popups
+        for _ in range(4): 
+            if not self.clickYes(detect=True, clickOnce=True): 
+                break
+            else:
+                yesPopup = True
+                time.sleep(0.4)
+        else: #4 yes/no popups, either cub/hive skin
+            if not self.setdat["hive_skin"] and not self.setdat["cub_skin"]: #do not use cub and hive stickers
+                self.logger.webhook("", "A hive/cub sticker has been wrongly selected, aborting", "red", "screen")
+                self.keyboard.press("e")
+                return
+        
+        if "ticket" in self.setdat["sticker_stack_item"] and not yesPopup: #if no popup appears, ran out of tickets
+            self.logger.webhook("", "No Tickets left, Sticker Stack has been disabled", "red", "screen")
+            self.setdat["sticker_stack"] = False
+            self.keyboard.press("e")
+            return
+        if finalTime is not None:
+            if stickerUsed: finalTime += 10
+            self.logger.webhook("", f"Activated Sticker Stack, Buff Duration: {timedelta(seconds=finalTime)}", "bright green")
+        else:
+            with open("./data/user/sticker_stack.txt", "r") as f: #get the cooldown from the prev detection
+                stickerStackCD = int(f.read())
+            f.close()
+            if stickerStackCD > 15*60: #make sure the time is valid
+                finalTime = stickerStackCD + 10
+            else:
+                finalTime = 60*60 #default to 1hr
+            self.logger.webhook("", f"Activated Sticker Stack, Buff Duration: {timedelta(seconds=finalTime)} (Defaulted to 1hr)", "bright green")
+        self.keyboard.press("e")
+        with open("./data/user/sticker_stack.txt", "w") as f:
+            f.write(str(finalTime))
+        f.close()
+
+    def nightAndHotbarBackground(self):
+
+        while True:
+            with open("./data/user/hotbar_timings.txt", "r") as f:
+                hotbarSlotTimings = ast.literal_eval(f.read())
+            f.close()
+            #night detection
+            if self.setdat["stinger_hunt"]:
+                self.detectNight()
+            #hotbar
+            for i in range(1,8):
+                slotUseWhen = self.setdat[f"hotbar{i}_use_when"]
+                #check if use when is correct
+                if slotUseWhen == "never": continue
+                elif self.status.value == "rejoining": continue
+                elif slotUseWhen == "gathering" and not "gather_" in self.status.value: continue 
+                elif slotUseWhen == "converting" and not self.status.value == "converting": continue 
+                #check cd
+                cdSecs = self.setdat[f"hotbar{i}_use_every_value"]
+                if self.setdat[f"hotbar{i}_use_every_format"] == "mins": 
+                    cdSecs *= 60
+                if time.time() - hotbarSlotTimings[i] < cdSecs: continue
+                print(f"pressed hotbar {i}")
+                #press the key
+                for _ in range(2):
+                    keyboard.pagPress(str(i))
+                    time.sleep(0.5)
+                #update the time pressed
+                hotbarSlotTimings[i] = time.time()
+                with open("./data/user/hotbar_timings.txt", "w") as f:
+                    f.write(str(hotbarSlotTimings))
+                f.close()
+                time.sleep(0.2)
     
     def start(self):
         #if roblox is not open, rejoin
@@ -1697,10 +2223,9 @@ class macro:
                 messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Accessibility Permission')
 
 
-        #enable night detection
-        if self.setdat["stinger_hunt"]:
-            nightDetectThread = threading.Thread(target=self.detectNight)
-            nightDetectThread.daemon = True
-            nightDetectThread.start()
+        #enable night detection and hotbar
+        nightAndHotbarThread = threading.Thread(target=self.nightAndHotbarBackground)
+        nightAndHotbarThread.daemon = True
+        nightAndHotbarThread.start()
         self.reset(convert=True)
         self.saveTiming("rejoin_every")

@@ -27,6 +27,13 @@ const slotArray = [1,2,3,4,5,6,7]
         inputType: "float", //restrict the input values to only certain characters. Options are: string, float, int
         inputLimit: 5 //restrict the maximum number of characters allowed. If set to 0 or not included, no limit 
     }
+    button:
+    type: {
+        name: "button",
+        triggerFunction: "func()",
+        text: "reset" //button text
+        length: 10, //in rem units, defaults to 5 if not included
+    }
 */
 
 
@@ -80,6 +87,10 @@ function buildInput(id, type){
         return html
 
     }
+    else if (type.name == "button"){
+        let html = `<div id = "${id}" class="purple-button" onclick="${type.triggerFunction}" style="width: ${type.length? type.length: 5}rem; display: flex; justify-content: center; padding: 0.3rem; cursor: pointer;">${type.text}</div>`
+        return html
+    }
 
 }
 
@@ -108,7 +119,8 @@ function buildStandardContainer(parentElement,title,desc,settings){
     const inputPadding = {
         "checkbox": "10%",
         "dropdown": "5%",
-        "textbox": "5%"
+        "textbox": "5%",
+        "button": "5%",
     }
 
     //add each setting

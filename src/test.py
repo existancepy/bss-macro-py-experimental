@@ -1,22 +1,8 @@
-import time
-def sleep(duration, get_now=time.perf_counter):
-    now = get_now()
-    end = now + duration
+import ast
 
-    while now < end:
-        now = get_now()
-
-t = time.process_time()
-#do some stuff
-sleep(1)
-elapsed_time = time.process_time() - t
-print(elapsed_time)
-
-t = time.process_time()
-#do some stuff
-d = 0
-while d < 1:
-    start = time.perf_counter()
-    d += time.perf_counter() - start
-elapsed_time = time.process_time() - t
-print(elapsed_time)
+data = {}
+for i in range(1,8):
+    data[i] = 0
+with open("./data/user/hotbar_timings.txt", "w") as f:
+    f.write(str(data))
+f.close()

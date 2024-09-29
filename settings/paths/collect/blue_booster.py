@@ -1,4 +1,6 @@
-exec(open("./paths/field_blue flower.py").read())
+global fields
+fields = ["pine tree", "blue flower", "bamboo"]
+self.goToField("blue flower", "south")
 self.keyboard.press("space")
 self.keyboard.keyDown("a")
 sleep(8)

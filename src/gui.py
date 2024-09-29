@@ -20,12 +20,25 @@ def start():
 def stop():
     if run.value == 3: return #already stopped
     run.value = 0
+
 @eel.expose
 def getPatterns():
     return [x.replace(".py","") for x in os.listdir("../settings/patterns") if ".py" in x]
+
 @eel.expose
 def clearManualPlanters():
     settingsManager.clearFile("./data/user/manualplanters.txt")
+    
+@eel.expose
+def clearBlender():
+    blenderData = {
+        "item": 1,
+        "collectTime": 0
+    }
+    with open("data/user/blender.txt", "w") as f:
+        f.write(str(blenderData))
+    f.close()
+
 @eel.expose
 def update():
     updateFunc()
@@ -42,10 +55,13 @@ eel.expose(settingsManager.loadAllSettings)
 eel.expose(settingsManager.saveProfileSetting)
 eel.expose(settingsManager.saveGeneralSetting)
 
-
+def updateGUI():
+    settings = settingsManager.loadAllSettings()
+    eel.loadInputs(settings)
 
 def toggleStartStop():
     eel.toggleStartStop()
 
 def launch():
     eel.start('index.html',app_mode = True,block = False, cmdline_args=["--incognito", "--new-window"])
+    

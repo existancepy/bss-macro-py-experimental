@@ -1,6 +1,7 @@
 import sys
 if sys.platform == "win32":
     import pydirectinput as pag
+    pag.PAUSE = 0.1
 else:
     import pyautogui as pag
 import time
@@ -11,6 +12,10 @@ class keyboard:
         self.ws = walkspeed
         self.haste = haste
 
+    @staticmethod
+    #call the press function of the pag library
+    def pagPress(k):
+        pag.press(k)
     @staticmethod
     def keyDown(k, pause = True):
         pag.keyDown(k, _pause = pause)
@@ -50,8 +55,11 @@ class keyboard:
     def tileWait(self, tiles,hasteCap=0):
         time.sleep((tiles/8.3)*28/self.haste.value)
     
-    def tileWalk(self, key, tiles):
-        self.press(key,(tiles/8.3)*28/self.haste.value)
+    def tileWalk(self, key, tiles, applyHaste = True):
+        if applyHaste:
+            self.press(key,(tiles/8.3)*28/self.ws)
+        else:
+            self.press(key,(tiles/8.3)*28/self.haste.value)
 
     #release all movement keys (wasd, space)
     @staticmethod

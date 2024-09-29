@@ -11,7 +11,6 @@ for i in range(width):
     self.keyboard.walk(tcfbkey,0.5*size+0.2*i)
 
 for i in range(width,0,-1):
-    print(i)
     if i != width:
         self.keyboard.walk(afcfbkey,(0.2*i)/2)
         self.keyboard.walk(afclrkey,(0.25*i)/2)

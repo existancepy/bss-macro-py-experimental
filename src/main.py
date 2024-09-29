@@ -29,10 +29,10 @@ def disconnectCheck(run, status, display_type):
             run.value = 4
 
 #controller for the macro
-def macro(status, log, haste):
+def macro(status, log, haste, updateGUI):
     import modules.misc.settingsManager as settingsManager
     import modules.macro as macroModule
-    macro = macroModule.macro(status, log, haste)
+    macro = macroModule.macro(status, log, haste, updateGUI)
     #invert the regularMobsInFields dict
     #instead of storing mobs in field, store the fields associated with each mob
     regularMobData = {}
@@ -74,6 +74,7 @@ def macro(status, log, haste):
 
     #macro.rejoin()
     while True:
+        setdat = macro.setdat
         #run empty task
         #this is in case no other settings are selected 
         runTask(resetAfter=False)
@@ -85,7 +86,16 @@ def macro(status, log, haste):
 
         if setdat["sticker_printer"] and macro.hasRespawned("sticker_printer", macro.collectCooldowns["sticker_printer"]):
             runTask(macro.collectStickerPrinter)
-
+        #blender
+        if setdat["blender_enable"]:
+            with open("./data/user/blender.txt", "r") as f:
+                blenderData = ast.literal_eval(f.read())
+            f.close()
+            #collectTime: time where the blender is done crafting
+            #item: the next item number to craft
+            #check if its time to collect the previous item
+            if blenderData["collectTime"] > -1 and time.time() > blenderData["collectTime"]:
+                runTask(macro.blender, args=(blenderData,))
         #planters
         def goToNextCycle(cycle):
             #go to the next cycle
@@ -137,15 +147,42 @@ def macro(status, log, haste):
         #stump snail
         if setdat["stump_snail"] and macro.hasRespawned("stump_snail", 96*60*60, applyMobRespawnBonus=True):
             runTask(macro.stumpSnail)
-            
-        #gather tab
+        
+        #sticker stack
+        if setdat["sticker_stack"]:
+            with open("./data/user/sticker_stack.txt", "r") as f:
+                stickerStackCD = int(f.read())
+            f.close()
+            if macro.hasRespawned("sticker_stack", stickerStackCD):
+                runTask(macro.collect, args=("sticker_stack",))
+        #field boosters
+        boostedGatherFields = []
+        for k, _ in macroModule.fieldBoosterData.items():
+            #check if the cooldown is up
+            if setdat[k] and macro.hasRespawned(k, macro.collectCooldowns[k]) and macro.hasRespawned("last_booster", setdat["boost_seperate"]*60):
+                boostedField = runTask(macro.collect, args=(k,))
+                if setdat["gather_boosted"] and boostedField:
+                    boostedGatherFields.append(boostedField)
+        #gather in boosted fields
+        #gather for the entire 15min duration
+        for field in boostedGatherFields:
+            st = time.time()
+            while time.time() - st < 15*60:
+                runTask(macro.gather, args=(field,), resetAfter=False)
+
+        #add gather tab fields
         gatherFields = []
         for i in range(3):
             if setdat["fields_enabled"][i]:
                 gatherFields.append(setdat["fields"][i])
+        
+        #add planter gather fields
         planterGatherFields = ast.literal_eval(planterDataRaw)["gatherFields"] if planterDataRaw else []
-
         gatherFields.extend([x for x in planterGatherFields if x not in gatherFields])
+
+        #remove fields that are already in boosted fields
+        gatherFields = [x for x in gatherFields if not x in boostedGatherFields]
+        
         for field in gatherFields:
             runTask(macro.gather, args=(field,), resetAfter=False)
         print("cycle done")
@@ -184,12 +221,23 @@ if __name__ == "__main__":
     #3: already stopped (do nothing)
     manager = multiprocessing.Manager()
     run = multiprocessing.Value('i', 3)
+    updateGUI = multiprocessing.Value('i', 0)
     status = manager.Value(ctypes.c_wchar_p, "none")
     log = manager.Value(ctypes.c_wchar_p, "")
     haste = multiprocessing.Value('d', 0)
     prevLog = ""
     watch_for_hotkeys(run)
     logger = logModule.log(log, False, None)
+
+    #update settings
+    profileSettings = settingsManager.loadSettings()
+    profileSettingsReference = settingsManager.readSettingsFile("./data/default_settings/settings.txt")
+    settingsManager.saveDict("../settings/profiles/a/settings.txt", {**profileSettingsReference, **profileSettings})
+
+    #update general settings
+    generalSettings = settingsManager.readSettingsFile("../settings/generalsettings.txt")
+    generalSettingsReference = settingsManager.readSettingsFile("./data/default_settings/generalsettings.txt")
+    settingsManager.saveDict("../settings/generalsettings.txt", {**generalSettingsReference, **generalSettings})
 
     def stopApp(page= None, sockets = None):
         global stopThreads
@@ -230,7 +278,7 @@ if __name__ == "__main__":
             logger.webhookURL = setdat["webhook_link"]
             haste.value = setdat["movespeed"]
             stopThreads = False
-            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste))
+            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste, updateGUI))
             macroProc.start()
             #disconnect detection
             disconnectThread = Thread(target=disconnectCheck, args=(run, status, screenInfo["display_type"]))
@@ -261,7 +309,7 @@ if __name__ == "__main__":
             appManager.closeApp("Roblox")
             keyboardModule.releaseMovement()
             mouse.mouseUp()
-            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste))
+            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste, updateGUI))
             macroProc.start()
             run.value = 2
 
@@ -275,6 +323,11 @@ if __name__ == "__main__":
             #add it to gui
             gui.log(logData["time"], msg, logData["color"])
             prevLog = log.value
+        
+        #detect if the gui needs to be updated
+        if updateGUI.value:
+            gui.updateGUI()
+            updateGUI.value = 0
     
             
             
