@@ -1967,7 +1967,12 @@ class macro:
                 #update the quantity
                 quantity1Img = quantity2Img
             quantity = ''.join([x[1][0] for x in ocr.ocrRead(mssScreenshot(self.mw/2-60-140, math.floor(self.mh*0.48)+140-20, 110, 23*2))])
-            quantity = int(''.join([x for x in quantity if x.isdigit()]))
+            quantity = ''.join([x for x in quantity if x.isdigit()])
+            if quantity:
+                quantity = int(quantity)
+            else:
+                self.logger.webhook("", "Failed to detect the quantity of items crafted. The macro will get the crafting time on the next visit", "dark brown")
+                quantity = 0
         else: 
             #normal quantity
             quantity = self.setdat[f"blender_quantity_{itemNo}"]
