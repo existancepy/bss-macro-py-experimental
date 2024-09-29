@@ -754,8 +754,7 @@ class macro:
             self.keyboard.keyDown("d")
             while time.time()-st < 0.15*6:
                 if self.isBesideEImage("cannon"):
-                    self.keyboard.keyUp("d")
-                    return
+                    break
             self.keyboard.keyUp("d")
             time.sleep(0.04)
             #check if overrun cannon
