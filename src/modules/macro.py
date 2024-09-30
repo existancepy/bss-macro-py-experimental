@@ -586,7 +586,7 @@ class macro:
                     break
             mouse.scroll(-40, True)
             time.sleep(0.04)
-        if valBest < 0.55:
+        if valBest < 0.62:
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
             return None
         if not foundEarly:
@@ -761,9 +761,9 @@ class macro:
                 if self.isBesideEImage("cannon"):
                     break
             self.keyboard.keyUp("d")
-            time.sleep(0.04)
             #check if overrun cannon
             for _ in range(3):
+                time.sleep(0.4)
                 if self.isBesideEImage("cannon"):
                     return
                 self.keyboard.walk("a",0.2)
@@ -771,6 +771,7 @@ class macro:
             self.reset(convert=False)
         else:
             self.logger.webhook("Notice", f"Failed to reach cannon too many times", "red")
+            self.rejoin()
     
     def rejoin(self, rejoinMsg = "Rejoining"):
         self.canDetectNight = False
@@ -870,8 +871,8 @@ class macro:
                 #$time.sleep(0.15)
                 if self.isBesideEImage("claimhive"):
                     #check for overrun
-                    time.sleep(0.12)
                     for _ in range(4):
+                        time.sleep(0.4)
                         if self.isBesideEImage("claimhive"): break
                         self.keyboard.walk("d",0.2)
                     self.keyboard.press("e")
