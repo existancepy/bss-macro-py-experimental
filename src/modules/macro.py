@@ -1109,8 +1109,8 @@ class macro:
                 if self.isBesideEImage("makehoney"):
                     break
             self.keyboard.keyUp("a")
-            #in case we overwalked
-            time.sleep(0.25)
+            #in case we overrun
+            time.sleep(0.4)
             for _ in range(4):
                 if self.convert():
                     break
@@ -1257,7 +1257,9 @@ class macro:
         mouse.click()
         time.sleep(0.2)
         #click yes
-        self.clickYes()
+        if not self.clickYes(detect=True):
+            self.logger.webhook("", f"No {self.setdat["sticker_printer_egg"]} eggs left, Sticker Printer has been disabled", "red", "screen")
+            self.setdat["sticker_printer"] = False
         #wait for sticker to generate
         time.sleep(7)
         self.logger.webhook(f"", "Claimed sticker", "bright green", "sticker")
@@ -1339,7 +1341,8 @@ class macro:
                 else:
                     mmType = objective.split("_")[0]
                 self.latestMM = mmType
-                self.logger.webhook("", f"Solving: ${displayName}", "dark brown", "screen")
+                time.sleep(2)
+                self.logger.webhook("", f"Solving: {displayName}", "dark brown", "screen")
                 solveMemoryMatch(mmType, self.display_type)
             elif objective in fieldBoosterData:
                 sleep(3)
@@ -1358,7 +1361,7 @@ class macro:
                             break
                     if boostedField: break
                 returnVal = boostedField
-                self.logger.webhook("", f"Collected: {displayName}, Boosted Field: {boostedField}", "bright green", "screen")
+                self.logger.webhook("", f"Collected: {displayName}, Boosted Field: {boostedField.title()}", "bright green", "screen")
                 self.saveTiming("last_booster")
             elif objective == "sticker_stack":
                 if "your" in reached or "activated" in reached:

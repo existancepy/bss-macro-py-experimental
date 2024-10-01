@@ -39,8 +39,7 @@ def solveMemoryMatch(mmType, displayType):
     def screenshotItem(x,y):
         screenshot = mssScreenshot(x-30, y-20, 50, 30)
         return imagehash.average_hash(screenshot)
-    
-    time.sleep(2)
+
     #get coordinates of grid
     gridSize = [4,4]
     checkedCoords = set() #store the coords the macro has checked
