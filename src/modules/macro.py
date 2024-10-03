@@ -586,7 +586,7 @@ class macro:
                     break
             mouse.scroll(-40, True)
             time.sleep(0.04)
-        if valBest < 0.62:
+        if valBest < 0.65:
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
             return None
         if not foundEarly:
@@ -1258,8 +1258,11 @@ class macro:
         time.sleep(0.2)
         #click yes
         if not self.clickYes(detect=True):
-            self.logger.webhook("", f"No {self.setdat["sticker_printer_egg"]} eggs left, Sticker Printer has been disabled", "red", "screen")
+            egg = self.setdat["sticker_printer_egg"]
+            self.logger.webhook("", f"No {egg} eggs left, Sticker Printer has been disabled", "red", "screen")
             self.setdat["sticker_printer"] = False
+            self.keyboard.press("e")
+            return
         #wait for sticker to generate
         time.sleep(7)
         self.logger.webhook(f"", "Claimed sticker", "bright green", "sticker")
