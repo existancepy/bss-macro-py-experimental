@@ -1,7 +1,7 @@
 sideTime = 0.15
 frontTime = 0.5
 time.sleep(2.5)
-self.keyboard.press(".") #feast messes up the camera angle
+self.keyboard.press(",") #feast messes up the camera angle
 self.keyboard.walk('a',0.55)
 self.keyboard.walk('w',0.2)
 for i in range(2):
