@@ -13,6 +13,10 @@ class keyboard:
         self.haste = haste
 
     @staticmethod
+    #call the press function of the pag library
+    def pagPress(k):
+        pag.press(k)
+    @staticmethod
     def keyDown(k, pause = True):
         pag.keyDown(k, _pause = pause)
 

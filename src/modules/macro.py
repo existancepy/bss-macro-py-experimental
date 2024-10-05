@@ -29,6 +29,7 @@ from modules.misc import messageBox
 from modules.submacros.memoryMatch import solveMemoryMatch
 import math
 import re
+import ast
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -44,7 +45,7 @@ collectData = {
     "stockings": [["check", "inside", "stocking"], "a", 1*60*60], #1hr
     "wreath": [["admire", "honey"], "a", 30*60], #30mins
     "feast": [["dig", "beesmas"], "s", 1.5*60*60], #1.5hr
-    "samovar": [["heat", "samovar"], "w", 6*60*60], #6hr
+    "samovar": [["heat", "samovar", "strange"], "w", 6*60*60], #6hr
     "snow_machine": [["activate"], None, 2*60*60], #2hr
     "lid_art": [["gander", "onett", "art"], "s", 8*60*60], #8hr
     "candles": [["admire", "candle", "honey"], "w", 4*60*60], #4hr
@@ -93,8 +94,8 @@ mobRespawnTimes = {
 resetLower1 = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
 resetUpper1 = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
 #balloon color
-resetLower2 = np.array([105, 210, 140])  # Lower bound of the color (H, L, S)
-resetUpper2 = np.array([120, 255, 210])  # Upper bound of the color (H, L, S)
+resetLower2 = np.array([105, 140, 210])  # Lower bound of the color (H, L, S)
+resetUpper2 = np.array([120, 220, 255])  # Upper bound of the color (H, L, S)
 resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(16,10))
 
 
@@ -239,6 +240,7 @@ class macro:
         self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
 
         #night detection variables
+        self.enableNightDetection = True if self.setdat["stinger_hunt"] else False
         self.canDetectNight = True
         self.night = False
         self.location = "spawn"
@@ -326,17 +328,15 @@ class macro:
             hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
             #detect brightness
-            if not isNightBrightness(hsv): return False
             if self.location == "spawn":
-                return isSpawnFloorNight(hsv)
+                return isNightSky(bgr)
             return isGrassNight(hsv) and isNightSky(bgr)
         
-        while True:
-            if self.canDetectNight and isNight():
-                self.night = True
-                self.logger.webhook("","Night detected","dark brown", "screen")
-                time.sleep(200) #wait for night to end
-                self.night = False
+        if self.canDetectNight and isNight():
+            self.night = True
+            self.logger.webhook("","Night detected","dark brown", "screen")
+            time.sleep(200) #wait for night to end
+            self.night = False
 
     def isFullScreen(self):
         menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar on mac, window bar on windows
@@ -586,7 +586,7 @@ class macro:
                     break
             mouse.scroll(-40, True)
             time.sleep(0.04)
-        if valBest < 0.55:
+        if valBest < 0.65:
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
             return None
         if not foundEarly:
@@ -630,19 +630,26 @@ class macro:
             if not self.isBesideEImage("makehoney"): return False
         #start convert
         self.keyboard.press("e")
+        self.status.value = "converting"
         st = time.time()
         time.sleep(2)
         self.logger.webhook("", "Converting", "brown", "screen")
+        if self.enableNightDetection:
+            self.keyboard.press(",")
         while not self.isBesideE(["pollen", "flower", "field"]): 
             mouse.click()
             if self.night and self.setdat["stinger_hunt"]:
+                self.keyboard.press(".")
                 self.stingerHunt()
                 return
             if time.time()-st > 30*60: #30mins max
                 self.logger.webhook("","Converting timeout (30mins max)", "brown", "screen")
+        self.status.value = ""
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
         wait = self.setdat["convert_wait"]
+        if self.enableNightDetection:
+            self.keyboard.press(".")
         if (wait):
             self.logger.webhook("", f'Waiting for an additional {wait} seconds', "light green")
         time.sleep(wait)
@@ -671,7 +678,7 @@ class macro:
             
             mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
-                solveMemoryMatch(self.latestMM)
+                solveMemoryMatch(self.latestMM, self.display_type)
 
             mmImg = self.adjustImage("./images/menu", "blenderclose") #blender
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
@@ -753,12 +760,11 @@ class macro:
             self.keyboard.keyDown("d")
             while time.time()-st < 0.15*6:
                 if self.isBesideEImage("cannon"):
-                    self.keyboard.keyUp("d")
-                    return
+                    break
             self.keyboard.keyUp("d")
-            time.sleep(0.04)
             #check if overrun cannon
             for _ in range(3):
+                time.sleep(0.4)
                 if self.isBesideEImage("cannon"):
                     return
                 self.keyboard.walk("a",0.2)
@@ -766,11 +772,13 @@ class macro:
             self.reset(convert=False)
         else:
             self.logger.webhook("Notice", f"Failed to reach cannon too many times", "red")
+            self.rejoin()
     
     def rejoin(self, rejoinMsg = "Rejoining"):
         self.canDetectNight = False
         psLink = self.setdat["private_server_link"]
         self.logger.webhook("",rejoinMsg, "dark brown")
+        self.status.value = "rejoining"
         mouse.mouseUp()
         keyboard.releaseMovement()
         for i in range(3):
@@ -863,6 +871,11 @@ class macro:
                 self.keyboard.walk("a",0.4)
                 #$time.sleep(0.15)
                 if self.isBesideEImage("claimhive"):
+                    #check for overrun
+                    for _ in range(4):
+                        time.sleep(0.4)
+                        if self.isBesideEImage("claimhive"): break
+                        self.keyboard.walk("d",0.2)
                     self.keyboard.press("e")
                     return True
                 return False
@@ -899,8 +912,10 @@ class macro:
                 self.convert()
                 #no need to reset
                 self.canDetectNight = True
+                self.status.value = ""
                 return
             self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
+        self.status.value = ""
     
     def blueTextImageSearch(self, text, threshold=0.7):
         target = self.adjustImage("./images/blue", text)
@@ -1048,6 +1063,7 @@ class macro:
                 self.incrementHourlyStat("gathering_time", getGatherTime()-self.setdat["mondo_buff_wait"]*60-20)
                 break
             elif self.died:
+                self.status.value = ""
                 turnOffShitLock()
                 self.logger.webhook("","Player died", "dark brown","screen")
                 self.reset()
@@ -1100,8 +1116,8 @@ class macro:
                 if self.isBesideEImage("makehoney"):
                     break
             self.keyboard.keyUp("a")
-            #in case we overwalked
-            time.sleep(0.25)
+            #in case we overrun
+            time.sleep(0.4)
             for _ in range(4):
                 if self.convert():
                     break
@@ -1230,6 +1246,7 @@ class macro:
         time.sleep(0.2)
         mouse.click()
         time.sleep(1)
+        #TODO: check if the player ran out of eggs
         #check if on cooldown
         confirmImg = self.adjustImage("./images/menu", "confirm")
         if not locateImageOnScreen(confirmImg, self.mw//2+150, 4*self.mh//10+160, 120, 60, 0.7):
@@ -1247,7 +1264,12 @@ class macro:
         mouse.click()
         time.sleep(0.2)
         #click yes
-        self.clickYes()
+        if not self.clickYes(detect=True):
+            egg = self.setdat["sticker_printer_egg"]
+            self.logger.webhook("", f"No {egg} eggs left, Sticker Printer has been disabled", "red", "screen")
+            self.setdat["sticker_printer"] = False
+            self.keyboard.press("e")
+            return
         #wait for sticker to generate
         time.sleep(7)
         self.logger.webhook(f"", "Claimed sticker", "bright green", "sticker")
@@ -1334,8 +1356,9 @@ class macro:
                 else:
                     mmType = objective.split("_")[0]
                 self.latestMM = mmType
-                self.logger.webhook("", f"Solving: ${displayName}", "dark brown", "screen")
-                solveMemoryMatch(mmType)
+                time.sleep(2)
+                self.logger.webhook("", f"Solving: {displayName}", "dark brown", "screen")
+                solveMemoryMatch(mmType, self.display_type)
             elif objective in fieldBoosterData:
                 sleep(3)
                 bluetexts = ""
@@ -1353,7 +1376,7 @@ class macro:
                             break
                     if boostedField: break
                 returnVal = boostedField
-                self.logger.webhook("", f"Collected: {displayName}, Boosted Field: {boostedField}", "bright green", "screen")
+                self.logger.webhook("", f"Collected: {displayName}, Boosted Field: {boostedField.title()}", "bright green", "screen")
                 self.saveTiming("last_booster")
             elif objective == "sticker_stack":
                 if "your" in reached or "activated" in reached:
@@ -1547,6 +1570,7 @@ class macro:
         self.vicField = None
         self.stopVic = False
         currField = None
+        self.status.value = ""
 
         stingerHuntThread = threading.Thread(target=self.stingerHuntBackground)
         stingerHuntThread.daemon = True
@@ -1867,7 +1891,10 @@ class macro:
                     return nextItem
             else:
                 return 0 #no items to craft
-        if blenderData["collectTime"] == 0: #first blender of the session
+
+        #check if item is none (settings got changed but user did not reset the blender data)
+        #or first blender of the reset
+        if blenderData["collectTime"] == 0 or (itemNo and self.setdat[f"blender_item_{itemNo}"] == "none"): 
             itemNo = getNextItem() #get the first item
             if not itemNo: #no items available
                 blenderData["item"] = itemNo
@@ -1950,13 +1977,13 @@ class macro:
                 cancelCraft()
         
         #time to craft
+        item = self.setdat[f"blender_item_{itemNo}"]
         if not itemNo: #if itemNo is 0, there are no items to craft. The macro has collected the last item to craft
             self.closeBlenderGUI()
             blenderData["collectTime"] = -1 #set collectTime to -1 (disable blender)
             saveBlenderData()
             return
         #click to the item
-        item = self.setdat[f"blender_item_{itemNo}"]
         itemDisplay = item.title()
         mouse.moveTo(self.mw/2+240, math.floor(self.mh*0.48)+128)
         for _ in range(blenderItems.index(item)):
@@ -1987,11 +2014,17 @@ class macro:
                     mouse.click()
                     sleep(0.03)
                 quantity2Img = quantityScreenshot()
-                if quantity2Img - quantity1Img < 2: #check if screenshots are similar
+                if quantity2Img == quantity1Img: #check if screenshots are similar
                     break
                 #update the quantity
                 quantity1Img = quantity2Img
-            quantity = int(''.join([x[1][0] for x in ocr.ocrRead(quantity2Img) if x.isdigit()]))
+            quantity = ''.join([x[1][0] for x in ocr.ocrRead(mssScreenshot(self.mw/2-60-140, math.floor(self.mh*0.48)+140-20, 110, 23*2))])
+            quantity = ''.join([x for x in quantity if x.isdigit()])
+            if quantity:
+                quantity = int(quantity)
+            else:
+                self.logger.webhook("", "Failed to detect the quantity of items crafted. The macro will get the crafting time on the next visit", "dark brown")
+                quantity = 0
         else: 
             #normal quantity
             quantity = self.setdat[f"blender_quantity_{itemNo}"]
@@ -2100,7 +2133,13 @@ class macro:
             if stickerUsed: finalTime += 10
             self.logger.webhook("", f"Activated Sticker Stack, Buff Duration: {timedelta(seconds=finalTime)}", "bright green")
         else:
-            finalTime = 60*60 #default to 1hr
+            with open("./data/user/sticker_stack.txt", "r") as f: #get the cooldown from the prev detection
+                stickerStackCD = int(f.read())
+            f.close()
+            if stickerStackCD > 15*60: #make sure the time is valid
+                finalTime = stickerStackCD + 10
+            else:
+                finalTime = 60*60 #default to 1hr
             self.logger.webhook("", f"Activated Sticker Stack, Buff Duration: {timedelta(seconds=finalTime)} (Defaulted to 1hr)", "bright green")
         self.keyboard.press("e")
         with open("./data/user/sticker_stack.txt", "w") as f:
@@ -2111,6 +2150,40 @@ class macro:
         data = settingsManager.readSettingsFile("data/user/hourly_report_main.txt")
         data[statName] += value
         settingsManager.saveDict(f"data/user/hourly_report_main.txt", data)
+        
+    def nightAndHotbarBackground(self):
+
+        while True:
+            with open("./data/user/hotbar_timings.txt", "r") as f:
+                hotbarSlotTimings = ast.literal_eval(f.read())
+            f.close()
+            #night detection
+            if self.enableNightDetection:
+                self.detectNight()
+            #hotbar
+            for i in range(1,8):
+                slotUseWhen = self.setdat[f"hotbar{i}_use_when"]
+                #check if use when is correct
+                if slotUseWhen == "never": continue
+                elif self.status.value == "rejoining": continue
+                elif slotUseWhen == "gathering" and not "gather_" in self.status.value: continue 
+                elif slotUseWhen == "converting" and not self.status.value == "converting": continue 
+                #check cd
+                cdSecs = self.setdat[f"hotbar{i}_use_every_value"]
+                if self.setdat[f"hotbar{i}_use_every_format"] == "mins": 
+                    cdSecs *= 60
+                if time.time() - hotbarSlotTimings[i] < cdSecs: continue
+                print(f"pressed hotbar {i}")
+                #press the key
+                for _ in range(2):
+                    keyboard.pagPress(str(i))
+                    time.sleep(0.5)
+                #update the time pressed
+                hotbarSlotTimings[i] = time.time()
+                with open("./data/user/hotbar_timings.txt", "w") as f:
+                    f.write(str(hotbarSlotTimings))
+                f.close()
+                time.sleep(0.2)
     
 
     def start(self):
@@ -2213,10 +2286,9 @@ class macro:
                 messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Accessibility Permission')
 
 
-        #enable night detection
-        if self.setdat["stinger_hunt"]:
-            nightDetectThread = threading.Thread(target=self.detectNight)
-            nightDetectThread.daemon = True
-            nightDetectThread.start()
+        #enable night detection and hotbar
+        nightAndHotbarThread = threading.Thread(target=self.nightAndHotbarBackground)
+        nightAndHotbarThread.daemon = True
+        nightAndHotbarThread.start()
         self.reset(convert=True)
         self.saveTiming("rejoin_every")

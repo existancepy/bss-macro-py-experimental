@@ -11,8 +11,9 @@ def mssScreenshotNP(x,y,w,h, save = False):
         # The screen part to capture
         monitor = {"left": int(x), "top": int(y), "width": int(w), "height": int(h)}
         # Grab the data and convert to opencv img
-        sct_img = np.array(sct.grab(monitor))
-        return sct_img
+        sct_img = sct.grab(monitor)
+        if save: mss.tools.to_png(sct_img.rgb, sct_img.size, output=f"screen-{time.time()}.png")
+        return np.array(sct_img)
 
 
 def mssScreenshot(x=0,y=0,w=mw,h=mh, save = False):
