@@ -8,6 +8,7 @@ def readSettingsFile(path):
     with open(path) as f:
         data = [[x.strip() for x in y.split("=", 1)] for y in f.read().split("\n") if y]
     f.close()
+    #convert to a dict
     out = {}
     for k,v in data:
         try:

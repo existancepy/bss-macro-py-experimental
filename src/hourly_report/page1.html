@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Hourly Report</title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
+            .inter-bold {
+                font-family: 'Montserrat', sans-serif;
+                font-optical-sizing: auto;
+                font-weight: 700;
+                font-style: normal;
+            }
+
+            .inter-semibold {
+                font-family: 'Montserrat', sans-serif;
+                font-optical-sizing: auto;
+                font-weight: 600;
+                font-style: normal;
+            }
+
+            .inter-medium {
+                font-family: 'Montserrat', sans-serif;
+                font-optical-sizing: auto;
+                font-weight: 400;
+                font-style: normal;
+            }
+
+            .inter-regular {
+                font-family: 'Montserrat', sans-serif;
+                font-optical-sizing: auto;
+                font-weight: 300;
+                font-style: normal;
+            }
+
+            /*Responsive font sizes*/
+            @media (min-width: 2000px) {
+                html {
+                    font-size: 14px;
+                }
+            }
+
+            @media (max-width: 2000px) {
+                html {
+                    font-size: 16px;
+                }
+            }
+
+            @media (max-width: 1200px) {
+                html {
+                    font-size: 11px;
+                }
+            }
+
+            @media (max-width: 900px) {
+                html {
+                    font-size: 9.5px;
+                }
+            }
+
+            @media (max-width: 700px) {
+                html {
+                    font-size: 8px;
+                }
+            }
+
+            @media (max-width: 560px) {
+                html {
+                    font-size: 7px;
+                }
+            }
+
+            h1, h2, h3, body{
+                all: unset;
+            }
+
+            .stat-card{
+                width: 15.5%; 
+                background-color: #1A1C24;
+                border-radius: 1.25rem;
+                padding: 2.6rem 0 2.4rem 1.8rem;
+            }
+
+            .stat-card img{
+                height: 3.5rem;
+            }
+
+            .stat-card .stat{
+                font-size: 1.7rem; 
+                margin-top: 1.2rem;
+            }
+
+            .stat-card .desc{
+                font-size: 1.15rem; 
+                margin-top: 1.2rem;
+            }
+
+            .aside-stat{
+                display: flex; 
+                align-items: center;
+                margin-top: 1.2rem;
+            }
+
+            .aside-stat .img-container{
+                display: flex; 
+                align-items: center;
+                justify-content: center;
+                border-radius: 1.25rem; 
+                background-color: #2D2E35; 
+                width: 3.188rem; 
+                aspect-ratio: 1;
+            }
+
+            .aside-stat .img-container img{
+                width: 60%;;
+            }
+
+            aside .title{
+                font-size: 1.5rem; 
+                margin-top: 2.5rem; 
+                display: inline-block; 
+                margin-bottom: 0.5rem;
+            }
+
+            .aside-stat .label{
+                font-size: 1.2rem; 
+                margin-left: 1rem;
+            }
+
+            .aside-stat .sublabel{
+                font-size: 1.09rem; 
+                margin-left: 1rem;
+                margin-top: 0.3rem;
+            }
+
+            .aside-stat .value{
+                font-size: 1.2rem; 
+                margin-left: auto;
+                text-align: right;
+            }
+
+            canvas{
+                position: absolute; 
+                bottom: 0;
+            }
+
+        </style>
+    </head>
+    <body style="background-color: #0E0F13; color: #FFFFFF; display: flex; justify-content: space-between;">
+        <div style="padding: 1.6rem 3rem 0 2.5rem; flex-grow: 1; height: 96vh; display: flex; flex-direction: column;">
+            <!--heading-->
+            <h1 style="font-size:2.25rem;" class="inter-bold">Hourly Report</h1>
+            <div style="font-size: 1.2rem; margin-top: 1rem;" class="inter-regular">Your stats for this hour</div>
+            <!--Card Stats-->
+            <div style="display: flex; width: 100%; justify-content: space-between; margin-top: 3rem;">
+                <div class="stat-card">
+                    <img src="assets/average_icon.png">
+                    <div class="inter-semibold stat">12.9 B</div>
+                    <div class="inter-medium desc">Average Honey<br>Per Hour</div>
+                </div>
+                <div class="stat-card">
+                    <img src="assets/honey_icon.png">
+                    <div class="inter-semibold stat" style="color: #F8BF17;">10.0 B</div>
+                    <div class="inter-medium desc">Honey Made<br>This Hour</div>
+                </div>
+                <div class="stat-card">
+                    <img src="assets/kill_icon.png">
+                    <div class="inter-semibold stat" style="color: #FE6563;">10</div>
+                    <div class="inter-medium desc">Bugs Killed<br>This Hour</div>
+                </div>
+                <div class="stat-card">
+                    <img src="assets/quest_icon.png">
+                    <div class="inter-semibold stat" style="color: #67FD99;">0</div>
+                    <div class="inter-medium desc">Quests Completed<br>This Hour</div>
+                </div>
+                <div class="stat-card">
+                    <img src="assets/vicious_bee_icon.png">
+                    <div class="inter-semibold stat" style="color: #84E9FE;">0</div>
+                    <div class="inter-medium desc">Vicious Bees<br>This Hour</div>
+                </div>
+            </div>
+            <h2 style="font-size:1.6rem; margin-top: 3rem; display: inline-block; margin-bottom: 1rem;" class="inter-bold">Honey/Min</h2>
+            <div style="flex-grow: 1; position: relative; width: 100%;">
+                <canvas id="honeyPerMinChart"></canvas>
+            </div>
+        </div>
+        <aside style="background-color: #17191D; width: 25%; height: 100vh; box-sizing:border-box; padding-left: 2rem; padding-right: 1.5rem;">
+            <!--Logo-->
+            <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem; justify-content: flex-end;">
+                <img src="assets/macro_icon.png" style="height: 2.8rem">
+                <div class="inter-semibold" style="font-size: 1.2rem;">Existance v2.0</div>
+            </div>
+            <!--Session stats-->
+            <h3 class="inter-semibold title" style="margin-top: 6rem;">Session</h3>
+            <div class="aside-stat">
+                <div class="img-container">
+                    <img src="assets/time_icon.png">
+                </div>
+                <div class="inter-semibold label">Session Time</div>
+                <div class="inter-semibold value">1d 11h 30m</div>
+            </div>
+            <div class="aside-stat">
+                <div class="img-container">
+                    <img src="assets/honey_icon.png">
+                </div>
+                <div class="inter-semibold label">Current Honey</div>
+                <div class="inter-semibold value" style="color: #F8BF17;">120.3B</div>
+            </div>
+            <div class="aside-stat">
+                <div class="img-container">
+                    <img src="assets/session_honey_icon.png">
+                </div>
+                <div class="inter-semibold label">Session Honey</div>
+                <div class="inter-semibold value" style="color: #FDE395;">40.3B</div>
+            </div>
+            <!--History-->
+            <h3 class="inter-semibold title" class="inter-semibold">History</h3>
+            <div class="aside-stat">
+                <div class="img-container">
+                    <img src="assets/history_icon.png">
+                </div>
+                <div>
+                    <div class="inter-semibold label">15:00-14:00</div>
+                    <div class="inter-regular sublabel">Oct 2,2024</div>
+                </div>
+                <div class="inter-semibold value" style="color: #FE6563;">12.3B</div>
+            </div>
+            <div class="aside-stat">
+                <div class="img-container">
+                    <img src="assets/history_icon.png">
+                </div>
+                <div>
+                    <div class="inter-semibold label">15:00-14:00</div>
+                    <div class="inter-regular sublabel">Oct 2,2024</div>
+                </div>
+                <div class="inter-semibold value" style="color: #67FD99;">9.0B</div>
+            </div>
+            <div class="aside-stat">
+                <div class="img-container">
+                    <img src="assets/history_icon.png">
+                </div>
+                <div>
+                    <div class="inter-semibold label">15:00-14:00</div>
+                    <div class="inter-regular sublabel">Oct 2,2024</div>
+                </div>
+                <div class="inter-semibold value" style="color: #67FD99;">9.0B</div>
+            </div>
+            <div class="aside-stat">
+                <div class="img-container">
+                    <img src="assets/history_icon.png">
+                </div>
+                <div>
+                    <div class="inter-semibold label">15:00-14:00</div>
+                    <div class="inter-regular sublabel">Oct 2,2024</div>
+                </div>
+                <div class="inter-semibold value" style="color: #67FD99;">9.0B</div>
+            </div>
+        </aside>
+    </body>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function leadingZero(inp){
+            if (inp < 10) return `0${inp}`
+            return inp
+        }
+
+        function millify(n){
+            if (!n) return 0
+            var millnames = ['','K','M','B','T','Qd']
+            var digitCount = Math.floor(Math.log10(Math.abs(n))/3)
+            var millidx = Math.max(0,Math.min(millnames.length -1, digitCount))
+
+            return `${(n / 10**(3 * millidx)).toFixed(1)}${millnames[millidx]}`
+        }
+
+        Chart.defaults.font.size = 20
+        Chart.defaults.animation = false
+        Chart.defaults.color = "#818285"
+        const hourNum = new Date().getHours()
+        const hour = leadingZero(hourNum)
+        const hourArray = Array.from(Array(61).keys())
+        var honeyPerMin = Array.from({length: 40}, () => Math.floor(Math.random() * 99999999999))
+        for(let i = honeyPerMin.length; i < 60; i++){
+            honeyPerMin.unshift(0)
+        }
+        const honeyPerMinCanvas = document.getElementById('honeyPerMinChart')
+        new Chart(honeyPerMinCanvas, {
+          type: 'line',
+          data: {
+            labels: hourArray,
+            datasets: [{
+                label: 'My First Dataset',
+                data: honeyPerMin,
+                fill: false,
+                borderColor: '#8706C7',
+                tension: 0.3,
+                fill: {
+                    target: 'origin',
+                    above: (context) => {
+                        const {ctx, chartArea} = context.chart
+                        let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top)
+                        gradient.addColorStop(0, 'rgba(174,22,250,0.2)')
+                        gradient.addColorStop(1, 'rgba(174,22,250,0.6)')
+                        return gradient
+                    }
+                }
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                grid: {
+                    color: "#1F1F20"
+                },
+                ticks: {
+                    maxTicksLimit: 6,
+                    autoSkip: false,
+                    callback: function(value, index, values) {
+                        return millify(value);
+                    }
+                }
+              },
+              x: {
+                ticks: {
+                    callback: function(value, index, values) {
+                        if (value == 60) return `${leadingZero(hourNum+1)}:00`
+                        if (!(value%10)) return `${hour}:${leadingZero(value)}`
+                    }
+                }
+              }
+            },
+            elements: {
+                point: {
+                    pointStyle: false,
+                }
+            },
+            plugins:{
+                legend: {
+                    display: false
+                }
+            },
+          }
+        })
+
+      </script>
+</html>

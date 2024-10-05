@@ -646,6 +646,7 @@ class macro:
         if (wait):
             self.logger.webhook("", f'Waiting for an additional {wait} seconds', "light green")
         time.sleep(wait)
+        self.incrementHourlyStat("converting_time", time.time()-st)
         return True
 
     def moveMouseToDefault(self):
@@ -1011,9 +1012,14 @@ class macro:
         gatherBackgroundThread.daemon = True
         gatherBackgroundThread.start()
         self.keyboard.releaseMovement()
-        def turnOffShitLock():
+
+        def getGatherTime():
+            return time.time() - st
+        
+        def turnOffShitLock(): #since shift lock is turned off at the end of the gather, we'll also update the gather time
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
             self.moveMouseToDefault()
+            self.incrementHourlyStat("gathering_time", getGatherTime())
 
         if fieldSetting["shift_lock"]: self.keyboard.press('shift')
         while keepGathering:
@@ -1039,6 +1045,7 @@ class macro:
                 self.reset(convert=False)
                 break
             elif self.collectMondoBuff(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
+                self.incrementHourlyStat("gathering_time", getGatherTime()-self.setdat["mondo_buff_wait"]*60-20)
                 break
             elif self.died:
                 turnOffShitLock()
@@ -1047,7 +1054,7 @@ class macro:
                 break
 
             #check if max time is reached
-            gatherTime = "{:.2f}".format((time.time() - st)/60)
+            gatherTime = "{:.2f}".format((getGatherTime)/60)
             if time.time() - st > maxGatherTime:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
@@ -1284,6 +1291,9 @@ class macro:
         objectiveData = mergedCollectData[objective]
         displayName = objective.replace("_"," ").title()
         self.location = "collect"
+        st = time.time()
+        def updateHourlyTime():
+            self.incrementHourlyStat("misc_time", time.time()-st)
         #go to collect and check that player has reached
         for i in range(3):
             self.logger.webhook("",f"Travelling: {displayName}","dark brown")
@@ -1300,7 +1310,9 @@ class macro:
             self.logger.webhook("", f"Failed to reach {displayName}", "dark brown", "screen")
             if i != 2: self.reset(convert=False)
         
-        if not reached: return #player failed to reach objective
+        if not reached: 
+            updateHourlyTime()
+            return #player failed to reach objective
         #player has reached, get cooldown info
         #check if on cooldown
         cooldownSeconds = objectiveData[2]
@@ -1354,6 +1366,7 @@ class macro:
         #update the internal cooldown
         self.saveTiming(objective)
         self.collectCooldowns[objective] = cooldownSeconds
+        updateHourlyTime()
         return returnVal
 
     #accept mob and field and return them in the format used for timings.txt file
@@ -1387,6 +1400,7 @@ class macro:
             #check respawn
             if self.hasMobRespawned(m, field, timings[timingName]):
                 timings[timingName] = time.time()
+                self.incrementHourlyStat("bugs", 1)
         settingsManager.saveDict("./data/user/timings.txt", timings)
 
     #background thread function to determine if player has defeated the mob
@@ -1435,6 +1449,8 @@ class macro:
         self.logger.webhook("","Attacking: {} ({})".format(mobName.title(),field.title()),"dark brown")
         
         st = time.time()
+        def updateHourlyTime():
+            self.incrementHourlyStat("bug_run_time", time.time()-st)
         #move in squares to evade attacks
         #save the last entered side and front keys. This will be used for the looting pattern
         distance = 0.7
@@ -1458,10 +1474,12 @@ class macro:
         attackThread.join()
         if self.mobRunStatus == "dead":
             self.logger.webhook("","Player died", "dark brown","screen")
+            updateHourlyTime()
             return
         elif self.mobRunStatus == "timeout":
             self.setMobTimer(field)
             self.logger.webhook("","Could not kill {} in time. Maybe it hasn't respawned?".format(mobName.title()), "dark brown", "screen")
+            updateHourlyTime()
             return
         time.sleep(1.5)
         #loot
@@ -1506,6 +1524,7 @@ class macro:
         lootThread.join()
         #check if there are paths for the macro to walk to other fields for mob runs
         #run a path in the field format
+        updateHourlyTime()
         self.runPath(f"mob_runs/{field}", fileMustExist=False)
 
     def stingerHuntBackground(self):
@@ -1532,6 +1551,9 @@ class macro:
         stingerHuntThread = threading.Thread(target=self.stingerHuntBackground)
         stingerHuntThread.daemon = True
         stingerHuntThread.start()
+        vicStartTime = time.time()
+        def updateHourlyTime():
+            self.incrementHourlyStat("bug_run_time", time.time()-vicStartTime)
         class vicFoundException(Exception):
             pass
         for currField in self.vicFields:
@@ -1561,6 +1583,7 @@ class macro:
             self.stopVic = True
             stingerHuntThread.join()
             self.convert()
+            updateHourlyTime()
             return
         
         #kill vic
@@ -1585,6 +1608,7 @@ class macro:
                 if self.died or self.vicStatus is not None: break
             if self.vicStatus == "defeated":
                 self.logger.webhook("","Vicious Bee Defeated","light green")
+                self.incrementHourlyStat("vicious_bees", 1)
                 break
             elif self.died:
                 self.logger.webhook("","Player Died","dark brown")
@@ -1593,6 +1617,7 @@ class macro:
             elif time.time()-st > 180: #max 3 mins to kill vic
                 self.logger.webhook("","Took too long to kill Vicious Bee","red", "screen")
                 break
+        updateHourlyTime()
         self.stopVic = True
         stingerHuntThread.join()
         self.reset()
@@ -1664,6 +1689,7 @@ class macro:
         cocoThread = threading.Thread(target=self.coconutCrabBackground)
         cocoThread.daemon = True
         cocoThread.start()
+        st = time.time()
         for _ in range(2):
             self.cannon()
             self.logger.webhook("","Travelling: Coconut Crab","dark brown")
@@ -1706,6 +1732,7 @@ class macro:
             self.nmLoot(9, 4, "d")
             self.nmLoot(9, 4, "a")
         cocoThread.join()
+        self.incrementHourlyStat("bug_run_time", time.time()-st)
         self.saveTiming("coconut_crab")
         self.reset()
 
@@ -1735,9 +1762,10 @@ class macro:
         else: #place, just walk there
             if finalKey is not None: self.keyboard.walk(finalKey[0], finalKey[1])
             return True
-    
+        
     #place the planter and return the time it would take for the planter to grow (in secs)
     def placePlanter(self, planter, field, harvestFull, glitter):
+        st = time.time()
         self.goToPlanter(planter, field, "place")
         name = planter.lower().replace(" ","").replace("-","")
         if glitter: self.useItemInInventory("glitter") #use glitter
@@ -1745,6 +1773,7 @@ class macro:
             return None
         self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
         #calculate growth time. If the user didnt select harvest when full, return the harvest every X hours instead
+        self.incrementHourlyStat("misc_time", time.time()-st)
         if harvestFull:
             baseGrowthTime, bonusFields, fieldGrowthBonus = planterGrowthData[planter]
             bonusTime = 0
@@ -1756,14 +1785,19 @@ class macro:
             return self.setdat["manual_planters_collect_every"]*60*60 
 
     def collectPlanter(self, planter, field):
+        st = time.time()
+        def updateHourlyTime():
+            self.incrementHourlyStat("misc_time", time.time()-st)
         if not self.goToPlanter(planter, field, "collect"):
             self.logger.webhook("",f"Unable to find Planter: {planter.title()}", "dark brown", "screen")
+            updateHourlyTime()
             return
         self.keyboard.press("e")
         self.clickYes()
         self.logger.webhook("",f"Looting: {planter.title()} planter","bright green", "screen")
         self.keyboard.multiWalk(["s","d"], 0.87)
         self.nmLoot(9, 5, "a")
+        updateHourlyTime()
 
     #iterate through all 3 slots in a cycle
     def placePlanterCycle(self, cycle):
@@ -1812,10 +1846,15 @@ class macro:
         
     def blender(self, blenderData):
         itemNo = blenderData["item"]
+        st = time.time()
+        def updateHourlyTime():
+            self.incrementHourlyStat("misc_time", time.time()-st)
+
         def saveBlenderData():
             with open("./data/user/blender.txt", "w") as f:
                 f.write(str(blenderData))
             f.close()
+            updateHourlyTime()
         
         def getNextItem():
             nextItem = itemNo
@@ -1835,7 +1874,7 @@ class macro:
                 blenderData["collectTime"] = -1
                 saveBlenderData()
                 return
-            
+
         for _ in range(2):
             self.logger.webhook("","Travelling: Blender","dark brown")
             self.cannon()
@@ -1847,6 +1886,7 @@ class macro:
             if reached: break
         else:
             self.logger.webhook("","Failed to reach Blender", "dark brown", "screen")
+            updateHourlyTime()
             return
         
         x = self.mw/3
@@ -2067,8 +2107,12 @@ class macro:
             f.write(str(finalTime))
         f.close()
 
-
+    def incrementHourlyStat(self, statName, value):
+        data = settingsManager.readSettingsFile("data/user/hourly_report_main.txt")
+        data[statName] += value
+        settingsManager.saveDict(f"data/user/hourly_report_main.txt", data)
     
+
     def start(self):
         #if roblox is not open, rejoin
         if not appManager.openApp("roblox"):
