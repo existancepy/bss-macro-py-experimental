@@ -1,5 +1,5 @@
 fields_enabled=[True, False, False]
-fields=['spider', 'sunflower', 'dandelion']
+fields=['pine tree', 'sunflower', 'dandelion']
 wealth_clock=False
 blueberry_dispenser=False
 strawberry_dispenser=False

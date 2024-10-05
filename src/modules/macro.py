@@ -1070,7 +1070,7 @@ class macro:
                 break
 
             #check if max time is reached
-            gatherTime = "{:.2f}".format((getGatherTime)/60)
+            gatherTime = "{:.2f}".format((getGatherTime())/60)
             if time.time() - st > maxGatherTime:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
@@ -2185,7 +2185,46 @@ class macro:
                 f.close()
                 time.sleep(0.2)
     
+    def hourlyReportBackground(self):
+        honeyY = 23 if self.newUI else 0
+        threshold = 0.75
+        numImages = []
+        for i in range(10):
+            numImages.append(adjustImage("images/misc", f"honey_{i}", self.display_type))
 
+        def getHoney():
+            #use image detection to get the amount of honey
+            #get the coordinates of each digit
+            screen = mssScreenshotNP(self.mw//2-241, honeyY, 140, 36, True)
+            screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
+            numbersRes = []
+            #get all the numbers and their coordinates
+            for i,e in enumerate(numImages):
+                e = cv2.cvtColor(e, cv2.COLOR_RGB2GRAY)
+                res = cv2.matchTemplate(screen,e,cv2.TM_CCOEFF_NORMED)
+                loc = np.where(res >=threshold)
+                w, h = e.shape[::-1]
+                screenCopy = screen.copy()
+                #loop through all found coordinates and append it to numberRes
+                for pt in zip(*loc[::-1]):
+                    #cv2.rectangle(screenCopy, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
+                    numbersRes.append((i, pt[0]))
+                #cv2.imwrite(f'res{i}.png',screenCopy)
+
+            #sort the numbers by their x coordinate
+            #then extract only the numbers and join them together
+            return int(''.join([str(x[0]) for x in sorted(numbersRes, key=lambda x: x[1])]))
+        #first honey
+        settingsManager.saveSettingFile("start_honey", getHoney(), "data/user/hourly_report_bg.txt")
+        while True:
+            honey = getHoney()
+            backpack = bpc(self.mw, self.newUI)
+            data = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
+            data["honey_per_min"].append(honey)
+            data["backpack_per_min"].append(honey)
+            settingsManager.saveDict("data/user/hourly_report_bg.txt", data)
+            time.sleep(60)
+            
     def start(self):
         #if roblox is not open, rejoin
         if not appManager.openApp("roblox"):
@@ -2290,5 +2329,11 @@ class macro:
         nightAndHotbarThread = threading.Thread(target=self.nightAndHotbarBackground)
         nightAndHotbarThread.daemon = True
         nightAndHotbarThread.start()
+
+        #enable hourly report background
+        hourlyReportThread = threading.Thread(target=self.hourlyReportBackground)
+        hourlyReportThread.daemon = True
+        hourlyReportThread.start()
+
         self.reset(convert=True)
         self.saveTiming("rejoin_every")
