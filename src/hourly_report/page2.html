@@ -304,6 +304,7 @@
 
         //planters
         function secondsToMinsAndHours(time){
+            if (time < 0) return "Ready!"
             const hours = Math.floor(time / 3600)
             const minutes = Math.floor((time - hours*3600)/60)
             return `${hours}h ${minutes}m`
@@ -334,9 +335,9 @@
             coconut: "refreshing"
         }
         const planterStatParent = document.getElementById("planter-stats")
-        const planterNames = ["blue clay", "paper", "pesticide"]
-        const planterTimes = ["59402", "10212", "111192"]
-        const planterFields = ["pine tree", "mountain top", "mountain top"]
+        const planterNames = []
+        const planterTimes = []
+        const planterFields = []
         for(let i=0; i < planterNames.length; i++){
             const imgPath = `assets/${planterNames[i].replaceAll(" ", "_")}_planter.png`
             const nectarPath = `assets/${fieldNectarIcons[planterFields[i].replaceAll(" ", "_")]}.png`
