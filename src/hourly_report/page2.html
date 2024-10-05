@@ -176,7 +176,8 @@
         const hourNum = new Date().getHours()
         const hour = leadingZero(hourNum)
         const hourArray = Array.from(Array(61).keys())
-        var backpackPerMin = Array.from({length: 40}, () => Math.floor(Math.random() * 100))
+        //var backpackPerMin = Array.from({length: 40}, () => Math.floor(Math.random() * 100))
+        var backpackPerMin = []
         for(let i = backpackPerMin.length; i < 60; i++){
             backpackPerMin.unshift(0)
         }
@@ -261,13 +262,13 @@
 
         function convertMins(time){
             const minutes = Math.floor(time / 60)
-            const seconds = time - minutes * 60
+            const seconds = Math.floor(time - minutes * 60)
             return `${minutes}m ${seconds}s`
         }
 
         const taskTimesColors = ["#A909F9","#C95EFF","#DFA0FF","#EDC9FF"]
         const tasks = ["Gathering", "Converting", "Bug Runs", "Misc"]
-        const taskTimes = [1,2,3,4]
+        const taskTimes = []
         const taskLegendEle = document.getElementById("task-times-legend")
         for (let i = 0; i < taskTimes.length; i++){
             taskLegendEle.innerHTML += `
@@ -333,7 +334,7 @@
             coconut: "refreshing"
         }
         const planterStatParent = document.getElementById("planter-stats")
-        //const planterNames = ["blue clay", "paper", "pesticide"]
+        const planterNames = ["blue clay", "paper", "pesticide"]
         const planterTimes = ["59402", "10212", "111192"]
         const planterFields = ["pine tree", "mountain top", "mountain top"]
         for(let i=0; i < planterNames.length; i++){

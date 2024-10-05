@@ -163,22 +163,22 @@
                 </div>
                 <div class="stat-card">
                     <img src="assets/honey_icon.png">
-                    <div class="inter-semibold stat" style="color: #F8BF17;">10.0 B</div>
+                    <div class="inter-semibold stat" style="color: #F8BF17;">-honey</div>
                     <div class="inter-medium desc">Honey Made<br>This Hour</div>
                 </div>
                 <div class="stat-card">
                     <img src="assets/kill_icon.png">
-                    <div class="inter-semibold stat" style="color: #FE6563;">10</div>
+                    <div class="inter-semibold stat" style="color: #FE6563;">-bugs</div>
                     <div class="inter-medium desc">Bugs Killed<br>This Hour</div>
                 </div>
                 <div class="stat-card">
                     <img src="assets/quest_icon.png">
-                    <div class="inter-semibold stat" style="color: #67FD99;">0</div>
+                    <div class="inter-semibold stat" style="color: #67FD99;">-quests</div>
                     <div class="inter-medium desc">Quests Completed<br>This Hour</div>
                 </div>
                 <div class="stat-card">
                     <img src="assets/vicious_bee_icon.png">
-                    <div class="inter-semibold stat" style="color: #84E9FE;">0</div>
+                    <div class="inter-semibold stat" style="color: #84E9FE;">-vicBees</div>
                     <div class="inter-medium desc">Vicious Bees<br>This Hour</div>
                 </div>
             </div>
@@ -200,21 +200,21 @@
                     <img src="assets/time_icon.png">
                 </div>
                 <div class="inter-semibold label">Session Time</div>
-                <div class="inter-semibold value">1d 11h 30m</div>
+                <div class="inter-semibold value">-sessTime</div>
             </div>
             <div class="aside-stat">
                 <div class="img-container">
                     <img src="assets/honey_icon.png">
                 </div>
                 <div class="inter-semibold label">Current Honey</div>
-                <div class="inter-semibold value" style="color: #F8BF17;">120.3B</div>
+                <div class="inter-semibold value" style="color: #F8BF17;">-currHoney</div>
             </div>
             <div class="aside-stat">
                 <div class="img-container">
                     <img src="assets/session_honey_icon.png">
                 </div>
                 <div class="inter-semibold label">Session Honey</div>
-                <div class="inter-semibold value" style="color: #FDE395;">40.3B</div>
+                <div class="inter-semibold value" style="color: #FDE395;">-sessHoney</div>
             </div>
             <!--History-->
             <h3 class="inter-semibold title" class="inter-semibold">History</h3>
@@ -273,7 +273,7 @@
             var digitCount = Math.floor(Math.log10(Math.abs(n))/3)
             var millidx = Math.max(0,Math.min(millnames.length -1, digitCount))
 
-            return `${(n / 10**(3 * millidx)).toFixed(1)}${millnames[millidx]}`
+            return `${(n / 10**(3 * millidx)).toFixed(1)} ${millnames[millidx]}`
         }
 
         Chart.defaults.font.size = 20
@@ -282,7 +282,8 @@
         const hourNum = new Date().getHours()
         const hour = leadingZero(hourNum)
         const hourArray = Array.from(Array(61).keys())
-        var honeyPerMin = Array.from({length: 40}, () => Math.floor(Math.random() * 99999999999))
+        //var honeyPerMin = Array.from({length: 40}, () => Math.floor(Math.random() * 99999999999))
+        var honeyPerMin = []
         for(let i = honeyPerMin.length; i < 60; i++){
             honeyPerMin.unshift(0)
         }

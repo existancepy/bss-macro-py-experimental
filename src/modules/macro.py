@@ -2195,7 +2195,7 @@ class macro:
         def getHoney():
             #use image detection to get the amount of honey
             #get the coordinates of each digit
-            screen = mssScreenshotNP(self.mw//2-241, honeyY, 140, 36, True)
+            screen = mssScreenshotNP(self.mw//2-241, honeyY, 140, 36)
             screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
             numbersRes = []
             #get all the numbers and their coordinates
@@ -2216,6 +2216,7 @@ class macro:
             return int(''.join([str(x[0]) for x in sorted(numbersRes, key=lambda x: x[1])]))
         #first honey
         settingsManager.saveSettingFile("start_honey", getHoney(), "data/user/hourly_report_bg.txt")
+        settingsManager.saveSettingFile("start_time", time.time(), "data/user/hourly_report_bg.txt")
         while True:
             honey = getHoney()
             backpack = bpc(self.mw, self.newUI)
