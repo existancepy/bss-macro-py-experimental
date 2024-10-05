@@ -2213,16 +2213,24 @@ class macro:
 
             #sort the numbers by their x coordinate
             #then extract only the numbers and join them together
-            return int(''.join([str(x[0]) for x in sorted(numbersRes, key=lambda x: x[1])]))
+            result = ''.join([str(x[0]) for x in sorted(numbersRes, key=lambda x: x[1])])
+            if result:
+                return int(result)
+            #couldnt detect
+            print("image detection for honey failed, using ocr")
+            ocrHoney = ocr.imToString("honey")
+            return ocrHoney if ocrHoney else 0
+
         #first honey
         settingsManager.saveSettingFile("start_honey", getHoney(), "data/user/hourly_report_bg.txt")
         settingsManager.saveSettingFile("start_time", time.time(), "data/user/hourly_report_bg.txt")
         while True:
+            if self.status.value == "rejoining": continue
             honey = getHoney()
             backpack = bpc(self.mw, self.newUI)
             data = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
             data["honey_per_min"].append(honey)
-            data["backpack_per_min"].append(honey)
+            data["backpack_per_min"].append(backpack)
             settingsManager.saveDict("data/user/hourly_report_bg.txt", data)
             time.sleep(60)
             
