@@ -641,6 +641,7 @@ class macro:
         while not self.isBesideE(["pollen", "flower", "field"]): 
             mouse.click()
             if self.night and self.setdat["stinger_hunt"]:
+                self.incrementHourlyStat("converting_time", time.time()-st)
                 self.keyboard.press(".")
                 self.stingerHunt()
                 return
