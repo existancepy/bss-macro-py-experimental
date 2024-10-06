@@ -84,17 +84,22 @@ def generateHourlyReport():
             if x > prevHoney:
                 honeyPerMin.append(x-prevHoney)
             prevHoney = x
+        
+        #calculate some stats
+        sessionHoney = hourlyReportData["honey_per_min"][-1]- hourlyReportData["start_honey"]
+        sessionTime = time.time()-hourlyReportData["start_time"]
         #replace the contents of the html
         replaceDict = {
             'src="a': f'src="{hourlyReportDir}/a',
             '`as': '`{}/as'.format(str(hourlyReportDir).replace("\\", "/")),
+            "-avgHoney": millify(sessionHoney/(sessionTime/3600)),
             "-honey": millify(hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]),
             "-bugs": hourlyReportData["bugs"],
             "-quests": hourlyReportData["quests_completed"],
             "-vicBees": hourlyReportData["vicious_bees"],
             "-currHoney": millify(hourlyReportData["honey_per_min"][-1]),
-            "-sessHoney": millify(hourlyReportData["honey_per_min"][-1]- hourlyReportData["start_honey"]),
-            "-sessTime": display_time(time.time()-hourlyReportData["start_time"], ['d','h','m']),
+            "-sessHoney": millify(sessionHoney),
+            "-sessTime": display_time(sessionTime, ['d','h','m']),
             "var honeyPerMin = []": f'var honeyPerMin = {honeyPerMin}',
             "var backpackPerMin = []": f'var backpackPerMin = {hourlyReportData["backpack_per_min"]}',
             "const taskTimes = []": f'const taskTimes = [{hourlyReportData["gathering_time"]}, {hourlyReportData["converting_time"]}, {hourlyReportData["bug_run_time"]}, {hourlyReportData["misc_time"]}]',
