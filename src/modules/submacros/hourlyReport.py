@@ -75,6 +75,11 @@ def generateHourlyReport():
             planterData = f.read()
         f.close()
 
+        #get history
+        with open("data/user/hourly_report_history.txt", "r") as f:
+            historyData = ast.literal_eval(f.read())
+        f.close()
+
         #filter out the honey/min
         hourlyReportData["honey_per_min"] = filterOutliers(hourlyReportData["honey_per_min"])
         #calculate honey/min
@@ -82,18 +87,19 @@ def generateHourlyReport():
         prevHoney = hourlyReportData["honey_per_min"][0]
         for x in hourlyReportData["honey_per_min"][1:]:
             if x > prevHoney:
-                honeyPerMin.append(x-prevHoney)
+                honeyPerMin.append((x-prevHoney)/60)
             prevHoney = x
         
         #calculate some stats
         sessionHoney = hourlyReportData["honey_per_min"][-1]- hourlyReportData["start_honey"]
         sessionTime = time.time()-hourlyReportData["start_time"]
+        honeyThisHour = hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]
         #replace the contents of the html
         replaceDict = {
             'src="a': f'src="{hourlyReportDir}/a',
             '`as': '`{}/as'.format(str(hourlyReportDir).replace("\\", "/")),
             "-avgHoney": millify(sessionHoney/(sessionTime/3600)),
-            "-honey": millify(hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]),
+            "-honey": millify(honeyThisHour),
             "-bugs": hourlyReportData["bugs"],
             "-quests": hourlyReportData["quests_completed"],
             "-vicBees": hourlyReportData["vicious_bees"],
@@ -103,6 +109,8 @@ def generateHourlyReport():
             "var honeyPerMin = []": f'var honeyPerMin = {honeyPerMin}',
             "var backpackPerMin = []": f'var backpackPerMin = {hourlyReportData["backpack_per_min"]}',
             "const taskTimes = []": f'const taskTimes = [{hourlyReportData["gathering_time"]}, {hourlyReportData["converting_time"]}, {hourlyReportData["bug_run_time"]}, {hourlyReportData["misc_time"]}]',
+            "const historyData = []": f'const historyData = {historyData}',
+            "const honey = 0": f'const honey = {honeyThisHour}'
         }
 
         if planterData:
@@ -150,3 +158,4 @@ def generateHourlyReport():
     # Resize the image
     imgOut = cv2.resize(imgOut, (width*2, height*2))
     cv2.imwrite("hourlyReport.png", imgOut) 
+    return hourlyReportData

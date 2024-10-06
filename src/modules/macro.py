@@ -2270,7 +2270,7 @@ class macro:
 
             #check if its time to send hourly report
             if currMin == 0:
-                generateHourlyReport()
+                hourlyReportData = generateHourlyReport()
                 self.logger.hourlyReport("Hourly Report", "", "purple")
 
                 #reset stats
@@ -2284,6 +2284,25 @@ class macro:
                     if isinstance(hourlyReportBgData[k], list):
                         hourlyReportBgData[k] = [] 
                 settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
+
+                #add to history
+                with open("data/user/hourly_report_history.txt", "r") as f:
+                    history = ast.literal_eval(f.read())
+                f.close()
+
+                historyObj = {
+                    "endHour": datetime.now().hour,
+                    "date": str(datetime.today().date()),
+                    "honey": hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]
+                }
+                #max 5 objs
+                if len(history) > 4:
+                    history.pop(-1)
+                history.insert(0,historyObj)
+
+                with open("data/user/hourly_report_history.txt", "w") as f:
+                    f.write(str(history))
+                f.close()
 
             
             

@@ -44,7 +44,7 @@ def thresholdMatch(target, screen):
 def hasteCompensation(baseMoveSpeed, haste):
     global prevHaste368, hasteEnds, prevHasteEnds, prevHaste
     st = time.time()
-    screen = pillowToCv2(mssScreenshot(0,mh/30,mw/2.1,mh/16))
+    screen = pillowToCv2(mssScreenshot(0,mh/30,mw/1.8,mh/16))
     bestHaste = 0
     bestHasteMaxVal = 0
     #match haste

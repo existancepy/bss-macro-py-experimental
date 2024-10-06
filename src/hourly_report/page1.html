@@ -182,7 +182,7 @@
                     <div class="inter-medium desc">Vicious Bees<br>This Hour</div>
                 </div>
             </div>
-            <h2 style="font-size:1.6rem; margin-top: 3rem; display: inline-block; margin-bottom: 1rem;" class="inter-bold">Honey/Min</h2>
+            <h2 style="font-size:1.6rem; margin-top: 3rem; display: inline-block; margin-bottom: 1rem;" class="inter-bold">Honey/Sec</h2>
             <div style="flex-grow: 1; position: relative; width: 100%;">
                 <canvas id="honeyPerMinChart"></canvas>
             </div>
@@ -218,45 +218,7 @@
             </div>
             <!--History-->
             <h3 class="inter-semibold title" class="inter-semibold">History</h3>
-            <div class="aside-stat">
-                <div class="img-container">
-                    <img src="assets/history_icon.png">
-                </div>
-                <div>
-                    <div class="inter-semibold label">15:00-14:00</div>
-                    <div class="inter-regular sublabel">Oct 2,2024</div>
-                </div>
-                <div class="inter-semibold value" style="color: #FE6563;">12.3B</div>
-            </div>
-            <div class="aside-stat">
-                <div class="img-container">
-                    <img src="assets/history_icon.png">
-                </div>
-                <div>
-                    <div class="inter-semibold label">15:00-14:00</div>
-                    <div class="inter-regular sublabel">Oct 2,2024</div>
-                </div>
-                <div class="inter-semibold value" style="color: #67FD99;">9.0B</div>
-            </div>
-            <div class="aside-stat">
-                <div class="img-container">
-                    <img src="assets/history_icon.png">
-                </div>
-                <div>
-                    <div class="inter-semibold label">15:00-14:00</div>
-                    <div class="inter-regular sublabel">Oct 2,2024</div>
-                </div>
-                <div class="inter-semibold value" style="color: #67FD99;">9.0B</div>
-            </div>
-            <div class="aside-stat">
-                <div class="img-container">
-                    <img src="assets/history_icon.png">
-                </div>
-                <div>
-                    <div class="inter-semibold label">15:00-14:00</div>
-                    <div class="inter-regular sublabel">Oct 2,2024</div>
-                </div>
-                <div class="inter-semibold value" style="color: #67FD99;">9.0B</div>
+            <div id = "history">
             </div>
         </aside>
     </body>
@@ -345,6 +307,42 @@
                 }
             },
           }
+        })
+
+        function formatDate(date){
+            let [year, month, day] = date.split("-")
+            dateNumToText = {
+                "1": "Jan",
+                "2": "Feb", 
+                "3": "Mar", 
+                "4": "Apr", 
+                "5": "May", 
+                "6": "Jun", 
+                "7": "Jul", 
+                "8": "Aug",
+                "9": "Sep", 
+                "10": "Oct", 
+                "11": "Nov",
+                "12": "Dec"
+            }
+            return `${dateNumToText[month]} ${day}, ${year}` 
+        }
+        const honey = 0
+        const historyElement = document.getElementById("history")
+        const historyData = []
+        historyData.forEach(x => {
+            historyElement.innerHTML += `
+            <div class="aside-stat">
+                <div class="img-container">
+                    <img src="assets/history_icon.png">
+                </div>
+                <div>
+                    <div class="inter-semibold label">${x.endHour-1}:00-${x.endHour}:00</div>
+                    <div class="inter-regular sublabel">${formatDate(x.date)}</div>
+                </div>
+                <div class="inter-semibold value" style="color: ${honey > x.honey ? "#67FD99" : "#FE6563"};">${millify(x.honey)}</div>
+            </div>
+            `
         })
 
       </script>
