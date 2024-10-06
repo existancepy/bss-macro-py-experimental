@@ -1,5 +1,5 @@
 sideTime = 0.15
-frontTime = 0.5
+frontTime = 0.54
 time.sleep(2.5)
 self.keyboard.press(",") #feast messes up the camera angle
 self.keyboard.walk('a',0.55)

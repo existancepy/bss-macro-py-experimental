@@ -6,7 +6,8 @@ from modules.misc.settingsManager import readSettingsFile
 import math
 import time
 import ast
-hti = Html2Image(size=(1900, 770))
+import numpy as np
+hti = Html2Image(size=(1900, 780))
 
 def millify(n):
     if not n: return "0"
@@ -16,6 +17,19 @@ def millify(n):
                         int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
 
     return '{:.2f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
+
+def filterOutliers(values, threshold=3):
+    # Calculate the mean and standard deviation
+    mean = np.mean(values)
+    std_dev = np.std(values)
+    
+    # Calculate Z-scores
+    z_scores = [(x - mean) / std_dev for x in values]
+    
+    # Filter out values with Z-scores greater than the threshold
+    filtered_values = [x for x, z in zip(values, z_scores) if abs(z) < threshold]
+    
+    return filtered_values
 
 intervals = (
     ('w', 604800),  # 60 * 60 * 24 * 7
@@ -61,13 +75,15 @@ def generateHourlyReport():
             planterData = f.read()
         f.close()
 
+        #filter out the honey/min
+        hourlyReportData["honey_per_min"] = filterOutliers(hourlyReportData["honey_per_min"])
         #calculate honey/min
         honeyPerMin = [0]
         prevHoney = hourlyReportData["honey_per_min"][0]
         for x in hourlyReportData["honey_per_min"][1:]:
-            honeyPerMin.append(x-prevHoney)
+            if x > prevHoney:
+                honeyPerMin.append(x-prevHoney)
             prevHoney = x
-
         #replace the contents of the html
         replaceDict = {
             'src="a': f'src="{hourlyReportDir}/a',
@@ -77,7 +93,7 @@ def generateHourlyReport():
             "-quests": hourlyReportData["quests_completed"],
             "-vicBees": hourlyReportData["vicious_bees"],
             "-currHoney": millify(hourlyReportData["honey_per_min"][-1]),
-            "-sessHoney": millify(hourlyReportData["honey_per_min"][-1]- hourlyReportData["honey_per_min"][0]),
+            "-sessHoney": millify(hourlyReportData["honey_per_min"][-1]- hourlyReportData["start_honey"]),
             "-sessTime": display_time(time.time()-hourlyReportData["start_time"], ['d','h','m']),
             "var honeyPerMin = []": f'var honeyPerMin = {honeyPerMin}',
             "var backpackPerMin = []": f'var backpackPerMin = {hourlyReportData["backpack_per_min"]}',
@@ -86,7 +102,6 @@ def generateHourlyReport():
 
         if planterData:
             planterData = ast.literal_eval(planterData)
-            print("hi")
             planterReplaceDict = {
                 "const planterNames = []": f'const planterNames = {planterData["planters"]}', 
                 "const planterTimes = []": f'const planterTimes = {[planterData["harvestTime"]-time.time()]*3}',
@@ -96,10 +111,33 @@ def generateHourlyReport():
         for k,v in replaceDict.items():
             htmlString = htmlString.replace(k,str(v))
         #save the html as an image
-        if "2" in page: print(htmlString)
         hti.screenshot(html_str=htmlString, save_as=f"{pageName}.png")
-        #open the image in pillow
-        pageImages.append(cv2.imread(f"{pageName}.png"))
+        #open the image
+        image = cv2.imread(f"{pageName}.png")
+
+        #crop the image to remove any excess empty space at the bottom
+        #this allows for seamless merging of images
+        # Define the BGR color value for #0E0F13 (the background)
+        targetColor = np.array([19, 15, 14])
+        # Tolerance for matching the color
+        tolerance = 5
+        height, width, _ = image.shape
+        # Function to check if a row contains the specified color
+        def is_color_row(row):
+            return np.all(np.abs(row - targetColor) < tolerance, axis=1).all()
+
+        # Find the row where the empty space starts (from the bottom of the image going upwards)
+        emptyAreaStart = height
+        for row in range(height-1, -1, -1):
+            if is_color_row(image[row, :]):
+                emptyAreaStart = row
+            else:
+                break
+
+        # Crop the image above the space
+        image = image[:emptyAreaStart, :]
+
+        pageImages.append(image)
 
     imgOut = cv2.vconcat(pageImages) 
     #Get the original dimensions

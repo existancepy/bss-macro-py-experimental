@@ -30,6 +30,7 @@ from modules.submacros.memoryMatch import solveMemoryMatch
 import math
 import re
 import ast
+from modules.submacros.hourlyReport import generateHourlyReport
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -424,8 +425,9 @@ class macro:
         return self.isInOCR("bee bear", includeList, excludeList)
     
     def isBesideEImage(self, name):
+        yOffset = 23 if self.newUI else 0
         template = self.adjustImage("./images/menu",name)
-        return locateTransparentImageOnScreen(template, self.mw//2-200,0,400,self.mh//8, 0.75)
+        return locateTransparentImageOnScreen(template, self.mw//2-200,yOffset,400,self.mh//8, 0.75)
 
     def getTiming(self,name = None):
         for _ in range(3):
@@ -680,9 +682,34 @@ class macro:
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
                 solveMemoryMatch(self.latestMM, self.display_type)
 
-            mmImg = self.adjustImage("./images/menu", "blenderclose") #blender
-            if locateImageOnScreen(mmImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
+            blenderImg = self.adjustImage("./images/menu", "blenderclose") #blender
+            if locateImageOnScreen(blenderImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
                 self.closeBlenderGUI()
+
+            noImg = self.adjustImage("./images/menu", "no") #yes/no popup
+            x = self.mw/3.2
+            y = self.mh/2.3
+            res = locateImageOnScreen(noImg,x,y,self.mw/2.5,self.mh/3.4, 0.8)
+            #mssScreenshot(x,y,self.mw/2.5,self.mh/3.4, True)
+            if res:
+                x2, y2 = res[1]
+                mouse.moveTo(x+x2, y+y2)
+                time.sleep(0.08)
+                mouse.moveBy(1,1)
+                time.sleep(0.1)
+                mouse.click()
+
+            stickerBookImg = self.adjustImage("./images/menu", "stickerbookclose") #sticker book
+            x = 250
+            y = 130
+            res = locateImageOnScreen(stickerBookImg,x,y,100, 80, 0.8)
+            if res:
+                x2, y2 = res[1]
+                mouse.moveTo(x+x2, y+y2)
+                time.sleep(0.08)
+                mouse.moveBy(1,3)
+                time.sleep(0.1)
+                mouse.click()
 
             self.moveMouseToDefault()
             time.sleep(0.1)
@@ -1246,8 +1273,6 @@ class macro:
         time.sleep(0.2)
         mouse.click()
         time.sleep(1)
-        #TODO: check if the player ran out of eggs
-        #check if on cooldown
         confirmImg = self.adjustImage("./images/menu", "confirm")
         if not locateImageOnScreen(confirmImg, self.mw//2+150, 4*self.mh//10+160, 120, 60, 0.7):
             self.logger.webhook(f"", "Sticker printer on cooldown", "dark brown", "screen")
@@ -2195,27 +2220,31 @@ class macro:
         def getHoney():
             #use image detection to get the amount of honey
             #get the coordinates of each digit
-            screen = mssScreenshotNP(self.mw//2-241, honeyY, 140, 36)
-            screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
-            numbersRes = []
-            #get all the numbers and their coordinates
-            for i,e in enumerate(numImages):
-                e = cv2.cvtColor(e, cv2.COLOR_RGB2GRAY)
-                res = cv2.matchTemplate(screen,e,cv2.TM_CCOEFF_NORMED)
-                loc = np.where(res >=threshold)
-                w, h = e.shape[::-1]
-                screenCopy = screen.copy()
-                #loop through all found coordinates and append it to numberRes
-                for pt in zip(*loc[::-1]):
-                    #cv2.rectangle(screenCopy, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
-                    numbersRes.append((i, pt[0]))
-                #cv2.imwrite(f'res{i}.png',screenCopy)
+            prevResult = 0
+            for _ in range(10):
+                screen = mssScreenshotNP(self.mw//2-241, honeyY, 140, 36)
+                screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
+                numbersRes = []
+                #get all the numbers and their coordinates
+                for i,e in enumerate(numImages):
+                    e = cv2.cvtColor(e, cv2.COLOR_RGB2GRAY)
+                    res = cv2.matchTemplate(screen,e,cv2.TM_CCOEFF_NORMED)
+                    loc = np.where(res >=threshold)
+                    w, h = e.shape[::-1]
+                    screenCopy = screen.copy()
+                    #loop through all found coordinates and append it to numberRes
+                    for pt in zip(*loc[::-1]):
+                        #cv2.rectangle(screenCopy, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
+                        numbersRes.append((i, pt[0]))
+                    #cv2.imwrite(f'res{i}.png',screenCopy)
 
-            #sort the numbers by their x coordinate
-            #then extract only the numbers and join them together
-            result = ''.join([str(x[0]) for x in sorted(numbersRes, key=lambda x: x[1])])
-            if result:
-                return int(result)
+                #sort the numbers by their x coordinate
+                #then extract only the numbers and join them together
+                result = ''.join([str(x[0]) for x in sorted(numbersRes, key=lambda x: x[1])])
+                if result == prevResult:
+                    return int(result)
+                prevResult = result
+                time.sleep(0.13)
             #couldnt detect
             print("image detection for honey failed, using ocr")
             ocrHoney = ocr.imToString("honey")
@@ -2224,15 +2253,39 @@ class macro:
         #first honey
         settingsManager.saveSettingFile("start_honey", getHoney(), "data/user/hourly_report_bg.txt")
         settingsManager.saveSettingFile("start_time", time.time(), "data/user/hourly_report_bg.txt")
+        prevMin = -1  
         while True:
             if self.status.value == "rejoining": continue
+            #instead of using time.sleep, we want to run the code at the start of the min
+            currMin = datetime.now().minute
+            if currMin == prevMin: continue
+            prevMin = currMin
             honey = getHoney()
+            print(honey)
             backpack = bpc(self.mw, self.newUI)
             data = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
             data["honey_per_min"].append(honey)
             data["backpack_per_min"].append(backpack)
             settingsManager.saveDict("data/user/hourly_report_bg.txt", data)
-            time.sleep(60)
+
+            #check if its time to send hourly report
+            if currMin == 0:
+                generateHourlyReport()
+                self.logger.hourlyReport("Hourly Report", "", "purple")
+
+                #reset stats
+                hourlyReportMainData = settingsManager.readSettingsFile("data/user/hourly_report_main.txt")
+                for k in hourlyReportMainData:
+                    hourlyReportMainData[k] = 0   
+                settingsManager.saveDict(f"data/user/hourly_report_main.txt", hourlyReportMainData)
+
+                hourlyReportBgData = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
+                for k in hourlyReportBgData:
+                    if isinstance(hourlyReportBgData[k], list):
+                        hourlyReportBgData[k] = [] 
+                settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
+
+            
             
     def start(self):
         #if roblox is not open, rejoin
@@ -2332,7 +2385,7 @@ class macro:
             self.keyboard.press("esc")
             if similarHashes(img1, img2, 3):
                 messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Accessibility Permission')
-
+            time.sleep(0.2)
 
         #enable night detection and hotbar
         nightAndHotbarThread = threading.Thread(target=self.nightAndHotbarBackground)
