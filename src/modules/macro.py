@@ -1073,9 +1073,9 @@ class macro:
             except Exception as e:
                 print(e)
                 if firstPattern:
-                    pattern = "e_lol"
                     self.logger.webhook("Incompatible pattern", f"The pattern {pattern} is incompatible with the macro. Defaulting to e_lol instead.\
                                         Avoid using this pattern in the future. If you are the creator of this pattern, the error can be found in terminal", "red")
+                    pattern = "e_lol"
             firstPattern = False
             #cycle ends
             mouse.mouseUp()
