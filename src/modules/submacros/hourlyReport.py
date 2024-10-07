@@ -7,7 +7,20 @@ import math
 import time
 import ast
 import numpy as np
-hti = Html2Image(size=(1900, 780))
+import platform
+from modules.misc.messageBox import msgBox
+def versionTuple(v):
+    return tuple(map(int, (v.split("."))))
+macVer = platform.mac_ver()[0]
+
+try:
+    hti = Html2Image(size=(1900, 780))
+except FileNotFoundError:
+    if versionTuple(macVer) >= versionTuple("10.15"):
+        msgBox(title = "error", text = "Google Chrome could not be found. Ensure that:\
+    \n1. Google Chrome is installed\nGoogle chrome is in the applications folder (open the google chrome dmg file. From the pop up, drag the icon into the folder)")
+    else:
+        hti = None
 
 def millify(n):
     if not n: return "0"

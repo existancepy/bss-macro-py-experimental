@@ -2243,7 +2243,7 @@ class macro:
                 #sort the numbers by their x coordinate
                 #then extract only the numbers and join them together
                 result = ''.join([str(x[0]) for x in sorted(numbersRes, key=lambda x: x[1])])
-                if result == prevResult:
+                if result and result == prevResult:
                     return int(result)
                 prevResult = result
                 time.sleep(0.13)
