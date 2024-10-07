@@ -51,6 +51,13 @@ class log:
 
         #send webhook
         #do it on a thread to avoid delays
+        if self.enableWebhook: 
+            webhookThread = threading.Thread(target=sendWebhook, args=(self.webhookURL, title, desc, logData["time"], colors[color], ss))
+            webhookThread.start()
+        
+        #wait until main process has added the log to gui
+        #while not self.logVar.value == "": pass
+    
+    def hourlyReport(self, title, desc, color):
         if not self.enableWebhook: return
-        webhookThread = threading.Thread(target=sendWebhook, args=(self.webhookURL, title, desc, logData["time"], colors[color], ss))
-        webhookThread.start()
+        logWebhook.webhook(self.webhookURL, title, desc, time.strftime("%H:%M:%S", time.localtime()), colors[color], "hourlyReport.png")

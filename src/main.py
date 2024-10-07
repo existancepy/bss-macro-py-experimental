@@ -298,6 +298,21 @@ if __name__ == "__main__":
                 hasteCompThread = Thread(target=hasteCompensationThread, args=(setdat["movespeed"],haste,))
                 hasteCompThread.daemon = True
                 hasteCompThread.start()
+
+            #reset hourly report stats
+            hourlyReportMainData = settingsManager.readSettingsFile("data/user/hourly_report_main.txt")
+            for k in hourlyReportMainData:
+                hourlyReportMainData[k] = 0   
+            settingsManager.saveDict(f"data/user/hourly_report_main.txt", hourlyReportMainData)
+
+            hourlyReportBgData = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
+            for k in hourlyReportBgData:
+                if isinstance(hourlyReportBgData[k], list):
+                    hourlyReportBgData[k] = []
+                else:
+                    hourlyReportBgData[k] = 0   
+            settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
+
             #discord bot
             discordBotProc = multiprocessing.Process(target=discordBot, args=(setdat["discord_bot_token"], run, status))
             if setdat["discord_bot"]:

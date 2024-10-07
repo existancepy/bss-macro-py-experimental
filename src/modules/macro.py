@@ -30,6 +30,7 @@ from modules.submacros.memoryMatch import solveMemoryMatch
 import math
 import re
 import ast
+from modules.submacros.hourlyReport import generateHourlyReport
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -45,7 +46,7 @@ collectData = {
     "stockings": [["check", "inside", "stocking"], "a", 1*60*60], #1hr
     "wreath": [["admire", "honey"], "a", 30*60], #30mins
     "feast": [["dig", "beesmas"], "s", 1.5*60*60], #1.5hr
-    "samovar": [["heat", "samovar"], "w", 6*60*60], #6hr
+    "samovar": [["heat", "samovar", "strange"], "w", 6*60*60], #6hr
     "snow_machine": [["activate"], None, 2*60*60], #2hr
     "lid_art": [["gander", "onett", "art"], "s", 8*60*60], #8hr
     "candles": [["admire", "candle", "honey"], "w", 4*60*60], #4hr
@@ -424,8 +425,9 @@ class macro:
         return self.isInOCR("bee bear", includeList, excludeList)
     
     def isBesideEImage(self, name):
+        yOffset = 23 if self.newUI else 0
         template = self.adjustImage("./images/menu",name)
-        return locateTransparentImageOnScreen(template, self.mw//2-200,0,400,self.mh//8, 0.75)
+        return locateTransparentImageOnScreen(template, self.mw//2-200,yOffset,400,self.mh//8, 0.75)
 
     def getTiming(self,name = None):
         for _ in range(3):
@@ -586,7 +588,7 @@ class macro:
                     break
             mouse.scroll(-40, True)
             time.sleep(0.04)
-        if valBest < 0.55:
+        if valBest < 0.65:
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
             return None
         if not foundEarly:
@@ -639,6 +641,7 @@ class macro:
         while not self.isBesideE(["pollen", "flower", "field"]): 
             mouse.click()
             if self.night and self.setdat["stinger_hunt"]:
+                self.incrementHourlyStat("converting_time", time.time()-st)
                 self.keyboard.press(".")
                 self.stingerHunt()
                 return
@@ -653,6 +656,7 @@ class macro:
         if (wait):
             self.logger.webhook("", f'Waiting for an additional {wait} seconds', "light green")
         time.sleep(wait)
+        self.incrementHourlyStat("converting_time", time.time()-st)
         return True
 
     def moveMouseToDefault(self):
@@ -679,9 +683,34 @@ class macro:
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
                 solveMemoryMatch(self.latestMM, self.display_type)
 
-            mmImg = self.adjustImage("./images/menu", "blenderclose") #blender
-            if locateImageOnScreen(mmImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
+            blenderImg = self.adjustImage("./images/menu", "blenderclose") #blender
+            if locateImageOnScreen(blenderImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
                 self.closeBlenderGUI()
+
+            noImg = self.adjustImage("./images/menu", "no") #yes/no popup
+            x = self.mw/3.2
+            y = self.mh/2.3
+            res = locateImageOnScreen(noImg,x,y,self.mw/2.5,self.mh/3.4, 0.8)
+            #mssScreenshot(x,y,self.mw/2.5,self.mh/3.4, True)
+            if res:
+                x2, y2 = res[1]
+                mouse.moveTo(x+x2, y+y2)
+                time.sleep(0.08)
+                mouse.moveBy(1,1)
+                time.sleep(0.1)
+                mouse.click()
+
+            stickerBookImg = self.adjustImage("./images/menu", "stickerbookclose") #sticker book
+            x = 250
+            y = 130
+            res = locateImageOnScreen(stickerBookImg,x,y,100, 80, 0.8)
+            if res:
+                x2, y2 = res[1]
+                mouse.moveTo(x+x2, y+y2)
+                time.sleep(0.08)
+                mouse.moveBy(1,3)
+                time.sleep(0.1)
+                mouse.click()
 
             self.moveMouseToDefault()
             time.sleep(0.1)
@@ -761,9 +790,9 @@ class macro:
                 if self.isBesideEImage("cannon"):
                     break
             self.keyboard.keyUp("d")
-            time.sleep(0.04)
             #check if overrun cannon
             for _ in range(3):
+                time.sleep(0.4)
                 if self.isBesideEImage("cannon"):
                     return
                 self.keyboard.walk("a",0.2)
@@ -771,6 +800,7 @@ class macro:
             self.reset(convert=False)
         else:
             self.logger.webhook("Notice", f"Failed to reach cannon too many times", "red")
+            self.rejoin()
     
     def rejoin(self, rejoinMsg = "Rejoining"):
         self.canDetectNight = False
@@ -870,8 +900,8 @@ class macro:
                 #$time.sleep(0.15)
                 if self.isBesideEImage("claimhive"):
                     #check for overrun
-                    time.sleep(0.12)
                     for _ in range(4):
+                        time.sleep(0.4)
                         if self.isBesideEImage("claimhive"): break
                         self.keyboard.walk("d",0.2)
                     self.keyboard.press("e")
@@ -1025,12 +1055,17 @@ class macro:
         gatherBackgroundThread.daemon = True
         gatherBackgroundThread.start()
         self.keyboard.releaseMovement()
-        def turnOffShitLock():
+
+        def getGatherTime():
+            return time.time() - st
+        
+        def turnOffShitLock(): #since shift lock is turned off at the end of the gather, we'll also update the gather time
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
             self.moveMouseToDefault()
 
         if fieldSetting["shift_lock"]: self.keyboard.press('shift')
         while keepGathering:
+            patternStartTime = time.time()
             mouse.mouseDown()
             #ensure that the pattern works  
             try:
@@ -1044,6 +1079,8 @@ class macro:
             firstPattern = False
             #cycle ends
             mouse.mouseUp()
+            #add gather time stat
+            self.incrementHourlyStat("gathering_time", time.time()-patternStartTime)
 
             #check for gather interrupts
             if self.night and self.setdat["stinger_hunt"]: 
@@ -1062,8 +1099,8 @@ class macro:
                 break
 
             #check if max time is reached
-            gatherTime = "{:.2f}".format((time.time() - st)/60)
-            if time.time() - st > maxGatherTime:
+            gatherTime = "{:.2f}".format((getGatherTime())/60)
+            if getGatherTime() > maxGatherTime:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
             #check backpack
@@ -1108,8 +1145,8 @@ class macro:
                 if self.isBesideEImage("makehoney"):
                     break
             self.keyboard.keyUp("a")
-            #in case we overwalked
-            time.sleep(0.25)
+            #in case we overrun
+            time.sleep(0.4)
             for _ in range(4):
                 if self.convert():
                     break
@@ -1238,8 +1275,6 @@ class macro:
         time.sleep(0.2)
         mouse.click()
         time.sleep(1)
-        #TODO: check if the player ran out of eggs
-        #check if on cooldown
         confirmImg = self.adjustImage("./images/menu", "confirm")
         if not locateImageOnScreen(confirmImg, self.mw//2+150, 4*self.mh//10+160, 120, 60, 0.7):
             self.logger.webhook(f"", "Sticker printer on cooldown", "dark brown", "screen")
@@ -1256,7 +1291,12 @@ class macro:
         mouse.click()
         time.sleep(0.2)
         #click yes
-        self.clickYes()
+        if not self.clickYes(detect=True):
+            egg = self.setdat["sticker_printer_egg"]
+            self.logger.webhook("", f"No {egg} eggs left, Sticker Printer has been disabled", "red", "screen")
+            self.setdat["sticker_printer"] = False
+            self.keyboard.press("e")
+            return
         #wait for sticker to generate
         time.sleep(7)
         self.logger.webhook(f"", "Claimed sticker", "bright green", "sticker")
@@ -1300,6 +1340,9 @@ class macro:
         objectiveData = mergedCollectData[objective]
         displayName = objective.replace("_"," ").title()
         self.location = "collect"
+        st = time.time()
+        def updateHourlyTime():
+            self.incrementHourlyStat("misc_time", time.time()-st)
         #go to collect and check that player has reached
         for i in range(3):
             self.logger.webhook("",f"Travelling: {displayName}","dark brown")
@@ -1316,7 +1359,9 @@ class macro:
             self.logger.webhook("", f"Failed to reach {displayName}", "dark brown", "screen")
             if i != 2: self.reset(convert=False)
         
-        if not reached: return #player failed to reach objective
+        if not reached: 
+            updateHourlyTime()
+            return #player failed to reach objective
         #player has reached, get cooldown info
         #check if on cooldown
         cooldownSeconds = objectiveData[2]
@@ -1338,7 +1383,8 @@ class macro:
                 else:
                     mmType = objective.split("_")[0]
                 self.latestMM = mmType
-                self.logger.webhook("", f"Solving: ${displayName}", "dark brown", "screen")
+                time.sleep(2)
+                self.logger.webhook("", f"Solving: {displayName}", "dark brown", "screen")
                 solveMemoryMatch(mmType, self.display_type)
             elif objective in fieldBoosterData:
                 sleep(3)
@@ -1357,7 +1403,7 @@ class macro:
                             break
                     if boostedField: break
                 returnVal = boostedField
-                self.logger.webhook("", f"Collected: {displayName}, Boosted Field: {boostedField}", "bright green", "screen")
+                self.logger.webhook("", f"Collected: {displayName}, Boosted Field: {boostedField.title()}", "bright green", "screen")
                 self.saveTiming("last_booster")
             elif objective == "sticker_stack":
                 if "your" in reached or "activated" in reached:
@@ -1370,6 +1416,7 @@ class macro:
         #update the internal cooldown
         self.saveTiming(objective)
         self.collectCooldowns[objective] = cooldownSeconds
+        updateHourlyTime()
         return returnVal
 
     #accept mob and field and return them in the format used for timings.txt file
@@ -1403,6 +1450,7 @@ class macro:
             #check respawn
             if self.hasMobRespawned(m, field, timings[timingName]):
                 timings[timingName] = time.time()
+                self.incrementHourlyStat("bugs", 1)
         settingsManager.saveDict("./data/user/timings.txt", timings)
 
     #background thread function to determine if player has defeated the mob
@@ -1451,6 +1499,8 @@ class macro:
         self.logger.webhook("","Attacking: {} ({})".format(mobName.title(),field.title()),"dark brown")
         
         st = time.time()
+        def updateHourlyTime():
+            self.incrementHourlyStat("bug_run_time", time.time()-st)
         #move in squares to evade attacks
         #save the last entered side and front keys. This will be used for the looting pattern
         distance = 0.7
@@ -1474,10 +1524,12 @@ class macro:
         attackThread.join()
         if self.mobRunStatus == "dead":
             self.logger.webhook("","Player died", "dark brown","screen")
+            updateHourlyTime()
             return
         elif self.mobRunStatus == "timeout":
             self.setMobTimer(field)
             self.logger.webhook("","Could not kill {} in time. Maybe it hasn't respawned?".format(mobName.title()), "dark brown", "screen")
+            updateHourlyTime()
             return
         time.sleep(1.5)
         #loot
@@ -1522,6 +1574,7 @@ class macro:
         lootThread.join()
         #check if there are paths for the macro to walk to other fields for mob runs
         #run a path in the field format
+        updateHourlyTime()
         self.runPath(f"mob_runs/{field}", fileMustExist=False)
 
     def stingerHuntBackground(self):
@@ -1549,6 +1602,9 @@ class macro:
         stingerHuntThread = threading.Thread(target=self.stingerHuntBackground)
         stingerHuntThread.daemon = True
         stingerHuntThread.start()
+        vicStartTime = time.time()
+        def updateHourlyTime():
+            self.incrementHourlyStat("bug_run_time", time.time()-vicStartTime)
         class vicFoundException(Exception):
             pass
         for currField in self.vicFields:
@@ -1578,6 +1634,7 @@ class macro:
             self.stopVic = True
             stingerHuntThread.join()
             self.convert()
+            updateHourlyTime()
             return
         
         #kill vic
@@ -1602,6 +1659,7 @@ class macro:
                 if self.died or self.vicStatus is not None: break
             if self.vicStatus == "defeated":
                 self.logger.webhook("","Vicious Bee Defeated","light green")
+                self.incrementHourlyStat("vicious_bees", 1)
                 break
             elif self.died:
                 self.logger.webhook("","Player Died","dark brown")
@@ -1610,6 +1668,7 @@ class macro:
             elif time.time()-st > 180: #max 3 mins to kill vic
                 self.logger.webhook("","Took too long to kill Vicious Bee","red", "screen")
                 break
+        updateHourlyTime()
         self.stopVic = True
         stingerHuntThread.join()
         self.reset()
@@ -1681,6 +1740,7 @@ class macro:
         cocoThread = threading.Thread(target=self.coconutCrabBackground)
         cocoThread.daemon = True
         cocoThread.start()
+        st = time.time()
         for _ in range(2):
             self.cannon()
             self.logger.webhook("","Travelling: Coconut Crab","dark brown")
@@ -1723,6 +1783,7 @@ class macro:
             self.nmLoot(9, 4, "d")
             self.nmLoot(9, 4, "a")
         cocoThread.join()
+        self.incrementHourlyStat("bug_run_time", time.time()-st)
         self.saveTiming("coconut_crab")
         self.reset()
 
@@ -1752,9 +1813,10 @@ class macro:
         else: #place, just walk there
             if finalKey is not None: self.keyboard.walk(finalKey[0], finalKey[1])
             return True
-    
+        
     #place the planter and return the time it would take for the planter to grow (in secs)
     def placePlanter(self, planter, field, harvestFull, glitter):
+        st = time.time()
         self.goToPlanter(planter, field, "place")
         name = planter.lower().replace(" ","").replace("-","")
         if glitter: self.useItemInInventory("glitter") #use glitter
@@ -1762,6 +1824,7 @@ class macro:
             return None
         self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
         #calculate growth time. If the user didnt select harvest when full, return the harvest every X hours instead
+        self.incrementHourlyStat("misc_time", time.time()-st)
         if harvestFull:
             baseGrowthTime, bonusFields, fieldGrowthBonus = planterGrowthData[planter]
             bonusTime = 0
@@ -1773,14 +1836,19 @@ class macro:
             return self.setdat["manual_planters_collect_every"]*60*60 
 
     def collectPlanter(self, planter, field):
+        st = time.time()
+        def updateHourlyTime():
+            self.incrementHourlyStat("misc_time", time.time()-st)
         if not self.goToPlanter(planter, field, "collect"):
             self.logger.webhook("",f"Unable to find Planter: {planter.title()}", "dark brown", "screen")
+            updateHourlyTime()
             return
         self.keyboard.press("e")
         self.clickYes()
         self.logger.webhook("",f"Looting: {planter.title()} planter","bright green", "screen")
         self.keyboard.multiWalk(["s","d"], 0.87)
         self.nmLoot(9, 5, "a")
+        updateHourlyTime()
 
     #iterate through all 3 slots in a cycle
     def placePlanterCycle(self, cycle):
@@ -1829,10 +1897,15 @@ class macro:
         
     def blender(self, blenderData):
         itemNo = blenderData["item"]
+        st = time.time()
+        def updateHourlyTime():
+            self.incrementHourlyStat("misc_time", time.time()-st)
+
         def saveBlenderData():
             with open("./data/user/blender.txt", "w") as f:
                 f.write(str(blenderData))
             f.close()
+            updateHourlyTime()
         
         def getNextItem():
             nextItem = itemNo
@@ -1855,7 +1928,7 @@ class macro:
                 blenderData["collectTime"] = -1
                 saveBlenderData()
                 return
-            
+
         for _ in range(2):
             self.logger.webhook("","Travelling: Blender","dark brown")
             self.cannon()
@@ -1867,6 +1940,7 @@ class macro:
             if reached: break
         else:
             self.logger.webhook("","Failed to reach Blender", "dark brown", "screen")
+            updateHourlyTime()
             return
         
         x = self.mw/3
@@ -2099,6 +2173,11 @@ class macro:
             f.write(str(finalTime))
         f.close()
 
+    def incrementHourlyStat(self, statName, value):
+        data = settingsManager.readSettingsFile("data/user/hourly_report_main.txt")
+        data[statName] += value
+        settingsManager.saveDict(f"data/user/hourly_report_main.txt", data)
+        
     def nightAndHotbarBackground(self):
 
         while True:
@@ -2133,6 +2212,102 @@ class macro:
                 f.close()
                 time.sleep(0.2)
     
+    def hourlyReportBackground(self):
+        honeyY = 23 if self.newUI else 0
+        threshold = 0.75
+        numImages = []
+        for i in range(10):
+            numImages.append(adjustImage("images/misc", f"honey_{i}", self.display_type))
+
+        def getHoney():
+            #use image detection to get the amount of honey
+            #get the coordinates of each digit
+            prevResult = 0
+            for _ in range(10):
+                screen = mssScreenshotNP(self.mw//2-241, honeyY, 140, 36)
+                screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
+                numbersRes = []
+                #get all the numbers and their coordinates
+                for i,e in enumerate(numImages):
+                    e = cv2.cvtColor(e, cv2.COLOR_RGB2GRAY)
+                    res = cv2.matchTemplate(screen,e,cv2.TM_CCOEFF_NORMED)
+                    loc = np.where(res >=threshold)
+                    w, h = e.shape[::-1]
+                    screenCopy = screen.copy()
+                    #loop through all found coordinates and append it to numberRes
+                    for pt in zip(*loc[::-1]):
+                        #cv2.rectangle(screenCopy, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
+                        numbersRes.append((i, pt[0]))
+                    #cv2.imwrite(f'res{i}.png',screenCopy)
+
+                #sort the numbers by their x coordinate
+                #then extract only the numbers and join them together
+                result = ''.join([str(x[0]) for x in sorted(numbersRes, key=lambda x: x[1])])
+                if result == prevResult:
+                    return int(result)
+                prevResult = result
+                time.sleep(0.13)
+            #couldnt detect
+            print("image detection for honey failed, using ocr")
+            ocrHoney = ocr.imToString("honey")
+            return ocrHoney if ocrHoney else 0
+
+        #first honey
+        settingsManager.saveSettingFile("start_honey", getHoney(), "data/user/hourly_report_bg.txt")
+        settingsManager.saveSettingFile("start_time", time.time(), "data/user/hourly_report_bg.txt")
+        prevMin = -1  
+        while True:
+            if self.status.value == "rejoining": continue
+            #instead of using time.sleep, we want to run the code at the start of the min
+            currMin = datetime.now().minute
+            if currMin == prevMin: continue
+            prevMin = currMin
+            honey = getHoney()
+            print(honey)
+            backpack = bpc(self.mw, self.newUI)
+            data = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
+            data["honey_per_min"].append(honey)
+            data["backpack_per_min"].append(backpack)
+            settingsManager.saveDict("data/user/hourly_report_bg.txt", data)
+
+            #check if its time to send hourly report
+            if currMin == 0:
+                hourlyReportData = generateHourlyReport()
+                self.logger.hourlyReport("Hourly Report", "", "purple")
+
+                #reset stats
+                hourlyReportMainData = settingsManager.readSettingsFile("data/user/hourly_report_main.txt")
+                for k in hourlyReportMainData:
+                    hourlyReportMainData[k] = 0   
+                settingsManager.saveDict(f"data/user/hourly_report_main.txt", hourlyReportMainData)
+
+                hourlyReportBgData = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
+                for k in hourlyReportBgData:
+                    if isinstance(hourlyReportBgData[k], list):
+                        hourlyReportBgData[k] = [] 
+                settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
+
+                #add to history
+                with open("data/user/hourly_report_history.txt", "r") as f:
+                    history = ast.literal_eval(f.read())
+                f.close()
+
+                historyObj = {
+                    "endHour": datetime.now().hour,
+                    "date": str(datetime.today().date()),
+                    "honey": hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]
+                }
+                #max 5 objs
+                if len(history) > 4:
+                    history.pop(-1)
+                history.insert(0,historyObj)
+
+                with open("data/user/hourly_report_history.txt", "w") as f:
+                    f.write(str(history))
+                f.close()
+
+            
+            
     def start(self):
         #if roblox is not open, rejoin
         if not appManager.openApp("roblox"):
@@ -2231,11 +2406,17 @@ class macro:
             self.keyboard.press("esc")
             if similarHashes(img1, img2, 3):
                 messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Accessibility Permission')
-
+            time.sleep(0.2)
 
         #enable night detection and hotbar
         nightAndHotbarThread = threading.Thread(target=self.nightAndHotbarBackground)
         nightAndHotbarThread.daemon = True
         nightAndHotbarThread.start()
+
+        #enable hourly report background
+        hourlyReportThread = threading.Thread(target=self.hourlyReportBackground)
+        hourlyReportThread.daemon = True
+        hourlyReportThread.start()
+
         self.reset(convert=True)
         self.saveTiming("rejoin_every")
