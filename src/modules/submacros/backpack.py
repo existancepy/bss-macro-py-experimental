@@ -117,5 +117,5 @@ def bpc(mw, newUI):
                         perc=95
                     else:
                         perc=0
-    print("Pixel Colour: {}, Backpack Percentage: {}.".format(col, perc))
+    #print("Pixel Colour: {}, Backpack Percentage: {}.".format(col, perc))
     return perc
