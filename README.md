@@ -21,6 +21,8 @@ This is where you can receive update news, guides, support/troubleshooting help 
 - Collect
     - Claim dispensers like wealth clock, glue dispenser and more
     - Collect the Mondo Chick's Buff
+    - Complete memory matches
+    - Craft and collect items from the blender
 - Kill
     - Automate bug runs
     - Kill bosses like coconut crab and stump snail
@@ -28,5 +30,6 @@ This is where you can receive update news, guides, support/troubleshooting help 
 - Planters
     - Customise your planter cycles
     - Boost your planter's growth by automating glitter usage and gathering in planter field
-
-
+- Boost
+    - Customise when and how often hotbar slots are used
+    - Collect buffs from the sticker stack and field boosts
