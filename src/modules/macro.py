@@ -1062,10 +1062,10 @@ class macro:
         def turnOffShitLock(): #since shift lock is turned off at the end of the gather, we'll also update the gather time
             if fieldSetting["shift_lock"]: self.keyboard.press('shift')
             self.moveMouseToDefault()
-            self.incrementHourlyStat("gathering_time", getGatherTime())
 
         if fieldSetting["shift_lock"]: self.keyboard.press('shift')
         while keepGathering:
+            patternStartTime = time.time()
             mouse.mouseDown()
             #ensure that the pattern works  
             try:
@@ -1079,6 +1079,8 @@ class macro:
             firstPattern = False
             #cycle ends
             mouse.mouseUp()
+            #add gather time stat
+            self.incrementHourlyStat("gathering_time", time.time()-patternStartTime)
 
             #check for gather interrupts
             if self.night and self.setdat["stinger_hunt"]: 
@@ -1088,7 +1090,6 @@ class macro:
                 self.reset(convert=False)
                 break
             elif self.collectMondoBuff(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
-                self.incrementHourlyStat("gathering_time", getGatherTime()-self.setdat["mondo_buff_wait"]*60-20)
                 break
             elif self.died:
                 self.status.value = ""
@@ -1099,7 +1100,7 @@ class macro:
 
             #check if max time is reached
             gatherTime = "{:.2f}".format((getGatherTime())/60)
-            if time.time() - st > maxGatherTime:
+            if getGatherTime() > maxGatherTime:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
             #check backpack
