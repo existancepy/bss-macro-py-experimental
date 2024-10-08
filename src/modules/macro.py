@@ -2236,9 +2236,9 @@ class macro:
                     screenCopy = screen.copy()
                     #loop through all found coordinates and append it to numberRes
                     for pt in zip(*loc[::-1]):
-                        #cv2.rectangle(screenCopy, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
+                        cv2.rectangle(screenCopy, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
                         numbersRes.append((i, pt[0]))
-                    #cv2.imwrite(f'res{i}.png',screenCopy)
+                    cv2.imwrite(f'res{i}.png',screenCopy)
 
                 #sort the numbers by their x coordinate
                 #then extract only the numbers and join them together

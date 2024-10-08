@@ -1,4 +1,4 @@
-wealth_clock=1727585774.2998478
+wealth_clock=1728355197.2063596
 blueberry_dispenser=1728265817.905525
 strawberry_dispenser=1724297819.950319
 royal_jelly_dispenser=0
@@ -27,7 +27,7 @@ rhinobeetle_blue flower=1727158653.133918
 rhinobeetle_bamboo=1727064647.7688131
 rhinobeetle_pineapple=1727060486.993366
 rhinobeetle_clover=1727061783.980821
-rejoin_every=1728285518.880378
+rejoin_every=1728355175.2714124
 coconut_crab=0
 memory_match=1727597613.9579892
 mega_memory_match=0
