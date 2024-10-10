@@ -636,6 +636,7 @@ class macro:
         st = time.time()
         time.sleep(2)
         self.logger.webhook("", "Converting", "brown", "screen")
+        self.alreadyConverted = True
         if self.enableNightDetection:
             self.keyboard.press(",")
         while not self.isBesideE(["pollen", "flower", "field"]): 
@@ -647,6 +648,7 @@ class macro:
                 return
             if time.time()-st > 30*60: #30mins max
                 self.logger.webhook("","Converting timeout (30mins max)", "brown", "screen")
+                break
         self.status.value = ""
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
@@ -665,6 +667,7 @@ class macro:
         mouse.moveTo(370, 100+yOffset)
 
     def reset(self, hiveCheck = False, convert = True):
+        self.alreadyConverted = False
         self.keyboard.releaseMovement()
 
         #reset until player is at hive
@@ -970,7 +973,7 @@ class macro:
         fieldSetting = self.fieldSettings[field]
         for i in range(3):
             #wait for bees to wake up
-            time.sleep(3)
+            if not self.alreadyConverted: time.sleep(6)
             #go to field
             self.cannon()
             self.logger.webhook("",f"Travelling: {field.title()}, Attempt {i+1}", "dark brown")
@@ -1668,6 +1671,7 @@ class macro:
             elif time.time()-st > 180: #max 3 mins to kill vic
                 self.logger.webhook("","Took too long to kill Vicious Bee","red", "screen")
                 break
+        self.night = False
         updateHourlyTime()
         self.stopVic = True
         stingerHuntThread.join()
@@ -2220,6 +2224,7 @@ class macro:
             numImages.append(adjustImage("images/misc", f"honey_{i}", self.display_type))
 
         def getHoney():
+            '''
             #use image detection to get the amount of honey
             #get the coordinates of each digit
             prevResult = 0
@@ -2249,6 +2254,7 @@ class macro:
                 time.sleep(0.13)
             #couldnt detect
             print("image detection for honey failed, using ocr")
+            '''
             ocrHoney = ocr.imToString("honey")
             return ocrHoney if ocrHoney else 0
 
@@ -2257,18 +2263,18 @@ class macro:
         settingsManager.saveSettingFile("start_time", time.time(), "data/user/hourly_report_bg.txt")
         prevMin = -1  
         while True:
-            if self.status.value == "rejoining": continue
-            #instead of using time.sleep, we want to run the code at the start of the min
-            currMin = datetime.now().minute
-            if currMin == prevMin: continue
-            prevMin = currMin
-            honey = getHoney()
-            print(honey)
-            backpack = bpc(self.mw, self.newUI)
-            data = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
-            data["honey_per_min"].append(honey)
-            data["backpack_per_min"].append(backpack)
-            settingsManager.saveDict("data/user/hourly_report_bg.txt", data)
+            if self.status.value != "rejoining":
+                #instead of using time.sleep, we want to run the code at the start of the min
+                currMin = datetime.now().minute
+                if currMin == prevMin: continue
+                prevMin = currMin
+                honey = getHoney()
+                print(honey)
+                backpack = bpc(self.mw, self.newUI)
+                data = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
+                data["honey_per_min"][currMin] = honey
+                data["backpack_per_min"][currMin] = backpack
+                settingsManager.saveDict("data/user/hourly_report_bg.txt", data)
 
             #check if its time to send hourly report
             if currMin == 0:
@@ -2284,7 +2290,7 @@ class macro:
                 hourlyReportBgData = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
                 for k in hourlyReportBgData:
                     if isinstance(hourlyReportBgData[k], list):
-                        hourlyReportBgData[k] = [] 
+                        hourlyReportBgData[k] = [0]*60 
                 settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
 
                 #add to history

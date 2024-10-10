@@ -308,7 +308,7 @@ if __name__ == "__main__":
             hourlyReportBgData = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
             for k in hourlyReportBgData:
                 if isinstance(hourlyReportBgData[k], list):
-                    hourlyReportBgData[k] = []
+                    hourlyReportBgData[k] = [0]*60
                 else:
                     hourlyReportBgData[k] = 0   
             settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)

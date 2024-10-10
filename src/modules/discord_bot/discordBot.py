@@ -3,6 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 from modules.screen.screenshot import mssScreenshot
 import io
+from modules.submacros.hourlyReport import generateHourlyReport
 
 def discordBot(token, run, status):
     bot = commands.Bot(command_prefix="!b", intents=discord.Intents.all())
@@ -61,8 +62,13 @@ def discordBot(token, run, status):
             status.value = "amulet_replace"
             await interaction.response.send_message("Replacing amulet")
         
-
-        
+    '''
+    @bot.tree.command(name = "hourly report", description = "Send the hourly report")
+    async def hourlyReport(interaction: discord.Interaction):
+        await interaction.response.defer()
+        generateHourlyReport()
+        await interaction.followup.send(file = discord.File("hourlyReport.png"))
+    '''
         
     #start bot
     bot.run(token)
