@@ -2220,6 +2220,7 @@ class macro:
             numImages.append(adjustImage("images/misc", f"honey_{i}", self.display_type))
 
         def getHoney():
+            '''
             #use image detection to get the amount of honey
             #get the coordinates of each digit
             prevResult = 0
@@ -2249,6 +2250,7 @@ class macro:
                 time.sleep(0.13)
             #couldnt detect
             print("image detection for honey failed, using ocr")
+            '''
             ocrHoney = ocr.imToString("honey")
             return ocrHoney if ocrHoney else 0
 
