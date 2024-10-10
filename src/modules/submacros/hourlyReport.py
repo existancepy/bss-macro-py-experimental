@@ -32,15 +32,16 @@ def millify(n):
     return '{:.2f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
 
 def filterOutliers(values, threshold=3):
+    nonZeroValues = [x for x in values if x]
     # Calculate the mean and standard deviation
-    mean = np.mean(values)
-    std_dev = np.std(values)
+    mean = np.mean(nonZeroValues)
+    std_dev = np.std(nonZeroValues)
     
     # Calculate Z-scores
     z_scores = [(x - mean) / std_dev for x in values]
     
     # Filter out values with Z-scores greater than the threshold
-    filtered_values = [x for x, z in zip(values, z_scores) if abs(z) < threshold]
+    filtered_values = [x for x, z in zip(values, z_scores) if abs(z) < threshold or not x]
     
     return filtered_values
 
@@ -94,6 +95,8 @@ def generateHourlyReport():
         f.close()
 
         #filter out the honey/min
+        print(hourlyReportData["honey_per_min"])
+        #hourlyReportData["honey_per_min"] = [x for x in hourlyReportData["honey_per_min"] if x]
         hourlyReportData["honey_per_min"] = filterOutliers(hourlyReportData["honey_per_min"])
         #calculate honey/min
         honeyPerMin = [0]

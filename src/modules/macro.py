@@ -2272,8 +2272,8 @@ class macro:
                 print(honey)
                 backpack = bpc(self.mw, self.newUI)
                 data = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
-                data["honey_per_min"][currMin] = honey
-                data["backpack_per_min"][currMin] = backpack
+                data["honey_per_min"].append(honey)
+                data["backpack_per_min"].append(backpack)
                 settingsManager.saveDict("data/user/hourly_report_bg.txt", data)
 
             #check if its time to send hourly report
@@ -2290,7 +2290,7 @@ class macro:
                 hourlyReportBgData = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
                 for k in hourlyReportBgData:
                     if isinstance(hourlyReportBgData[k], list):
-                        hourlyReportBgData[k] = [0]*60 
+                        hourlyReportBgData[k] = []
                 settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
 
                 #add to history
