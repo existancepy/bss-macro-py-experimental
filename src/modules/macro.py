@@ -623,6 +623,7 @@ class macro:
         mouse.moveBy(10,15)
         for _ in range(2):
             mouse.click()
+            time.sleep(0.1)
         self.clickYes()
         #close inventory
         self.toggleInventory("close")
@@ -1834,12 +1835,14 @@ class macro:
             if not self.useItemInInventory(f"{name}planter"):
                 return None
             #check if planter is placed
-            time.sleep(0.3)
-            if self.isBesideEImage("ebutton"):
+            time.sleep(0.5)
+            if self.blueTextImageSearch("planter"):
                 self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
                 break
             self.logger.webhook("",f"Failed to Place Planter: {planter.title()}, trying again", "red", "screen")
             self.reset()
+        else:
+            return None
         #calculate growth time. If the user didnt select harvest when full, return the harvest every X hours instead
         self.incrementHourlyStat("misc_time", time.time()-st)
         if harvestFull:
@@ -2230,12 +2233,13 @@ class macro:
                 time.sleep(0.2)
     
     def hourlyReportBackground(self):
+        '''
         honeyY = 23 if self.newUI else 0
         threshold = 0.75
         numImages = []
         for i in range(10):
             numImages.append(adjustImage("images/misc", f"honey_{i}", self.display_type))
-
+        '''
         def getHoney():
             '''
             #use image detection to get the amount of honey

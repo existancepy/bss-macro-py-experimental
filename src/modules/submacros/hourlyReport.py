@@ -93,7 +93,9 @@ def generateHourlyReport():
         with open("data/user/hourly_report_history.txt", "r") as f:
             historyData = ast.literal_eval(f.read())
         f.close()
-
+        
+        if len(hourlyReportData["honey_per_min"]) < 3:
+            hourlyReportData["honey_per_min"] = [0]*3 + hourlyReportData["honey_per_min"]
         #filter out the honey/min
         print(hourlyReportData["honey_per_min"])
         #hourlyReportData["honey_per_min"] = [x for x in hourlyReportData["honey_per_min"] if x]
@@ -107,9 +109,11 @@ def generateHourlyReport():
             prevHoney = x
         
         #calculate some stats
-        sessionHoney = hourlyReportData["honey_per_min"][-1]- hourlyReportData["start_honey"]
+        onlyValidHourlyHoney = [x for x in hourlyReportData["honey_per_min"] if x] #removes all zeroes
+        sessionHoney = onlyValidHourlyHoney[-1]- hourlyReportData["start_honey"]
         sessionTime = time.time()-hourlyReportData["start_time"]
-        honeyThisHour = hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]
+        honeyThisHour = onlyValidHourlyHoney[-1] - onlyValidHourlyHoney["honey_per_min"][0]
+
         #replace the contents of the html
         replaceDict = {
             'src="a': f'src="{hourlyReportDir}/a'.replace("\\", "/"),
@@ -119,7 +123,7 @@ def generateHourlyReport():
             "-bugs": hourlyReportData["bugs"],
             "-quests": hourlyReportData["quests_completed"],
             "-vicBees": hourlyReportData["vicious_bees"],
-            "-currHoney": millify(hourlyReportData["honey_per_min"][-1]),
+            "-currHoney": millify(onlyValidHourlyHoney[-1]),
             "-sessHoney": millify(sessionHoney),
             "-sessTime": display_time(sessionTime, ['d','h','m']),
             "var honeyPerMin = []": f'var honeyPerMin = {honeyPerMin}',
