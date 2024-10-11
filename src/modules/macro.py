@@ -435,6 +435,10 @@ class macro:
             if data: break #most likely another process is writing to the file
             time.sleep(0.1)
         if name is not None:
+            if not name in data:
+                print(f"could not find timing for {name}, setting a new one")
+                self.saveTiming(name)
+                return time.time()
             return data[name]
         return data
     
@@ -959,7 +963,7 @@ class macro:
         while self.isGathering:
             #death check
             st = time.time()
-            if self.blueTextImageSearch("died"):
+            if self.blueTextImageSearch("died", 0.8):
                 self.died = True
             #mob respawn check
             self.setMobTimer(field)
@@ -1098,6 +1102,7 @@ class macro:
                 self.status.value = ""
                 turnOffShitLock()
                 self.logger.webhook("","Player died", "dark brown","screen")
+                time.sleep(0.4)
                 self.reset()
                 break
 
@@ -1821,12 +1826,20 @@ class macro:
     #place the planter and return the time it would take for the planter to grow (in secs)
     def placePlanter(self, planter, field, harvestFull, glitter):
         st = time.time()
-        self.goToPlanter(planter, field, "place")
-        name = planter.lower().replace(" ","").replace("-","")
-        if glitter: self.useItemInInventory("glitter") #use glitter
-        if not self.useItemInInventory(f"{name}planter"):
-            return None
-        self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
+        for _ in range(2):
+            #try to place planter
+            self.goToPlanter(planter, field, "place")
+            name = planter.lower().replace(" ","").replace("-","")
+            if glitter: self.useItemInInventory("glitter") #use glitter
+            if not self.useItemInInventory(f"{name}planter"):
+                return None
+            #check if planter is placed
+            time.sleep(0.3)
+            if self.isBesideEImage("ebutton"):
+                self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
+                break
+            self.logger.webhook("",f"Failed to Place Planter: {planter.title()}, trying again", "red", "screen")
+            self.reset()
         #calculate growth time. If the user didnt select harvest when full, return the harvest every X hours instead
         self.incrementHourlyStat("misc_time", time.time()-st)
         if harvestFull:
