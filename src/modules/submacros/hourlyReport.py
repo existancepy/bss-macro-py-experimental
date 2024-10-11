@@ -112,7 +112,7 @@ def generateHourlyReport():
         honeyThisHour = hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]
         #replace the contents of the html
         replaceDict = {
-            'src="a': f'src="{hourlyReportDir}/a',
+            'src="a': f'src="{hourlyReportDir}/a'.replace("\\", "/"),
             '`as': '`{}/as'.format(str(hourlyReportDir).replace("\\", "/")),
             "-avgHoney": millify(sessionHoney/(sessionTime/3600)),
             "-honey": millify(honeyThisHour),
@@ -143,6 +143,7 @@ def generateHourlyReport():
         hti.screenshot(html_str=htmlString, save_as=f"{pageName}.png")
         #open the image
         image = cv2.imread(f"{pageName}.png")
+        print(htmlString)
 
         #crop the image to remove any excess empty space at the bottom
         #this allows for seamless merging of images
