@@ -87,7 +87,7 @@ def ahkPatternToPython(ahk):
             #loop number of times
             digits = ''.join([x for x in line if x.isdigit()])
             if digits: 
-                out[i] = e.replace(line, f'for i in range({int(digits)})')
+                out[i] = e.replace(line, f'for i in range({int(digits)}):')
         #convert send
         elif line.startswith("send"):
             cmds = []
@@ -106,7 +106,6 @@ def ahkPatternToPython(ahk):
                 add = re.sub(r'"\s*([^"]*?)\s*"', r'"\1"', add)
                 #split into parameters
                 args = add.split(" ")
-                print(args)
                 #get key
                 key = args[0]
                 #check if variable 
@@ -221,5 +220,5 @@ loop reps {
 	
 }
 '''
-print(ahkPatternToPython(test))
+#print(ahkPatternToPython(test))
 

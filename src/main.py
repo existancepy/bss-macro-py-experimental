@@ -210,6 +210,9 @@ if __name__ == "__main__":
     import modules.misc.appManager as appManager
     import modules.misc.settingsManager as settingsManager
     from modules.discord_bot.discordBot import discordBot
+    from modules.submacros.convertAhkPattern import ahkPatternToPython
+    import os
+
     macroProc: typing.Optional[multiprocessing.Process] = None
     #set screen data
     screenData.setScreenData()
@@ -248,6 +251,20 @@ if __name__ == "__main__":
     compareBlueFlowerPath = '\nself.keyboard.press(",")\nself.keyboard.press(",")\nself.keyboard.slowPress("e")\nsleep(0.08)\nself.keyboard.keyDown("w")\nself.keyboard.slowPress("space")\nself.keyboard.slowPress("space")\nsleep(3)\nself.keyboard.keyUp("w")\nself.keyboard.slowPress("space")\nsleep(0.8)'
     if blueFlowerPath != compareBlueFlowerPath:
         messageBox.msgBox("Warning", "It looks like you did not update your paths for update 6. The macro will not work properly. Refer to update 6's instructions in #updates")
+    
+    #convert ahk pattern
+    ahkPatterns = [x for x in os.listdir("../settings/patterns") if ".ahk" in x]
+    for pattern in ahkPatterns:
+        with open(f"../settings/patterns/{pattern}", "r") as f:
+            ahk = f.read()
+        f.close()
+        python = ahkPatternToPython(ahk)
+        print(f"Converted: {pattern}")
+        patternName = pattern.rsplit(".", 1)[0]
+        with open(f"../settings/patterns/{patternName}.py", "w") as f:
+            f.write(python)
+        f.close()
+
     def stopApp(page= None, sockets = None):
         global stopThreads
         stopThreads = True

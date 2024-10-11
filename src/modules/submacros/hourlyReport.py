@@ -112,7 +112,7 @@ def generateHourlyReport():
         onlyValidHourlyHoney = [x for x in hourlyReportData["honey_per_min"] if x] #removes all zeroes
         sessionHoney = onlyValidHourlyHoney[-1]- hourlyReportData["start_honey"]
         sessionTime = time.time()-hourlyReportData["start_time"]
-        honeyThisHour = onlyValidHourlyHoney[-1] - onlyValidHourlyHoney["honey_per_min"][0]
+        honeyThisHour = onlyValidHourlyHoney[-1] - onlyValidHourlyHoney[0]
 
         #replace the contents of the html
         replaceDict = {

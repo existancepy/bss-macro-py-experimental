@@ -387,7 +387,8 @@ class macro:
             if not fileMustExist and not os.path.isfile(pyPath): return
             exec(open(pyPath).read())
 
-    #
+    def getBackpack(self):
+        return bpc(self.mw, self.newUI)
     def faceDirection(self, field, dir):
         keys = fieldFaceNorthKeys[field]
         if dir == "south": #invert the keys
@@ -634,7 +635,9 @@ class macro:
         self.location = "spawn"
         if not bypass:
             #use ebutton detection, faster detection but more prone to false positives (like detecting trades)
-            if not self.isBesideEImage("makehoney"): return False
+            if not self.isBesideEImage("makehoney"): 
+                self.alreadyConverted = False
+                return False
         #start convert
         self.keyboard.press("e")
         self.status.value = "converting"
@@ -642,6 +645,16 @@ class macro:
         time.sleep(2)
         self.logger.webhook("", "Converting", "brown", "screen")
         self.alreadyConverted = True
+
+        #check if convert balloon
+        if self.setdat["convert_balloon"] == "always":
+            convertBalloon = True
+        elif self.setdat["convert_balloon"] == "every" and self.hasRespawned("convert_balloon", self.setdat["convert_balloon_every"]*60):
+            convertBalloon = True
+        else:
+            convertBalloon = False
+        convertedBackpack = False
+
         if self.enableNightDetection:
             self.keyboard.press(",")
         while not self.isBesideE(["pollen", "flower", "field"]): 
@@ -651,9 +664,19 @@ class macro:
                 self.keyboard.press(".")
                 self.stingerHunt()
                 return
+            
+            #check if backpack is done
+            if not convertedBackpack:
+                backpack = self.getBackpack()
+                if not backpack:
+                    convertedBackpack = True
+                    if not convertBalloon: break
+                    self.logger.webhook("", "Converting Balloon", "light blue")
+
             if time.time()-st > 30*60: #30mins max
                 self.logger.webhook("","Converting timeout (30mins max)", "brown", "screen")
                 break
+        if convertBalloon: self.saveTiming("convert_balloon")
         self.status.value = ""
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
@@ -949,6 +972,11 @@ class macro:
                 #no need to reset
                 self.canDetectNight = True
                 self.status.value = ""
+                #say existance so broke
+                if self.setdat["existance_broke"]:
+                    self.keyboard.press("/")
+                    self.keyboard.write(f'Existance so broke :weary: {datetime.now().strftime("%H:%M")}', interval = 0.1)
+                    self.keyboard.press("enter")
                 return
             self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
         self.status.value = ""
@@ -1113,7 +1141,7 @@ class macro:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
             #check backpack
-            if bpc(self.mw, self.newUI) >= fieldSetting["backpack"]:
+            if self.getBackpack() >= fieldSetting["backpack"]:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Backpack - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
 
@@ -2287,7 +2315,7 @@ class macro:
                 prevMin = currMin
                 honey = getHoney()
                 print(honey)
-                backpack = bpc(self.mw, self.newUI)
+                backpack = self.getBackpack()
                 data = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
                 data["honey_per_min"].append(honey)
                 data["backpack_per_min"].append(backpack)

@@ -15,3 +15,4 @@ icicles_beequip=0
 rejoin_every=0
 discord_bot=False
 discord_bot_token=
+existance_broke=False
