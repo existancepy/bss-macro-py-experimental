@@ -667,8 +667,10 @@ class macro:
             
             #check if backpack is done
             if not convertedBackpack:
-                backpack = self.getBackpack()
-                if not backpack:
+                for _ in range(4):
+                    backpack = self.getBackpack()
+                    if backpack: break
+                else:
                     convertedBackpack = True
                     if not convertBalloon: break
                     self.logger.webhook("", "Converting Balloon", "light blue")
@@ -717,6 +719,23 @@ class macro:
             blenderImg = self.adjustImage("./images/menu", "blenderclose") #blender
             if locateImageOnScreen(blenderImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
                 self.closeBlenderGUI()
+
+            performanceStatsImg = self.adjustImage("./images/menu", "performancestats")
+            if locateTransparentImageOnScreen(performanceStatsImg, 0, 20, self.mw/3.5, 70, 0.7):
+                if sys.platform == "darwin":
+                    '''
+                    #self.keyboard.keyDown("fn", False)
+                    self.keyboard.keyDown("command", False)
+                    self.keyboard.keyDown("option", False)
+                    self.keyboard.keyDown("f7")
+                    #self.keyboard.keyUp("fn")
+                    self.keyboard.keyUp("command", False)
+                    self.keyboard.keyUp("option", False)
+                    self.keyboard.keyUp("f7", False)
+                    '''
+                    pass
+                else:
+                    pass
 
             noImg = self.adjustImage("./images/menu", "no") #yes/no popup
             x = self.mw/3.2
@@ -1860,7 +1879,10 @@ class macro:
             self.goToPlanter(planter, field, "place")
             name = planter.lower().replace(" ","").replace("-","")
             if glitter: self.useItemInInventory("glitter") #use glitter
-            if not self.useItemInInventory(f"{name}planter"):
+            for _ in range(2):
+                if self.useItemInInventory(f"{name}planter"): 
+                    break
+            else:
                 return None
             #check if planter is placed
             time.sleep(0.5)
@@ -1887,7 +1909,10 @@ class macro:
         st = time.time()
         def updateHourlyTime():
             self.incrementHourlyStat("misc_time", time.time()-st)
-        if not self.goToPlanter(planter, field, "collect"):
+        for _ in range(2):
+            if self.goToPlanter(planter, field, "collect"): 
+                break
+        else:
             self.logger.webhook("",f"Unable to find Planter: {planter.title()}", "dark brown", "screen")
             updateHourlyTime()
             return

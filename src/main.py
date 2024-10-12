@@ -260,7 +260,7 @@ if __name__ == "__main__":
         f.close()
         python = ahkPatternToPython(ahk)
         print(f"Converted: {pattern}")
-        patternName = pattern.rsplit(".", 1)[0]
+        patternName = pattern.rsplit(".", 1)[0].lower()
         with open(f"../settings/patterns/{patternName}.py", "w") as f:
             f.write(python)
         f.close()
