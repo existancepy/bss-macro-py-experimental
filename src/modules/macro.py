@@ -987,15 +987,15 @@ class macro:
                     self.keyboard.press("o")
                 self.moveMouseToDefault()
                 time.sleep(1)
+                if self.setdat["existance_broke"]:
+                    self.keyboard.press("/")
+                    self.keyboard.write(f'Existance so broke :weary: {datetime.now().strftime("%H:%M")}', 0.1)
+                    self.keyboard.press("enter")
                 self.convert()
                 #no need to reset
                 self.canDetectNight = True
                 self.status.value = ""
                 #say existance so broke
-                if self.setdat["existance_broke"]:
-                    self.keyboard.press("/")
-                    self.keyboard.write(f'Existance so broke :weary: {datetime.now().strftime("%H:%M")}', interval = 0.1)
-                    self.keyboard.press("enter")
                 return
             self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
         self.status.value = ""

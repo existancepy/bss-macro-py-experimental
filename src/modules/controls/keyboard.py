@@ -30,7 +30,7 @@ class keyboard:
         time.sleep(delay)
         keyboard.keyUp(key, False)
 
-    def write(text, interval = 0.1):
+    def write(self, text, interval = 0.1):
         pag.typewrite(text, interval)
     #pyautogui with the pause
     def slowPress(self,k):
