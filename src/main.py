@@ -27,6 +27,7 @@ def disconnectCheck(run, status, display_type):
         if locateImageOnScreen(img, mw/3, mh/2.8, mw/2.3, mh/5, 0.7):
             print("disconnected")
             run.value = 4
+            time.sleep(300) #5 min cd to let the macro run through all 3 rejoins
 
 #controller for the macro
 def macro(status, log, haste, updateGUI):

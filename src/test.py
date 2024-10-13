@@ -20,5 +20,5 @@ cv2.imshow("final", morphed)
 cv2.waitKey(0)
 '''
 
-from modules.submacros.hourlyReport import *
+from modules.submacros.hourlyReport import generateHourlyReport
 generateHourlyReport()

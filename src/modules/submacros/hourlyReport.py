@@ -9,6 +9,16 @@ import ast
 import numpy as np
 import platform
 from modules.misc.messageBox import msgBox
+from modules.screen.imageSearch import locateTransparentImageOnScreen
+from modules.screen.screenshot import mssScreenshotNP
+from modules.misc.imageManipulation import adjustImage
+import time
+import pyautogui as pag
+from modules.screen.ocr import ocrRead
+from modules.screen.screenData import getScreenData
+
+ww, wh = pag.size()
+
 def versionTuple(v):
     return tuple(map(int, (v.split("."))))
 macVer = platform.mac_ver()[0]
@@ -21,6 +31,64 @@ except FileNotFoundError:
     \n1. Google Chrome is installed\nGoogle chrome is in the applications folder (open the google chrome dmg file. From the pop up, drag the icon into the folder)")
     else:
         hti = None
+
+#buff size is 76x76
+lower = np.array([0, 102, 0])
+upper = np.array([110, 255, 31])
+kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+x = 0
+y = 30
+
+#key: name of buff
+#value: [template for template matching is the buff's top or bottom, if buff image should be transformed]
+buffs = {
+    "tabby_love": ["top", True],
+    "polar_power": ["top", True],
+    "wealth_clock": ["top", False],
+    "blessing": ["bottom", False],
+    "bloat": ["top", True],
+}
+buffs = buffs.items()
+buffQuantity = []
+
+def getBuffs():
+    buffQuantity = []
+    displayType = getScreenData()["display_type"]
+    for buff,v in buffs:
+        templatePosition, transform = v
+        multi = 2 if displayType == "retina" else 1
+
+        #find the buff
+        buffTemplate = adjustImage("./images/buffs", buff, displayType)
+        res = locateTransparentImageOnScreen(buffTemplate, x, y, ww/1.8, 45, 0.8)
+        if not res: 
+            buffQuantity.append("0")
+            continue
+
+        #get a screenshot of the buff
+        rx, ry = res[1]
+        h,w = buffTemplate.shape[:-1]
+        if templatePosition == "bottom": ry-=78-h
+        fullBuffImgRAW = mssScreenshotNP(x+(rx/multi), y+ry/multi, 78/multi, 78/multi)
+
+        #filter out everything but the text
+        fullBuffImgBGR = cv2.cvtColor(fullBuffImgRAW, cv2.COLOR_RGBA2BGR)
+        mask = cv2.cvtColor(fullBuffImgBGR, cv2.COLOR_BGR2HLS)
+        if transform:
+            mask = cv2.inRange(mask, lower, upper)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+        mask = Image.fromarray(mask)
+
+        #mask.save(f"{time.time()}.png")
+        #read the text
+        ocrText = ''.join([x[1][0] for x in ocrRead(mask)])
+        print(ocrText)
+        buffCount = ''.join([x for x in ocrText if x.isdigit() or x == "."])
+        print(buff)
+        print(buffCount)
+        buffQuantity.append(buffCount if buffCount else '1')
+    return buffQuantity
+
 
 def millify(n):
     if not n: return "0"
@@ -72,6 +140,7 @@ def display_time(seconds, units = ['w','d','h','m','s']):
 def generateHourlyReport():
     pages = ["page1.html", "page2.html"]
     pageImages = []
+    buffQuantity = getBuffs()
     for page in pages:
         #relative file paths do not work, so replace the paths in src with absolute paths
         hourlyReportDir = Path(__file__).parents[2] / "hourly_report"
@@ -109,7 +178,10 @@ def generateHourlyReport():
             prevHoney = x
         
         #calculate some stats
-        onlyValidHourlyHoney = [x for x in hourlyReportData["honey_per_min"] if x] #removes all zeroes
+        if len(set(hourlyReportData["honey_per_min"])) <= 1:
+            onlyValidHourlyHoney = hourlyReportData["honey_per_min"].copy()
+        else:
+            onlyValidHourlyHoney = [x for x in hourlyReportData["honey_per_min"] if x] #removes all zeroes
         sessionHoney = onlyValidHourlyHoney[-1]- hourlyReportData["start_honey"]
         sessionTime = time.time()-hourlyReportData["start_time"]
         honeyThisHour = onlyValidHourlyHoney[-1] - onlyValidHourlyHoney[0]
@@ -130,7 +202,10 @@ def generateHourlyReport():
             "var backpackPerMin = []": f'var backpackPerMin = {hourlyReportData["backpack_per_min"]}',
             "const taskTimes = []": f'const taskTimes = [{hourlyReportData["gathering_time"]}, {hourlyReportData["converting_time"]}, {hourlyReportData["bug_run_time"]}, {hourlyReportData["misc_time"]}]',
             "const historyData = []": f'const historyData = {historyData}',
-            "const honey = 0": f'const honey = {honeyThisHour}'
+            "const honey = 0": f'const honey = {honeyThisHour}',
+            "url(": f'url({hourlyReportDir}/'.replace("\\", "/"),
+            "const buffNames = []": f'const buffNames = {[k for k,v in buffs]}',
+            "const buffValues = []": f'const buffValues = {buffQuantity}',
         }
 
         if planterData:

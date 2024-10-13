@@ -97,6 +97,12 @@
                 margin-bottom: 0.5rem;
             }
 
+            .aside-stat{
+                display: flex; 
+                align-items: center;
+                margin-top: 1.2rem;
+            }
+
             #planter-stats{
                 display: flex; 
                 justify-content: space-between;
@@ -127,6 +133,24 @@
                 margin-top: 0.5rem;
             }
 
+            .buff-bg{
+                height: 4rem; 
+                width: 4rem; 
+                background-position: center; 
+                background-size: cover; 
+                background-repeat: no-repeat; 
+                display: flex; 
+                align-items: end; 
+                justify-content: end;
+                text-shadow: -1px 0 #000, 0 1px #000, 0 -1px #000, 1px 1px #000, -1px -1px #000, 1px -1px #000, -1px 1px #000;
+                font-size: 1rem;
+            }
+
+            .buff-bg.inactive{
+                background-color: rgba(0,0,0,0.4);
+                background-blend-mode: darken;
+            }
+
         </style>
     </head>
     <body style="background-color: #0E0F13; color: #FFFFFF; display: flex; justify-content: space-between;">
@@ -151,6 +175,10 @@
         <aside style="background-color: #17191D; width: 25%; height: 100vh; box-sizing:border-box; padding-left: 2rem; padding-right: 1.5rem;">
             <h3 class="inter-semibold title">Planters</h3>
             <div id = "planter-stats">
+            </div>
+            <h3 class="inter-semibold title">Buffs</h3>
+            <div id = "buffs" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.2rem;">
+
             </div>
         </aside>
     </body>
@@ -351,6 +379,16 @@
                     <div class="inter-semibold time">${secondsToMinsAndHours(planterTimes[i])}</div>
                 </div>
             `
+        }
+
+        const buffParent = document.getElementById("buffs")
+        const buffNames = []
+        const buffValues = []
+        //const buffNames = ['tabby_love', 'polar_power', 'wealth_clock', 'bloat', 'blessing']
+        //const buffValues = ['1000', '263', '1', '5.98', '37']
+
+        for (let i=0; i < buffNames.length; i++){
+            buffParent.innerHTML += `<div style="background-image: url(assets/${buffNames[i]}_buff.png);" class="buff-bg inter-semibold ${buffValues[i] == "0" ? "inactive" : ""}">x${buffValues[i]}</div>`
         }
         
 

@@ -975,8 +975,8 @@ class macro:
                     if findHive():
                         guessedSlot = max(1,min(6, round((j+1)//2.5)))
                         hiveClaim = guessedSlot
-                        if 2 < guessedSlot < 6:
-                            hiveClaim += 1
+                        #if 3 < guessedSlot < 6:
+                            #hiveClaim += 1
                         self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", "screen")
                         rejoinSuccess = True
                         self.setdat["hive_number"] = hiveClaim
