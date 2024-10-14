@@ -20,5 +20,12 @@ cv2.imshow("final", morphed)
 cv2.waitKey(0)
 '''
 
-from modules.submacros.hourlyReport import generateHourlyReport
-generateHourlyReport()
+
+from modules.submacros.hourlyReport import getBuffs, getNectars
+import time
+from modules.misc.appManager import openApp
+
+openApp("roblox")
+time.sleep(1)
+print(getNectars())
+

@@ -45,7 +45,7 @@ buffs = {
     "tabby_love": ["top", True],
     "polar_power": ["top", True],
     "wealth_clock": ["top", False],
-    "blessing": ["bottom", False],
+    "blessing": ["middle", False],
     "bloat": ["top", True],
 }
 buffs = buffs.items()
@@ -68,8 +68,12 @@ def getBuffs():
         #get a screenshot of the buff
         rx, ry = res[1]
         h,w = buffTemplate.shape[:-1]
-        if templatePosition == "bottom": ry-=78-h
-        fullBuffImgRAW = mssScreenshotNP(x+(rx/multi), y+ry/multi, 78/multi, 78/multi)
+        if templatePosition == "bottom": 
+            ry-=78-h
+        elif templatePosition == "middle":
+            rx -= (78-w)/2+8
+            ry -= 30
+        fullBuffImgRAW = mssScreenshotNP(x+(rx/multi), y+ry/multi, 78/multi, 78/multi, "blessing" in buff)
 
         #filter out everything but the text
         fullBuffImgBGR = cv2.cvtColor(fullBuffImgRAW, cv2.COLOR_RGBA2BGR)
@@ -82,13 +86,53 @@ def getBuffs():
         #mask.save(f"{time.time()}.png")
         #read the text
         ocrText = ''.join([x[1][0] for x in ocrRead(mask)])
-        print(ocrText)
         buffCount = ''.join([x for x in ocrText if x.isdigit() or x == "."])
         print(buff)
         print(buffCount)
+
         buffQuantity.append(buffCount if buffCount else '1')
     return buffQuantity
 
+nectars = {
+    "comforting": [np.array([0, 150, 63]), np.array([20, 155, 70])],
+    "invigorating": [np.array([0, 128, 95]), np.array([10, 132, 101])],
+    "motivating": [np.array([160, 150, 63]), np.array([170, 155, 70])],
+    "refreshing": [np.array([50, 144, 70]), np.array([70, 151, 75])]
+}
+nectarKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
+nectars = nectars.items()
+def getNectars():
+    nectarQuantity = []
+    displayType = getScreenData()["display_type"]
+    for buff, col in nectars:
+        multi = 2 if displayType == "retina" else 1
+
+        #find the buff
+        buffTemplate = adjustImage("./images/buffs", buff, displayType)
+        res = locateTransparentImageOnScreen(buffTemplate, x, y, ww/1.8, 45, 0.8)
+        if not res: 
+            nectarQuantity.append("0")
+            continue
+        #get a screenshot of the buff
+        rx, ry = res[1]
+        h,w = buffTemplate.shape[:-1]
+        fullBuffImg = mssScreenshotNP(x+(rx/multi)-4, y+ry/multi-5, 83/multi, 84/multi)
+
+        #get the buff level
+        fullBuffImg = cv2.cvtColor(fullBuffImg, cv2.COLOR_RGBA2BGR)
+        mask = cv2.cvtColor(fullBuffImg, cv2.COLOR_BGR2HLS)
+        mask = cv2.inRange(mask, col[0], col[1])
+        #cv2.imshow("mask", mask)
+        #cv2.waitKey(0)
+        mask = cv2.erode(mask, nectarKernel)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            nectarQuantity.append(2)
+            continue
+        # return the bounding with the largest area
+        _, _, _, buffH = cv2.boundingRect(max(contours, key=cv2.contourArea))
+        nectarQuantity.append(buffH/h*100)
+    return nectarQuantity
 
 def millify(n):
     if not n: return "0"
