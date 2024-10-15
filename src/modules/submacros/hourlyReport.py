@@ -45,7 +45,7 @@ buffs = {
     "tabby_love": ["top", True],
     "polar_power": ["top", True],
     "wealth_clock": ["top", False],
-    "blessing": ["middle", False],
+    "blessing": ["middle", True],
     "bloat": ["top", True],
 }
 buffs = buffs.items()
@@ -73,22 +73,22 @@ def getBuffs():
         elif templatePosition == "middle":
             rx -= (78-w)/2+8
             ry -= 30
-        fullBuffImgRAW = mssScreenshotNP(x+(rx/multi), y+ry/multi, 78/multi, 78/multi, "blessing" in buff)
+        fullBuffImgRAW = mssScreenshotNP(x+(rx/multi), y+ry/multi, 78/multi, 78/multi)
 
         #filter out everything but the text
         fullBuffImgBGR = cv2.cvtColor(fullBuffImgRAW, cv2.COLOR_RGBA2BGR)
         mask = cv2.cvtColor(fullBuffImgBGR, cv2.COLOR_BGR2HLS)
         if transform:
             mask = cv2.inRange(mask, lower, upper)
-            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+            mask = cv2.erode(mask, kernel)
         mask = Image.fromarray(mask)
 
-        #mask.save(f"{time.time()}.png")
+        #if "blessing" in buff: mask.save(f"{time.time()}.png")
         #read the text
         ocrText = ''.join([x[1][0] for x in ocrRead(mask)])
         buffCount = ''.join([x for x in ocrText if x.isdigit() or x == "."])
         print(buff)
-        print(buffCount)
+        print(ocrText)
 
         buffQuantity.append(buffCount if buffCount else '1')
     return buffQuantity

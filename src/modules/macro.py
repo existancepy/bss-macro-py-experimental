@@ -583,7 +583,7 @@ class macro:
         foundEarly = False #if the max_val > 0.9, end searching early to save time
         time.sleep(0.3)
         for i in range(60):
-            max_val, max_loc = locateImageOnScreen(itemImg, 0, 90, 120, self.mh-180)
+            max_val, max_loc = locateImageOnScreen(itemImg, 90, 90, 310, self.mh-180)
             if max_val > valBest:
                 valBest = max_val
                 bestX, bestY = max_loc
@@ -607,7 +607,8 @@ class macro:
         if self.display_type == "retina":
             bestX //= 2
             bestY //= 2
-        return (bestX+20, bestY+80+20)
+        #return (bestX+20, bestY+80+20)
+        return (40, bestY+80)
     
     #click at the specified coordinates to use an item in the inventory
     #if x/y is not provided, find the item in inventory

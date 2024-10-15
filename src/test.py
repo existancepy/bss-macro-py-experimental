@@ -27,5 +27,5 @@ from modules.misc.appManager import openApp
 
 openApp("roblox")
 time.sleep(1)
-print(getNectars())
+print(getBuffs())
 

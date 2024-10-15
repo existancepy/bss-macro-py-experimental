@@ -1,4 +1,4 @@
-start_honey=9117972
-start_time=1728873126.939415
-honey_per_min=[9117972, 9117972]
-backpack_per_min=[0, 0]
+start_honey=9146425001761
+start_time=1728992107.271623
+honey_per_min=[9146425001761, 9146425570088, 9146660451606]
+backpack_per_min=[10, 0, 10]
