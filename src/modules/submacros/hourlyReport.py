@@ -60,7 +60,7 @@ def getBuffs():
 
         #find the buff
         buffTemplate = adjustImage("./images/buffs", buff, displayType)
-        res = locateTransparentImageOnScreen(buffTemplate, x, y, ww/1.8, 45, 0.8)
+        res = locateTransparentImageOnScreen(buffTemplate, x, y, ww/1.8, 45, 0.7)
         if not res: 
             buffQuantity.append("0")
             continue
@@ -95,7 +95,7 @@ def getBuffs():
 
 nectars = {
     "comforting": [np.array([0, 150, 63]), np.array([20, 155, 70])],
-    "invigorating": [np.array([0, 128, 95]), np.array([10, 132, 101])],
+    "invigorating": [np.array([0, 128, 95]), np.array([180, 132, 101])],
     "motivating": [np.array([160, 150, 63]), np.array([170, 155, 70])],
     "refreshing": [np.array([50, 144, 70]), np.array([70, 151, 75])],
     "satisfying": [np.array([130, 163, 36]), np.array([140, 168, 40])]
@@ -110,14 +110,14 @@ def getNectars():
 
         #find the buff
         buffTemplate = adjustImage("./images/buffs", buff, displayType)
-        res = locateTransparentImageOnScreen(buffTemplate, x, y, ww/1.8, 45, 0.8)
+        res = locateTransparentImageOnScreen(buffTemplate, x, y, ww/1.8, 45, 0.7)
         if not res: 
             nectarQuantity.append("0")
             continue
         #get a screenshot of the buff
         rx, ry = res[1]
         h,w = buffTemplate.shape[:-1]
-        fullBuffImg = mssScreenshotNP(x+(rx/multi)-4, y+ry/multi-5, 83/multi, 84/multi)
+        fullBuffImg = mssScreenshotNP(x+(rx/multi)-4, y+ry/multi-1, 83/multi, 80/multi)
 
         #get the buff level
         fullBuffImg = cv2.cvtColor(fullBuffImg, cv2.COLOR_RGBA2BGR)
@@ -186,6 +186,7 @@ def generateHourlyReport():
     pages = ["page1.html", "page2.html"]
     pageImages = []
     buffQuantity = getBuffs()
+    nectarQuantity = getNectars()
     for page in pages:
         #relative file paths do not work, so replace the paths in src with absolute paths
         hourlyReportDir = Path(__file__).parents[2] / "hourly_report"
@@ -251,6 +252,7 @@ def generateHourlyReport():
             "url(": f'url({hourlyReportDir}/'.replace("\\", "/"),
             "const buffNames = []": f'const buffNames = {[k for k,v in buffs]}',
             "const buffValues = []": f'const buffValues = {buffQuantity}',
+            "const nectarValues = []": f'const nectarValues = {nectarQuantity}'
         }
 
         if planterData:
