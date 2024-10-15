@@ -1,1 +1,0 @@
-{'cycle': 1, 'planters': ['red clay', 'candy'], 'fields': ['strawberry', 'stump'], 'gatherFields': [], 'harvestTime': 1728809263.405642}

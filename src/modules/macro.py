@@ -1913,6 +1913,7 @@ class macro:
         for _ in range(2):
             if self.goToPlanter(planter, field, "collect"): 
                 break
+            self.reset()
         else:
             self.logger.webhook("",f"Unable to find Planter: {planter.title()}", "dark brown", "screen")
             updateHourlyTime()

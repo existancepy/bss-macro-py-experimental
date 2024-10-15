@@ -97,7 +97,8 @@ nectars = {
     "comforting": [np.array([0, 150, 63]), np.array([20, 155, 70])],
     "invigorating": [np.array([0, 128, 95]), np.array([10, 132, 101])],
     "motivating": [np.array([160, 150, 63]), np.array([170, 155, 70])],
-    "refreshing": [np.array([50, 144, 70]), np.array([70, 151, 75])]
+    "refreshing": [np.array([50, 144, 70]), np.array([70, 151, 75])],
+    "satisfying": [np.array([130, 163, 36]), np.array([140, 168, 40])]
 }
 nectarKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
 nectars = nectars.items()
