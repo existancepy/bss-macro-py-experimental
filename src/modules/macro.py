@@ -593,7 +593,7 @@ class macro:
                     break
             mouse.scroll(-40, True)
             time.sleep(0.04)
-        if valBest < 0.65:
+        if valBest < 0.8:
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
             return None
         if not foundEarly:
@@ -1219,6 +1219,7 @@ class macro:
             self.rejoin()
         elif returnType == "whirligig":
             self.useItemInInventory("whirligig")
+            time.sleep(1)
             if not self.convert():
                 self.logger.webhook("","Whirligigs failed, walking to hive", "dark brown", "screen")
                 walkToHive()

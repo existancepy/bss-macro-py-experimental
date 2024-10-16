@@ -1,0 +1,1 @@
+{'cycle': 1, 'planters': ['candy'], 'fields': ['stump'], 'gatherFields': [], 'harvestTime': 1729056417.735617}

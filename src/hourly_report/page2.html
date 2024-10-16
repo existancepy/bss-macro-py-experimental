@@ -810,7 +810,7 @@
         element.style.height = `${nectarChartSize}px`
         element.style.width = `${nectarChartSize}px`
         element.dataset.percent = perc
-        element.innerText = `${perc}%`
+        element.innerText = `${Math.round(perc)}%`
         new EasyPieChart(element, {
             scaleLength: false,
             animate: false,

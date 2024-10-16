@@ -73,7 +73,7 @@ def getBuffs():
         elif templatePosition == "middle":
             rx -= (78-w)/2+8
             ry -= 30
-        fullBuffImgRAW = mssScreenshotNP(x+(rx/multi), y+ry/multi, 78/multi, 78/multi)
+        fullBuffImgRAW = mssScreenshotNP(x+(rx/multi), y+ry/multi, 39, 39)
 
         #filter out everything but the text
         fullBuffImgBGR = cv2.cvtColor(fullBuffImgRAW, cv2.COLOR_RGBA2BGR)
@@ -117,7 +117,7 @@ def getNectars():
         #get a screenshot of the buff
         rx, ry = res[1]
         h,w = buffTemplate.shape[:-1]
-        fullBuffImg = mssScreenshotNP(x+(rx/multi)-4, y+ry/multi-1, 83/multi, 80/multi)
+        fullBuffImg = mssScreenshotNP(x+(rx/multi)-4, y+ry/multi-1, 41, 40)
 
         #get the buff level
         fullBuffImg = cv2.cvtColor(fullBuffImg, cv2.COLOR_RGBA2BGR)
