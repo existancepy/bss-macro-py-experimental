@@ -337,7 +337,7 @@
                     <img src="assets/history_icon.png">
                 </div>
                 <div>
-                    <div class="inter-semibold label">${x.endHour-1}:00-${x.endHour}:00</div>
+                    <div class="inter-semibold label">${x.endHour? x.endHour-1 : 23}:00-${x.endHour}:00</div>
                     <div class="inter-regular sublabel">${formatDate(x.date)}</div>
                 </div>
                 <div class="inter-semibold value" style="color: ${honey > x.honey ? "#67FD99" : "#FE6563"};">${millify(x.honey)}</div>
