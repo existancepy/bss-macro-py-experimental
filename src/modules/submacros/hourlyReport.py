@@ -51,9 +51,21 @@ buffs = {
 buffs = buffs.items()
 buffQuantity = []
 
-def getBuffs():
+nectars = {
+    "comforting": [np.array([0, 150, 63]), np.array([20, 155, 70])],
+    "invigorating": [np.array([0, 128, 95]), np.array([180, 132, 101])],
+    "motivating": [np.array([160, 150, 63]), np.array([170, 155, 70])],
+    "refreshing": [np.array([50, 144, 70]), np.array([70, 151, 75])],
+    "satisfying": [np.array([130, 163, 36]), np.array([140, 168, 40])]
+}
+nectarKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
+nectars = nectars.items()
+
+
+def getBuffs(newUI):
     buffQuantity = []
     displayType = getScreenData()["display_type"]
+    if newUI: y+=22
     for buff,v in buffs:
         templatePosition, transform = v
         multi = 2 if displayType == "retina" else 1
@@ -93,17 +105,9 @@ def getBuffs():
         buffQuantity.append(buffCount if buffCount else '1')
     return buffQuantity
 
-nectars = {
-    "comforting": [np.array([0, 150, 63]), np.array([20, 155, 70])],
-    "invigorating": [np.array([0, 128, 95]), np.array([180, 132, 101])],
-    "motivating": [np.array([160, 150, 63]), np.array([170, 155, 70])],
-    "refreshing": [np.array([50, 144, 70]), np.array([70, 151, 75])],
-    "satisfying": [np.array([130, 163, 36]), np.array([140, 168, 40])]
-}
-nectarKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
-nectars = nectars.items()
-def getNectars():
+def getNectars(newUI):
     nectarQuantity = []
+    if newUI: y+=22
     displayType = getScreenData()["display_type"]
     for buff, col in nectars:
         multi = 2 if displayType == "retina" else 1
@@ -182,11 +186,11 @@ def display_time(seconds, units = ['w','d','h','m','s']):
                 result.append("{} {}".format(value, name))
     return ' '.join(result)
 
-def generateHourlyReport():
+def generateHourlyReport(newUI):
     pages = ["page1.html", "page2.html"]
     pageImages = []
-    buffQuantity = getBuffs()
-    nectarQuantity = getNectars()
+    buffQuantity = getBuffs(newUI)
+    nectarQuantity = getNectars(newUI)
     for page in pages:
         #relative file paths do not work, so replace the paths in src with absolute paths
         hourlyReportDir = Path(__file__).parents[2] / "hourly_report"

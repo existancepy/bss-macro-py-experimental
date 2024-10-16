@@ -2351,7 +2351,7 @@ class macro:
 
             #check if its time to send hourly report
             if currMin == 0:
-                hourlyReportData = generateHourlyReport()
+                hourlyReportData = generateHourlyReport(self.newUI)
                 self.logger.hourlyReport("Hourly Report", "", "purple")
 
                 #reset stats
