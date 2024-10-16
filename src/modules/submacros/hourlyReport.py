@@ -9,6 +9,16 @@ import ast
 import numpy as np
 import platform
 from modules.misc.messageBox import msgBox
+from modules.screen.imageSearch import locateTransparentImageOnScreen
+from modules.screen.screenshot import mssScreenshotNP
+from modules.misc.imageManipulation import adjustImage
+import time
+import pyautogui as pag
+from modules.screen.ocr import ocrRead
+from modules.screen.screenData import getScreenData
+
+ww, wh = pag.size()
+
 def versionTuple(v):
     return tuple(map(int, (v.split("."))))
 macVer = platform.mac_ver()[0]
@@ -22,6 +32,121 @@ except FileNotFoundError:
     else:
         hti = None
 
+#buff size is 76x76
+lower = np.array([0, 102, 0])
+upper = np.array([110, 255, 31])
+kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+x = 0
+y = 30
+
+#key: name of buff
+#value: [template for template matching is the buff's top or bottom, if buff image should be transformed]
+buffs = {
+    "tabby_love": ["top", True],
+    "polar_power": ["top", True],
+    "wealth_clock": ["top", False],
+    "blessing": ["middle", True],
+    "bloat": ["top", True],
+}
+buffs = buffs.items()
+buffQuantity = []
+
+nectars = {
+    "comforting": [[np.array([0, 150, 63]), np.array([20, 155, 70])], (-2,0)],
+    "invigorating": [[np.array([0, 128, 95]), np.array([180, 132, 101])], (-2,4)],
+    "motivating": [[np.array([160, 150, 63]), np.array([170, 155, 70])], (-2,-2)],
+    "refreshing": [[np.array([50, 144, 70]), np.array([70, 151, 75])], (-2,2)],
+    "satisfying": [[np.array([130, 163, 36]), np.array([140, 168, 40])], (-2,0)]
+}
+nectarKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
+nectars = nectars.items()
+
+
+def getBuffs():
+    buffQuantity = []
+    displayType = getScreenData()["display_type"]
+    for buff,v in buffs:
+        templatePosition, transform = v
+        multi = 2 if displayType == "retina" else 1
+
+        #find the buff
+        buffTemplate = adjustImage("./images/buffs", buff, displayType)
+        res = locateTransparentImageOnScreen(buffTemplate, x, y, ww/1.8, 45, 0.7)
+        if not res: 
+            buffQuantity.append("0")
+            continue
+
+        #get a screenshot of the buff
+        rx, ry = res[1]
+        h,w = buffTemplate.shape[:-1]
+        if templatePosition == "bottom": 
+            ry-=78-h
+        elif templatePosition == "middle":
+            rx -= (78-w)/2+8
+            ry -= 30
+        fullBuffImgRAW = mssScreenshotNP(x+(rx/multi), y+ry/multi, 39, 39)
+
+        #filter out everything but the text
+        fullBuffImgBGR = cv2.cvtColor(fullBuffImgRAW, cv2.COLOR_RGBA2BGR)
+        mask = cv2.cvtColor(fullBuffImgBGR, cv2.COLOR_BGR2HLS)
+        if transform:
+            mask = cv2.inRange(mask, lower, upper)
+            mask = cv2.erode(mask, kernel)
+        mask = Image.fromarray(mask)
+
+        #mask.save(f"{time.time()}.png")
+        #read the text
+        ocrText = ''.join([x[1][0] for x in ocrRead(mask)])
+        buffCount = ''.join([x for x in ocrText if x.isdigit() or x == "."])
+        print(buff)
+        print(ocrText)
+
+        buffQuantity.append(buffCount if buffCount else '1')
+    return buffQuantity
+
+def getNectars():
+    nectarQuantity = []
+    displayType = getScreenData()["display_type"]
+    for buff, vals in nectars:
+        col, offsetCoords = vals
+        print(offsetCoords)
+        print(col)
+        offsetX, offsetY = offsetCoords
+        multi = 2 if displayType == "retina" else 1
+
+        #find the buff
+        buffTemplate = adjustImage("./images/buffs", buff, displayType)
+        res = locateTransparentImageOnScreen(buffTemplate, x, y, ww/1.8, 45, 0.5) #get the best match first. At high nectar levels, it becomes hard to detect the nectar icon
+        if not res: 
+            nectarQuantity.append("0")
+            continue
+        #get a screenshot of the buff
+        rx, ry = res[1]
+        h,w = buffTemplate.shape[:-1]
+        fullBuffImg = mssScreenshotNP(x+(rx/multi)+offsetX, y+ry/multi+offsetY, 40, 40)
+
+        #get the buff level
+        fullBuffImg = cv2.cvtColor(fullBuffImg, cv2.COLOR_RGBA2BGR)
+        mask = cv2.cvtColor(fullBuffImg, cv2.COLOR_BGR2HLS)
+        mask = cv2.inRange(mask, col[0], col[1])
+        #cv2.imshow("mask", mask)
+        #cv2.waitKey(0)
+        mask = cv2.erode(mask, nectarKernel)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+        if not contours:
+            #in this case, the nectar quantity might be so low it cant be detected or the player doesnt have the nectar at all
+            #so, we get the confidence value of the match
+            #if the value is high, its probably low nectar quantity
+            #if its low, the player prob doesnt have the nectar
+            max_val, _  = res
+            nectarQuantity.append(2 if max_val > 0.8 else 0)
+            continue
+        # return the bounding with the largest area
+        _, _, _, buffH = cv2.boundingRect(max(contours, key=cv2.contourArea))
+        nectarQuantity.append(buffH/h*100)
+    return nectarQuantity
+
 def millify(n):
     if not n: return "0"
     millnames = ['',' K',' M',' B',' T', 'Qd']
@@ -32,15 +157,16 @@ def millify(n):
     return '{:.2f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
 
 def filterOutliers(values, threshold=3):
+    nonZeroValues = [x for x in values if x]
     # Calculate the mean and standard deviation
-    mean = np.mean(values)
-    std_dev = np.std(values)
+    mean = np.mean(nonZeroValues)
+    std_dev = np.std(nonZeroValues)
     
     # Calculate Z-scores
     z_scores = [(x - mean) / std_dev for x in values]
     
     # Filter out values with Z-scores greater than the threshold
-    filtered_values = [x for x, z in zip(values, z_scores) if abs(z) < threshold]
+    filtered_values = [x for x, z in zip(values, z_scores) if abs(z) < threshold or not x]
     
     return filtered_values
 
@@ -68,9 +194,13 @@ def display_time(seconds, units = ['w','d','h','m','s']):
                 result.append("{} {}".format(value, name))
     return ' '.join(result)
 
-def generateHourlyReport():
+def generateHourlyReport(newUI):
+    global y
+    if newUI: y+=22
     pages = ["page1.html", "page2.html"]
     pageImages = []
+    buffQuantity = getBuffs()
+    nectarQuantity = getNectars()
     for page in pages:
         #relative file paths do not work, so replace the paths in src with absolute paths
         hourlyReportDir = Path(__file__).parents[2] / "hourly_report"
@@ -92,8 +222,12 @@ def generateHourlyReport():
         with open("data/user/hourly_report_history.txt", "r") as f:
             historyData = ast.literal_eval(f.read())
         f.close()
-
+        
+        if len(hourlyReportData["honey_per_min"]) < 3:
+            hourlyReportData["honey_per_min"] = [0]*3 + hourlyReportData["honey_per_min"]
         #filter out the honey/min
+        print(hourlyReportData["honey_per_min"])
+        #hourlyReportData["honey_per_min"] = [x for x in hourlyReportData["honey_per_min"] if x]
         hourlyReportData["honey_per_min"] = filterOutliers(hourlyReportData["honey_per_min"])
         #calculate honey/min
         honeyPerMin = [0]
@@ -104,26 +238,35 @@ def generateHourlyReport():
             prevHoney = x
         
         #calculate some stats
-        sessionHoney = hourlyReportData["honey_per_min"][-1]- hourlyReportData["start_honey"]
+        if len(set(hourlyReportData["honey_per_min"])) <= 1:
+            onlyValidHourlyHoney = hourlyReportData["honey_per_min"].copy()
+        else:
+            onlyValidHourlyHoney = [x for x in hourlyReportData["honey_per_min"] if x] #removes all zeroes
+        sessionHoney = onlyValidHourlyHoney[-1]- hourlyReportData["start_honey"]
         sessionTime = time.time()-hourlyReportData["start_time"]
-        honeyThisHour = hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]
+        honeyThisHour = onlyValidHourlyHoney[-1] - onlyValidHourlyHoney[0]
+
         #replace the contents of the html
         replaceDict = {
-            'src="a': f'src="{hourlyReportDir}/a',
+            'src="a': f'src="{hourlyReportDir}/a'.replace("\\", "/"),
             '`as': '`{}/as'.format(str(hourlyReportDir).replace("\\", "/")),
             "-avgHoney": millify(sessionHoney/(sessionTime/3600)),
             "-honey": millify(honeyThisHour),
             "-bugs": hourlyReportData["bugs"],
             "-quests": hourlyReportData["quests_completed"],
             "-vicBees": hourlyReportData["vicious_bees"],
-            "-currHoney": millify(hourlyReportData["honey_per_min"][-1]),
+            "-currHoney": millify(onlyValidHourlyHoney[-1]),
             "-sessHoney": millify(sessionHoney),
             "-sessTime": display_time(sessionTime, ['d','h','m']),
             "var honeyPerMin = []": f'var honeyPerMin = {honeyPerMin}',
             "var backpackPerMin = []": f'var backpackPerMin = {hourlyReportData["backpack_per_min"]}',
             "const taskTimes = []": f'const taskTimes = [{hourlyReportData["gathering_time"]}, {hourlyReportData["converting_time"]}, {hourlyReportData["bug_run_time"]}, {hourlyReportData["misc_time"]}]',
             "const historyData = []": f'const historyData = {historyData}',
-            "const honey = 0": f'const honey = {honeyThisHour}'
+            "const honey = 0": f'const honey = {honeyThisHour}',
+            "url(": f'url({hourlyReportDir}/'.replace("\\", "/"),
+            "const buffNames = []": f'const buffNames = {[k for k,v in buffs]}',
+            "const buffValues = []": f'const buffValues = {buffQuantity}',
+            "const nectarValues = []": f'const nectarValues = {nectarQuantity}'
         }
 
         if planterData:
@@ -140,6 +283,7 @@ def generateHourlyReport():
         hti.screenshot(html_str=htmlString, save_as=f"{pageName}.png")
         #open the image
         image = cv2.imread(f"{pageName}.png")
+        print(htmlString)
 
         #crop the image to remove any excess empty space at the bottom
         #this allows for seamless merging of images

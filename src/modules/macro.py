@@ -387,7 +387,8 @@ class macro:
             if not fileMustExist and not os.path.isfile(pyPath): return
             exec(open(pyPath).read())
 
-    #
+    def getBackpack(self):
+        return bpc(self.mw, self.newUI)
     def faceDirection(self, field, dir):
         keys = fieldFaceNorthKeys[field]
         if dir == "south": #invert the keys
@@ -435,6 +436,10 @@ class macro:
             if data: break #most likely another process is writing to the file
             time.sleep(0.1)
         if name is not None:
+            if not name in data:
+                print(f"could not find timing for {name}, setting a new one")
+                self.saveTiming(name)
+                return time.time()
             return data[name]
         return data
     
@@ -578,7 +583,7 @@ class macro:
         foundEarly = False #if the max_val > 0.9, end searching early to save time
         time.sleep(0.3)
         for i in range(60):
-            max_val, max_loc = locateImageOnScreen(itemImg, 0, 90, 120, self.mh-180)
+            max_val, max_loc = locateImageOnScreen(itemImg, 90, 90, 310, self.mh-180)
             if max_val > valBest:
                 valBest = max_val
                 bestX, bestY = max_loc
@@ -588,7 +593,7 @@ class macro:
                     break
             mouse.scroll(-40, True)
             time.sleep(0.04)
-        if valBest < 0.65:
+        if valBest < 0.8:
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
             return None
         if not foundEarly:
@@ -602,7 +607,8 @@ class macro:
         if self.display_type == "retina":
             bestX //= 2
             bestY //= 2
-        return (bestX+20, bestY+80+20)
+        #return (bestX+20, bestY+80+20)
+        return (40, bestY+80)
     
     #click at the specified coordinates to use an item in the inventory
     #if x/y is not provided, find the item in inventory
@@ -619,6 +625,7 @@ class macro:
         mouse.moveBy(10,15)
         for _ in range(2):
             mouse.click()
+            time.sleep(0.1)
         self.clickYes()
         #close inventory
         self.toggleInventory("close")
@@ -629,13 +636,26 @@ class macro:
         self.location = "spawn"
         if not bypass:
             #use ebutton detection, faster detection but more prone to false positives (like detecting trades)
-            if not self.isBesideEImage("makehoney"): return False
+            if not self.isBesideEImage("makehoney"): 
+                self.alreadyConverted = False
+                return False
         #start convert
         self.keyboard.press("e")
         self.status.value = "converting"
         st = time.time()
         time.sleep(2)
         self.logger.webhook("", "Converting", "brown", "screen")
+        self.alreadyConverted = True
+
+        #check if convert balloon
+        if self.setdat["convert_balloon"] == "always":
+            convertBalloon = True
+        elif self.setdat["convert_balloon"] == "every" and self.hasRespawned("convert_balloon", self.setdat["convert_balloon_every"]*60):
+            convertBalloon = True
+        else:
+            convertBalloon = False
+        convertedBackpack = False
+
         if self.enableNightDetection:
             self.keyboard.press(",")
         while not self.isBesideE(["pollen", "flower", "field"]): 
@@ -645,8 +665,21 @@ class macro:
                 self.keyboard.press(".")
                 self.stingerHunt()
                 return
+            
+            #check if backpack is done
+            if not convertedBackpack:
+                for _ in range(4):
+                    backpack = self.getBackpack()
+                    if backpack: break
+                else:
+                    convertedBackpack = True
+                    if not convertBalloon: break
+                    self.logger.webhook("", "Converting Balloon", "light blue")
+
             if time.time()-st > 30*60: #30mins max
                 self.logger.webhook("","Converting timeout (30mins max)", "brown", "screen")
+                break
+        if convertBalloon: self.saveTiming("convert_balloon")
         self.status.value = ""
         #deal with the extra delay
         self.logger.webhook("", "Finished converting", "brown")
@@ -665,6 +698,7 @@ class macro:
         mouse.moveTo(370, 100+yOffset)
 
     def reset(self, hiveCheck = False, convert = True):
+        self.alreadyConverted = False
         self.keyboard.releaseMovement()
 
         #reset until player is at hive
@@ -686,6 +720,23 @@ class macro:
             blenderImg = self.adjustImage("./images/menu", "blenderclose") #blender
             if locateImageOnScreen(blenderImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
                 self.closeBlenderGUI()
+
+            performanceStatsImg = self.adjustImage("./images/menu", "performancestats")
+            if locateTransparentImageOnScreen(performanceStatsImg, 0, 20, self.mw/3.5, 70, 0.7):
+                if sys.platform == "darwin":
+                    '''
+                    #self.keyboard.keyDown("fn", False)
+                    self.keyboard.keyDown("command", False)
+                    self.keyboard.keyDown("option", False)
+                    self.keyboard.keyDown("f7")
+                    #self.keyboard.keyUp("fn")
+                    self.keyboard.keyUp("command", False)
+                    self.keyboard.keyUp("option", False)
+                    self.keyboard.keyUp("f7", False)
+                    '''
+                    pass
+                else:
+                    pass
 
             noImg = self.adjustImage("./images/menu", "no") #yes/no popup
             x = self.mw/3.2
@@ -925,8 +976,8 @@ class macro:
                     if findHive():
                         guessedSlot = max(1,min(6, round((j+1)//2.5)))
                         hiveClaim = guessedSlot
-                        if 2 < guessedSlot < 6:
-                            hiveClaim += 1
+                        #if 3 < guessedSlot < 6:
+                            #hiveClaim += 1
                         self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", "screen")
                         rejoinSuccess = True
                         self.setdat["hive_number"] = hiveClaim
@@ -937,10 +988,15 @@ class macro:
                     self.keyboard.press("o")
                 self.moveMouseToDefault()
                 time.sleep(1)
+                if self.setdat["existance_broke"]:
+                    self.keyboard.press("/")
+                    self.keyboard.write(f'Existance so broke :weary: {datetime.now().strftime("%H:%M")}', 0.1)
+                    self.keyboard.press("enter")
                 self.convert()
                 #no need to reset
                 self.canDetectNight = True
                 self.status.value = ""
+                #say existance so broke
                 return
             self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
         self.status.value = ""
@@ -956,7 +1012,7 @@ class macro:
         while self.isGathering:
             #death check
             st = time.time()
-            if self.blueTextImageSearch("died"):
+            if self.blueTextImageSearch("died", 0.8):
                 self.died = True
             #mob respawn check
             self.setMobTimer(field)
@@ -970,7 +1026,7 @@ class macro:
         fieldSetting = self.fieldSettings[field]
         for i in range(3):
             #wait for bees to wake up
-            time.sleep(3)
+            if not self.alreadyConverted: time.sleep(6)
             #go to field
             self.cannon()
             self.logger.webhook("",f"Travelling: {field.title()}, Attempt {i+1}", "dark brown")
@@ -1095,6 +1151,7 @@ class macro:
                 self.status.value = ""
                 turnOffShitLock()
                 self.logger.webhook("","Player died", "dark brown","screen")
+                time.sleep(0.4)
                 self.reset()
                 break
 
@@ -1104,7 +1161,7 @@ class macro:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
             #check backpack
-            if bpc(self.mw, self.newUI) >= fieldSetting["backpack"]:
+            if self.getBackpack() >= fieldSetting["backpack"]:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Backpack - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
 
@@ -1162,6 +1219,7 @@ class macro:
             self.rejoin()
         elif returnType == "whirligig":
             self.useItemInInventory("whirligig")
+            time.sleep(1)
             if not self.convert():
                 self.logger.webhook("","Whirligigs failed, walking to hive", "dark brown", "screen")
                 walkToHive()
@@ -1668,6 +1726,7 @@ class macro:
             elif time.time()-st > 180: #max 3 mins to kill vic
                 self.logger.webhook("","Took too long to kill Vicious Bee","red", "screen")
                 break
+        self.night = False
         updateHourlyTime()
         self.stopVic = True
         stingerHuntThread.join()
@@ -1817,12 +1876,25 @@ class macro:
     #place the planter and return the time it would take for the planter to grow (in secs)
     def placePlanter(self, planter, field, harvestFull, glitter):
         st = time.time()
-        self.goToPlanter(planter, field, "place")
-        name = planter.lower().replace(" ","").replace("-","")
-        if glitter: self.useItemInInventory("glitter") #use glitter
-        if not self.useItemInInventory(f"{name}planter"):
+        for _ in range(2):
+            #try to place planter
+            self.goToPlanter(planter, field, "place")
+            name = planter.lower().replace(" ","").replace("-","")
+            if glitter: self.useItemInInventory("glitter") #use glitter
+            for _ in range(2):
+                if self.useItemInInventory(f"{name}planter"): 
+                    break
+            else:
+                return None
+            #check if planter is placed
+            time.sleep(0.5)
+            if self.blueTextImageSearch("planter"):
+                self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
+                break
+            self.logger.webhook("",f"Failed to Place Planter: {planter.title()}, trying again", "red", "screen")
+            self.reset()
+        else:
             return None
-        self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
         #calculate growth time. If the user didnt select harvest when full, return the harvest every X hours instead
         self.incrementHourlyStat("misc_time", time.time()-st)
         if harvestFull:
@@ -1839,7 +1911,11 @@ class macro:
         st = time.time()
         def updateHourlyTime():
             self.incrementHourlyStat("misc_time", time.time()-st)
-        if not self.goToPlanter(planter, field, "collect"):
+        for _ in range(2):
+            if self.goToPlanter(planter, field, "collect"): 
+                break
+            self.reset()
+        else:
             self.logger.webhook("",f"Unable to find Planter: {planter.title()}", "dark brown", "screen")
             updateHourlyTime()
             return
@@ -2213,12 +2289,13 @@ class macro:
                 time.sleep(0.2)
     
     def hourlyReportBackground(self):
+        '''
         honeyY = 23 if self.newUI else 0
         threshold = 0.75
         numImages = []
         for i in range(10):
             numImages.append(adjustImage("images/misc", f"honey_{i}", self.display_type))
-
+        '''
         def getHoney():
             '''
             #use image detection to get the amount of honey
@@ -2237,9 +2314,9 @@ class macro:
                     screenCopy = screen.copy()
                     #loop through all found coordinates and append it to numberRes
                     for pt in zip(*loc[::-1]):
-                        #cv2.rectangle(screenCopy, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
+                        cv2.rectangle(screenCopy, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
                         numbersRes.append((i, pt[0]))
-                    #cv2.imwrite(f'res{i}.png',screenCopy)
+                    cv2.imwrite(f'res{i}.png',screenCopy)
 
                 #sort the numbers by their x coordinate
                 #then extract only the numbers and join them together
@@ -2259,22 +2336,22 @@ class macro:
         settingsManager.saveSettingFile("start_time", time.time(), "data/user/hourly_report_bg.txt")
         prevMin = -1  
         while True:
-            if self.status.value == "rejoining": continue
-            #instead of using time.sleep, we want to run the code at the start of the min
-            currMin = datetime.now().minute
-            if currMin == prevMin: continue
-            prevMin = currMin
-            honey = getHoney()
-            print(honey)
-            backpack = bpc(self.mw, self.newUI)
-            data = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
-            data["honey_per_min"].append(honey)
-            data["backpack_per_min"].append(backpack)
-            settingsManager.saveDict("data/user/hourly_report_bg.txt", data)
+            if self.status.value != "rejoining":
+                #instead of using time.sleep, we want to run the code at the start of the min
+                currMin = datetime.now().minute
+                if currMin == prevMin: continue
+                prevMin = currMin
+                honey = getHoney()
+                print(honey)
+                backpack = self.getBackpack()
+                data = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
+                data["honey_per_min"].append(honey)
+                data["backpack_per_min"].append(backpack)
+                settingsManager.saveDict("data/user/hourly_report_bg.txt", data)
 
             #check if its time to send hourly report
             if currMin == 0:
-                hourlyReportData = generateHourlyReport()
+                hourlyReportData = generateHourlyReport(self.newUI)
                 self.logger.hourlyReport("Hourly Report", "", "purple")
 
                 #reset stats
@@ -2286,7 +2363,7 @@ class macro:
                 hourlyReportBgData = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
                 for k in hourlyReportBgData:
                     if isinstance(hourlyReportBgData[k], list):
-                        hourlyReportBgData[k] = [] 
+                        hourlyReportBgData[k] = []
                 settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
 
                 #add to history
@@ -2387,6 +2464,7 @@ class macro:
             self.newUI = True
             self.logger.webhook("","Detected: New Roblox UI","light blue")
             ocr.newUI = True
+            logModule.newUI = True
         else:
             self.logger.webhook("","Unable to detect Roblox UI","red", "screen")
             self.newUI = False   

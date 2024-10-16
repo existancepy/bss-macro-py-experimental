@@ -60,6 +60,7 @@
                     }
                 },
             ])
+            
             buildStandardContainer(parentBSS,"Sprinkler", "",[
                 {
                     id: "sprinkler_type",
@@ -83,6 +84,30 @@
                     }
                 }
             ])
+
+            buildStandardContainer(parentBSS, "Balloon", "", [
+                {
+                    id: "convert_balloon",
+                    title: "Convert Balloon",
+                    desc: "How often the macro should convert the balloon",
+                    type: {
+                        name: "dropdown",
+                        data: ["Always", "Every", "Never"],
+                        triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+                {
+                    id: "convert_balloon_every",
+                    title: "Convert Balloon Every X Mins",
+                    desc: "Convert the balloon every X mins. Only applies if convert balloon is set to 'every'",
+                    type: {
+                        name: "textbox",
+                        inputType: "int",
+                        triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+            ])
+
             buildStandardContainer(parentBSS,"Preferences", "",[
                 {
                     id: "convert_wait",
@@ -136,6 +161,17 @@
                     }
                     
                 },
+                {
+                    
+                    id: "existance_broke",
+                    title: "Existance so Broke",
+                    desc: "Say 'Existance so broke' in chat after rejoining. A reference to natro's 'natro so broke', which is a reference to e_lol's 'e_lol so broke'",
+                    type: {
+                        name: "checkbox",
+                        triggerFunction: saveGeneralTriggerFunction
+                    }
+                    
+                },
 
             ])
 
@@ -150,6 +186,7 @@
                     }
                 },
             ])
+
         </script>
     </div>
     <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="discord">
@@ -189,7 +226,7 @@
     
                 ])
 
-                buildStandardContainer(parentDiscord,"Webhook", "",[
+                buildStandardContainer(parentDiscord,"Discord Bot", "",[
                     {
                         id: "discord_bot",
                         title: "Enable Discord Bot",
