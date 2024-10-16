@@ -123,7 +123,7 @@ def getNectars():
         #get a screenshot of the buff
         rx, ry = res[1]
         fullBuffImg = mssScreenshotNP(x+(rx/multi)+offsetX, y+ry/multi+offsetY, 40, 40)
-        h,w, *_ = fullBuffImg
+        h,w, *_ = fullBuffImg.shape
         #get the buff level
         fullBuffImg = cv2.cvtColor(fullBuffImg, cv2.COLOR_RGBA2BGR)
         mask = cv2.cvtColor(fullBuffImg, cv2.COLOR_BGR2HLS)
@@ -143,7 +143,8 @@ def getNectars():
             continue
         # return the bounding with the largest area
         _, _, _, buffH = cv2.boundingRect(max(contours, key=cv2.contourArea))
-        nectarQuantity.append(min(100,buffH/h*100))
+        quantity = min(100, (buffH/h*100))
+        nectarQuantity.append(quantity)
     return nectarQuantity
 
 def millify(n):

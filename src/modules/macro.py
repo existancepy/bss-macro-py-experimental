@@ -644,7 +644,7 @@ class macro:
             self.keyboard.press("e")
             time.sleep(0.5)
             if not self.isBesideEImage("makehoney"): break
-            
+
         self.status.value = "converting"
         st = time.time()
         time.sleep(2)
@@ -774,15 +774,18 @@ class macro:
             self.keyboard.press('r')
             time.sleep(0.2)
             self.keyboard.press('enter')
-            emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
+            if self.newUI:
+                emptyHealth = self.adjustImage("./images/menu", "emptyhealth_new")
+            else:
+                emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
             healthBar = False #check if the health bar appears when the player resets. For some reason, the empty health bar doesnt always appear
             st = time.time()
             #wait for empty health bar to appear
             while time.time() - st < 3: 
-                if locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
+                if locateImageOnScreen(emptyHealth, self.mw-350, 0, 250, 60, 0.7):
                     healthBar = True
                     break
-            if healthBar: #check if the health bar has been detected. If it hasnt, just wait for a flat 6s
+            if healthBar: #check if the health bar has b detected. If it hasnt, just wait for a flat 6s
                 #if the empty health bar disappears, player has respawned
                 #max 9s of waiting
                 st = time.time()
