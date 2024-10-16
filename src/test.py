@@ -24,6 +24,6 @@ cv2.waitKey(0)
 from modules.submacros.hourlyReport import getBuffs, getNectars, generateHourlyReport
 import time
 from modules.misc.appManager import openApp
-
-generateHourlyReport()
+time.sleep(2)
+generateHourlyReport(True)
 

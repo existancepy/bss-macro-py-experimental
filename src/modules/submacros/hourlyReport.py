@@ -52,20 +52,19 @@ buffs = buffs.items()
 buffQuantity = []
 
 nectars = {
-    "comforting": [np.array([0, 150, 63]), np.array([20, 155, 70])],
-    "invigorating": [np.array([0, 128, 95]), np.array([180, 132, 101])],
-    "motivating": [np.array([160, 150, 63]), np.array([170, 155, 70])],
-    "refreshing": [np.array([50, 144, 70]), np.array([70, 151, 75])],
-    "satisfying": [np.array([130, 163, 36]), np.array([140, 168, 40])]
+    "comforting": [[np.array([0, 150, 63]), np.array([20, 155, 70])], (-2,0)],
+    "invigorating": [[np.array([0, 128, 95]), np.array([180, 132, 101])], (-2,4)],
+    "motivating": [[np.array([160, 150, 63]), np.array([170, 155, 70])], (-2,-2)],
+    "refreshing": [[np.array([50, 144, 70]), np.array([70, 151, 75])], (-2,2)],
+    "satisfying": [[np.array([130, 163, 36]), np.array([140, 168, 40])], (-2,0)]
 }
 nectarKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
 nectars = nectars.items()
 
 
-def getBuffs(newUI):
+def getBuffs():
     buffQuantity = []
     displayType = getScreenData()["display_type"]
-    if newUI: y+=22
     for buff,v in buffs:
         templatePosition, transform = v
         multi = 2 if displayType == "retina" else 1
@@ -95,7 +94,7 @@ def getBuffs(newUI):
             mask = cv2.erode(mask, kernel)
         mask = Image.fromarray(mask)
 
-        #if "blessing" in buff: mask.save(f"{time.time()}.png")
+        #mask.save(f"{time.time()}.png")
         #read the text
         ocrText = ''.join([x[1][0] for x in ocrRead(mask)])
         buffCount = ''.join([x for x in ocrText if x.isdigit() or x == "."])
@@ -105,23 +104,26 @@ def getBuffs(newUI):
         buffQuantity.append(buffCount if buffCount else '1')
     return buffQuantity
 
-def getNectars(newUI):
+def getNectars():
     nectarQuantity = []
-    if newUI: y+=22
     displayType = getScreenData()["display_type"]
-    for buff, col in nectars:
+    for buff, vals in nectars:
+        col, offsetCoords = vals
+        print(offsetCoords)
+        print(col)
+        offsetX, offsetY = offsetCoords
         multi = 2 if displayType == "retina" else 1
 
         #find the buff
         buffTemplate = adjustImage("./images/buffs", buff, displayType)
-        res = locateTransparentImageOnScreen(buffTemplate, x, y, ww/1.8, 45, 0.7)
+        res = locateTransparentImageOnScreen(buffTemplate, x, y, ww/1.8, 45, 0.5) #get the best match first. At high nectar levels, it becomes hard to detect the nectar icon
         if not res: 
             nectarQuantity.append("0")
             continue
         #get a screenshot of the buff
         rx, ry = res[1]
         h,w = buffTemplate.shape[:-1]
-        fullBuffImg = mssScreenshotNP(x+(rx/multi)-4, y+ry/multi-1, 41, 40)
+        fullBuffImg = mssScreenshotNP(x+(rx/multi)+offsetX, y+ry/multi+offsetY, 40, 40)
 
         #get the buff level
         fullBuffImg = cv2.cvtColor(fullBuffImg, cv2.COLOR_RGBA2BGR)
@@ -131,8 +133,14 @@ def getNectars(newUI):
         #cv2.waitKey(0)
         mask = cv2.erode(mask, nectarKernel)
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
         if not contours:
-            nectarQuantity.append(2)
+            #in this case, the nectar quantity might be so low it cant be detected or the player doesnt have the nectar at all
+            #so, we get the confidence value of the match
+            #if the value is high, its probably low nectar quantity
+            #if its low, the player prob doesnt have the nectar
+            max_val, _  = res
+            nectarQuantity.append(2 if max_val > 0.8 else 0)
             continue
         # return the bounding with the largest area
         _, _, _, buffH = cv2.boundingRect(max(contours, key=cv2.contourArea))
@@ -187,10 +195,12 @@ def display_time(seconds, units = ['w','d','h','m','s']):
     return ' '.join(result)
 
 def generateHourlyReport(newUI):
+    global y
+    if newUI: y+=22
     pages = ["page1.html", "page2.html"]
     pageImages = []
-    buffQuantity = getBuffs(newUI)
-    nectarQuantity = getNectars(newUI)
+    buffQuantity = getBuffs()
+    nectarQuantity = getNectars()
     for page in pages:
         #relative file paths do not work, so replace the paths in src with absolute paths
         hourlyReportDir = Path(__file__).parents[2] / "hourly_report"
