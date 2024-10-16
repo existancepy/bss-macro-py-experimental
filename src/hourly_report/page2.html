@@ -151,6 +151,23 @@
                 background-color: rgba(0,0,0,0.4);
                 background-blend-mode: darken;
             }
+
+            .buff-2-bg{
+                height: 3.5rem; 
+                width: 3.5rem;
+            }
+
+            .buff-2-bg.inactive{
+                opacity: 0.6;
+            }
+
+            .buff-2-text{
+                position: absolute; 
+                bottom: 0.05rem; 
+                right: 0.1rem; 
+                text-shadow: -1px 0 #000, 0 1px #000, 0 -1px #000, 1px 1px #000, -1px -1px #000, 1px -1px #000, -1px 1px #000; 
+                font-size: 1rem;
+            }
             
             /*Easy chart CSS*/
             .chart {
@@ -205,7 +222,6 @@
             </div>
             <h3 class="inter-semibold title">Buffs</h3>
             <div id = "buffs" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.2rem; width: 100%;">
-
             </div>
             <h3 class="inter-semibold title">Nectars</h3>
             <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.2rem; width: 100%;">
@@ -435,10 +451,16 @@
         const buffNames = []
         const buffValues = []
         //const buffNames = ['tabby_love', 'polar_power', 'wealth_clock', 'bloat', 'blessing']
-        //const buffValues = ['1000', '263', '1', '5.98', '37']
+        //const buffValues = ['1000', '263', '0', '5.98', '37']
 
         for (let i=0; i < buffNames.length; i++){
-            buffParent.innerHTML += `<div style="background-image: url(assets/${buffNames[i]}_buff.png);" class="buff-bg inter-semibold ${buffValues[i] == "0" ? "inactive" : ""}">x${buffValues[i]}</div>`
+            //buffParent.innerHTML += `<div style="background-image: url(assets/${buffNames[i]}_buff.png);" class="buff-bg inter-semibold ${buffValues[i] == "0" ? "inactive" : ""}">x${buffValues[i]}</div>`
+            buffParent.innerHTML += `
+                <div style="position: relative;">
+                    <img src="assets/${buffNames[i]}_buff.png" class=" buff-2-bg ${buffValues[i] == "0" ? "inactive" : ""}">
+                    <div class="inter-semibold buff-2-text">x${buffValues[i]}</div>
+                </div>
+                `
         }
 
         //the source code for easy pie chart
