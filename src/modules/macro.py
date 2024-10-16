@@ -2464,6 +2464,7 @@ class macro:
             self.newUI = True
             self.logger.webhook("","Detected: New Roblox UI","light blue")
             ocr.newUI = True
+            logModule.newUI = True
         else:
             self.logger.webhook("","Unable to detect Roblox UI","red", "screen")
             self.newUI = False   

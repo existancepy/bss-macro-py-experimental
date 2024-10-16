@@ -15,9 +15,10 @@ colors = {
 }
 
 mw, mh = pag.size()
+newUI = False
 screenshotRegions = {
     "screen": None,
-    "honey-pollen": (mw/3.5, 0, mw/2.4, 40),
+    "honey-pollen": (mw/3.5, 23 if newUI else 0, mw/2.4, 40),
     "sticker": (200, 70, mw/2.5-200, mh/4),
 }
 
