@@ -262,7 +262,7 @@ def generateHourlyReport(newUI):
             "const taskTimes = []": f'const taskTimes = [{hourlyReportData["gathering_time"]}, {hourlyReportData["converting_time"]}, {hourlyReportData["bug_run_time"]}, {hourlyReportData["misc_time"]}]',
             "const historyData = []": f'const historyData = {historyData}',
             "const honey = 0": f'const honey = {honeyThisHour}',
-            "url(": f'url({hourlyReportDir}/'.replace("\\", "/"),
+            "url(a": f'url({hourlyReportDir}/a'.replace("\\", "/"),
             "const buffNames = []": f'const buffNames = {[k for k,v in buffs]}',
             "const buffValues = []": f'const buffValues = {buffQuantity}',
             "const nectarValues = []": f'const nectarValues = {nectarQuantity}'
