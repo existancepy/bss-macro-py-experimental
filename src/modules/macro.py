@@ -640,7 +640,11 @@ class macro:
                 self.alreadyConverted = False
                 return False
         #start convert
-        self.keyboard.press("e")
+        while True:
+            self.keyboard.press("e")
+            time.sleep(0.5)
+            if not self.isBesideEImage("makehoney"): break
+            
         self.status.value = "converting"
         st = time.time()
         time.sleep(2)
