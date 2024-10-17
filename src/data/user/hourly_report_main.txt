@@ -1,7 +1,7 @@
-bugs=6
+bugs=1
 quests_completed=0
 vicious_bees=0
-gathering_time=1828.6892051696777
-converting_time=822.0234730243683
+gathering_time=537.1616368293762
+converting_time=137.13261914253235
 bug_run_time=0
-misc_time=131.87704348564148
+misc_time=0

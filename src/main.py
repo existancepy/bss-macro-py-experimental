@@ -186,7 +186,6 @@ def macro(status, log, haste, updateGUI):
         
         for field in gatherFields:
             runTask(macro.gather, args=(field,), resetAfter=False)
-        print("cycle done")
 
 def watch_for_hotkeys(run):
     def on_press(key):
