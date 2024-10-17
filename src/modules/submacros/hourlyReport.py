@@ -199,7 +199,7 @@ def generateHourlyReport(newUI):
     pageImages = []
     buffQuantity = getBuffs()
     nectarQuantity = getNectars()
-    mssScreenshot(save=True)
+    #mssScreenshot(save=True)
     for page in pages:
         #relative file paths do not work, so replace the paths in src with absolute paths
         hourlyReportDir = Path(__file__).parents[2] / "hourly_report"

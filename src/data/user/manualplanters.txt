@@ -1,1 +1,0 @@
-{'cycle': 2, 'planters': ['candy', 'tacky', 'pesticide'], 'fields': ['pineapple', 'sunflower', 'strawberry'], 'gatherFields': [], 'harvestTime': 1729136680.6352818}
