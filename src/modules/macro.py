@@ -640,7 +640,11 @@ class macro:
                 self.alreadyConverted = False
                 return False
         #start convert
-        self.keyboard.press("e")
+        while True:
+            self.keyboard.press("e")
+            time.sleep(0.5)
+            if not self.isBesideEImage("makehoney"): break
+
         self.status.value = "converting"
         st = time.time()
         time.sleep(2)
@@ -770,15 +774,18 @@ class macro:
             self.keyboard.press('r')
             time.sleep(0.2)
             self.keyboard.press('enter')
-            emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
+            if self.newUI:
+                emptyHealth = self.adjustImage("./images/menu", "emptyhealth_new")
+            else:
+                emptyHealth = self.adjustImage("./images/menu", "emptyhealth")
             healthBar = False #check if the health bar appears when the player resets. For some reason, the empty health bar doesnt always appear
             st = time.time()
             #wait for empty health bar to appear
             while time.time() - st < 3: 
-                if locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
+                if locateImageOnScreen(emptyHealth, self.mw-350, 0, 150, 60, 0.7):
                     healthBar = True
                     break
-            if healthBar: #check if the health bar has been detected. If it hasnt, just wait for a flat 6s
+            if healthBar: #check if the health bar has b detected. If it hasnt, just wait for a flat 6s
                 #if the empty health bar disappears, player has respawned
                 #max 9s of waiting
                 st = time.time()
@@ -930,6 +937,8 @@ class macro:
                     self.logger.webhook("","Not logged into the roblox app. Rejoining via the browser. For a smoother experience, please ensure you are logged into the Roblox app beforehand.","red","screen")
                     self.setdat["rejoin_method"] = "new tab"
                     continue
+            
+            self.startDetect()
             #find hive
             time.sleep(2)
             mouse.click()
@@ -951,7 +960,7 @@ class macro:
                 #$time.sleep(0.15)
                 if self.isBesideEImage("claimhive"):
                     #check for overrun
-                    for _ in range(4):
+                    for _ in range(7):
                         time.sleep(0.4)
                         if self.isBesideEImage("claimhive"): break
                         self.keyboard.walk("d",0.2)
@@ -1888,10 +1897,15 @@ class macro:
                 return None
             #check if planter is placed
             time.sleep(0.5)
-            if self.blueTextImageSearch("planter"):
-                self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
-                break
-            self.logger.webhook("",f"Failed to Place Planter: {planter.title()}, trying again", "red", "screen")
+            placedPlanter = False
+            for _ in range(20):
+                if self.blueTextImageSearch("planter"):
+                    self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
+                    placedPlanter = True
+                    break
+                time.sleep(0.1)
+            if placedPlanter: break
+            self.logger.webhook("",f"Failed to Place Planter: {planter.title()}", "red", "screen")
             self.reset()
         else:
             return None
@@ -2386,15 +2400,7 @@ class macro:
                 f.close()
 
             
-            
-    def start(self):
-        #if roblox is not open, rejoin
-        if not appManager.openApp("roblox"):
-            self.rejoin()
-        else:
-            #toggle fullscreen
-            if not self.isFullScreen():
-                self.toggleFullScreen()
+    def startDetect(self):
         #disable game mode
         self.moveMouseToDefault()
         if sys.platform == "darwin":
@@ -2487,6 +2493,16 @@ class macro:
             if similarHashes(img1, img2, 3):
                 messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Accessibility Permission')
             time.sleep(0.2)
+
+    def start(self):
+        #if roblox is not open, rejoin
+        if not appManager.openApp("roblox"):
+            self.rejoin()
+        else:
+            #toggle fullscreen
+            if not self.isFullScreen():
+                self.toggleFullScreen()
+            self.startDetect()
 
         #enable night detection and hotbar
         nightAndHotbarThread = threading.Thread(target=self.nightAndHotbarBackground)

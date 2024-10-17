@@ -10,7 +10,7 @@ import numpy as np
 import platform
 from modules.misc.messageBox import msgBox
 from modules.screen.imageSearch import locateTransparentImageOnScreen
-from modules.screen.screenshot import mssScreenshotNP
+from modules.screen.screenshot import mssScreenshotNP, mssScreenshot
 from modules.misc.imageManipulation import adjustImage
 import time
 import pyautogui as pag
@@ -96,7 +96,7 @@ def getBuffs():
 
         #mask.save(f"{time.time()}.png")
         #read the text
-        ocrText = ''.join([x[1][0] for x in ocrRead(mask)])
+        ocrText = ''.join([x[1][0] for x in ocrRead(mask)]).replace(":", ".")
         buffCount = ''.join([x for x in ocrText if x.isdigit() or x == "."])
         print(buff)
         print(ocrText)
@@ -109,8 +109,6 @@ def getNectars():
     displayType = getScreenData()["display_type"]
     for buff, vals in nectars:
         col, offsetCoords = vals
-        print(offsetCoords)
-        print(col)
         offsetX, offsetY = offsetCoords
         multi = 2 if displayType == "retina" else 1
 
@@ -122,9 +120,8 @@ def getNectars():
             continue
         #get a screenshot of the buff
         rx, ry = res[1]
-        h,w = buffTemplate.shape[:-1]
         fullBuffImg = mssScreenshotNP(x+(rx/multi)+offsetX, y+ry/multi+offsetY, 40, 40)
-
+        h,w, *_ = fullBuffImg.shape
         #get the buff level
         fullBuffImg = cv2.cvtColor(fullBuffImg, cv2.COLOR_RGBA2BGR)
         mask = cv2.cvtColor(fullBuffImg, cv2.COLOR_BGR2HLS)
@@ -144,7 +141,8 @@ def getNectars():
             continue
         # return the bounding with the largest area
         _, _, _, buffH = cv2.boundingRect(max(contours, key=cv2.contourArea))
-        nectarQuantity.append(buffH/h*100)
+        quantity = min(100, (buffH/h*100))
+        nectarQuantity.append(quantity)
     return nectarQuantity
 
 def millify(n):
@@ -196,11 +194,12 @@ def display_time(seconds, units = ['w','d','h','m','s']):
 
 def generateHourlyReport(newUI):
     global y
-    if newUI: y+=22
+    if newUI: y=52
     pages = ["page1.html", "page2.html"]
     pageImages = []
     buffQuantity = getBuffs()
     nectarQuantity = getNectars()
+    #mssScreenshot(save=True)
     for page in pages:
         #relative file paths do not work, so replace the paths in src with absolute paths
         hourlyReportDir = Path(__file__).parents[2] / "hourly_report"
@@ -263,7 +262,7 @@ def generateHourlyReport(newUI):
             "const taskTimes = []": f'const taskTimes = [{hourlyReportData["gathering_time"]}, {hourlyReportData["converting_time"]}, {hourlyReportData["bug_run_time"]}, {hourlyReportData["misc_time"]}]',
             "const historyData = []": f'const historyData = {historyData}',
             "const honey = 0": f'const honey = {honeyThisHour}',
-            "url(": f'url({hourlyReportDir}/'.replace("\\", "/"),
+            "url(a": f'url({hourlyReportDir}/a'.replace("\\", "/"),
             "const buffNames = []": f'const buffNames = {[k for k,v in buffs]}',
             "const buffValues = []": f'const buffValues = {buffQuantity}',
             "const nectarValues = []": f'const nectarValues = {nectarQuantity}'
