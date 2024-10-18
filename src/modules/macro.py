@@ -574,19 +574,10 @@ class macro:
     def findItemInInventory(self, itemName):
         #for retina, just a regular image search
         #for built-in, a transparency search
-        if self.display_type == "retina":
-            itemImg = self.adjustImage("./images/inventory", itemName)
-        else:
-            template = cv2.imread(f'images/inventory/natro/{itemName}.png', cv2.IMREAD_UNCHANGED)
-            # extract base image and alpha channel and make alpha 3 channels
-            itemImg = template[:,:,0:3]
-            alpha = template[:,:,3]
-            alpha = cv2.merge([alpha,alpha,alpha])
+        itemImg = self.adjustImage("./images/inventory/old", itemName)
 
         itemOCRName = itemName.lower().replace("planter", "") #the name of the item used to check with the ocr to verify its correct
         itemH, itemW, *_ = itemImg.shape
-        print(itemW)
-        print(itemH)
         #open inventory
         self.toggleInventory("open")
         time.sleep(0.3)
@@ -601,10 +592,7 @@ class macro:
         foundEarly = False #if the max_val > 0.9, end searching early to save time
         time.sleep(0.3)
         for i in range(60):
-            if self.display_type == "retina":
-                max_val, max_loc = locateImageOnScreen(itemImg, 90, 90, 310, self.mh-180)
-            else:
-                max_val, max_loc = locateImageWithMaskOnScreen(itemImg, alpha, 90, 90, 310, self.mh-180)
+            max_val, max_loc = locateImageOnScreen(itemImg, 0, 90, 100, self.mh-180)
                 
             if max_val > valBest:
                 valBest = max_val
@@ -673,14 +661,18 @@ class macro:
                 self.alreadyConverted = False
                 return False
         #start convert
-        while True:
+        eStartTime = time.time()
+        while time.time() - eStartTime < 3:
             self.keyboard.press("e")
             time.sleep(0.5)
-            if not self.isBesideEImage("makehoney"): break
+            for _ in range(2):
+                if self.isBesideEImage("makehoney"): break
+            else:
+                break
 
         self.status.value = "converting"
         st = time.time()
-        time.sleep(2)
+        time.sleep(1)
         self.logger.webhook("", "Converting", "brown", "screen")
         self.alreadyConverted = True
 
