@@ -807,7 +807,7 @@ class macro:
             st = time.time()
             #wait for empty health bar to appear
             while time.time() - st < 3: 
-                if locateTransparentImageOnScreen(emptyHealth, self.mw-150, 0, 150, 60, 0.7):
+                if locateTransparentImageOnScreen(emptyHealth, self.mw-150, 0, 150, 60, 0.8):
                     healthBar = True
                     break
             if healthBar: #check if the health bar has b detected. If it hasnt, just wait for a flat 6s
@@ -819,7 +819,7 @@ class macro:
                         time.sleep(0.5)
                         break
             else:
-                time.sleep(6)
+                time.sleep(5)
 
             self.canDetectNight = True
             self.location = "spawn"
