@@ -568,7 +568,14 @@ class macro:
 
     #scroll to an item in the inventory and return the x,y coordinates
     def findItemInInventory(self, itemName):
-        itemImg = self.adjustImage("./images/inventory", itemName)
+        if self.display_type == "retina":
+            itemImg = self.adjustImage("./images/inventory", itemName)
+        else:
+            template = cv2.imread(f'images/inventory/natro/{itemName}.png', cv2.IMREAD_UNCHANGED)
+            # extract base image and alpha channel and make alpha 3 channels
+            base = template[:,:,0:3]
+            alpha = template[:,:,3]
+            alpha = cv2.merge([alpha,alpha,alpha])
         #open inventory
         self.toggleInventory("open")
         time.sleep(0.3)
@@ -583,7 +590,11 @@ class macro:
         foundEarly = False #if the max_val > 0.9, end searching early to save time
         time.sleep(0.3)
         for i in range(60):
-            max_val, max_loc = locateImageOnScreen(itemImg, 90, 90, 310, self.mh-180)
+            if self.display_type == "retina":
+                max_val, max_loc = locateImageOnScreen(itemImg, 90, 90, 310, self.mh-180)
+            else:
+                max_val, max_loc = locateImageWithMaskOnScreen(base, alpha, 90, 90, 310, self.mh-180)
+                
             if max_val > valBest:
                 valBest = max_val
                 bestX, bestY = max_loc

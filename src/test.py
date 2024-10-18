@@ -28,21 +28,21 @@ import math
 img = cv2.imread('screenshot2.png')
 
 # read image template
-template = cv2.imread('images/inventory/blueclayplanter-retina.png', cv2.IMREAD_UNCHANGED)
-template = cv2.resize(template, (0, 0), fx = 0.5, fy = 0.5)
+template = cv2.imread('natro.png', cv2.IMREAD_UNCHANGED)
+#template = cv2.resize(template, (0, 0), fx = 0.5, fy = 0.5)
 hh, ww = template.shape[:2]
 
 # extract base image and alpha channel and make alpha 3 channels
 base = template[:,:,0:3]
 alpha = template[:,:,3]
 alpha = cv2.merge([alpha,alpha,alpha])
-cv2.imshow('result', alpha)
-cv2.waitKey(0)
+#cv2.imshow('result', alpha)
+#cv2.waitKey(0)
 # do masked template matching and save correlation image
 correlation = cv2.matchTemplate(img, base, cv2.TM_CCORR_NORMED, mask=alpha)
 
 # set threshold and get all matches
-threshold = 0.8
+threshold = 0.7
 
 ''' from:  https://stackoverflow.com/questions/61779288/how-to-template-match-a-simple-2d-shape-in-opencv/61780200#61780200 '''
 # search for max score
