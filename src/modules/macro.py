@@ -1478,6 +1478,8 @@ class macro:
                 time.sleep(2)
                 self.logger.webhook("", f"Solving: {displayName}", "dark brown", "screen")
                 solveMemoryMatch(mmType, self.display_type)
+                time.sleep(0.8)
+                self.logger.webhook("", f"Completed: {displayName}", "bright green", "blue")
             elif objective in fieldBoosterData:
                 sleep(3)
                 bluetexts = ""
