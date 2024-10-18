@@ -24,7 +24,7 @@ def solveMemoryMatch(mmType, displayType):
         st = time.time()
         while time.time()-st < 3: #max 3s of waiting
             tile = screenshotItem(x,y)
-            if not similarImages(tile, blankTile): #if the tile is the same as the reference, it has flipped
+            if not similarImages(tile, blankTile): #if the tile is not the same as the reference, it has flipped
                 time.sleep(0.2) #wait for the tile flip animation
                 tile = screenshotItem(x,y) #get a new screenshot
                 break
@@ -78,6 +78,7 @@ def solveMemoryMatch(mmType, displayType):
     matchFound = None #store the value of the match
     skipAttempt = False
     for currAttempt in range(attempts):
+        print(currAttempt)
         if skipAttempt:
             skipAttempt = False
             continue
