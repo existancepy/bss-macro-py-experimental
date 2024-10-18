@@ -807,7 +807,7 @@ class macro:
             st = time.time()
             #wait for empty health bar to appear
             while time.time() - st < 3: 
-                if locateImageOnScreen(emptyHealth, self.mw-350, 0, 150, 60, 0.7):
+                if locateTransparentImageOnScreen(emptyHealth, self.mw-150, 0, 150, 60, 0.7):
                     healthBar = True
                     break
             if healthBar: #check if the health bar has b detected. If it hasnt, just wait for a flat 6s
@@ -815,7 +815,7 @@ class macro:
                 #max 9s of waiting
                 st = time.time()
                 while time.time() - st < 9:
-                    if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
+                    if not locateTransparentImageOnScreen(emptyHealth, self.mw-150, 0, 150, 60, 0.7):
                         time.sleep(0.5)
                         break
             else:
