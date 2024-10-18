@@ -810,7 +810,7 @@ class macro:
                 if locateTransparentImageOnScreen(emptyHealth, self.mw-150, 0, 150, 60, 0.8):
                     healthBar = True
                     break
-            if healthBar: #check if the health bar has b detected. If it hasnt, just wait for a flat 6s
+            if healthBar: #check if the health bar has b detected. If it hasnt, just wait for a flat time
                 #if the empty health bar disappears, player has respawned
                 #max 9s of waiting
                 st = time.time()
