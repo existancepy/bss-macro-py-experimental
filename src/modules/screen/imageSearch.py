@@ -27,3 +27,13 @@ def locateTransparentImageOnScreen(target, x,y,w,h, threshold = 0):
 
 def similarHashes(hash1, hash2, threshold):
     return hash1-hash2 < threshold
+
+def locateImageWithMaskOnScreen(image, mask, x,y,w,h, threshold=0):
+    screen = mssScreenshotNP(x,y,w,h)
+    screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
+
+    # do masked template matching and save correlation image
+    res = cv2.matchTemplate(screen, image, cv2.TM_CCORR_NORMED, mask=mask)
+    _, max_val, _, max_loc = cv2.minMaxLoc(res)
+    if max_val < threshold: return None
+    return (max_val, max_loc)

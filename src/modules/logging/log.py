@@ -22,12 +22,13 @@ def sendWebhook(url, title, desc, time, colorHex, ss = None):
         "screen": None,
         "honey-pollen": (mw/3.5, 23 if newUI else 0, mw/2.4, 40),
         "sticker": (200, 70, mw/2.5-200, mh/4),
+        "blue": (mw*3/4, mh*2/3, mw//4, mh//3),
     }
     
     webhookImg = None
     if not ss is None:
         webhookImg = "webhookScreenshot.png"
-        screenshotScreen("webhookScreenshot.png", screenshotRegions[ss])
+        screenshotScreen(webhookImg, screenshotRegions[ss])
     logWebhook.webhook(url, title, desc, time, colorHex, webhookImg)
 
 class log:

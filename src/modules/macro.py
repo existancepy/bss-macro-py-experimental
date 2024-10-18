@@ -31,6 +31,7 @@ import math
 import re
 import ast
 from modules.submacros.hourlyReport import generateHourlyReport
+from difflib import SequenceMatcher
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -567,8 +568,16 @@ class macro:
         '''
 
     #scroll to an item in the inventory and return the x,y coordinates
+    def getStringSimilarity(self, str1, str2):
+        return SequenceMatcher(None, str1, str2).ratio()
+    
     def findItemInInventory(self, itemName):
-        itemImg = self.adjustImage("./images/inventory", itemName)
+        #for retina, just a regular image search
+        #for built-in, a transparency search
+        itemImg = self.adjustImage("./images/inventory/old", itemName)
+
+        itemOCRName = itemName.lower().replace("planter", "") #the name of the item used to check with the ocr to verify its correct
+        itemH, itemW, *_ = itemImg.shape
         #open inventory
         self.toggleInventory("open")
         time.sleep(0.3)
@@ -583,7 +592,8 @@ class macro:
         foundEarly = False #if the max_val > 0.9, end searching early to save time
         time.sleep(0.3)
         for i in range(60):
-            max_val, max_loc = locateImageOnScreen(itemImg, 90, 90, 310, self.mh-180)
+            max_val, max_loc = locateImageOnScreen(itemImg, 0, 90, 100, self.mh-180)
+                
             if max_val > valBest:
                 valBest = max_val
                 bestX, bestY = max_loc
@@ -596,6 +606,7 @@ class macro:
         if valBest < 0.8:
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
             return None
+
         if not foundEarly:
             #scroll to the top
             for _ in range(80):
@@ -607,6 +618,16 @@ class macro:
         if self.display_type == "retina":
             bestX //= 2
             bestY //= 2
+            itemW //= 2
+            itemH //= 2
+        #use ocr to check that the item has been found
+        '''
+        itemScreenshot = mssScreenshot(90+bestX, 90+bestY-itemH/2, itemW, itemH, True)
+        itemOCRText = ''.join([x[1][0] for x in ocr.ocrRead(itemScreenshot)]).replace(" ","").replace("-","").lower()
+        if not (itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.6):
+            self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
+            return None
+        '''            
         #return (bestX+20, bestY+80+20)
         return (40, bestY+80)
     
@@ -640,14 +661,18 @@ class macro:
                 self.alreadyConverted = False
                 return False
         #start convert
-        while True:
+        eStartTime = time.time()
+        while time.time() - eStartTime < 3:
             self.keyboard.press("e")
             time.sleep(0.5)
-            if not self.isBesideEImage("makehoney"): break
+            for _ in range(2):
+                if self.isBesideEImage("makehoney"): break
+            else:
+                break
 
         self.status.value = "converting"
         st = time.time()
-        time.sleep(2)
+        time.sleep(1)
         self.logger.webhook("", "Converting", "brown", "screen")
         self.alreadyConverted = True
 
@@ -719,7 +744,7 @@ class macro:
             
             mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
-                solveMemoryMatch(self.latestMM, self.display_type)
+                solveMemoryMatch(self.latestMM, self.display_type, attemptRequirement)
 
             blenderImg = self.adjustImage("./images/menu", "blenderclose") #blender
             if locateImageOnScreen(blenderImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
@@ -782,19 +807,19 @@ class macro:
             st = time.time()
             #wait for empty health bar to appear
             while time.time() - st < 3: 
-                if locateImageOnScreen(emptyHealth, self.mw-350, 0, 150, 60, 0.7):
+                if locateTransparentImageOnScreen(emptyHealth, self.mw-150, 0, 150, 60, 0.8):
                     healthBar = True
                     break
-            if healthBar: #check if the health bar has b detected. If it hasnt, just wait for a flat 6s
+            if healthBar: #check if the health bar has b detected. If it hasnt, just wait for a flat time
                 #if the empty health bar disappears, player has respawned
                 #max 9s of waiting
                 st = time.time()
                 while time.time() - st < 9:
-                    if not locateImageOnScreen(emptyHealth, self.mw-100, 0, 100, 60, 0.7):
+                    if not locateTransparentImageOnScreen(emptyHealth, self.mw-150, 0, 150, 60, 0.7):
                         time.sleep(0.5)
                         break
             else:
-                time.sleep(6)
+                time.sleep(5)
 
             self.canDetectNight = True
             self.location = "spawn"
@@ -1453,6 +1478,8 @@ class macro:
                 time.sleep(2)
                 self.logger.webhook("", f"Solving: {displayName}", "dark brown", "screen")
                 solveMemoryMatch(mmType, self.display_type)
+                time.sleep(0.8)
+                #self.logger.webhook("", f"Completed: {displayName}", "bright green", "blue")
             elif objective in fieldBoosterData:
                 sleep(3)
                 bluetexts = ""
@@ -1885,6 +1912,10 @@ class macro:
     #place the planter and return the time it would take for the planter to grow (in secs)
     def placePlanter(self, planter, field, harvestFull, glitter):
         st = time.time()
+
+        def updateHourlyTime():
+            self.incrementHourlyStat("misc_time", time.time()-st)
+
         for _ in range(2):
             #try to place planter
             self.goToPlanter(planter, field, "place")
@@ -1894,6 +1925,7 @@ class macro:
                 if self.useItemInInventory(f"{name}planter"): 
                     break
             else:
+                updateHourlyTime()
                 return None
             #check if planter is placed
             time.sleep(0.5)
@@ -1908,9 +1940,10 @@ class macro:
             self.logger.webhook("",f"Failed to Place Planter: {planter.title()}", "red", "screen")
             self.reset()
         else:
+            updateHourlyTime()
             return None
         #calculate growth time. If the user didnt select harvest when full, return the harvest every X hours instead
-        self.incrementHourlyStat("misc_time", time.time()-st)
+        updateHourlyTime()
         if harvestFull:
             baseGrowthTime, bonusFields, fieldGrowthBonus = planterGrowthData[planter]
             bonusTime = 0
@@ -1928,9 +1961,9 @@ class macro:
         for _ in range(2):
             if self.goToPlanter(planter, field, "collect"): 
                 break
+            self.logger.webhook("",f"Unable to find Planter: {planter.title()}", "dark brown", "screen")
             self.reset()
         else:
-            self.logger.webhook("",f"Unable to find Planter: {planter.title()}", "dark brown", "screen")
             updateHourlyTime()
             return
         self.keyboard.press("e")

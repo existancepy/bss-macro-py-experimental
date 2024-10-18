@@ -40,11 +40,11 @@ x = 0
 y = 30
 
 #key: name of buff
-#value: [template for template matching is the buff's top or bottom, if buff image should be transformed]
+#value: [template for template matching is the buff's top, bottom or middle, if buff image should be transformed]
 buffs = {
     "tabby_love": ["top", True],
     "polar_power": ["top", True],
-    "wealth_clock": ["top", False],
+    "wealth_clock": ["top", True],
     "blessing": ["middle", True],
     "bloat": ["top", True],
 }
