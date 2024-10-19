@@ -744,7 +744,7 @@ class macro:
             
             mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
-                solveMemoryMatch(self.latestMM, self.display_type, attemptRequirement)
+                solveMemoryMatch(self.latestMM, self.display_type)
 
             blenderImg = self.adjustImage("./images/menu", "blenderclose") #blender
             if locateImageOnScreen(blenderImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
@@ -807,15 +807,14 @@ class macro:
             st = time.time()
             #wait for empty health bar to appear
             while time.time() - st < 3: 
-                if locateTransparentImageOnScreen(emptyHealth, self.mw-150, 0, 150, 60, 0.8):
+                if locateImageOnScreen(emptyHealth, self.mw-150, 0, 150, 60, 0.8):
                     healthBar = True
                     break
             if healthBar: #check if the health bar has b detected. If it hasnt, just wait for a flat time
                 #if the empty health bar disappears, player has respawned
-                #max 9s of waiting
                 st = time.time()
-                while time.time() - st < 9:
-                    if not locateTransparentImageOnScreen(emptyHealth, self.mw-150, 0, 150, 60, 0.7):
+                while time.time() - st < 8:
+                    if not locateImageOnScreen(emptyHealth, self.mw-150, 0, 150, 60, 0.6):
                         time.sleep(0.5)
                         break
             else:

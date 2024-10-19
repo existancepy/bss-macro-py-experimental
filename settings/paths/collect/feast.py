@@ -15,8 +15,8 @@ self.keyboard.slowPress(".")
 sleep(0.2)
 self.keyboard.keyUp("w")
 self.keyboard.slowPress("space")
-time.sleep(0.7)
-if self.isBesideE(["polar"]):
+time.sleep(1)
+if self.isBesideE(["talk", "polar"]):
     self.keyboard.keyDown("w")
     time.sleep(1)
     self.keyboard.press("space")
