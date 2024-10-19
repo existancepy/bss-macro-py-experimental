@@ -744,7 +744,7 @@ class macro:
             
             mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
-                solveMemoryMatch(self.latestMM, self.display_type, attemptRequirement)
+                solveMemoryMatch(self.latestMM, self.display_type)
 
             blenderImg = self.adjustImage("./images/menu", "blenderclose") #blender
             if locateImageOnScreen(blenderImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
