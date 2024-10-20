@@ -661,14 +661,11 @@ class macro:
                 self.alreadyConverted = False
                 return False
         #start convert
-        eStartTime = time.time()
-        while time.time() - eStartTime < 3:
+        #check that the game has started converting
+        for _ in range(5):  #must always be an odd number
             self.keyboard.press("e")
             time.sleep(0.5)
-            for _ in range(2):
-                if self.isBesideEImage("makehoney"): break
-            else:
-                break
+            if self.isBesideE(["stop"], ["make"]): break
 
         self.status.value = "converting"
         st = time.time()
@@ -766,6 +763,18 @@ class macro:
                     pass
                 else:
                     pass
+            
+            permissionPopup = self.adjustImage("./images/mac", "allow")
+            x = self.mw/4
+            y = self.mh/3
+            res = locateImageOnScreen(permissionPopup, x, y, self.mw/2, self.mh/3, 0.8)
+            if res:
+                x2, y2 = res[1]
+                mouse.moveTo(x+x2, y+y2)
+                time.sleep(0.08)
+                mouse.moveBy(1,1)
+                time.sleep(0.1)
+                mouse.click()
 
             noImg = self.adjustImage("./images/menu", "no") #yes/no popup
             x = self.mw/3.2
@@ -1400,10 +1409,10 @@ class macro:
     #brackets: account for brackets in the text, where the cooldown value is between said brackets
     def cdTextToSecs(self, rawText, brackets):
         if brackets:
-            closePos = rawText.find(")")
+            closePos = rawText.rfind(")")
             #get cooldown if close bracket is present or not
             if closePos >= 0:
-                cooldownRaw = rawText[rawText.find("(")+1:closePos]
+                cooldownRaw = rawText[rawText.rfind("(")+1:closePos]
             else:
                 cooldownRaw = rawText.split("(")[1]
         else:
@@ -2505,7 +2514,7 @@ class macro:
             logModule.newUI = True
         else:
             self.logger.webhook("","Unable to detect Roblox UI","red", "screen")
-            self.newUI = False   
+            self.newUI = True
             #2nd check for screen recording perms by checking for sprinkler icon
             if sys.platform == "darwin":
                 sprinklerImg = self.adjustImage("./images/menu", "sprinkler")
