@@ -1,6 +1,6 @@
 # Making your own custom content (paths, patterns)
 
-Disclaimer: Python/Automator knowledge is required
+Disclaimer: Python knowledge is required
 
 ## Patterns
 Patterns are stored as python files in settings -> patterns

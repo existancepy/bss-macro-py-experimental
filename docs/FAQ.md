@@ -23,3 +23,14 @@ Not directly. However, your mac's battery and performance may suffer over time
 - Performance:
   Like all electronics, your mac will slow down over time due to wear and tear, and this process is accelerated when running the macro for long periods.
 
+### 4. How do I add patterns to the macro?
+ - You can add the pattern file to the settings -> patterns<br>
+*The pattern file can either be a python file (.py) or an autohotkey file (.ahk)*
+- After adding the file in, restart the macro
+
+### 5. Can I use natro patterns with this macro?
+Yes, the macro is able to convert natro ahk patterns into python ones. Refer to #4 to see how to import a pattern
+
+### 6. Are natro settings the same as this macro's?
+Yes, this macro was designed to match natro's gather settings
+
