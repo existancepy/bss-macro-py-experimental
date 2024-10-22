@@ -1,2 +1,2 @@
-self.keyboard.walk("a",3)
-self.keyboard.walk("w",4)
+self.keyboard.walk("a",3, False)
+self.keyboard.walk("w",4, False)

@@ -2519,7 +2519,7 @@ class macro:
             if sys.platform == "darwin":
                 sprinklerImg = self.adjustImage("./images/menu", "sprinkler")
                 if not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.75):
-                    messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Screen Recording Permission')
+                    messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal. After that, restart the macro.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Screen Recording Permission')
 
         #check for accessibility
         #this is done by taking 2 different screenshots
