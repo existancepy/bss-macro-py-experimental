@@ -735,6 +735,8 @@ class macro:
             self.canDetectNight = False
 
             #close any menus if they exist
+            self.clickPermissionPopup()
+
             closeImg = self.adjustImage("./images/menu", "close") #sticker printer
             if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
                 self.keyboard.press("e")
@@ -763,18 +765,6 @@ class macro:
                     pass
                 else:
                     pass
-            
-            permissionPopup = self.adjustImage("./images/mac", "allow")
-            x = self.mw/4
-            y = self.mh/3
-            res = locateImageOnScreen(permissionPopup, x, y, self.mw/2, self.mh/3, 0.8)
-            if res:
-                x2, y2 = res[1]
-                mouse.moveTo(x+x2, y+y2)
-                time.sleep(0.08)
-                mouse.moveBy(1,1)
-                time.sleep(0.1)
-                mouse.click()
 
             noImg = self.adjustImage("./images/menu", "no") #yes/no popup
             x = self.mw/3.2
@@ -783,6 +773,9 @@ class macro:
             #mssScreenshot(x,y,self.mw/2.5,self.mh/3.4, True)
             if res:
                 x2, y2 = res[1]
+                if self.display_type == "retina":
+                    x2 /= 2
+                    y2 /= 2
                 mouse.moveTo(x+x2, y+y2)
                 time.sleep(0.08)
                 mouse.moveBy(1,1)
@@ -997,6 +990,7 @@ class macro:
                         time.sleep(0.4)
                         if self.isBesideEImage("claimhive"): break
                         self.keyboard.walk("d",0.2)
+                    self.clickPermissionPopup()
                     self.keyboard.press("e")
                     return True
                 return False
@@ -1177,6 +1171,7 @@ class macro:
             firstPattern = False
             #cycle ends
             mouse.mouseUp()
+            self.clickPermissionPopup()
             #add gather time stat
             self.incrementHourlyStat("gathering_time", time.time()-patternStartTime)
 
@@ -2308,7 +2303,25 @@ class macro:
         data = settingsManager.readSettingsFile("data/user/hourly_report_main.txt")
         data[statName] += value
         settingsManager.saveDict(f"data/user/hourly_report_main.txt", data)
-        
+    
+    #click the "allow for one month" on the "terminal is requesting to bypass" popup
+    def clickPermissionPopup(self):
+        permissionPopup = self.adjustImage("./images/mac", "allow")
+        x = self.mw/4
+        y = self.mh/3
+        res = locateImageOnScreen(permissionPopup, x, y, self.mw/2, self.mh/3, 0.8)
+        if res:
+            self.logger.webhook("", "Detected: Terminal permission popup", "orange")
+            x2, y2 = res[1]
+            if self.display_type == "retina":
+                x2 /= 2
+                y2 /= 2
+            mouse.moveTo(x+x2, y+y2)
+            time.sleep(0.08)
+            mouse.moveBy(1,1)
+            time.sleep(0.1)
+            mouse.click()
+
     def nightAndHotbarBackground(self):
 
         while True:

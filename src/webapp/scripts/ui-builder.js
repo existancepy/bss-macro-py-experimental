@@ -110,7 +110,7 @@ function buildInput(id, type){
 */
 function buildStandardContainer(parentElement,title,desc,settings){
     let out = `
-        <div class = "poppins-medium standard-container" style="display: block; padding-top: 1rem;">
+        <div class = "poppins-medium standard-container" style="display: block; justify-items: unset; padding-top: 1rem;">
             <h2 id="${title.toLowerCase().replaceAll(" ","-")}">${title}</h2>
             <p style = "font-weight:500; font-size:1rem;">${desc}</p>
             <div class="seperator"></div>

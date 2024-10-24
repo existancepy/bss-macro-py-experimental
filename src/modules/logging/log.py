@@ -11,7 +11,8 @@ colors = {
     "light green": "98FB98",
     "dark brown": "5C4033",
     "brown": "D27D2D",
-    "purple": "954cf5"   
+    "purple": "954cf5",
+    "orange": "FFA500"   
 }
 
 mw, mh = pag.size()

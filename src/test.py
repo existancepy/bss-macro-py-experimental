@@ -19,49 +19,24 @@ morphed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 cv2.imshow("final", morphed)
 cv2.waitKey(0)
 '''
-
-import cv2
+import pyautogui as pag
+from modules.screen.imageSearch import locateImageOnScreen
+from modules.misc.imageManipulation import adjustImage
 import time
-import math
+import modules.controls.mouse as mouse
 
-# read game image
-img = cv2.imread('screenshot2.png')
-
-# read image template
-template = cv2.imread('natro.png', cv2.IMREAD_UNCHANGED)
-#template = cv2.resize(template, (0, 0), fx = 0.5, fy = 0.5)
-hh, ww = template.shape[:2]
-
-# extract base image and alpha channel and make alpha 3 channels
-base = template[:,:,0:3]
-alpha = template[:,:,3]
-alpha = cv2.merge([alpha,alpha,alpha])
-#cv2.imshow('result', alpha)
-#cv2.waitKey(0)
-# do masked template matching and save correlation image
-correlation = cv2.matchTemplate(img, base, cv2.TM_CCORR_NORMED, mask=alpha)
-
-# set threshold and get all matches
-threshold = 0.7
-
-''' from:  https://stackoverflow.com/questions/61779288/how-to-template-match-a-simple-2d-shape-in-opencv/61780200#61780200 '''
-# search for max score
-result = img.copy()
-max_val = 1
-rad = int(math.sqrt(hh*hh+ww*ww)/4)
-
-# find max value of correlation image
-min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(correlation)
-print(max_val, max_loc)
-
-if max_val > threshold:
-    # draw match on copy of input
-    cv2.rectangle(result, max_loc, (max_loc[0]+ww, max_loc[1]+hh), (0,0,255), 1)
-
-    # save results
-    cv2.imshow('result', result)
-    cv2.waitKey(0)
-else:
-    print("No match found")
-
-
+time.sleep(2)
+mw, mh = pag.size()
+permissionPopup = adjustImage("./images/mac", "allow", "retina")
+x = mw/4
+y = mh/3
+res = locateImageOnScreen(permissionPopup, x, y, mw/2, mh/3, 0.8)
+if res:
+    x2, y2 = res[1]
+    x2 /= 2
+    y2 /= 2
+    mouse.moveTo(x+x2, y+y2)
+    time.sleep(0.08)
+    mouse.moveBy(1,1)
+    time.sleep(0.1)
+    mouse.click()
