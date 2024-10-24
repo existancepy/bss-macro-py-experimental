@@ -1,4 +1,3 @@
 global finalKey
-self.keyboard.walk("w",4)
-self.keyboard.walk("a",4)
-finalKey = ("s",0.25)
+self.keyboard.walk("w",4, False)
+self.keyboard.walk("a",4, False)
