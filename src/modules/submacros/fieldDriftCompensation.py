@@ -19,9 +19,6 @@ class fieldDriftCompensation():
             self.kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(8,8))
     #imgSRC is a cv2 img
     def getSaturatorInImage(self, imgSRC):
-        maxy, maxx = imgSRC.shape[:2]
-
-        imgMSK = np.zeros((maxy, maxx, 3), np.uint8)
         imgHLS = cv2.cvtColor(imgSRC, cv2.COLOR_BGR2HLS)
 
         sLow = 250
@@ -31,19 +28,15 @@ class fieldDriftCompensation():
         hLow = 170/2
         hHi = 220/2
 
-        # Apply thresholds to each channel (H, L, S) using NumPy vectorized operations
-        mask = (hLow <= imgHLS[:,:,0]) & (imgHLS[:,:,0] <= hHi) & \
-            (lLow <= imgHLS[:,:,1]) & (imgHLS[:,:,1] <= lHi) & \
-            (sLow <= imgHLS[:,:,2]) & (imgHLS[:,:,2] <= sHi)
-
-        # Convert the mask to a 3-channel image
-        imgMSK = np.zeros_like(imgSRC)
-        imgMSK[mask] = [255, 255, 255]
-
-        imgMSK = cv2.erode(imgMSK, self.kernel, 3)
-        imgMSKGRAY = cv2.cvtColor(imgMSK, cv2.COLOR_BGR2GRAY)
-
-        contours, _ = cv2.findContours(imgMSKGRAY, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Apply thresholds to each channel (H, L, S)
+        binary_mask = cv2.inRange(
+            cv2.cvtColor(imgHLS, cv2.COLOR_BGR2HLS),
+            np.array([hLow, lLow, sLow], dtype=np.uint8),
+            np.array([hHi, lHi, sHi], dtype=np.uint8)
+            )
+        
+        binary_mask = cv2.erode(binary_mask, self.kernel, iterations=1)
+        contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         if not contours: return None
         # return the bounding with the largest area
@@ -169,6 +162,7 @@ class fieldDriftCompensation():
         st = time.time()
         saturatorLocation = self.getSaturatorLocation()
         timing = time.time()-st
+        print(timing)
         if timing > 0.25:
             self.slowFieldDriftCompensation(saturatorLocation)
         else:

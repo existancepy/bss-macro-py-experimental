@@ -1,0 +1,1 @@
+{'cycle': 1, 'planters': ['pesticide'], 'fields': ['rose'], 'gatherFields': [], 'harvestTime': 1734827846.647815}

@@ -36,15 +36,17 @@ prevHaste368 = 0 #tracking the previous haste to accurately determine if the has
 hasteEnds = 0
 prevHasteEnds = 0
 
-def thresholdMatch(target, screen):
+def thresholdMatch(target, screen, threshold=0.7):
     res = templateMatch(target, screen)
-    _, val, _, _ = res
-    return (val > 0.7, val)
+    _, val, _, loc = res
+    #if target == hastePlus:
+        #print(loc)
+    return (val > threshold, val)
 
 def hasteCompensation(baseMoveSpeed, haste):
     global prevHaste368, hasteEnds, prevHasteEnds, prevHaste
     st = time.time()
-    screen = pillowToCv2(mssScreenshot(0,30,mw/1.8,70))
+    screen = np.array(mssScreenshot(0,30,mw/1.8,70))
     bestHaste = 0
     bestHasteMaxVal = 0
     #match haste
@@ -81,17 +83,17 @@ def hasteCompensation(baseMoveSpeed, haste):
             hasteOut = prevHasteEnds
 
     prevHaste = bestHaste
-     
     #match bear morph
-    bearMorph = any(thresholdMatch(x, screen)[0] for x in bearMorphs)
+    bearMorph = any(thresholdMatch(x, screen, 0.75)[0] for x in bearMorphs)
     if bearMorph: 
         bearMorph = 4
-        #print("bear morph active")
+        print("bear morph active")
     
     #match haste+
-    if thresholdMatch(hastePlus, screen):
-        hasteOut += 2
-    #if hasteOut: print(f"Haste stacks: {hasteOut}")
+    if thresholdMatch(hastePlus, screen, 0.75)[0]:
+        hasteOut += 10
+        print("hastePlus")
+    if hasteOut: print(f"Haste stacks: {hasteOut}")
     out = (baseMoveSpeed+bearMorph)*(1+(0.1*hasteOut))
     haste.value = out
 
