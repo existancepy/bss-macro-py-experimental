@@ -224,6 +224,36 @@ startLocationDimensions = {
     "coconut": [1500, 2250]
 }
 
+#for the ocr
+#sometimes, it reads the bss font as crillic characters, so it'll need to be converted back to latin
+#This isn't an actual translation, the characters are mapped visually
+cyrillicToLatin = {
+    'А': 'A', 
+    'В': 'B', 
+    'Е': 'E', 
+    'К': 'K', 
+    'М': 'M', 
+    'Н': 'H',
+    'О': 'O', 
+    'Р': 'P', 
+    'С': 'C', 
+    'Т': 'T', 
+    'У': 'Y', 
+    'Х': 'X',
+    'а': 'a', 
+    'в': 'B', 
+    'е': 'e', 
+    'к': 'k', 
+    'м': 'm', 
+    'н': 'h',
+    'о': 'o', 
+    'р': 'p', 
+    'с': 'c', 
+    'т': 't', 
+    'у': 'y', 
+    'х': 'x'
+}
+
 class macro:
     def __init__(self, status, log, haste, updateGUI):
         self.status = status
@@ -414,7 +444,14 @@ class macro:
 
     def isInOCR(self, name, includeList, excludeList):
         #get text
-        text = ocr.imToString(name).lower()
+        textRaw = ocr.imToString(name).lower()
+        #correct the text
+        text = ""
+        for x in textRaw:
+            if x in cyrillicToLatin:
+                x = cyrillicToLatin[x]
+            text += x
+
         #check if text is to be rejected
         for i in excludeList:
             if i in text: return False
@@ -662,10 +699,10 @@ class macro:
                 return False
         #start convert
         #check that the game has started converting
-        for _ in range(5):  #must always be an odd number
+        for _ in range(3):  #must always be an odd number
             self.keyboard.press("e")
             time.sleep(0.5)
-            if self.isBesideE(["stop"], ["make"]): break
+            if self.isBesideE(["stop"], ["make", "маке"]): break
 
         self.status.value = "converting"
         st = time.time()
@@ -684,6 +721,7 @@ class macro:
 
         if self.enableNightDetection:
             self.keyboard.press(",")
+            
         while not self.isBesideE(["pollen", "flower", "field"]): 
             mouse.click()
             if self.night and self.setdat["stinger_hunt"]:
@@ -705,6 +743,7 @@ class macro:
             if time.time()-st > 30*60: #30mins max
                 self.logger.webhook("","Converting timeout (30mins max)", "brown", "screen")
                 break
+
         if convertBalloon: self.saveTiming("convert_balloon")
         self.status.value = ""
         #deal with the extra delay
@@ -854,7 +893,7 @@ class macro:
             #Move to canon:
             self.keyboard.walk("w",0.8)
             fieldDist = 0.9
-            self.keyboard.walk("d",1.2*(self.setdat["hive_number"]), False)
+            self.keyboard.walk("d",1.2*(self.setdat["hive_number"])+i, False)
             self.keyboard.keyDown("d")
             time.sleep(0.5)
             self.keyboard.slowPress("space")
@@ -870,16 +909,19 @@ class macro:
             self.keyboard.walk("s",0.07)
             st = time.time()
             self.keyboard.keyDown("d")
+            foundCannon = False
             while time.time()-st < 0.15*6:
                 if self.isBesideEImage("cannon"):
+                    foundCannon = True
                     break
             self.keyboard.keyUp("d")
-            #check if overrun cannon
-            for _ in range(3):
-                time.sleep(0.4)
-                if self.isBesideEImage("cannon"):
-                    return
-                self.keyboard.walk("a",0.2)
+            if foundCannon:
+                #check if overrun cannon
+                for _ in range(3):
+                    time.sleep(0.4)
+                    if self.isBesideEImage("cannon"):
+                        return
+                    self.keyboard.walk("a",0.2)
             self.logger.webhook("Notice", f"Could not find cannon", "dark brown", "screen")
             self.reset(convert=False)
         else:
@@ -994,6 +1036,7 @@ class macro:
                     self.keyboard.press("e")
                     return True
                 return False
+            
             rejoinSuccess = False
             for _ in range(3):
                 if findHive():
@@ -1010,7 +1053,7 @@ class macro:
                 time.sleep(0.5)
                 for j in range(40):
                     if findHive():
-                        guessedSlot = max(1,min(6, round((j+1)//2.5)))
+                        guessedSlot = max(1,min(6, round(j//2.5)))
                         hiveClaim = guessedSlot
                         #if 3 < guessedSlot < 6:
                             #hiveClaim += 1
@@ -1286,6 +1329,7 @@ class macro:
         self.keyboard.walk("d",3)
         self.keyboard.walk("s",0.4)
         time.sleep(0.5)
+
         if self.isBesideE(["spen","play"], ["need"]):
             self.logger.webhook("","Start Ant Challenge","bright green", "screen")
             self.keyboard.press("e")
@@ -1452,6 +1496,8 @@ class macro:
                     if reached: break
             if reached: break
             self.logger.webhook("", f"Failed to reach {displayName}", "dark brown", "screen")
+            if objective == "ant_pass_dispenser":
+                self.logger.webhook("", "Maybe you have maxed out ant passes?", "dark brown")
             if i != 2: self.reset(convert=False)
         
         if not reached: 
@@ -1467,7 +1513,7 @@ class macro:
             cooldownFormat = timedelta(seconds=cooldownSeconds)
             self.logger.webhook("", f"{displayName} is on cooldown ({cooldownFormat} remaining)", "dark brown", "screen")
         else: #not on cooldown
-            for _ in range(2):
+            for _ in range(1 if objective == "sticker_stack" else 2):
                 self.keyboard.press("e")
             #run the claim path (if it exists)
             self.runPath(f"collect/claim/{objective}", fileMustExist=False)
@@ -1481,8 +1527,8 @@ class macro:
                 time.sleep(2)
                 self.logger.webhook("", f"Solving: {displayName}", "dark brown", "screen")
                 solveMemoryMatch(mmType, self.display_type)
-                time.sleep(0.8)
-                #self.logger.webhook("", f"Completed: {displayName}", "bright green", "blue")
+                time.sleep(2)
+                self.logger.webhook("", f"Completed: {displayName}", "bright green", "blue")
             elif objective in fieldBoosterData:
                 sleep(3)
                 bluetexts = ""
@@ -1518,7 +1564,7 @@ class macro:
 
     #accept mob and field and return them in the format used for timings.txt file
     #mob_field, eg ladybug_strawberry
-    #werewolf is an acception, just return "werewolf"
+    #werewolf is an exception, just return "werewolf"
     def formatMobTimingName(self, mob, field):
         if mob == "werewolf": return mob
         return f"{mob}_{field}"
@@ -1702,27 +1748,15 @@ class macro:
         vicStartTime = time.time()
         def updateHourlyTime():
             self.incrementHourlyStat("bug_run_time", time.time()-vicStartTime)
-        class vicFoundException(Exception):
-            pass
+
         for currField in self.vicFields:
             #go to field
             self.cannon()
             self.logger.webhook("",f"Travelling to {currField} (vicious bee)","dark brown")
             self.goToField(currField, "south")
-
-            #since we can't use break/return in an exec statement, use exceptions to terminate it early
-            #walk in path
-            #between each line of movement in the path, check if vic has been found
             time.sleep(0.8)
-            pathLines = open(f"../settings/paths/vic/find_vic/{currField}.py").read().split("\n")
-            pathCode = ""
-            for code in pathLines:
-                pathCode += f"{code}\n"
-                if "self.keyboard.walk" in code or "sleep" in code:
-                    pathCode += "if self.vicField is not None: raise vicFoundException\n"
-            try:
-                exec(pathCode)
-            except vicFoundException:
+            self.runPath(f"vic/find_vic/{currField}")
+            if self.vicField is not None:
                 self.logger.webhook("",f"Vicious Bee detected ({self.vicField})", "dark brown") 
                 break
             print(self.vicField)

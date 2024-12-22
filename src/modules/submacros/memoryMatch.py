@@ -9,6 +9,7 @@ from PIL import Image
 from modules.misc.imageManipulation import adjustImage
 from modules.screen.imageSearch import locateImageOnScreen
 
+#V1's memory match, slightly modified for lag compensation
 #TODO: clean up the code, really messy, lots of copy paste
 mw, mh = pag.size()
 def solveMemoryMatch(mmType, displayType):

@@ -1,1 +1,1 @@
-[]
+[{'endHour': 19, 'date': '2024-12-05', 'honey': 0}, {'endHour': 11, 'date': '2024-12-04', 'honey': 0}, {'endHour': 11, 'date': '2024-12-04', 'honey': 0}]

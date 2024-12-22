@@ -16,3 +16,5 @@ rejoin_every=0
 discord_bot=False
 discord_bot_token=
 existance_broke=False
+stream_quality=1920x1080
+stream_fps=30
