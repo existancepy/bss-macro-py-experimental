@@ -10,7 +10,6 @@ time.sleep(2.2)
 self.keyboard.walk("w", 1.7)
 
 targetY = self.mh/1.3
-print(targetY)
 kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
 for _ in range(int(3/0.02)):
     self.keyboard.walk("w", 0.02)

@@ -87,3 +87,59 @@ def findColorObjectHSL(img, hslRange, kernel=None, mode="point", best=1, draw=Fa
         cv2.waitKey(0)
 
     return results if best > 1 else results[0]
+
+def fastFeatureMatching(haystack, needle):
+
+    # Load images (downscale for speed if needed)
+    img1 = needle
+    img2 = haystack
+
+    # Downscale images to speed up processing (adjust scale factor as needed)
+
+    # Use ORB for keypoint detection and descriptor extraction
+    orb = cv2.ORB_create(nfeatures=500, scoreType=cv2.ORB_FAST_SCORE)  
+
+    # Detect keypoints and compute descriptors
+    kp1, des1 = orb.detectAndCompute(img1, None)
+    kp2, des2 = orb.detectAndCompute(img2, None)
+
+    # Use FLANN-based matcher for faster approximate matching
+    FLANN_INDEX_LSH = 6
+    index_params = dict(algorithm=FLANN_INDEX_LSH, table_number=6, key_size=12, multi_probe_level=1)
+    search_params = dict(checks=80) 
+    flann = cv2.FlannBasedMatcher(index_params, search_params)
+
+    # Perform knnMatch
+    matches = flann.knnMatch(des1, des2, k=2)
+
+    # Apply ratio test
+    good = []
+    for x in matches:
+        if len(x) != 2: continue
+        m, n = x
+        if m.distance < 0.7 * n.distance:
+            good.append(m)
+
+    # If there are enough good matches, find the object's location
+    if len(good) < 5:
+        return None
+    
+    # Extract location of good matches
+    src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+    dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+
+    # Find homography
+    M, _ = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+
+
+    if M is None:
+        return None
+    #homography is found
+    h, w = img1.shape
+    pts = np.float32([[0, 0], [w, 0], [w, h], [0, h]]).reshape(-1, 1, 2)
+    dst = cv2.perspectiveTransform(pts, M)
+
+    # Calculate and display center of the bounding box
+    center_x = int(np.mean(dst[:, 0, 0]))
+    center_y = int(np.mean(dst[:, 0, 1]))
+    return (center_x, center_y)

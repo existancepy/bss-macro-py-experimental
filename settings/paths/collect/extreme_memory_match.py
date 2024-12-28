@@ -39,6 +39,7 @@ self.keyboard.keyUp("w")
 self.keyboard.walk("w",1)
 self.keyboard.press(".")
 self.keyboard.walk("w",0.965)
+self.keyboard.walk("d",0.2)
 
 
 
