@@ -69,8 +69,8 @@ def solveMemoryMatch(mmType, displayType):
         #read the attempt screen
         #get only numbers from the ocr result
         attemptsOCR = int(''.join([x[1][0] for x in ocrRead(cap) if x[1][0].isdigit()]))
-        #min 6, max 10
-        if 6 <= attemptsOCR <= 10:
+        #min 3, max 10
+        if 3 <= attemptsOCR <= 10:
             attempts = attemptsOCR
             print(f"Number of attempts: {attempts}")
     except Exception as e:
@@ -78,15 +78,18 @@ def solveMemoryMatch(mmType, displayType):
             
     matchFound = None #store the value of the match
     skipAttempt = False
-    for currAttempt in range(attempts):
+    currAttempt = 0
+    while currAttempt <= attempts:
         print(currAttempt)
         if skipAttempt:
             skipAttempt = False
             continue
-        if currAttempt > attempts//2:
+        if currAttempt > attempts:
             mmImg = adjustImage("./images/menu", "mmopen", displayType) #memory match
             if not locateImageOnScreen(mmImg, mw/4, mh/4, mw/4, mh/3.5, 0.8):
-                break
+                #print("Terminated early")
+                #break
+                pass
         firstTile = None
         matchFound = None
         #open first tile
@@ -151,10 +154,11 @@ def solveMemoryMatch(mmType, displayType):
                         x2 = xr2-offsetX
                         y2 = yr2-offsetY
                         mmclick(x2,y2) #click the tile that matches
-                        skipAttempt = True
+                        currAttempt += 1
                         claimedCoords.add(i)
                         claimedCoords.add(j)
                         break
                 mmData[i] = tileImg #add the img 
                 break
+        currAttempt += 1
         time.sleep(0.8)

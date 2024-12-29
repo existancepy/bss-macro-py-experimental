@@ -1,1 +1,1 @@
-[{'endHour': 19, 'date': '2024-12-05', 'honey': 0}, {'endHour': 11, 'date': '2024-12-04', 'honey': 0}, {'endHour': 11, 'date': '2024-12-04', 'honey': 0}]
+[{'endHour': 8, 'date': '2024-12-28', 'honey': 21426372247}, {'endHour': 18, 'date': '2024-12-24', 'honey': 0}, {'endHour': 14, 'date': '2024-12-24', 'honey': 9912599002419}, {'endHour': 13, 'date': '2024-12-24', 'honey': 0}, {'endHour': 19, 'date': '2024-12-05', 'honey': 0}]

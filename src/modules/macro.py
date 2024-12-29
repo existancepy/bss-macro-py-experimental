@@ -372,7 +372,6 @@ class macro:
 
     def isFullScreen(self):
         menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar on mac, window bar on windows
-        print(menubarRaw)
         menubar = ""
         try:
             for x in menubarRaw:
@@ -380,7 +379,6 @@ class macro:
         except:
             pass
         menubar = menubar.lower()
-        print(menubar)
         return not ("rob" in menubar or "lox" in menubar) #check if roblox can be found in menu bar
 
     def toggleFullScreen(self):
@@ -442,9 +440,10 @@ class macro:
         if faceDir == "default": return
         self.faceDirection(field, faceDir)
 
-    def isInOCR(self, name, includeList, excludeList):
+    def isInOCR(self, name, includeList, excludeList, log=False):
         #get text
         textRaw = ocr.imToString(name).lower()
+        if log: print(f"Raw text: {textRaw}")
         #correct the text
         text = ""
         for x in textRaw:
@@ -453,6 +452,7 @@ class macro:
             text += x
 
         #check if text is to be rejected
+        if log: print(f"output text: {text}")
         for i in excludeList:
             if i in text: return False
         #check if its to be accepted
@@ -460,8 +460,8 @@ class macro:
             if i in text:  return text
         return False
     
-    def isBesideE(self, includeList = [], excludeList = []):
-        return self.isInOCR("bee bear", includeList, excludeList)
+    def isBesideE(self, includeList = [], excludeList = [], log=False):
+        return self.isInOCR("bee bear", includeList, excludeList, log)
     
     def isBesideEImage(self, name):
         yOffset = 23 if self.newUI else 0
@@ -629,13 +629,16 @@ class macro:
         foundEarly = False #if the max_val > 0.9, end searching early to save time
         time.sleep(0.3)
         for i in range(60):
+            #screen = cv2.cvtColor(mssScreenshotNP(0, 90, 100, self.mh-180), cv2.COLOR_RGBA2GRAY)
+            #max_loc = fastFeatureMatching(screen, itemImg)
+            #max_val = 1 if max_loc else 0
             max_val, max_loc = locateImageOnScreen(itemImg, 0, 90, 100, self.mh-180)
                 
             if max_val > valBest:
                 valBest = max_val
                 bestX, bestY = max_loc
                 bestScroll = i
-                if max_val > 0.9:
+                if max_val > 0.95:
                     foundEarly = True
                     break
             mouse.scroll(-40, True)
@@ -702,7 +705,7 @@ class macro:
         for _ in range(3):  #must always be an odd number
             self.keyboard.press("e")
             time.sleep(0.5)
-            if self.isBesideE(["stop"], ["make", "маке"]): break
+            if self.isBesideE(["stop"], ["make"], log=True): break
 
         self.status.value = "converting"
         st = time.time()
@@ -859,7 +862,7 @@ class macro:
                         time.sleep(0.5)
                         break
             else:
-                time.sleep(5)
+                time.sleep(8-3)
 
             self.canDetectNight = True
             self.location = "spawn"
@@ -1923,7 +1926,7 @@ class macro:
     def goToPlanter(self, planter, field, method):
         global finalKey
         self.cannon()
-        self.logger.webhook("", f"Travelling: {planter.title()} Planter ({field.title()})", "dark brown")
+        self.logger.webhook("", f"Travelling: {planter.title()} Planter ({field.title()}), {method.title()}", "dark brown")
         self.goToField(field, "north")
         #move from center of field to planter spot
         finalKey = None
@@ -2504,7 +2507,7 @@ class macro:
             macVersion, _, _ = platform.mac_ver()
             macVersion = float('.'.join(macVersion.split('.')[:2]))
             if macVersion >= 14 and platform.processor() == "arm":
-                self.logger.webhook("","Disabling game mode","dark brown")
+                self.logger.webhook("","Detecting and disabling game mode","dark brown")
                 #make sure roblox is not fullscreen
                 self.toggleFullScreen()
                     
@@ -2566,7 +2569,7 @@ class macro:
             if sys.platform == "darwin":
                 sprinklerImg = self.adjustImage("./images/menu", "sprinkler")
                 if not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.75):
-                    messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal. After that, restart the macro.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Screen Recording Permission')
+                    messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal. After that, restart the macro.\n\nVisit #6system-settings in the discord for more detailed instructions\n\n NOTE: This popup might be incorrect. If the macro is able to detect objects on the screen, you can dismiss this popup', title='Screen Recording Permission')
 
         #check for accessibility
         #this is done by taking 2 different screenshots
@@ -2579,7 +2582,7 @@ class macro:
             img2 = pillowToHash(mssScreenshot())
             self.keyboard.press("esc")
             if similarHashes(img1, img2, 3):
-                messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions', title='Accessibility Permission')
+                messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions\n\n NOTE: This popup might be incorrect. If the macro is able to input keypresses and interact with the game, you can dismiss this popup', title='Accessibility Permission')
             time.sleep(0.2)
 
     def start(self):

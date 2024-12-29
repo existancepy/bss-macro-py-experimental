@@ -162,7 +162,6 @@ class fieldDriftCompensation():
         st = time.time()
         saturatorLocation = self.getSaturatorLocation()
         timing = time.time()-st
-        print(timing)
         if timing > 0.25:
             self.slowFieldDriftCompensation(saturatorLocation)
         else:

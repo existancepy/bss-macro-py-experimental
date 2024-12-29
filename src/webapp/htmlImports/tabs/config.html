@@ -297,29 +297,6 @@
                     }
     
                 ])
-
-                buildStandardContainer(parentDiscord,"Discord Bot", "",[
-                    {
-                        id: "discord_bot",
-                        title: "Enable Discord Bot",
-                        desc: "A discord bot to receive commands",
-                        type: {
-                            name: "checkbox",
-                            triggerFunction: saveGeneralTriggerFunction
-                        }
-                    },
-                    {
-                        id: "discord_bot_token",
-                        title: "Discord Bot Token",
-                        desc: "The token of your discord bot",
-                        type: {
-                            name: "textbox",
-                            inputType: "string",
-                            length: 13,
-                            triggerFunction: saveGeneralTriggerFunction
-                        }
-                    }
-                ])
         </script>
     </div>
 </div>
