@@ -862,7 +862,7 @@ class macro:
                         time.sleep(0.5)
                         break
             else:
-                time.sleep(5)
+                time.sleep(8-3)
 
             self.canDetectNight = True
             self.location = "spawn"
