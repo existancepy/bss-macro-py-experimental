@@ -645,6 +645,7 @@ class macro:
             time.sleep(0.04)
         if valBest < 0.8:
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
+            self.toggleInventory("close")
             return None
 
         if not foundEarly:
@@ -678,7 +679,6 @@ class macro:
             if itemName is None: raise Exception("tried searching for item but no item name is provided")
             res = self.findItemInInventory(itemName)
             if res is None:
-                self.toggleInventory("close")
                 return False
             x, y = res
         #close UI navigation
@@ -1948,25 +1948,43 @@ class macro:
         else: #place, just walk there
             if finalKey is not None: self.keyboard.walk(finalKey[0], finalKey[1])
             return True
-        
+    
+    def findPlanterInInventory(self, name):
+        for _ in range(2):
+            res = self.findItemInInventory(f"{name}planter")
+            if res:
+                self.planterCoords = res
+                return
+            
     #place the planter and return the time it would take for the planter to grow (in secs)
     def placePlanter(self, planter, field, harvestFull, glitter):
         st = time.time()
+        name = planter.lower().replace(" ","").replace("-","")
 
         def updateHourlyTime():
             self.incrementHourlyStat("misc_time", time.time()-st)
 
         for _ in range(2):
             #try to place planter
+            #start finding planter
+            self.planterCoords = None
+            findPlanterInventoryThread = threading.Thread(target=self.findPlanterInInventory, args=(name,))
+            findPlanterInventoryThread.daemon = True
+            findPlanterInventoryThread.start()
+            
             self.goToPlanter(planter, field, "place")
-            name = planter.lower().replace(" ","").replace("-","")
-            if glitter: self.useItemInInventory("glitter") #use glitter
-            for _ in range(2):
-                if self.useItemInInventory(f"{name}planter"): 
-                    break
-            else:
+            #wait for thread to finish
+            findPlanterInventoryThread.join()
+            #Couldn't find planter
+            if self.planterCoords is None:
                 updateHourlyTime()
-                return None
+                return 
+            #place planter
+            self.useItemInInventory(x=self.planterCoords[0], y=self.planterCoords[1])
+            
+            #use glitter
+            if glitter: self.useItemInInventory("glitter")
+            
             #check if planter is placed
             time.sleep(0.5)
             placedPlanter = False
