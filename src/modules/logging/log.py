@@ -1,24 +1,25 @@
 import time
+import threading
+import queue
+import pyautogui as pag
 from modules.screen.screenshot import screenshotScreen
 import modules.logging.webhook as logWebhook
-import threading
-import pyautogui as pag
 
 colors = {
-    "red":"D22B2B",
-    "light blue":"89CFF0",
+    "red": "D22B2B",
+    "light blue": "89CFF0",
     "bright green": "7CFC00",
     "light green": "98FB98",
     "dark brown": "5C4033",
     "brown": "D27D2D",
     "purple": "954cf5",
-    "orange": "FFA500"   
+    "orange": "FFA500"
 }
 
 mw, mh = pag.size()
 newUI = False
 
-def sendWebhook(url, title, desc, time, colorHex, ss = None):
+def sendWebhook(url, title, desc, time, colorHex, ss=None):
     screenshotRegions = {
         "screen": None,
         "honey-pollen": (mw/3.5, 23 if newUI else 0, mw/2.4, 40),
@@ -27,41 +28,67 @@ def sendWebhook(url, title, desc, time, colorHex, ss = None):
     }
     
     webhookImg = None
-    if not ss is None:
+    if ss is not None:
         webhookImg = "webhookScreenshot.png"
         screenshotScreen(webhookImg, screenshotRegions[ss])
     logWebhook.webhook(url, title, desc, time, colorHex, webhookImg)
 
-class log:
-    def __init__(self, log, enableWebhook, webhookURL):
-        self.logVar = log
+class webhookQueue:
+    def __init__(self, enableWebhook, webhookURL):
+        self.queue = queue.Queue()
         self.enableWebhook = enableWebhook
         self.webhookURL = webhookURL
-    #display in gui and in macrologs
+        self.worker_thread = threading.Thread(target=self._process_queue, daemon=True)
+        self.worker_thread.start()
+
+    def _process_queue(self):
+        while True:
+            # Wait for a message from the queue
+            data = self.queue.get()
+            if data is None:
+                break  # Exit signal received
+            # Send the webhook
+            sendWebhook(**data)
+            self.queue.task_done()
+
+    def add_to_queue(self, title, desc, color, time, ss=None):
+        if not self.enableWebhook:
+            return
+        # Prepare the data
+        data = {
+            "url": self.webhookURL,
+            "title": title,
+            "desc": desc,
+            "time": time,
+            "colorHex": colors[color],
+            "ss": ss
+        }
+        self.queue.put(data)
+
+class log:
+    def __init__(self, logVar, enableWebhook, webhookURL):
+        self.logVar = logVar
+        self.webhookQueue = webhookQueue(enableWebhook, webhookURL)
+
     def log(self, msg):
+        # Display in GUI or macro logs (to be implemented)
         pass
-    #webhook, gui and macrologs
-    def webhook(self, title, desc, color, ss = None):
-        #update logs
+
+    def webhook(self, title, desc, color, ss=None):
+        # Update logs
         logData = {
             "type": "webhook",
             "time": time.strftime("%H:%M:%S", time.localtime()),
             "title": title,
             "desc": desc,
             "color": colors[color]
-
         }
         self.logVar.value = str(logData)
 
-        #send webhook
-        #do it on a thread to avoid delays
-        if self.enableWebhook: 
-            webhookThread = threading.Thread(target=sendWebhook, args=(self.webhookURL, title, desc, logData["time"], colors[color], ss))
-            webhookThread.start()
-        
-        #wait until main process has added the log to gui
-        #while not self.logVar.value == "": pass
-    
+        # Add the webhook message to the queue
+        self.webhookQueue.add_to_queue(title, desc, color, logData["time"], ss)
+
     def hourlyReport(self, title, desc, color):
-        if not self.enableWebhook: return
-        logWebhook.webhook(self.webhookURL, title, desc, time.strftime("%H:%M:%S", time.localtime()), colors[color], "hourlyReport.png")
+        if not self.webhookQueue.enableWebhook:
+            return
+        self.webhookQueue.add_to_queue(title, desc, color, time.strftime("%H:%M:%S", time.localtime()), "hourlyReport.png")

@@ -333,6 +333,8 @@ class macro:
         #detect the color of the grass in fields
         #useful when gathering
         def isGrassNight(hsv):
+            #get only the bottom half of the screen
+            #hsv = hsv[self.mh/2:self.mh, 0:self.mw]
             def threshold(lower, upper):
                 kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(4,4))
                 mask = cv2.inRange(hsv, lower, upper)   
@@ -1971,7 +1973,7 @@ class macro:
             findPlanterInventoryThread = threading.Thread(target=self.findPlanterInInventory, args=(name,))
             findPlanterInventoryThread.daemon = True
             findPlanterInventoryThread.start()
-            
+
             self.goToPlanter(planter, field, "place")
             #wait for thread to finish
             findPlanterInventoryThread.join()

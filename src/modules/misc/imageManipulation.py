@@ -37,4 +37,4 @@ def adjustImage(folder, imageName, display_type):
     #resize image
     img = img.resize((int(width/scaling), int(height/scaling)))
     #convert to cv2
-    return pillowToCv2(img)
+    return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
