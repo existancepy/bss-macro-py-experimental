@@ -706,12 +706,11 @@ class macro:
         #check that the game has started converting
         for _ in range(3):  #must always be an odd number
             self.keyboard.press("e")
-            time.sleep(0.5)
+            time.sleep(1)
             if self.isBesideE(["stop"], ["make"], log=True): break
 
         self.status.value = "converting"
         st = time.time()
-        time.sleep(1)
         self.logger.webhook("", "Converting", "brown", "screen")
         self.alreadyConverted = True
 
