@@ -1,1 +1,0 @@
-{'cycle': 1, 'planters': ['blue clay'], 'fields': ['pine tree'], 'gatherFields': [], 'harvestTime': 1735348599.7281432}
