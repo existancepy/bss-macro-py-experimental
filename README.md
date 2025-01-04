@@ -3,9 +3,9 @@
 ![GitHub Repo stars](https://img.shields.io/github/stars/existancepy/bss-macro-py?style=flat&label=Stars&color=fff240&logo=github&logocolor=white&link=https://github.com/existancepy/bss-macro-py/stargazers)
 ![Repo Size](https://img.shields.io/github/repo-size/existancepy/bss-macro-py?label=Repo%20Size&logo=github&logoColor=white)
 
-A Macro for [Bee Swarm Simulator](https://www.roblox.com/games/1537690962/Bee-Swarm-Simulator) with a GUI designed for MacOS and Windows.
+A Python macro for [Bee Swarm Simulator](https://www.roblox.com/games/1537690962/Bee-Swarm-Simulator) designed for MacOS and Windows.
 
-Existance Macro is a free open source software, link: https://github.com/existancepy/bss-macro-py
+Existance Macro is a free and open source software, link: https://github.com/existancepy/bss-macro-py
 
 ![gui](https://raw.githubusercontent.com/existancepy/bss-macro-py-experimental/3b6d5fa0c9110f4ae1baad9bac3c1f393eeed74f/docs/assets/gui.png)
 ## Community
