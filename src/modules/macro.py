@@ -633,7 +633,7 @@ class macro:
         valBest = 0
         foundEarly = False #if the max_val > 0.9, end searching early to save time
         time.sleep(0.3)
-        for i in range(60):
+        for i in range(80):
             #screen = cv2.cvtColor(mssScreenshotNP(90, 90, 300-90, self.mh-180), cv2.COLOR_RGBA2GRAY)
             #max_loc = fastFeatureMatching(screen, itemImg)
             #max_val = 1 if max_loc else 0
