@@ -296,10 +296,12 @@ class macro:
         #detects the average brightness of the screen. This isn't very reliable since things like lights can mess it up
         #the threshold isnt accurate
         def isNightBrightness(hsv):
+            hsv = hsv[int(hsv.shape[0]/3):hsv.shape[0]]
             vValues = np.sum(hsv[:, :, 2])
             area = hsv.shape[0] * hsv.shape[1]
             avg_brightness = vValues/area
-            return 10 < avg_brightness < 120 #threshold for night. It must be > 10 to deal with cases where the player is inside a fruit or stuck against a wall 
+            #threshold for night. It must be > 10 to deal with cases where the player is inside a fruit or stuck against a wall 
+            return 10 < avg_brightness < 80 
 
         #Detect the color of the floor at spawn
         #Useful when resetting/converting
@@ -333,6 +335,8 @@ class macro:
         #detect the color of the grass in fields
         #useful when gathering
         def isGrassNight(hsv):
+            #get only the bottom half of the screen
+            hsv = hsv[hsv.shape[0]//1.7:hsv.shape[0]]
             def threshold(lower, upper):
                 kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(4,4))
                 mask = cv2.inRange(hsv, lower, upper)   
@@ -361,7 +365,7 @@ class macro:
 
             #detect brightness
             if self.location == "spawn":
-                return isNightSky(bgr)
+                return isNightSky(bgr) and isSpawnFloorNight(hsv)
             return isGrassNight(hsv) and isNightSky(bgr)
         
         if self.canDetectNight and isNight():
@@ -612,6 +616,7 @@ class macro:
         #for retina, just a regular image search
         #for built-in, a transparency search
         itemImg = self.adjustImage("./images/inventory/old", itemName)
+        #itemImg = cv2.cvtColor(itemImg, cv2.COLOR_RGB2GRAY)
 
         itemOCRName = itemName.lower().replace("planter", "") #the name of the item used to check with the ocr to verify its correct
         itemH, itemW, *_ = itemImg.shape
@@ -628,8 +633,8 @@ class macro:
         valBest = 0
         foundEarly = False #if the max_val > 0.9, end searching early to save time
         time.sleep(0.3)
-        for i in range(60):
-            #screen = cv2.cvtColor(mssScreenshotNP(0, 90, 100, self.mh-180), cv2.COLOR_RGBA2GRAY)
+        for i in range(80):
+            #screen = cv2.cvtColor(mssScreenshotNP(90, 90, 300-90, self.mh-180), cv2.COLOR_RGBA2GRAY)
             #max_loc = fastFeatureMatching(screen, itemImg)
             #max_val = 1 if max_loc else 0
             max_val, max_loc = locateImageOnScreen(itemImg, 0, 90, 100, self.mh-180)
@@ -638,13 +643,14 @@ class macro:
                 valBest = max_val
                 bestX, bestY = max_loc
                 bestScroll = i
-                if max_val > 0.95:
+                if max_val > 0.93:
                     foundEarly = True
                     break
             mouse.scroll(-40, True)
             time.sleep(0.04)
-        if valBest < 0.8:
+        if valBest < 0.77:
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
+            self.toggleInventory("close")
             return None
 
         if not foundEarly:
@@ -678,10 +684,9 @@ class macro:
             if itemName is None: raise Exception("tried searching for item but no item name is provided")
             res = self.findItemInInventory(itemName)
             if res is None:
-                self.toggleInventory("close")
                 return False
             x, y = res
-        #close UI navigation
+
         mouse.moveTo(x, y)
         mouse.moveBy(10,15)
         for _ in range(2):
@@ -704,12 +709,11 @@ class macro:
         #check that the game has started converting
         for _ in range(3):  #must always be an odd number
             self.keyboard.press("e")
-            time.sleep(0.5)
+            time.sleep(1)
             if self.isBesideE(["stop"], ["make"], log=True): break
 
         self.status.value = "converting"
         st = time.time()
-        time.sleep(1)
         self.logger.webhook("", "Converting", "brown", "screen")
         self.alreadyConverted = True
 
@@ -1948,25 +1952,43 @@ class macro:
         else: #place, just walk there
             if finalKey is not None: self.keyboard.walk(finalKey[0], finalKey[1])
             return True
-        
+    
+    def findPlanterInInventory(self, name):
+        for _ in range(2):
+            res = self.findItemInInventory(f"{name}planter")
+            if res:
+                self.planterCoords = res
+                return
+            
     #place the planter and return the time it would take for the planter to grow (in secs)
     def placePlanter(self, planter, field, harvestFull, glitter):
         st = time.time()
+        name = planter.lower().replace(" ","").replace("-","")
 
         def updateHourlyTime():
             self.incrementHourlyStat("misc_time", time.time()-st)
 
         for _ in range(2):
             #try to place planter
+            #start finding planter
+            self.planterCoords = None
+            findPlanterInventoryThread = threading.Thread(target=self.findPlanterInInventory, args=(name,))
+            findPlanterInventoryThread.daemon = True
+            findPlanterInventoryThread.start()
+
             self.goToPlanter(planter, field, "place")
-            name = planter.lower().replace(" ","").replace("-","")
-            if glitter: self.useItemInInventory("glitter") #use glitter
-            for _ in range(2):
-                if self.useItemInInventory(f"{name}planter"): 
-                    break
-            else:
+            #wait for thread to finish
+            findPlanterInventoryThread.join()
+            #Couldn't find planter
+            if self.planterCoords is None:
                 updateHourlyTime()
-                return None
+                return 
+            #place planter
+            self.useItemInInventory(x=self.planterCoords[0], y=self.planterCoords[1])
+            
+            #use glitter
+            if glitter: self.useItemInInventory("glitter")
+            
             #check if planter is placed
             time.sleep(0.5)
             placedPlanter = False
@@ -2583,7 +2605,7 @@ class macro:
             self.keyboard.press("esc")
             if similarHashes(img1, img2, 3):
                 messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions\n\n NOTE: This popup might be incorrect. If the macro is able to input keypresses and interact with the game, you can dismiss this popup', title='Accessibility Permission')
-            time.sleep(0.2)
+            time.sleep(1)
 
     def start(self):
         #if roblox is not open, rejoin

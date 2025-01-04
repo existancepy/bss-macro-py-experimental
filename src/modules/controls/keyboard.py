@@ -26,6 +26,9 @@ class keyboard:
 
     #pyautogui without the pause
     def press(self,key, delay = 0.02):
+        #for some reason, the function key is sometimes held down, causing it to open the dock or enable dictation
+        if sys.platform == "darwin":
+            keyboard.keyUp('fn', False)
         keyboard.keyDown(key, False)
         time.sleep(delay)
         keyboard.keyUp(key, False)
