@@ -1,5 +1,8 @@
 import discord
-from discord import app_commands
+try:
+    from discord import app_commands
+except ImportError:
+    print("discord bot not supported")
 from discord.ext import commands
 from modules.screen.screenshot import mssScreenshot
 import io
