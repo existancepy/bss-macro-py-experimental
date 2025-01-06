@@ -267,7 +267,7 @@
         Chart.defaults.font.size = 20
         Chart.defaults.animation = false
         Chart.defaults.color = "#818285"
-        const hourNum = new Date().getHours()
+        const hourNum = new Date().getHours()-1
         const hour = leadingZero(hourNum)
         const hourArray = Array.from(Array(61).keys())
         //var backpackPerMin = Array.from({length: 40}, () => Math.floor(Math.random() * 100))
