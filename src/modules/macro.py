@@ -336,7 +336,7 @@ class macro:
         #useful when gathering
         def isGrassNight(hsv):
             #get only the bottom half of the screen
-            hsv = hsv[hsv.shape[0]//1.7:hsv.shape[0]]
+            hsv = hsv[int(hsv.shape[0]/1.7):hsv.shape[0]]
             def threshold(lower, upper):
                 kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(4,4))
                 mask = cv2.inRange(hsv, lower, upper)   

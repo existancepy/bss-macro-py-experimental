@@ -46,7 +46,8 @@ class webhookQueue:
             # Wait for a message from the queue
             data = self.queue.get()
             if data is None:
-                break  # Exit signal received
+                print("Webhook queue stopped.")
+                break
             # Send the webhook
             sendWebhook(**data)
             self.queue.task_done()
@@ -68,7 +69,8 @@ class webhookQueue:
 class log:
     def __init__(self, logVar, enableWebhook, webhookURL):
         self.logVar = logVar
-        self.webhookQueue = webhookQueue(enableWebhook, webhookURL)
+        self.webhookURL = webhookURL
+        self.webhookQueue = webhookQueue(enableWebhook, self.webhookURL)
 
     def log(self, msg):
         # Display in GUI or macro logs (to be implemented)
@@ -89,6 +91,5 @@ class log:
         self.webhookQueue.add_to_queue(title, desc, color, logData["time"], ss)
 
     def hourlyReport(self, title, desc, color):
-        if not self.webhookQueue.enableWebhook:
-            return
-        self.webhookQueue.add_to_queue(title, desc, color, time.strftime("%H:%M:%S", time.localtime()), "hourlyReport.png")
+        if not self.webhookQueue.enableWebhook: return
+        logWebhook.webhook(self.webhookURL, title, desc, time.strftime("%H:%M:%S", time.localtime()), colors[color], "hourlyReport.png") 
