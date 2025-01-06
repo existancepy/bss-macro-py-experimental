@@ -282,7 +282,7 @@ def generateHourlyReport(newUI):
         hti.screenshot(html_str=htmlString, save_as=f"{pageName}.png")
         #open the image
         image = cv2.imread(f"{pageName}.png")
-        print(htmlString)
+        #print(htmlString)
 
         #crop the image to remove any excess empty space at the bottom
         #this allows for seamless merging of images

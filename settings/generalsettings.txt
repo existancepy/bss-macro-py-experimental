@@ -8,7 +8,6 @@ rejoin_wait=30
 rejoin_method=deeplink
 webhook_link=
 send_screenshot=True
-enable_webhook=False
 gifted_vicious=False
 stick_bug_amulet=0
 icicles_beequip=0
