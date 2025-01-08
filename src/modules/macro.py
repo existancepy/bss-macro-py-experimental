@@ -48,7 +48,7 @@ collectData = {
     "wreath": [["admire", "honey"], "a", 30*60], #30mins
     "feast": [["dig", "beesmas"], "s", 1.5*60*60], #1.5hr
     "samovar": [["heat", "samovar", "strange"], "w", 6*60*60], #6hr
-    "snow_machine": [["activate"], None, 2*60*60], #2hr
+    "snow_machine": [["activ", "snow"], None, 2*60*60], #2hr
     "lid_art": [["gander", "onett", "art"], "s", 8*60*60], #8hr
     "candles": [["admire", "candle", "honey"], "w", 4*60*60], #4hr
     "memory_match": [["spend", "play"], "a", 2*60*60], #2hr
@@ -306,6 +306,7 @@ class macro:
         #Detect the color of the floor at spawn
         #Useful when resetting/converting
         def isSpawnFloorNight(hsv):
+            hsv = hsv[int(hsv.shape[0]/2):hsv.shape[0]]
             lower = np.array([99, 45, 102])
             upper = np.array([105, 51, 112])
 
@@ -336,7 +337,7 @@ class macro:
         #useful when gathering
         def isGrassNight(hsv):
             #get only the bottom half of the screen
-            hsv = hsv[int(hsv.shape[0]/1.7):hsv.shape[0]]
+            hsv = hsv[int(hsv.shape[0]/2):hsv.shape[0]]
             def threshold(lower, upper):
                 kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(4,4))
                 mask = cv2.inRange(hsv, lower, upper)   
@@ -365,8 +366,8 @@ class macro:
 
             #detect brightness
             if self.location == "spawn":
-                return isNightSky(bgr) and isSpawnFloorNight(hsv)
-            return isGrassNight(hsv) and isNightSky(bgr)
+                return isSpawnFloorNight(hsv)
+            return isGrassNight(hsv)
         
         if self.canDetectNight and isNight():
             self.night = True
@@ -754,7 +755,7 @@ class macro:
         if convertBalloon: self.saveTiming("convert_balloon")
         self.status.value = ""
         #deal with the extra delay
-        self.logger.webhook("", "Finished converting", "brown")
+        self.logger.webhook("", f"Finished converting (Time: {self.convertSecsToMinsAndSecs(time.time()-st)})", "brown")
         wait = self.setdat["convert_wait"]
         if self.enableNightDetection:
             self.keyboard.press(".")
@@ -1108,6 +1109,11 @@ class macro:
         sleep(time/1000)
         self.keyboard.keyUp(key, False)
 
+    def convertSecsToMinsAndSecs(self, n):
+        m = n // 60
+        s = n % 60
+        return f"{int(m)}:{s:.2f}"
+    
     def gather(self, field):
         fieldSetting = self.fieldSettings[field]
         for i in range(3):
@@ -1243,7 +1249,7 @@ class macro:
                 break
 
             #check if max time is reached
-            gatherTime = "{:.2f}".format((getGatherTime())/60)
+            gatherTime = self.convertSecsToMinsAndSecs(getGatherTime())
             if getGatherTime() > maxGatherTime:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
@@ -1281,7 +1287,7 @@ class macro:
             self.logger.webhook("",f"Walking back to hive: {field.title()}", "dark brown")
             self.runPath(f"field_to_hive/{field}")
             #find hive and convert
-            self.keyboard.walk("a", (self.setdat["hive_number"]-1)*0.9)
+            #self.keyboard.walk("a", (self.setdat["hive_number"]-1)*0.8)
             self.keyboard.keyDown("a")
             st = time.time()
             self.canDetectNight = True
