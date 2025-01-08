@@ -28,7 +28,14 @@ if [ -d bin ]; then
    printf "activating virtual environment"
 fi
 
+runPython() {
+	if command -v $1 >/dev/null 2>&1; then
+		$1 main.py
+	fi
+
+}
+
 cd src
-python3.7 main.py 
-python3.8 main.py
-python3.9 main.py
+runPython python3.7
+runPython python3.8
+runPython python3.9
