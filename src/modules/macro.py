@@ -1465,8 +1465,10 @@ class macro:
             #get cooldown if close bracket is present or not
             if closePos >= 0:
                 cooldownRaw = rawText[rawText.rfind("(")+1:closePos]
-            else:
+            elif "(" in rawText:
                 cooldownRaw = rawText.split("(")[1]
+            else:
+                cooldownRaw = rawText
         else:
             cooldownRaw = rawText
         #clean it up, extract only valid characters
@@ -1603,6 +1605,8 @@ class macro:
         mobs = regularMobInFields[field]
         for m in mobs:
             timingName = self.formatMobTimingName(m, field)
+            if not timingName in timings:
+                continue
             #check respawn
             if self.hasMobRespawned(m, field, timings[timingName]):
                 timings[timingName] = time.time()
