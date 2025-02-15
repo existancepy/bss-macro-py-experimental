@@ -25,6 +25,7 @@ macVer = platform.mac_ver()[0]
 
 try:
     hti = Html2Image(size=(1900, 780))
+    
 except FileNotFoundError:
     if versionTuple(macVer) >= versionTuple("10.15"):
         msgBox(title = "error", text = "Google Chrome could not be found. Ensure that:\

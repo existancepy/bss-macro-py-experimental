@@ -1,5 +1,5 @@
 global fields
-fields = ["pine tree", "blue flower", "bamboo"]
+fields = ["pine tree", "blue flower", "bamboo", "stump"]
 self.goToField("blue flower", "south")
 self.keyboard.press("space")
 self.keyboard.keyDown("a")

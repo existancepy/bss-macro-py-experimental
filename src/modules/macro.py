@@ -2472,6 +2472,7 @@ class macro:
         settingsManager.saveSettingFile("start_honey", getHoney(), "data/user/hourly_report_bg.txt")
         settingsManager.saveSettingFile("start_time", time.time(), "data/user/hourly_report_bg.txt")
         prevMin = -1  
+        currMin = None
         while True:
             if self.status.value != "rejoining":
                 #instead of using time.sleep, we want to run the code at the start of the min
@@ -2487,7 +2488,7 @@ class macro:
                 settingsManager.saveDict("data/user/hourly_report_bg.txt", data)
 
             #check if its time to send hourly report
-            if currMin == 0:
+            if currMin == 20:
                 hourlyReportData = generateHourlyReport(self.newUI)
                 self.logger.hourlyReport("Hourly Report", "", "purple")
 
