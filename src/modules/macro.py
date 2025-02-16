@@ -2488,7 +2488,7 @@ class macro:
                 settingsManager.saveDict("data/user/hourly_report_bg.txt", data)
 
             #check if its time to send hourly report
-            if currMin == 20:
+            if currMin == 0:
                 hourlyReportData = generateHourlyReport(self.newUI)
                 self.logger.hourlyReport("Hourly Report", "", "purple")
 

@@ -1,1 +1,1 @@
-[{'endHour': 8, 'date': '2024-12-28', 'honey': 21426372247}, {'endHour': 18, 'date': '2024-12-24', 'honey': 0}, {'endHour': 14, 'date': '2024-12-24', 'honey': 9912599002419}, {'endHour': 13, 'date': '2024-12-24', 'honey': 0}, {'endHour': 19, 'date': '2024-12-05', 'honey': 0}]
+[{'endHour': 7, 'date': '2025-02-16', 'honey': 4859100902}, {'endHour': 7, 'date': '2025-02-16', 'honey': 0}, {'endHour': 7, 'date': '2025-02-16', 'honey': 719775670}, {'endHour': 7, 'date': '2025-02-16', 'honey': 2459865531}, {'endHour': 7, 'date': '2025-02-16', 'honey': 1958709815}]

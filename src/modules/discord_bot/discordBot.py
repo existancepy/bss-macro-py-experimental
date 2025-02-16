@@ -68,8 +68,7 @@ def discordBot(token, run, status):
             await interaction.response.send_message("Replacing amulet")
 
     @bot.tree.command(name = "battery", description = "Get your current battery status")
-    @app_commands.describe(option = "Get your current battery status")
-    async def battery(interaction: discord.Interaction, option: str):
+    async def battery(interaction: discord.Interaction):
         try:
             if sys.platform == "darwin":
                 output = subprocess.check_output(["pmset", "-g", "batt"], text=True)
