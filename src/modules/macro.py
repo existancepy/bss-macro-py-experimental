@@ -323,7 +323,7 @@ class macro:
             y = 30
             if self.display_type == "retina": y*=2
             #crop the image to only the area above buff
-            bgr = bgr[0:y, 0:int(self.mw)]
+            bgr = bgr[0:y, (360 if self.display_type == "retina" else 180):int(self.mw)]
             w,h = bgr.shape[:2]
             #check if a 15x15 area that is entirely black
             for x in range(w-15):
@@ -335,27 +335,33 @@ class macro:
         
         #detect the color of the grass in fields
         #useful when gathering
-        def isGrassNight(hsv):
-            #get only the bottom half of the screen
-            hsv = hsv[int(hsv.shape[0]/2):hsv.shape[0]]
-            def threshold(lower, upper):
-                kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(4,4))
-                mask = cv2.inRange(hsv, lower, upper)   
-                mask = cv2.erode(mask, kernel, 1)
-                return bool(np.mean(mask))
-            
-            def grassDay():
-                dayLower = np.array([63, 127, 140]) 
-                dayUpper = np.array([68, 165, 163])
-                return threshold(dayLower, dayUpper)
-            
-            def grassNight():
-                nightLower = np.array([65, 183, 51]) 
-                nightUpper = np.array([68, 204, 77])
-                return threshold(nightLower, nightUpper)
-            
-            if grassDay(): return False
-            if grassNight(): return True
+        def isGrassNight(bgr):       
+            dayColors = [
+                [(47, 117, 57), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #ground
+                [(46, 117, 58), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #dande
+                [(60, 156, 74), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #stump
+                [(38, 114, 51), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #pa
+                [(66, 123, 40), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #clov
+                [(32, 211, 22), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #ant
+            ]
+
+            nightColors = [
+                [(23, 72, 30), cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))], #a
+                [(17, 71, 28), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #dande
+            ]
+
+            bgr = bgr[0:bgr.shape[0]- (200 if self.display_type == "retina" else 100)]
+            dayScreen = bgr[int(bgr.shape[0]*2/5):bgr.shape[0]].copy()
+            #detect day
+            for color, kernel in dayColors:
+                if findColorObjectRGB(dayScreen, color, variance=6, kernel=kernel, mode="box"):
+                    return False
+            #day not found, detect Night
+            nightScreen = bgr[int(bgr.shape[0]/2):bgr.shape[0]].copy()
+            for color, kernel in nightColors:
+                if findColorObjectRGB(nightScreen, color, variance=6, kernel=kernel, mode="box"):
+                    return True
+                
             return False
 
         def isNight():
@@ -364,16 +370,30 @@ class macro:
             bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
             hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
-            #detect brightness
-            if self.location == "spawn":
-                return isSpawnFloorNight(hsv)
-            return isGrassNight(hsv)
+            firstHalf = isNightBrightness(hsv) and isNightSky(hsv)
+            if firstHalf:
+                self.logger.webhook("", "Night Detected? (Sky)", "red", "screen")
+
+            #night detected
+            if isGrassNight(bgr) and firstHalf:
+                self.nightDetectStreaks += 1
+                self.logger.webhook("", f"Night Detected? ({self.nightDetectStreaks})", "red", "screen")
+            else: 
+                #failed to detect night, reset streak counter
+                self.nightDetectStreaks = 0
+
+            #detected night consecutively for 5 times or more
+            if self.nightDetectStreaks >= 5:
+                return True
+            
+            return False
         
         if self.canDetectNight and isNight():
             self.night = True
             self.logger.webhook("","Night detected","dark brown", "screen")
             time.sleep(200) #wait for night to end
             self.night = False
+            self.nightDetectStreaks = 0
 
     def isFullScreen(self):
         menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar on mac, window bar on windows
@@ -1112,7 +1132,7 @@ class macro:
     def convertSecsToMinsAndSecs(self, n):
         m = n // 60
         s = n % 60
-        return f"{int(m)}:{s:.2f}"
+        return f"{int(m)}:{int(s)}"
     
     def gather(self, field):
         fieldSetting = self.fieldSettings[field]
@@ -2392,7 +2412,8 @@ class macro:
             mouse.click()
 
     def nightAndHotbarBackground(self):
-
+        
+        self.nightDetectStreaks = 0
         while True:
             with open("./data/user/hotbar_timings.txt", "r") as f:
                 hotbarSlotTimings = ast.literal_eval(f.read())
@@ -2424,6 +2445,8 @@ class macro:
                     f.write(str(hotbarSlotTimings))
                 f.close()
                 time.sleep(0.2)
+            
+            time.sleep(1)
     
     def hourlyReportBackground(self):
         '''

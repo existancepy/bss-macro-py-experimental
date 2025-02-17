@@ -164,6 +164,10 @@ def filterOutliers(values, threshold=3):
     # Calculate the mean and standard deviation
     mean = np.mean(nonZeroValues)
     std_dev = np.std(nonZeroValues)
+
+    #standard deviation is 0, no outliers, prevent division by zero
+    if std_dev == 0:
+        return values 
     
     # Calculate Z-scores
     z_scores = [(x - mean) / std_dev for x in values]
