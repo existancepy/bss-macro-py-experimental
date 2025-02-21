@@ -4,7 +4,7 @@ import cv2
 from modules.screen.screenshot import mssScreenshotNP
 from modules.screen.imageSearch import findColorObjectHSL, findColorObjectRGB
 
-bgr = cv2.imread("night.png")
+bgr = cv2.imread("night2.png")
 
 dayColors = [
     #[(47, 117, 57), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #ground
@@ -21,18 +21,14 @@ nightColors = [
 ]
 
 bgr = bgr[0:bgr.shape[0]-200]
-#detect night 5 times in a row
-for _ in range(5):
-    #detect day
-    for color, kernel in dayColors:
+for color, kernel in dayColors:
+    if findColorObjectRGB(bgr, color, variance=6, kernel=kernel, mode="box"):
+        print("Day")
+#day not found, detect Night
+else:
+    for color, kernel in nightColors:
         if findColorObjectRGB(bgr, color, variance=6, kernel=kernel, mode="box"):
-            print("No")
-    #day not found, detect Night
-    else:
-        for color, kernel in nightColors:
-            if findColorObjectRGB(bgr, color, variance=6, kernel=kernel, mode="box"):
-                break
-        else: #neither day nor night detected
-            print("No")
-    
-print("Yes")
+            print("Night")
+            break
+    else: #neither day nor night detected
+        print("Day")

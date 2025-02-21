@@ -27,7 +27,6 @@ try:
     hti = Html2Image(size=(1900, 780))
     if hasattr(hti.browser, 'use_new_headless'):
         hti.browser.use_new_headless = None
-        print("Applied hti headless workaround")
 
     
 except FileNotFoundError:

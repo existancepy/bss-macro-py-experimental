@@ -370,14 +370,17 @@ class macro:
             bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
             hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
-            firstHalf = isNightBrightness(hsv) and isNightSky(hsv)
+            firstHalf = isNightSky(hsv)
             if firstHalf:
-                self.logger.webhook("", "Night Detected? (Sky)", "red", "screen")
+                pass
+                #self.logger.webhook("", "Night Detected? (Sky)", "red", "screen")
 
             #night detected
             if isGrassNight(bgr) and firstHalf:
                 self.nightDetectStreaks += 1
-                self.logger.webhook("", f"Night Detected? ({self.nightDetectStreaks})", "red", "screen")
+                #self.logger.webhook("", f"Night Detected? ({self.nightDetectStreaks})", "red", "screen")
+                im = Image.fromarray(cv2.cvtColor(screen, cv2.COLOR_BGR2RGB))
+                im.save(f"night-{time.time}.png")
             else: 
                 #failed to detect night, reset streak counter
                 self.nightDetectStreaks = 0
@@ -2546,7 +2549,50 @@ class macro:
                     f.write(str(history))
                 f.close()
 
-            
+    def findQuest(self):
+        #open inventory to ensure quest page is closed
+        self.toggleInventory("open")
+        #open quest page
+        mouse.moveTo(80, 113)
+        time.sleep(0.1)
+        mouse.moveBy(0,3)
+        time.sleep(0.1)
+        mouse.click()
+        time.sleep(0.3)
+        mouse.moveTo(312, 200)
+        mouse.click()
+        #scroll to top
+        for _ in range(80):
+            mouse.scroll(100)
+        #scroll down, note the best match
+        valBest = 0
+        time.sleep(0.3)
+        questFound = False
+
+        for i in range(80):
+            screen = cv2.cvtColor(mssScreenshotNP(0, 170, 300, 200), cv2.COLOR_BGRA2GRAY)
+            img = cv2.threshold(screen, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+            img = cv2.GaussianBlur(img, (5, 5), 0)
+            img = Image.fromarray(img)
+            texts = []
+            for x in ocr.ocrRead(img):
+                text = x[1][0].strip().lower()
+                if TARGET_QUEST in text:
+                    questFound = True
+                    break
+                
+            if questFound:
+                break
+            mouse.scroll(-40, True)
+            time.sleep(0.04)
+        if questFound:
+            pass
+        else:
+            self.logger.webhook("", f"Could not find", "dark brown")
+            self.toggleInventory("close")
+            return None
+        pass
+
     def startDetect(self):
         #disable game mode
         self.moveMouseToDefault()
