@@ -48,7 +48,7 @@ collectData = {
     "wreath": [["admire", "honey"], "a", 30*60], #30mins
     "feast": [["dig", "beesmas"], "s", 1.5*60*60], #1.5hr
     "samovar": [["heat", "samovar", "strange"], "w", 6*60*60], #6hr
-    "snow_machine": [["activate"], None, 2*60*60], #2hr
+    "snow_machine": [["activ", "snow"], None, 2*60*60], #2hr
     "lid_art": [["gander", "onett", "art"], "s", 8*60*60], #8hr
     "candles": [["admire", "candle", "honey"], "w", 4*60*60], #4hr
     "memory_match": [["spend", "play"], "a", 2*60*60], #2hr
@@ -306,6 +306,7 @@ class macro:
         #Detect the color of the floor at spawn
         #Useful when resetting/converting
         def isSpawnFloorNight(hsv):
+            hsv = hsv[int(hsv.shape[0]/2):hsv.shape[0]]
             lower = np.array([99, 45, 102])
             upper = np.array([105, 51, 112])
 
@@ -322,7 +323,7 @@ class macro:
             y = 30
             if self.display_type == "retina": y*=2
             #crop the image to only the area above buff
-            bgr = bgr[0:y, 0:int(self.mw)]
+            bgr = bgr[0:y, (360 if self.display_type == "retina" else 180):int(self.mw)]
             w,h = bgr.shape[:2]
             #check if a 15x15 area that is entirely black
             for x in range(w-15):
@@ -334,27 +335,33 @@ class macro:
         
         #detect the color of the grass in fields
         #useful when gathering
-        def isGrassNight(hsv):
-            #get only the bottom half of the screen
-            hsv = hsv[int(hsv.shape[0]/1.7):hsv.shape[0]]
-            def threshold(lower, upper):
-                kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(4,4))
-                mask = cv2.inRange(hsv, lower, upper)   
-                mask = cv2.erode(mask, kernel, 1)
-                return bool(np.mean(mask))
-            
-            def grassDay():
-                dayLower = np.array([63, 127, 140]) 
-                dayUpper = np.array([68, 165, 163])
-                return threshold(dayLower, dayUpper)
-            
-            def grassNight():
-                nightLower = np.array([65, 183, 51]) 
-                nightUpper = np.array([68, 204, 77])
-                return threshold(nightLower, nightUpper)
-            
-            if grassDay(): return False
-            if grassNight(): return True
+        def isGrassNight(bgr):       
+            dayColors = [
+                [(47, 117, 57), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #ground
+                [(46, 117, 58), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #dande
+                [(60, 156, 74), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #stump
+                [(38, 114, 51), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #pa
+                [(66, 123, 40), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #clov
+                [(32, 211, 22), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #ant
+            ]
+
+            nightColors = [
+                [(23, 72, 30), cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))], #a
+                [(17, 71, 28), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #dande
+            ]
+
+            bgr = bgr[0:bgr.shape[0]- (200 if self.display_type == "retina" else 100)]
+            dayScreen = bgr[int(bgr.shape[0]*2/5):bgr.shape[0]].copy()
+            #detect day
+            for color, kernel in dayColors:
+                if findColorObjectRGB(dayScreen, color, variance=6, kernel=kernel, mode="box"):
+                    return False
+            #day not found, detect Night
+            nightScreen = bgr[int(bgr.shape[0]/2):bgr.shape[0]].copy()
+            for color, kernel in nightColors:
+                if findColorObjectRGB(nightScreen, color, variance=6, kernel=kernel, mode="box"):
+                    return True
+                
             return False
 
         def isNight():
@@ -363,16 +370,33 @@ class macro:
             bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
             hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
-            #detect brightness
-            if self.location == "spawn":
-                return isNightSky(bgr) and isSpawnFloorNight(hsv)
-            return isGrassNight(hsv) and isNightSky(bgr)
+            firstHalf = isNightSky(hsv)
+            if firstHalf:
+                pass
+                #self.logger.webhook("", "Night Detected? (Sky)", "red", "screen")
+
+            #night detected
+            if isGrassNight(bgr) and firstHalf:
+                self.nightDetectStreaks += 1
+                #self.logger.webhook("", f"Night Detected? ({self.nightDetectStreaks})", "red", "screen")
+                im = Image.fromarray(cv2.cvtColor(screen, cv2.COLOR_BGR2RGB))
+                im.save(f"night-{time.time}.png")
+            else: 
+                #failed to detect night, reset streak counter
+                self.nightDetectStreaks = 0
+
+            #detected night consecutively for 5 times or more
+            if self.nightDetectStreaks >= 5:
+                return True
+            
+            return False
         
         if self.canDetectNight and isNight():
             self.night = True
             self.logger.webhook("","Night detected","dark brown", "screen")
             time.sleep(200) #wait for night to end
             self.night = False
+            self.nightDetectStreaks = 0
 
     def isFullScreen(self):
         menubarRaw = ocr.customOCR(0, 0, 300, 60, 0) #get menu bar on mac, window bar on windows
@@ -754,7 +778,7 @@ class macro:
         if convertBalloon: self.saveTiming("convert_balloon")
         self.status.value = ""
         #deal with the extra delay
-        self.logger.webhook("", "Finished converting", "brown")
+        self.logger.webhook("", f"Finished converting (Time: {self.convertSecsToMinsAndSecs(time.time()-st)})", "brown")
         wait = self.setdat["convert_wait"]
         if self.enableNightDetection:
             self.keyboard.press(".")
@@ -1108,6 +1132,11 @@ class macro:
         sleep(time/1000)
         self.keyboard.keyUp(key, False)
 
+    def convertSecsToMinsAndSecs(self, n):
+        m = n // 60
+        s = n % 60
+        return f"{int(m)}:{int(s)}"
+    
     def gather(self, field):
         fieldSetting = self.fieldSettings[field]
         for i in range(3):
@@ -1243,7 +1272,7 @@ class macro:
                 break
 
             #check if max time is reached
-            gatherTime = "{:.2f}".format((getGatherTime())/60)
+            gatherTime = self.convertSecsToMinsAndSecs(getGatherTime())
             if getGatherTime() > maxGatherTime:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
@@ -1281,7 +1310,7 @@ class macro:
             self.logger.webhook("",f"Walking back to hive: {field.title()}", "dark brown")
             self.runPath(f"field_to_hive/{field}")
             #find hive and convert
-            self.keyboard.walk("a", (self.setdat["hive_number"]-1)*0.9)
+            #self.keyboard.walk("a", (self.setdat["hive_number"]-1)*0.8)
             self.keyboard.keyDown("a")
             st = time.time()
             self.canDetectNight = True
@@ -1459,8 +1488,10 @@ class macro:
             #get cooldown if close bracket is present or not
             if closePos >= 0:
                 cooldownRaw = rawText[rawText.rfind("(")+1:closePos]
-            else:
+            elif "(" in rawText:
                 cooldownRaw = rawText.split("(")[1]
+            else:
+                cooldownRaw = rawText
         else:
             cooldownRaw = rawText
         #clean it up, extract only valid characters
@@ -1597,6 +1628,8 @@ class macro:
         mobs = regularMobInFields[field]
         for m in mobs:
             timingName = self.formatMobTimingName(m, field)
+            if not timingName in timings:
+                continue
             #check respawn
             if self.hasMobRespawned(m, field, timings[timingName]):
                 timings[timingName] = time.time()
@@ -2382,7 +2415,8 @@ class macro:
             mouse.click()
 
     def nightAndHotbarBackground(self):
-
+        
+        self.nightDetectStreaks = 0
         while True:
             with open("./data/user/hotbar_timings.txt", "r") as f:
                 hotbarSlotTimings = ast.literal_eval(f.read())
@@ -2414,6 +2448,8 @@ class macro:
                     f.write(str(hotbarSlotTimings))
                 f.close()
                 time.sleep(0.2)
+            
+            time.sleep(1)
     
     def hourlyReportBackground(self):
         '''
@@ -2462,6 +2498,7 @@ class macro:
         settingsManager.saveSettingFile("start_honey", getHoney(), "data/user/hourly_report_bg.txt")
         settingsManager.saveSettingFile("start_time", time.time(), "data/user/hourly_report_bg.txt")
         prevMin = -1  
+        currMin = None
         while True:
             if self.status.value != "rejoining":
                 #instead of using time.sleep, we want to run the code at the start of the min
@@ -2512,7 +2549,50 @@ class macro:
                     f.write(str(history))
                 f.close()
 
-            
+    def findQuest(self):
+        #open inventory to ensure quest page is closed
+        self.toggleInventory("open")
+        #open quest page
+        mouse.moveTo(80, 113)
+        time.sleep(0.1)
+        mouse.moveBy(0,3)
+        time.sleep(0.1)
+        mouse.click()
+        time.sleep(0.3)
+        mouse.moveTo(312, 200)
+        mouse.click()
+        #scroll to top
+        for _ in range(80):
+            mouse.scroll(100)
+        #scroll down, note the best match
+        valBest = 0
+        time.sleep(0.3)
+        questFound = False
+
+        for i in range(80):
+            screen = cv2.cvtColor(mssScreenshotNP(0, 170, 300, 200), cv2.COLOR_BGRA2GRAY)
+            img = cv2.threshold(screen, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+            img = cv2.GaussianBlur(img, (5, 5), 0)
+            img = Image.fromarray(img)
+            texts = []
+            for x in ocr.ocrRead(img):
+                text = x[1][0].strip().lower()
+                if TARGET_QUEST in text:
+                    questFound = True
+                    break
+                
+            if questFound:
+                break
+            mouse.scroll(-40, True)
+            time.sleep(0.04)
+        if questFound:
+            pass
+        else:
+            self.logger.webhook("", f"Could not find", "dark brown")
+            self.toggleInventory("close")
+            return None
+        pass
+
     def startDetect(self):
         #disable game mode
         self.moveMouseToDefault()

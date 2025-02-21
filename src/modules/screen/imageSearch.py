@@ -88,6 +88,59 @@ def findColorObjectHSL(img, hslRange, kernel=None, mode="point", best=1, draw=Fa
 
     return results if best > 1 else results[0]
 
+def findColorObjectRGB(img, rgbTarget, variance=0, kernel=None, mode="point", best=1, draw=False):
+    """
+    Quickly find objects of a specific color in the RGB range with variance.
+
+    Args:
+        img (numpy.ndarray): Input image in BGR format.
+        rgbTarget (tuple): Target RGB color (R, G, B), values 0-255.
+        variance (int): Allowed variation (0-255) for each color component.
+        kernel (numpy.ndarray): Kernel for erosion (optional).
+        mode (str): "point" to return center of bounding box, "box" to return bounding boxes.
+        best (int): Number of top contours to return (default 1).
+        draw (bool): Whether to draw bounding boxes on the image.
+
+    Returns:
+        tuple or list: Coordinates of the center or bounding boxes.
+    """
+    
+    # Convert image from BGR to RGB
+    imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    
+    # Compute lower and upper bounds
+    lower_bound = np.clip(np.array(rgbTarget) - variance, 0, 255).astype(np.uint8)
+    upper_bound = np.clip(np.array(rgbTarget) + variance, 0, 255).astype(np.uint8)
+    
+    # Thresholding to create a binary mask
+    binary_mask = cv2.inRange(imgRGB, lower_bound, upper_bound)
+    
+    if kernel is not None:
+        binary_mask = cv2.erode(binary_mask, kernel, iterations=1)
+    
+    contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    if not contours:
+        return None
+    
+    if best > 1:
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)[:best]
+    
+    results = []
+    for contour in (contours if best > 1 else [max(contours, key=cv2.contourArea)]):
+        x, y, w, h = cv2.boundingRect(contour)
+        results.append((x + w // 2, y + h // 2) if mode == "point" else (x, y, w, h))
+        if draw:
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+    
+    if draw:
+        cv2.imshow("Result", img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    
+    return results if best > 1 else results[0]
+
+
 def fastFeatureMatching(haystack, needle):
 
     # Load images (downscale for speed if needed)

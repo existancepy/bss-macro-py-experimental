@@ -25,6 +25,10 @@ macVer = platform.mac_ver()[0]
 
 try:
     hti = Html2Image(size=(1900, 780))
+    if hasattr(hti.browser, 'use_new_headless'):
+        hti.browser.use_new_headless = None
+
+    
 except FileNotFoundError:
     if versionTuple(macVer) >= versionTuple("10.15"):
         msgBox(title = "error", text = "Google Chrome could not be found. Ensure that:\
@@ -159,6 +163,10 @@ def filterOutliers(values, threshold=3):
     # Calculate the mean and standard deviation
     mean = np.mean(nonZeroValues)
     std_dev = np.std(nonZeroValues)
+
+    #standard deviation is 0, no outliers, prevent division by zero
+    if std_dev == 0:
+        return values 
     
     # Calculate Z-scores
     z_scores = [(x - mean) / std_dev for x in values]

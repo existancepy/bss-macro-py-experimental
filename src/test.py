@@ -2,18 +2,33 @@ import numpy as np
 import time
 import cv2
 from modules.screen.screenshot import mssScreenshotNP
-def isNightBrightness(hsv):
-    hsv = hsv[int(hsv.shape[0]*2/5):hsv.shape[0]]
-    vValues = np.sum(hsv[:, :, 2])
-    area = hsv.shape[0] * hsv.shape[1]
-    avg_brightness = vValues/area
-    #threshold for night. It must be > 10 to deal with cases where the player is inside a fruit or stuck against a wall 
-    print(avg_brightness)
-    return 10 < avg_brightness < 80 
+from modules.screen.imageSearch import findColorObjectHSL, findColorObjectRGB
 
-time.sleep(2)
-screen = mssScreenshotNP(0,0, 1440, 900)
-bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
-hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-isNightBrightness(hsv)
+bgr = cv2.imread("night2.png")
 
+dayColors = [
+    #[(47, 117, 57), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #ground
+    [(46, 117, 58), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #dande
+    [(60, 156, 74), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #stump
+    [(38, 114, 51), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #pa
+    [(66, 123, 40), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #clov
+    [(32, 211, 22), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #ant
+]
+
+nightColors = [
+    [(23, 72, 30), cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))], #a
+    [(17, 71, 28), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #dande
+]
+
+bgr = bgr[0:bgr.shape[0]-200]
+for color, kernel in dayColors:
+    if findColorObjectRGB(bgr, color, variance=6, kernel=kernel, mode="box"):
+        print("Day")
+#day not found, detect Night
+else:
+    for color, kernel in nightColors:
+        if findColorObjectRGB(bgr, color, variance=6, kernel=kernel, mode="box"):
+            print("Night")
+            break
+    else: #neither day nor night detected
+        print("Day")
