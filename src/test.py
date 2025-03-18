@@ -1,34 +1,19 @@
-import numpy as np
-import time
-import cv2
-from modules.screen.screenshot import mssScreenshotNP
-from modules.screen.imageSearch import findColorObjectHSL, findColorObjectRGB
+from fuzzywuzzy import process
 
-bgr = cv2.imread("night2.png")
+def find_closest_match(input_sentence, sentence_list):
+    # Find the closest match from the list without extracting anything
+    best_match, score = process.extractOne(input_sentence, sentence_list)
+    
+    return best_match
 
-dayColors = [
-    #[(47, 117, 57), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #ground
-    [(46, 117, 58), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #dande
-    [(60, 156, 74), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #stump
-    [(38, 114, 51), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #pa
-    [(66, 123, 40), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #clov
-    [(32, 211, 22), cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))], #ant
+# Example usage
+input_sentence = "polar bear: thick smoothie"
+sentence_list = [
+    "spooky stew",
+    "scorpion salad",
+    "strawberry skewers",
+    "thick smoothie"
 ]
 
-nightColors = [
-    [(23, 72, 30), cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))], #a
-    [(17, 71, 28), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #dande
-]
-
-bgr = bgr[0:bgr.shape[0]-200]
-for color, kernel in dayColors:
-    if findColorObjectRGB(bgr, color, variance=6, kernel=kernel, mode="box"):
-        print("Day")
-#day not found, detect Night
-else:
-    for color, kernel in nightColors:
-        if findColorObjectRGB(bgr, color, variance=6, kernel=kernel, mode="box"):
-            print("Night")
-            break
-    else: #neither day nor night detected
-        print("Day")
+closest_match = find_closest_match(input_sentence, sentence_list)
+print("Closest Match:", closest_match)

@@ -10,6 +10,7 @@ import sys
 import ast
 import subprocess
 from modules.misc import messageBox
+import copy
 
 def hasteCompensationThread(baseSpeed, haste):
     from modules.submacros.hasteCompensation import hasteCompensation
@@ -75,10 +76,29 @@ def macro(status, log, haste, updateGUI):
 
     #macro.rejoin()
     while True:
-        setdat = macro.setdat
+        setdat = copy.deepcopy(macro.setdat)
         #run empty task
         #this is in case no other settings are selected 
         runTask(resetAfter=False)
+
+        #handle quests
+        questGatherFields = []
+
+        if setdat["polar_bear_quest"]:
+            questGiver = "polar bear"
+            questObjective = macro.findQuest(questGiver)
+            if questObjective is None: #quest does not exist
+                questObjective = macro.getNewQuest(questGiver, False)
+            elif not len(questObjective): #quest completed
+                questObjective = macro.getNewQuest(questGiver, True)
+            else:
+                for obj in questObjective:
+                    objData = obj.split("_")
+                    if objData[0] == "gather":
+                        questGatherFields.append(objData[1])
+                    elif objData[0] == "kill":
+                        setdat[objData[2]] = True
+                    
         #collect
         for k, _ in macroModule.collectData.items():
             #check if the cooldown is up
@@ -180,6 +200,9 @@ def macro(status, log, haste, updateGUI):
         #add planter gather fields
         planterGatherFields = ast.literal_eval(planterDataRaw)["gatherFields"] if planterDataRaw else []
         gatherFields.extend([x for x in planterGatherFields if x not in gatherFields])
+
+        #add quest fields
+        gatherFields.extend([x for x in questGatherFields if x not in gatherFields])
 
         #remove fields that are already in boosted fields
         gatherFields = [x for x in gatherFields if not x in boostedGatherFields]
@@ -306,7 +329,7 @@ if __name__ == "__main__":
             logger.webhookURL = setdat["webhook_link"]
             haste.value = setdat["movespeed"]
             stopThreads = False
-            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste, updateGUI))
+            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste, updateGUI), daemon=True)
             macroProc.start()
             #disconnect detection
             disconnectThread = Thread(target=disconnectCheck, args=(run, status, screenInfo["display_type"]))
@@ -333,7 +356,7 @@ if __name__ == "__main__":
             settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
 
             #discord bot
-            discordBotProc = multiprocessing.Process(target=discordBot, args=(setdat["discord_bot_token"], run, status))
+            discordBotProc = multiprocessing.Process(target=discordBot, args=(setdat["discord_bot_token"], run, status), daemon=True)
             if setdat["discord_bot"]:
                 discordBotProc.start()
             logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
@@ -352,7 +375,7 @@ if __name__ == "__main__":
             appManager.closeApp("Roblox")
             keyboardModule.releaseMovement()
             mouse.mouseUp()
-            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste, updateGUI))
+            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste, updateGUI), daemon=True)
             macroProc.start()
             run.value = 2
 
