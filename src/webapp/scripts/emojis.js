@@ -157,3 +157,7 @@ const fieldBoosterEmojis = {
 const stickerStackIcon = {
     sticker_stack: "sticker_stack"
 }
+
+const questGiverEmojis = {
+    polar_bear_quest: "🐻‍❄️",
+}

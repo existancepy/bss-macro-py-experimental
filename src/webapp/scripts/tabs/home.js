@@ -47,6 +47,12 @@ function taskHTML(title, desc=""){
 async function loadTasks(){
     const setdat = await loadAllSettings()
     let out = ""
+    //load quest givers
+    for (const [k, v] of Object.entries(questGiverEmojis)) {
+        if (!setdat[k]) continue
+        out += taskHTML("Quest", `${v} ${toTitleCase(k.replaceAll("quest","").replaceAll("_", " "))}`)
+    }
+    
     //load collect
     for (const [k, v] of Object.entries(collectEmojis)) {
         if (!setdat[k]) continue

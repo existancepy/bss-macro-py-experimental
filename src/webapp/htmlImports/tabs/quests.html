@@ -6,8 +6,28 @@
     <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="quests-settings-tab">
         <script>
             const questsSettingsParent = document.getElementById("quests-settings-tab")
-            buildStandardContainer(questsSettingsParent,"Override Gather Settings", "Override the settings in the gather tab when gathering for quests",[
-
+            buildStandardContainer(questsSettingsParent,"Override Gather Settings", "Override the gather settings in the gather tab when gathering for quests",[
+                {
+                    id: "quest_gather_mins",
+                    title: "Gather Until Mins",
+                    desc: "Override the 'Gather Until Mins' option. Set it to 0 to disable overriding",
+                    type: {
+                        name: "textbox",
+                        inputType: "float",
+                        inputLimit: 4,
+                        triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+                {
+                    id: "quest_gather_return",
+                    title: "Return To Hive",
+                    desc: "Override the 'Return To Hive' option",
+                    type: {
+                        name: "dropdown",
+                        data: ["No Override", "💀 Reset","👟 Walk","🔄 Rejoin","🌱 Whirligig"],
+                        triggerFunction: saveProfileTriggerFunction
+                    }
+                },
             ])
 
         </script>

@@ -1171,8 +1171,8 @@ class macro:
         s = n % 60
         return f"{int(m)}:{int(s)}"
     
-    def gather(self, field):
-        fieldSetting = self.fieldSettings[field]
+    def gather(self, field, settingsOverride = {}):
+        fieldSetting = {**self.fieldSettings[field], **settingsOverride}
         for i in range(3):
             #wait for bees to wake up
             if not self.alreadyConverted: time.sleep(6)
@@ -2427,7 +2427,10 @@ class macro:
 
     def incrementHourlyStat(self, statName, value):
         data = settingsManager.readSettingsFile("data/user/hourly_report_main.txt")
-        data[statName] += value
+        if not statName in data:
+            data[statName] = value
+        else:
+            data[statName] += value
         settingsManager.saveDict(f"data/user/hourly_report_main.txt", data)
     
     #click the "allow for one month" on the "terminal is requesting to bypass" popup
@@ -2706,6 +2709,7 @@ class macro:
 
     def goToQuestGiver(self, questGiver, reason):
         for _ in range(3):
+            self.cannon()
             self.logger.webhook("",f"Travelling: {questGiver} ({reason}) ","brown")
             self.runPath(f"quests/{questGiver}")
 
@@ -2719,24 +2723,30 @@ class macro:
             else:
                 self.logger.webhook("",f"Failed to reach {questGiver}","brown", "screen")
                 self.reset()
-                return False
+        return False
 
-    def clickdialog(self):
-        for _ in range(90):
+    def clickdialog(self, count):
+        for _ in range(count):
             mouse.moveTo(self.mw/2, 2*self.mh//3)
             mouse.click()
             time.sleep(0.05)
 
     def getNewQuest(self, questGiver, submitQuest):
         if not self.goToQuestGiver(questGiver, "Get New Quest"): return
-        self.clickdialog()
+        dialogClickCountForQuestGivers = {
+            "polar bear": 25,
+            "bucko bee": 40,
+            "riley bee": 40
+        }
+        dialogClickCount = dialogClickCountForQuestGivers.get(questGiver, 50)
+        self.clickdialog(dialogClickCount)
         #player submitted a quest, then get a new one
         if submitQuest:
             sleep(1)
             self.keyboard.press("e")
             sleep(0.2)
             self.keyboard.press("e")
-            self.clickdialog()
+            self.clickdialog(dialogClickCount)
         return self.findQuest(questGiver)
 
 

@@ -47,8 +47,8 @@ def macro(status, log, haste, updateGUI):
     #Limit werewolf to just pumpkin 
     regularMobData["werewolf"] = ["pumpkin"]
     
-    setdat = macro.setdat
-    if "share" in setdat["private_server_link"] and setdat["rejoin_method"] == "deeplink":
+    originalSetdat = copy.deepcopy(macro.setdat)
+    if "share" in macro.setdat["private_server_link"] and macro.setdat["rejoin_method"] == "deeplink":
                 messageBox.msgBox(text="You entered a 'share?code' link!\n\nTo fix this:\n1. Paste the link in your browser\n2. Wait for roblox to load in\n3. Copy the link from the top of your browser.  It should now be a 'privateServerLinkCode' link", title='Unsupported private server link')
                 return
     macro.start()
@@ -57,18 +57,18 @@ def macro(status, log, haste, updateGUI):
     #makes it easy to do any checks after a task is complete (like stinger hunt, rejoin every, etc)
     def runTask(func = None, args = (), resetAfter = True, convertAfter = True):
         #execute the task
-        returnVal = None
-        if not func is None: returnVal = func(*args)
+        returnVal = func(*args) if func else None
         #task done
-        if resetAfter: macro.reset(convert=convertAfter)
+        if resetAfter: 
+            macro.reset(convert=convertAfter)
 
         #do priority tasks
-        if macro.night and setdat["stinger_hunt"]:
+        if macro.night and macro.setdat["stinger_hunt"]:
             macro.stingerHunt()
-        if setdat["mondo_buff"]:
+        if macro.setdat["mondo_buff"]:
             macro.collectMondoBuff()
-        if setdat["rejoin_every"]:
-            if macro.hasRespawned("rejoin_every", setdat["rejoin_every"]*60*60):
+        if macro.setdat["rejoin_every"]:
+            if macro.hasRespawned("rejoin_every", macro.setdat["rejoin_every"]*60*60):
                 macro.rejoin("Rejoining (Scheduled)")
                 macro.saveTiming("rejoin_every")
         status.value = ""
@@ -76,7 +76,7 @@ def macro(status, log, haste, updateGUI):
 
     #macro.rejoin()
     while True:
-        setdat = copy.deepcopy(macro.setdat)
+        macro.setdat = copy.deepcopy(originalSetdat)
         #run empty task
         #this is in case no other settings are selected 
         runTask(resetAfter=False)
@@ -84,7 +84,7 @@ def macro(status, log, haste, updateGUI):
         #handle quests
         questGatherFields = []
 
-        if setdat["polar_bear_quest"]:
+        if macro.setdat["polar_bear_quest"]:
             questGiver = "polar bear"
             questObjective = macro.findQuest(questGiver)
             if questObjective is None: #quest does not exist
@@ -97,18 +97,18 @@ def macro(status, log, haste, updateGUI):
                     if objData[0] == "gather":
                         questGatherFields.append(objData[1])
                     elif objData[0] == "kill":
-                        setdat[objData[2]] = True
+                        macro.setdat[objData[2]] = True
                     
         #collect
         for k, _ in macroModule.collectData.items():
             #check if the cooldown is up
-            if setdat[k] and macro.hasRespawned(k, macro.collectCooldowns[k]):
+            if macro.setdat[k] and macro.hasRespawned(k, macro.collectCooldowns[k]):
                 runTask(macro.collect, args=(k,))
 
-        if setdat["sticker_printer"] and macro.hasRespawned("sticker_printer", macro.collectCooldowns["sticker_printer"]):
+        if macro.setdat["sticker_printer"] and macro.hasRespawned("sticker_printer", macro.collectCooldowns["sticker_printer"]):
             runTask(macro.collectStickerPrinter)
         #blender
-        if setdat["blender_enable"]:
+        if macro.setdat["blender_enable"]:
             with open("./data/user/blender.txt", "r") as f:
                 blenderData = ast.literal_eval(f.read())
             f.close()
@@ -125,12 +125,12 @@ def macro(status, log, haste, updateGUI):
                 if cycle > 5:
                     cycle = 1
                 for i in range(3): #make sure the cycle is occupied
-                    if setdat[f"cycle{cycle}_{i+1}_planter"] != "none" and setdat[f"cycle{cycle}_{i+1}_field"] != "none":
+                    if macro.setdat[f"cycle{cycle}_{i+1}_planter"] != "none" and macro.setdat[f"cycle{cycle}_{i+1}_field"] != "none":
                         return cycle
             else: 
                 return False
         planterDataRaw = None
-        if setdat["planters_mode"] == 1:
+        if macro.setdat["planters_mode"] == 1:
             with open("./data/user/manualplanters.txt", "r") as f:
                 planterDataRaw = f.read()
             f.close()
@@ -153,24 +153,24 @@ def macro(status, log, haste, updateGUI):
                     runTask(macro.placePlanterCycle, args = (cycle,),resetAfter=False) 
         #mob runs
         for mob, fields in regularMobData.items():
-            if not setdat[mob]: continue
+            if not macro.setdat[mob]: continue
             for f in fields:
                 if macro.hasMobRespawned(mob, f):
                     runTask(macro.killMob, args=(mob, f,), convertAfter=False)
         #ant challenge
-        if setdat["ant_challenge"]: 
+        if macro.setdat["ant_challenge"]: 
             runTask(macro.antChallenge)
 
         #coconut crab
-        if setdat["coconut_crab"] and macro.hasRespawned("coconut_crab", 36*60*60, applyMobRespawnBonus=True):
+        if macro.setdat["coconut_crab"] and macro.hasRespawned("coconut_crab", 36*60*60, applyMobRespawnBonus=True):
             macro.coconutCrab()
             
         #stump snail
-        if setdat["stump_snail"] and macro.hasRespawned("stump_snail", 96*60*60, applyMobRespawnBonus=True):
+        if macro.setdat["stump_snail"] and macro.hasRespawned("stump_snail", 96*60*60, applyMobRespawnBonus=True):
             runTask(macro.stumpSnail)
         
         #sticker stack
-        if setdat["sticker_stack"]:
+        if macro.setdat["sticker_stack"]:
             with open("./data/user/sticker_stack.txt", "r") as f:
                 stickerStackCD = int(f.read())
             f.close()
@@ -180,9 +180,9 @@ def macro(status, log, haste, updateGUI):
         boostedGatherFields = []
         for k, _ in macroModule.fieldBoosterData.items():
             #check if the cooldown is up
-            if setdat[k] and macro.hasRespawned(k, macro.collectCooldowns[k]) and macro.hasRespawned("last_booster", setdat["boost_seperate"]*60):
+            if macro.setdat[k] and macro.hasRespawned(k, macro.collectCooldowns[k]) and macro.hasRespawned("last_booster", macro.setdat["boost_seperate"]*60):
                 boostedField = runTask(macro.collect, args=(k,))
-                if setdat["gather_boosted"] and boostedField:
+                if macro.setdat["gather_boosted"] and boostedField:
                     boostedGatherFields.append(boostedField)
         #gather in boosted fields
         #gather for the entire 15min duration
@@ -194,21 +194,32 @@ def macro(status, log, haste, updateGUI):
         #add gather tab fields
         gatherFields = []
         for i in range(3):
-            if setdat["fields_enabled"][i]:
-                gatherFields.append(setdat["fields"][i])
+            if macro.setdat["fields_enabled"][i]:
+                gatherFields.append(macro.setdat["fields"][i])
         
         #add planter gather fields
         planterGatherFields = ast.literal_eval(planterDataRaw)["gatherFields"] if planterDataRaw else []
         gatherFields.extend([x for x in planterGatherFields if x not in gatherFields])
-
-        #add quest fields
-        gatherFields.extend([x for x in questGatherFields if x not in gatherFields])
 
         #remove fields that are already in boosted fields
         gatherFields = [x for x in gatherFields if not x in boostedGatherFields]
         
         for field in gatherFields:
             runTask(macro.gather, args=(field,), resetAfter=False)
+
+        #do quests
+        questGatherFields = [x for x in questGatherFields if not (x in gatherFields or x in boostedGatherFields)]
+        print(questGatherFields)
+        #setup the override
+        questGatherOverrides = {}
+        if macro.setdat["quest_gather_mins"]:
+            questGatherOverrides["mins"] = macro.setdat["quest_gather_mins"]
+        if macro.setdat["quest_gather_return"] != "no override":
+            questGatherOverrides["return"] = macro.setdat["quest_gather_return"]
+        for field in questGatherFields:
+            runTask(macro.gather, args=(field, questGatherOverrides), resetAfter=False)
+        
+
 
 def watch_for_hotkeys(run):
     def on_press(key):
@@ -255,7 +266,7 @@ if __name__ == "__main__":
     haste = multiprocessing.Value('d', 0)
     prevLog = ""
     watch_for_hotkeys(run)
-    logger = logModule.log(log, False, None)
+    logger = logModule.log(log, False, None, blocking=True)
 
     #update settings
     profileSettings = settingsManager.loadSettings()
@@ -324,10 +335,10 @@ if __name__ == "__main__":
         eel.sleep(0.2)
         if run.value == 1:
             #create and set webhook obj for the logger
-            setdat = settingsManager.loadAllSettings()
-            logger.enableWebhook = setdat["enable_webhook"]
-            logger.webhookURL = setdat["webhook_link"]
-            haste.value = setdat["movespeed"]
+            macro.setdat = settingsManager.loadAllSettings()
+            logger.enableWebhook = macro.setdat["enable_webhook"]
+            logger.webhookURL = macro.setdat["webhook_link"]
+            haste.value = macro.setdat["movespeed"]
             stopThreads = False
             macroProc = multiprocessing.Process(target=macro, args=(status, log, haste, updateGUI), daemon=True)
             macroProc.start()
@@ -336,8 +347,8 @@ if __name__ == "__main__":
             disconnectThread.daemon = True
             disconnectThread.start()
             #haste compensation
-            if setdat["haste_compensation"]:
-                hasteCompThread = Thread(target=hasteCompensationThread, args=(setdat["movespeed"],haste,))
+            if macro.setdat["haste_compensation"]:
+                hasteCompThread = Thread(target=hasteCompensationThread, args=(macro.setdat["movespeed"],haste,))
                 hasteCompThread.daemon = True
                 hasteCompThread.start()
 
@@ -356,10 +367,11 @@ if __name__ == "__main__":
             settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
 
             #discord bot
-            discordBotProc = multiprocessing.Process(target=discordBot, args=(setdat["discord_bot_token"], run, status), daemon=True)
-            if setdat["discord_bot"]:
+            discordBotProc = multiprocessing.Process(target=discordBot, args=(macro.setdat["discord_bot_token"], run, status), daemon=True)
+            if macro.setdat["discord_bot"]:
                 discordBotProc.start()
-            logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
+            if macro.setdat["enable_webhook"]:
+                logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
             run.value = 2
             gui.toggleStartStop()
         elif run.value == 0:
