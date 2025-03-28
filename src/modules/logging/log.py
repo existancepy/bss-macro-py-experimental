@@ -34,10 +34,8 @@ def sendWebhook(url, title, desc, time, colorHex, ss=None):
     logWebhook.webhook(url, title, desc, time, colorHex, webhookImg)
 
 class webhookQueue:
-    def __init__(self, enableWebhook, webhookURL):
+    def __init__(self):
         self.queue = queue.Queue()
-        self.enableWebhook = enableWebhook
-        self.webhookURL = webhookURL
         self.worker_thread = threading.Thread(target=self._process_queue, daemon=True)
         self.worker_thread.start()
 
@@ -52,25 +50,18 @@ class webhookQueue:
             sendWebhook(**data)
             self.queue.task_done()
 
-    def add_to_queue(self, title, desc, color, time, ss=None):
-        if not self.enableWebhook:
-            return
-        # Prepare the data
-        data = {
-            "url": self.webhookURL,
-            "title": title,
-            "desc": desc,
-            "time": time,
-            "colorHex": colors[color],
-            "ss": ss
-        }
+    def add_to_queue(self, data):
         self.queue.put(data)
 
 class log:
-    def __init__(self, logVar, enableWebhook, webhookURL):
+    def __init__(self, logVar, enableWebhook, webhookURL, blocking=False):
         self.logVar = logVar
         self.webhookURL = webhookURL
-        self.webhookQueue = webhookQueue(enableWebhook, self.webhookURL)
+        self.enableWebhook = enableWebhook
+        self.blocking = blocking
+
+        if not self.blocking:
+            self.webhookQueue = webhookQueue()
 
     def log(self, msg):
         # Display in GUI or macro logs (to be implemented)
@@ -87,8 +78,22 @@ class log:
         }
         self.logVar.value = str(logData)
 
+        if not self.enableWebhook: return
+
+        webhookData = {
+            "url": self.webhookURL,
+            "title": title,
+            "desc": desc,
+            "time": time.strftime("%H:%M:%S", time.localtime()),
+            "colorHex": colors[color],
+            "ss": ss
+        }
+
         # Add the webhook message to the queue
-        self.webhookQueue.add_to_queue(title, desc, color, logData["time"], ss)
+        if self.blocking:
+            sendWebhook(**webhookData)
+        else:
+            self.webhookQueue.add_to_queue(webhookData)
 
     def hourlyReport(self, title, desc, color):
         if not self.webhookQueue.enableWebhook: return

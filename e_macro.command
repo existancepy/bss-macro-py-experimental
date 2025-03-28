@@ -30,6 +30,7 @@ fi
 
 runPython() {
 	if command -v $1 >/dev/null 2>&1; then
+		echo "Trying to run macro with $1"
 		$1 main.py
 	fi
 

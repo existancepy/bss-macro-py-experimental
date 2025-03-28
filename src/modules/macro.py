@@ -1,3 +1,4 @@
+import fuzzywuzzy.process
 import modules.screen.ocr as ocr
 from modules.screen.pixelColor import getPixelColor
 import modules.misc.appManager as appManager
@@ -32,6 +33,7 @@ import re
 import ast
 from modules.submacros.hourlyReport import generateHourlyReport
 from difflib import SequenceMatcher
+import fuzzywuzzy
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -254,6 +256,32 @@ cyrillicToLatin = {
     'х': 'x'
 }
 
+#Load quest data from quest_data.txt
+quest_data = {}
+quest_bear = ""
+quest_title = ""
+quest_info = []
+
+with open("./data/bss/quest_data.txt", "r") as f:
+    qdata = [x for x in f.read().split("\n") if x]
+
+for line in qdata:
+    if line.startswith("==") and line.endswith("=="): #bear
+        if quest_title:
+            quest_data[quest_bear][quest_title] = quest_info  
+        quest_bear = line.strip("=")
+        quest_data[quest_bear] = {}
+        quest_title, quest_info = "", []
+    
+    elif line.startswith("-"): #new quest title
+        if quest_title:  
+            quest_data[quest_bear][quest_title] = quest_info
+        quest_title = line.lstrip("-").strip()
+        quest_info = []
+    
+    else:  #quest objectives
+        quest_info.append(line)
+
 class macro:
     def __init__(self, status, log, haste, updateGUI):
         self.status = status
@@ -468,16 +496,20 @@ class macro:
         if faceDir == "default": return
         self.faceDirection(field, faceDir)
 
+    def convertCyrillic(self, original):
+        out = ""
+        for x in original:
+            if x in cyrillicToLatin:
+                x = cyrillicToLatin[x]
+            out += x
+        return out 
+    
     def isInOCR(self, name, includeList, excludeList, log=False):
         #get text
         textRaw = ocr.imToString(name).lower()
         if log: print(f"Raw text: {textRaw}")
         #correct the text
-        text = ""
-        for x in textRaw:
-            if x in cyrillicToLatin:
-                x = cyrillicToLatin[x]
-            text += x
+        text = self.convertCyrillic(textRaw)
 
         #check if text is to be rejected
         if log: print(f"output text: {text}")
@@ -515,12 +547,14 @@ class macro:
     #note that cooldown is in seconds
     def hasRespawned(self, name, cooldown, applyMobRespawnBonus = False, timing = None):
         if timing is None: timing = self.getTiming(name)
+        if not isinstance(timing, float) and not isinstance(timing, int):
+            print(f"Timing is not a valid number? {timing}")
         mobRespawnBonus = 1
         if applyMobRespawnBonus:
             mobRespawnBonus -= 0.15 if self.setdat["gifted_vicious"] else 0
             mobRespawnBonus -= self.setdat["stick_bug_amulet"]/100 
             mobRespawnBonus -= self.setdat["icicles_beequip"]/100 
-
+    
         return time.time() - timing >= cooldown*mobRespawnBonus
 
     def isInBlueTexts(self, includeList = [], excludeList = []):
@@ -1137,8 +1171,8 @@ class macro:
         s = n % 60
         return f"{int(m)}:{int(s)}"
     
-    def gather(self, field):
-        fieldSetting = self.fieldSettings[field]
+    def gather(self, field, settingsOverride = {}):
+        fieldSetting = {**self.fieldSettings[field], **settingsOverride}
         for i in range(3):
             #wait for bees to wake up
             if not self.alreadyConverted: time.sleep(6)
@@ -2393,7 +2427,10 @@ class macro:
 
     def incrementHourlyStat(self, statName, value):
         data = settingsManager.readSettingsFile("data/user/hourly_report_main.txt")
-        data[statName] += value
+        if not statName in data:
+            data[statName] = value
+        else:
+            data[statName] += value
         settingsManager.saveDict(f"data/user/hourly_report_main.txt", data)
     
     #click the "allow for one month" on the "terminal is requesting to bypass" popup
@@ -2549,10 +2586,8 @@ class macro:
                     f.write(str(history))
                 f.close()
 
-    def findQuest(self):
-        #open inventory to ensure quest page is closed
-        self.toggleInventory("open")
-        #open quest page
+    def toggleQuest(self):
+        #click quest icon
         mouse.moveTo(80, 113)
         time.sleep(0.1)
         mouse.moveBy(0,3)
@@ -2561,37 +2596,159 @@ class macro:
         time.sleep(0.3)
         mouse.moveTo(312, 200)
         mouse.click()
+
+    def findQuest(self, questGiver):
+        #map quest giver to a shorthand form for ocr searching
+        questGiverShort = {
+            "polar bear": "polar",
+            "bucko bee": "bucko",
+            "riley bee": "riley"
+        }
+
+        #prevent the macro from false detecting beesmas quests
+        questTitleBlacklistedPhrases = {
+            "polar bear": ["beesmas", "feast"],
+            "bucko bee": ["snow", "machine"],
+            "riley bee": ["snow", "machine"]
+        }
+
+        #sanity check
+        if not questGiver in questGiverShort:
+            raise Exception(f"Unknown Quest Giver: {questGiver}")
+        
+        def screenshotQuest(screenshotHeight):
+            #Take a screenshot of the quest page and 
+            screen = cv2.cvtColor(mssScreenshotNP(0, 170, 300, screenshotHeight), cv2.COLOR_BGRA2GRAY)
+            return screen
+        
+        #open inventory to ensure quest page is closed
+        self.toggleInventory("open")
+        self.toggleQuest()
         #scroll to top
-        for _ in range(80):
+        #stop scrolling when the quest page remains unchanged
+        prevHash = None
+        for _ in range(180):
             mouse.scroll(100)
+            sleep(0.05)
+            hash = imagehash.average_hash(Image.fromarray(screenshotQuest(100)))
+            if not prevHash is None and prevHash == hash:
+                break
+            prevHash = hash
         #scroll down, note the best match
-        valBest = 0
-        time.sleep(0.3)
-        questFound = False
+        sleep(0.3)
+        questTitle = None
+        questTitleYPos = None
+
 
         for i in range(80):
-            screen = cv2.cvtColor(mssScreenshotNP(0, 170, 300, 200), cv2.COLOR_BGRA2GRAY)
+            screen = screenshotQuest(200)
             img = cv2.threshold(screen, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
             img = cv2.GaussianBlur(img, (5, 5), 0)
             img = Image.fromarray(img)
-            texts = []
             for x in ocr.ocrRead(img):
-                text = x[1][0].strip().lower()
-                if TARGET_QUEST in text:
-                    questFound = True
-                    break
+                text = self.convertCyrillic(x[1][0].strip().lower())
+                if questGiverShort[questGiver] in text:
+                    for word in questTitleBlacklistedPhrases.get(questGiver, []):
+                        if word in text: break
+                    else:
+                        #match text with the closest known quest title
+                        questTitleYPos = x[0][3][1] #get the bottom Y coordinate
+                        questTitle, _ = fuzzywuzzy.process.extractOne(text, quest_data[questGiver].keys())
+                        break
                 
-            if questFound:
+            if questTitle:
                 break
             mouse.scroll(-40, True)
             time.sleep(0.04)
-        if questFound:
-            pass
-        else:
-            self.logger.webhook("", f"Could not find", "dark brown")
-            self.toggleInventory("close")
+
+        if questTitle is None:
+            self.logger.webhook("", f"Could not find {questGiver} quest", "dark brown")
+            self.toggleQuest()
             return None
-        pass
+        
+        #quest title found, now find the objectives
+        print(questTitle)
+        objectives = quest_data[questGiver][questTitle]
+
+        #merge the texts into chunks. Using those chunks, compare it with the known objectives
+        #assume that the merging is done properly, so 1st chunk = 1st objective
+        screen = screenshotQuest(650)
+        #crop it below the quest title
+        screen = screen[questTitleYPos: , : ]
+        img = cv2.threshold(screen, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        img = cv2.GaussianBlur(img, (5, 5), 0)
+        #dilute the image so that texts can be merged into chunks
+        kernel = np.ones((12, 12), np.uint8) 
+        img = cv2.dilate(img, kernel, iterations=1)
+
+        contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        completedObjectives = []
+        incompleteObjectives = []
+        for i, contour in enumerate(contours[::-1][:len(objectives)]):
+            x, y, w, h = cv2.boundingRect(contour)
+            textImg =  Image.fromarray(screen[y:y+h, x:x+w])
+            textChunk = []
+            for line in ocr.ocrRead(textImg):
+                textChunk.append(self.convertCyrillic(line[1][0].strip().lower()))
+            textChunk = ''.join(textChunk)
+            print(textChunk)
+            if "complete" in textChunk:
+                completedObjectives.append(objectives[i])
+            else:
+                incompleteObjectives.append(objectives[i])
+        
+        print(completedObjectives)
+        print(incompleteObjectives)
+        self.logger.webhook(f"Detected {questGiver.title()} Quest: {questTitle.title()}", 
+                            "**Completed Objectives:**\n{}\n\n**Incomplete Objectives:**\n{}".format(
+                                '\n'.join(completedObjectives) if completedObjectives else "None", 
+                                '\n'.join(incompleteObjectives) if incompleteObjectives else "None"), 
+                            "light blue")
+        self.toggleQuest()
+        return incompleteObjectives
+
+    def goToQuestGiver(self, questGiver, reason):
+        for _ in range(3):
+            self.cannon()
+            self.logger.webhook("",f"Travelling: {questGiver} ({reason}) ","brown")
+            self.runPath(f"quests/{questGiver}")
+
+            #check if player reached the quest giver
+            if self.isBesideE(["talk"] + questGiver.lower().split(" "), log=True):
+                self.logger.webhook("",f"Reached {questGiver}","brown", "screen")
+                self.keyboard.press("e")
+                sleep(0.2)
+                self.keyboard.press("e")
+                return True
+            else:
+                self.logger.webhook("",f"Failed to reach {questGiver}","brown", "screen")
+                self.reset()
+        return False
+
+    def clickdialog(self, count):
+        for _ in range(count):
+            mouse.moveTo(self.mw/2, 2*self.mh//3)
+            mouse.click()
+            time.sleep(0.05)
+
+    def getNewQuest(self, questGiver, submitQuest):
+        if not self.goToQuestGiver(questGiver, "Get New Quest"): return
+        dialogClickCountForQuestGivers = {
+            "polar bear": 25,
+            "bucko bee": 40,
+            "riley bee": 40
+        }
+        dialogClickCount = dialogClickCountForQuestGivers.get(questGiver, 50)
+        self.clickdialog(dialogClickCount)
+        #player submitted a quest, then get a new one
+        if submitQuest:
+            sleep(1)
+            self.keyboard.press("e")
+            sleep(0.2)
+            self.keyboard.press("e")
+            self.clickdialog(dialogClickCount)
+        return self.findQuest(questGiver)
+
 
     def startDetect(self):
         #disable game mode

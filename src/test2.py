@@ -17,23 +17,37 @@ SCROLL_AMOUNT = -500  # Adjust based on your screen's scroll sensitivity
 # Function to detect and recognize quest text
 def detect_text(img):
     # Preprocess the image
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img = cv2.threshold(img, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-    img = cv2.GaussianBlur(img, (5, 5), 0)
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # Apply threshold
+    thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+
+    # Apply Gaussian blur to reduce noise
+    blurred = cv2.GaussianBlur(thresh, (5, 5), 0)
+
+    kernel = np.ones((12, 12), np.uint8)  # Adjust kernel size to control merging strength
+    dilated = cv2.dilate(blurred, kernel, iterations=1)
+
+    # Find contours of the merged text chunks
+    contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Draw bounding boxes around detected text
+    out = []
+    for contour in contours[::-1]:
+        x, y, w, h = cv2.boundingRect(contour)
+        textImg =  Image.fromarray(img_gray[y:y+h, x:x+w])
+        temp = []
+        for a in ocr.ocrRead(textImg):
+            print(a)
+            temp.append(a[1][0].strip().lower())
+        out.append(' '.join(temp))
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 255), 2)  # Green box
+
+    print(out)
+    # Show the processed image
     cv2.imshow("res", img)
     cv2.waitKey(0)
-    
-    # Extract text
-    img = Image.fromarray(img)
-    texts = []
-    for x in ocr.ocrRead(img):
-        text = x[1][0].strip().lower()
-        if "complete" in text:
-            texts[-1] += " " + text
-        else:
-            texts.append(text) 
 
-    return texts
+    return ""
 
 # Function to check if quest is found
 def quest_found(texts):
