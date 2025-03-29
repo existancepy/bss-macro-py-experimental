@@ -96,5 +96,5 @@ class log:
             self.webhookQueue.add_to_queue(webhookData)
 
     def hourlyReport(self, title, desc, color):
-        if not self.webhookQueue.enableWebhook: return
+        if not self.enableWebhook: return
         logWebhook.webhook(self.webhookURL, title, desc, time.strftime("%H:%M:%S", time.localtime()), colors[color], "hourlyReport.png") 
