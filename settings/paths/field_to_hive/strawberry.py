@@ -8,6 +8,7 @@ self.keyboard.walk("w",11, False)
 self.keyboard.walk("s",0.15)
 self.keyboard.walk("d",0.35)
 self.keyboard.walk("w",4)
+self.keyboard.walk("s",0.35)
 self.keyboard.walk("d",4)
 self.keyboard.walk("s",0.6)
     

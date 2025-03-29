@@ -12,11 +12,12 @@ import subprocess
 from modules.misc import messageBox
 import copy
 
-def hasteCompensationThread(baseSpeed, haste):
-    from modules.submacros.hasteCompensation import hasteCompensation
+def hasteCompensationThread(baseSpeed, isRetina, haste):
+    from modules.submacros.hasteCompensation import HasteCompensation
+    hasteCompensation = HasteCompensation(isRetina, baseSpeed)
     global stopThreads
     while not stopThreads:
-        hasteCompensation(baseSpeed, haste)
+        haste.value = hasteCompensation.getHaste()
 
 def disconnectCheck(run, status, display_type):
     from modules.misc.imageManipulation import adjustImage
@@ -335,10 +336,10 @@ if __name__ == "__main__":
         eel.sleep(0.2)
         if run.value == 1:
             #create and set webhook obj for the logger
-            macro.setdat = settingsManager.loadAllSettings()
-            logger.enableWebhook = macro.setdat["enable_webhook"]
-            logger.webhookURL = macro.setdat["webhook_link"]
-            haste.value = macro.setdat["movespeed"]
+            setdat = settingsManager.loadAllSettings()
+            logger.enableWebhook = setdat["enable_webhook"]
+            logger.webhookURL = setdat["webhook_link"]
+            haste.value = setdat["movespeed"]
             stopThreads = False
             macroProc = multiprocessing.Process(target=macro, args=(status, log, haste, updateGUI), daemon=True)
             macroProc.start()
@@ -347,8 +348,8 @@ if __name__ == "__main__":
             disconnectThread.daemon = True
             disconnectThread.start()
             #haste compensation
-            if macro.setdat["haste_compensation"]:
-                hasteCompThread = Thread(target=hasteCompensationThread, args=(macro.setdat["movespeed"],haste,))
+            if setdat["haste_compensation"]:
+                hasteCompThread = Thread(target=hasteCompensationThread, args=(setdat["movespeed"], screenInfo["display_type"] == "retina", haste,))
                 hasteCompThread.daemon = True
                 hasteCompThread.start()
 
@@ -367,10 +368,10 @@ if __name__ == "__main__":
             settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
 
             #discord bot
-            discordBotProc = multiprocessing.Process(target=discordBot, args=(macro.setdat["discord_bot_token"], run, status), daemon=True)
-            if macro.setdat["discord_bot"]:
+            discordBotProc = multiprocessing.Process(target=discordBot, args=(setdat["discord_bot_token"], run, status), daemon=True)
+            if setdat["discord_bot"]:
                 discordBotProc.start()
-            if macro.setdat["enable_webhook"]:
+            if setdat["enable_webhook"]:
                 logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
             run.value = 2
             gui.toggleStartStop()

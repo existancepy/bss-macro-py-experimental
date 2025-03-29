@@ -8,7 +8,8 @@ import time
 from PIL import Image
 from modules.misc.imageManipulation import pillowToCv2
 
-class HasteCompensation():
+
+class Walk():
     def __init__(self, isRetina, baseMoveSpeed):
         self.isRetina = isRetina
         self.baseMoveSpeed = baseMoveSpeed
@@ -46,7 +47,7 @@ class HasteCompensation():
         _, val, _, loc = res
         return (val > threshold, val)
 
-    def getHaste(self):
+    def hasteCompensation(self):
         st = time.perf_counter()
         screen = np.array(mssScreenshot(0,30,self.mw/1.8,70))
         bestHaste = 0
@@ -98,5 +99,19 @@ class HasteCompensation():
         #if hasteOut: print(f"Haste stacks: {hasteOut}")
         out = (self.baseMoveSpeed+bearMorph)*(1+(0.1*hasteOut))
         
-        return out
+        et = time.perf_counter()
+        return st, et, out
+    
+    def walk(self, n):
+        freq = 1  # Simulated frequency constant
+        d = freq / 8
+        l = n * freq * 4  # 4 studs per tile
+
+        s, f, v = self.hasteCompensation()  # Get initial timestamps and speed
+        d += v * (f - s)  # Accumulate initial movement
+
+        while d < l:
+            prev_v = v
+            s, f, v = self.hasteCompensation()  # Get new timestamps and speed
+            d += ((prev_v + v) / 2) * (f - s)  # Apply trapezoidal integration
 
