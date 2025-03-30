@@ -318,6 +318,9 @@ class macro:
         #memory match
         self.latestMM = "normal"
 
+        self.converting = False
+        self.alreadyConverted = False
+
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
     #TODO:
@@ -400,17 +403,17 @@ class macro:
             bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
             hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
-            firstHalf = True #isNightSky(hsv)
-            if firstHalf:
-                pass
-                #self.logger.webhook("", "Night Detected? (Sky)", "red", "screen")
+            if self.converting:
+                nightDetected = isNightSky(bgr)
+            else:
+                nightDetected = isGrassNight(bgr)
 
             #night detected
-            if isGrassNight(bgr) and firstHalf:
+            if nightDetected:
                 self.nightDetectStreaks += 1
                 #self.logger.webhook("", f"Night Detected? ({self.nightDetectStreaks})", "red", "screen")
-                im = Image.fromarray(cv2.cvtColor(screen, cv2.COLOR_BGR2RGB))
-                im.save(f"night-{time.time}.png")
+                #im = Image.fromarray(cv2.cvtColor(screen, cv2.COLOR_BGR2RGB))
+                #im.save(f"night-{time.time()}.png")
             else: 
                 #failed to detect night, reset streak counter
                 self.nightDetectStreaks = 0
@@ -776,6 +779,7 @@ class macro:
         st = time.time()
         self.logger.webhook("", "Converting", "brown", "screen")
         self.alreadyConverted = True
+        self.converting = True
 
         #check if convert balloon
         if self.setdat["convert_balloon"] == "always":
@@ -788,12 +792,13 @@ class macro:
 
         if self.enableNightDetection:
             self.keyboard.press(",")
-            
+        
         while not self.isBesideE(["pollen", "flower", "field"]): 
             mouse.click()
             if self.night and self.setdat["stinger_hunt"]:
                 self.incrementHourlyStat("converting_time", time.time()-st)
                 self.keyboard.press(".")
+                self.converting = False
                 self.stingerHunt()
                 return
             
@@ -816,11 +821,13 @@ class macro:
         #deal with the extra delay
         self.logger.webhook("", f"Finished converting (Time: {self.convertSecsToMinsAndSecs(time.time()-st)})", "brown")
         wait = self.setdat["convert_wait"]
-        if self.enableNightDetection:
-            self.keyboard.press(".")
         if (wait):
             self.logger.webhook("", f'Waiting for an additional {wait} seconds', "light green")
         time.sleep(wait)
+
+        if self.enableNightDetection:
+            self.keyboard.press(".")
+        self.converting = False
         self.incrementHourlyStat("converting_time", time.time()-st)
         return True
 
@@ -1176,7 +1183,7 @@ class macro:
             #             self.setdat["hive_number"] = hiveClaim
             #             break
             #claim hive and convert
-            if rejoinSuccess:
+            if rejoinSuccess and self.isBesideEImage("ebutton"):
                 self.clickPermissionPopup()
                 self.keyboard.press("e")
                 self.logger.webhook("",f'Claimed hive {newHiveNumber}', "bright green", "screen")
