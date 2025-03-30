@@ -34,6 +34,8 @@ import ast
 from modules.submacros.hourlyReport import generateHourlyReport
 from difflib import SequenceMatcher
 import fuzzywuzzy
+from modules.submacros.walk import Walk
+
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -316,6 +318,9 @@ class macro:
         #memory match
         self.latestMM = "normal"
 
+        self.converting = False
+        self.alreadyConverted = False
+
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
     #TODO:
@@ -398,17 +403,17 @@ class macro:
             bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
             hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
-            firstHalf = isNightSky(hsv)
-            if firstHalf:
-                pass
-                #self.logger.webhook("", "Night Detected? (Sky)", "red", "screen")
+            if self.converting:
+                nightDetected = isNightSky(bgr)
+            else:
+                nightDetected = isGrassNight(bgr)
 
             #night detected
-            if isGrassNight(bgr) and firstHalf:
+            if nightDetected:
                 self.nightDetectStreaks += 1
                 #self.logger.webhook("", f"Night Detected? ({self.nightDetectStreaks})", "red", "screen")
-                im = Image.fromarray(cv2.cvtColor(screen, cv2.COLOR_BGR2RGB))
-                im.save(f"night-{time.time}.png")
+                #im = Image.fromarray(cv2.cvtColor(screen, cv2.COLOR_BGR2RGB))
+                #im.save(f"night-{time.time()}.png")
             else: 
                 #failed to detect night, reset streak counter
                 self.nightDetectStreaks = 0
@@ -774,6 +779,7 @@ class macro:
         st = time.time()
         self.logger.webhook("", "Converting", "brown", "screen")
         self.alreadyConverted = True
+        self.converting = True
 
         #check if convert balloon
         if self.setdat["convert_balloon"] == "always":
@@ -786,12 +792,13 @@ class macro:
 
         if self.enableNightDetection:
             self.keyboard.press(",")
-            
+        
         while not self.isBesideE(["pollen", "flower", "field"]): 
             mouse.click()
             if self.night and self.setdat["stinger_hunt"]:
                 self.incrementHourlyStat("converting_time", time.time()-st)
                 self.keyboard.press(".")
+                self.converting = False
                 self.stingerHunt()
                 return
             
@@ -814,11 +821,13 @@ class macro:
         #deal with the extra delay
         self.logger.webhook("", f"Finished converting (Time: {self.convertSecsToMinsAndSecs(time.time()-st)})", "brown")
         wait = self.setdat["convert_wait"]
-        if self.enableNightDetection:
-            self.keyboard.press(".")
         if (wait):
             self.logger.webhook("", f'Waiting for an additional {wait} seconds', "light green")
         time.sleep(wait)
+
+        if self.enableNightDetection:
+            self.keyboard.press(".")
+        self.converting = False
         self.incrementHourlyStat("converting_time", time.time()-st)
         return True
 
@@ -1075,63 +1084,115 @@ class macro:
             #find hive
             time.sleep(2)
             mouse.click()
-            self.keyboard.press("space")
-            self.keyboard.walk("w",5+(i*0.5),0)
-            self.keyboard.walk("s",0.3,0)
-            self.keyboard.walk("d",5,0)
-            self.keyboard.walk("s",0.3,0)
-            time.sleep(0.5)
+            # self.keyboard.press("space")
+            # time.sleep(0.5)
+            # self.keyboard.walk("w",5+(i*0.5),0)
+            # self.keyboard.walk("s",0.3,0)
+            # self.keyboard.walk("d",5,0)
+            # self.keyboard.walk("s",0.3,0)
             hiveNumber = self.setdat["hive_number"]
-            #find the hive in hive number
-            self.logger.webhook("",f'Claiming hive {hiveNumber} (guessing hive location)', "dark brown")
-            steps = round(hiveNumber*2.5) if hiveNumber != 1 else 0
-            for _ in range(steps):
-                self.keyboard.walk("a",0.4, 0)
-
-            def findHive():
-                self.keyboard.walk("a",0.4)
-                #$time.sleep(0.15)
-                if self.isBesideEImage("claimhive"):
-                    #check for overrun
-                    for _ in range(7):
-                        time.sleep(0.4)
-                        if self.isBesideEImage("claimhive"): break
-                        self.keyboard.walk("d",0.2)
-                    self.clickPermissionPopup()
-                    self.keyboard.press("e")
-                    return True
-                return False
-            
             rejoinSuccess = False
-            for _ in range(3):
-                if findHive():
-                    self.logger.webhook("",f'Claimed hive {hiveNumber}', "bright green", "screen")
-                    rejoinSuccess = True
-                    break 
-            #find a new hive
+            availableSlots = [] #store hive slots that are claimable
+            newHiveNumber = 0
+        
+            self.keyboard.keyDown("d", False)
+            self.keyboard.tileWait(4)
+            self.keyboard.keyDown("w", False)
+            self.keyboard.tileWait(20)
+            self.keyboard.keyUp("d", False)
+            self.keyboard.keyUp("w", False)
+
+            #go to the selected hive. Note down any available hives on the way
+            self.logger.webhook("",f'Claiming hive {hiveNumber}', "dark brown")
+            for j in range(1, hiveNumber+1):
+                time.sleep(0.4)
+                if j > 1:
+                    self.keyboard.tileWalk("a", 9.2)
+                    #self.keyboard.tileWalk("a", 11)
+
+                if self.isBesideE(["claim", "hive"], ["send", "trade"]):
+                    availableSlots.append(j)
+            
+            #selected hive claimed
+            if hiveNumber in availableSlots:
+                newHiveNumber = hiveNumber
+                rejoinSuccess = True
+            
             else:
-                self.logger.webhook("",f'Hive is {hiveNumber} already claimed, finding new hive','dark brown', "screen")
-                #walk closer to the hives so the player wont walk up the ramp
-                self.keyboard.walk("w",0.3,0)
-                self.keyboard.walk("d",0.9*(hiveNumber)+2,0)
-                self.keyboard.walk("s",0.3,0)
-                time.sleep(0.5)
-                for j in range(40):
-                    if findHive():
-                        guessedSlot = max(1,min(6, round(j//2.5)))
-                        hiveClaim = guessedSlot
-                        #if 3 < guessedSlot < 6:
-                            #hiveClaim += 1
-                        self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", "screen")
+                self.logger.webhook("",f'Hive {hiveNumber} is already claimed, finding new hive','dark brown', "screen")
+                #backtrack and claim the hive closest to cannon
+                if availableSlots:
+                    targetSlot = min(availableSlots)
+                    self.keyboard.tileWalk("d", 9.2*(hiveNumber - targetSlot))
+                    if self.isBesideE(["claim", "hive"], ["send", "trade"]):
+                        newHiveNumber = targetSlot
                         rejoinSuccess = True
-                        self.setdat["hive_number"] = hiveClaim
-                        break
-            #after hive is claimed, convert
-            if rejoinSuccess:
+
+                #no available hive slots found previously, continue finding new ones ahead
+                else:
+                    for j in range(1, 6 - hiveNumber + 1):
+                        time.sleep(0.4)
+                        if j > 1:
+                            self.keyboard.tileWalk("a", 9.2)
+
+                        if self.isBesideE(["claim", "hive"], ["send", "trade"]):
+                            newHiveNumber = j
+                            rejoinSuccess = True
+
+            # #find the hive in hive number
+            # self.logger.webhook("",f'Claiming hive {hiveNumber} (guessing hive location)', "dark brown")
+            # steps = round(hiveNumber*2.5) if hiveNumber != 1 else 0
+            # for _ in range(steps):
+            #     self.keyboard.walk("a",0.4, 0)
+
+            # def findHive():
+            #     self.keyboard.walk("a",0.4)
+            #     #$time.sleep(0.15)
+            #     if self.isBesideEImage("claimhive"):
+            #         #check for overrun
+            #         for _ in range(7):
+            #             time.sleep(0.4)
+            #             if self.isBesideEImage("claimhive"): break
+            #             self.keyboard.walk("d",0.2)
+            #         self.clickPermissionPopup()
+            #         self.keyboard.press("e")
+            #         return True
+            #     return False
+            
+            # for _ in range(3):
+            #     if findHive():
+            #         self.logger.webhook("",f'Claimed hive {hiveNumber}', "bright green", "screen")
+            #         rejoinSuccess = True
+            #         break 
+            # #find a new hive
+            # else:
+            #     self.logger.webhook("",f'Hive {hiveNumber} is already claimed, finding new hive','dark brown', "screen")
+            #     #walk closer to the hives so the player wont walk up the ramp
+            #     self.keyboard.walk("w",0.3,0)
+            #     self.keyboard.walk("d",0.9*(hiveNumber)+2,0)
+            #     self.keyboard.walk("s",0.3,0)
+            #     for j in range(40):
+
+            #         if findHive():
+            #             guessedSlot = max(1,min(6, round(j//2.5)))
+            #             hiveClaim = guessedSlot
+            #             #if 3 < guessedSlot < 6:
+            #                 #hiveClaim += 1
+            #             self.logger.webhook("",f"Claimed hive {hiveClaim}", "bright green", "screen")
+            #             rejoinSuccess = True
+            #             self.setdat["hive_number"] = hiveClaim
+            #             break
+            #claim hive and convert
+            if rejoinSuccess and self.isBesideEImage("ebutton"):
+                self.clickPermissionPopup()
+                self.keyboard.press("e")
+                self.logger.webhook("",f'Claimed hive {newHiveNumber}', "bright green", "screen")
+                self.setdat["hive_number"] = newHiveNumber
                 for _ in range(8):
                     self.keyboard.press("o")
                 self.moveMouseToDefault()
                 time.sleep(1)
+                #say existance so broke
                 if self.setdat["existance_broke"]:
                     self.keyboard.press("/")
                     self.keyboard.write(f'Existance so broke :weary: {datetime.now().strftime("%H:%M")}', 0.1)
@@ -1140,7 +1201,6 @@ class macro:
                 #no need to reset
                 self.canDetectNight = True
                 self.status.value = ""
-                #say existance so broke
                 return
             self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
         self.status.value = ""
@@ -1348,7 +1408,7 @@ class macro:
             self.keyboard.keyDown("a")
             st = time.time()
             self.canDetectNight = True
-            while time.time()-st < 0.2*20:
+            while time.time()-st < 10:
                 if self.isBesideEImage("makehoney"):
                     break
             self.keyboard.keyUp("a")
@@ -1830,8 +1890,8 @@ class macro:
             self.goToField(currField, "south")
             time.sleep(0.8)
             self.runPath(f"vic/find_vic/{currField}")
-            if self.vicField is not None:
-                self.logger.webhook("",f"Vicious Bee detected ({self.vicField})", "dark brown") 
+            if self.vicField:
+                self.logger.webhook("",f"Vicious Bee detected ({self.vicField})", "light blue") 
                 break
             print(self.vicField)
             self.reset(convert=False)
@@ -1846,10 +1906,12 @@ class macro:
         def goToVicField():
             self.reset(convert=False)
             self.logger.webhook("",f"Travelling to {self.vicField} (vicious bee)","dark brown")
+            self.cannon()
             self.goToField(currField, "south")
 
         #first, check if vic is found in the same field as the player
-        if currField != self.vicField: goToVicField()
+        if currField != self.vicField: 
+            goToVicField()
         
         #run the dodge pattern
         #similar to the search pattern, between each line of code, check if vic has been defeated/player died
