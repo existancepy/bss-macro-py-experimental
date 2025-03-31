@@ -1,0 +1,1 @@
+{'cycle': 2, 'planters': ['pesticide', 'hydroponic', 'red clay'], 'fields': ['strawberry', 'blue flower', 'cactus'], 'gatherFields': [], 'harvestTime': 1743362601.678493}

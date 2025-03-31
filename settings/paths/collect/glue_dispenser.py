@@ -39,4 +39,3 @@ if itemCoords is not None:
     self.keyboard.walk("w",2.5)
     time.sleep(0.5)
     self.canDetectNight = True
-

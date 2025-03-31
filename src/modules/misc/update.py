@@ -68,4 +68,4 @@ def update(t = "e"):
     st = os.stat(e_macroPath)
     os.chmod(e_macroPath, st.st_mode | stat.S_IEXEC)
     
-    msgBox("Update success", "Update complete. You can now relaunch the macro")
+    msgBox("Update success", "😔. You can now relaunch the macro")

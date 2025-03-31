@@ -1,9 +1,7 @@
 
-self.keyboard.walk("w",0.4)
-self.keyboard.walk("a",6)
-self.keyboard.walk("s",3)
-self.keyboard.walk("a",1)
-self.keyboard.walk("w",5)
+self.keyboard.walk("w",0.5)
+self.keyboard.walk("a",7)
+self.keyboard.walk("w",7, False)
 self.runPath(f"field_to_hive/blue flower")
 
     

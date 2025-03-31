@@ -1,6 +1,6 @@
 def jump(self, dirKey):
     self.keyboard.keyDown(dirKey)
-    time.sleep(2)
+    time.sleep(1.5)
     self.keyboard.slowPress('space')
     sleep(0.2)
     self.keyboard.keyUp(dirKey)
@@ -23,5 +23,5 @@ jump(self, "w")
 self.keyboard.walk("w",0.5)
 jump(self, "w")
 self.keyboard.walk("w",1.5)
-self.keyboard.walk("s",0.7)
-self.keyboard.walk("a",0.3)
+self.keyboard.walk("s",0.55)
+

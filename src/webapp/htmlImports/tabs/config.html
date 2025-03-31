@@ -58,6 +58,28 @@
                     
                 },
                 {
+                    id: "fast",
+                    title: "Cannon",
+                    desc: "Enable to jump over the ramp quicker (detects haste) <br> Note: May jump too early if haste ends at any given time",
+                    type: {
+                        name: "checkbox",
+                        triggerFunction: saveGeneralTriggerFunction
+                    }
+                    
+                },
+                {
+                    id: "bees",
+                    title: "Bees",
+                    desc: "The amount of bees in your hive <br> For mob runs",
+                    type: {
+                        name: "textbox",
+                        inputType: "float",
+                        inputLimit: 2,
+                        triggerFunction: saveGeneralTriggerFunction
+                    }
+                    
+                },
+                {
                     id: "movespeed",
                     title: "Movespeed",
                     desc: "Your movespeed without any haste",
@@ -188,7 +210,20 @@
                 {
                     id: "haste_compensation",
                     title: "Enable Haste Compensation",
-                    desc: "Adjust the macro's movements based on the amount of haste the player has. This is done by searching for haste and bear morph buffs on the screen",
+                    desc: "Adjust the macro's movements based on the amount of haste the player has. This is done by searching for haste, oil, and bear morph buffs on the screen",
+                    type: {
+                        name: "checkbox",
+                        triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+                
+            ])
+
+            buildStandardContainer(parentOther, "Hourly Report", "", [
+                {
+                    id: "12_hour",
+                    title: "Hourly Format",
+                    desc: "Enabled = 12-Hour <br> Disabled = 24-Hour",
                     type: {
                         name: "checkbox",
                         triggerFunction: saveProfileTriggerFunction
@@ -206,6 +241,15 @@
                         id: "enable_webhook",
                         title: "Enable Webhook",
                         desc: "A webhook to send the macro's status. Does not receive commands",
+                        type: {
+                            name: "checkbox",
+                            triggerFunction: saveGeneralTriggerFunction
+                        }
+                    },
+                    {
+                        id: "webhook_format",
+                        title: "Time Format",
+                        desc: "Enabled = 12-Hour <br> Disabled = 24-Hour",
                         type: {
                             name: "checkbox",
                             triggerFunction: saveGeneralTriggerFunction

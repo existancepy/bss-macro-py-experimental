@@ -200,10 +200,134 @@ def display_time(seconds, units = ['w','d','h','m','s']):
                 result.append("{} {}".format(value, name))
     return ' '.join(result)
 
-def generateHourlyReport(newUI):
+def generateHourlyReport24(newUI):
     global y
     if newUI: y=52
     pages = ["page1.html", "page2.html"]
+    pageImages = []
+    buffQuantity = getBuffs()
+    nectarQuantity = getNectars()
+    #mssScreenshot(save=True)
+    for page in pages:
+        #relative file paths do not work, so replace the paths in src with absolute paths
+        hourlyReportDir = Path(__file__).parents[2] / "hourly_report"
+        pageDir = hourlyReportDir / page
+        pageName = page.split(".",1)[0]
+        with open(pageDir, "r") as f:
+            htmlString = f.read()
+        f.close()
+
+        #get the hourly report data
+        hourlyReportData = {**readSettingsFile("data/user/hourly_report_main.txt"), **readSettingsFile("data/user/hourly_report_bg.txt")}
+
+        #get planter data
+        with open("./data/user/manualplanters.txt", "r") as f:
+            planterData = f.read()
+        f.close()
+
+        #get history
+        with open("data/user/hourly_report_history.txt", "r") as f:
+            historyData = ast.literal_eval(f.read())
+        f.close()
+        
+        if len(hourlyReportData["honey_per_min"]) < 3:
+            hourlyReportData["honey_per_min"] = [0]*3 + hourlyReportData["honey_per_min"]
+        #filter out the honey/min
+        print(hourlyReportData["honey_per_min"])
+        #hourlyReportData["honey_per_min"] = [x for x in hourlyReportData["honey_per_min"] if x]
+        hourlyReportData["honey_per_min"] = filterOutliers(hourlyReportData["honey_per_min"])
+        #calculate honey/min
+        honeyPerMin = [0]
+        prevHoney = hourlyReportData["honey_per_min"][0]
+        for x in hourlyReportData["honey_per_min"][1:]:
+            if x > prevHoney:
+                honeyPerMin.append((x-prevHoney)/60)
+            prevHoney = x
+        
+        #calculate some stats
+        if len(set(hourlyReportData["honey_per_min"])) <= 1:
+            onlyValidHourlyHoney = hourlyReportData["honey_per_min"].copy()
+        else:
+            onlyValidHourlyHoney = [x for x in hourlyReportData["honey_per_min"] if x] #removes all zeroes
+        sessionHoney = onlyValidHourlyHoney[-1]- hourlyReportData["start_honey"]
+        sessionTime = time.time()-hourlyReportData["start_time"]
+        honeyThisHour = onlyValidHourlyHoney[-1] - onlyValidHourlyHoney[0]
+
+        #replace the contents of the html
+        replaceDict = {
+            'src="a': f'src="{hourlyReportDir}/a'.replace("\\", "/"),
+            '`as': '`{}/as'.format(str(hourlyReportDir).replace("\\", "/")),
+            "-avgHoney": millify(sessionHoney/(sessionTime/3600)),
+            "-honey": millify(honeyThisHour),
+            "-bugs": hourlyReportData["bugs"],
+            "-quests": hourlyReportData["quests_completed"],
+            "-vicBees": hourlyReportData["vicious_bees"],
+            "-currHoney": millify(onlyValidHourlyHoney[-1]),
+            "-sessHoney": millify(sessionHoney),
+            "-sessTime": display_time(sessionTime, ['d','h','m']),
+            "var honeyPerMin = []": f'var honeyPerMin = {honeyPerMin}',
+            "var backpackPerMin = []": f'var backpackPerMin = {hourlyReportData["backpack_per_min"]}',
+            "const taskTimes = []": f'const taskTimes = [{hourlyReportData["gathering_time"]}, {hourlyReportData["converting_time"]}, {hourlyReportData["bug_run_time"]}, {hourlyReportData["misc_time"]}]',
+            "const historyData = []": f'const historyData = {historyData}',
+            "const honey = 0": f'const honey = {honeyThisHour}',
+            "url(a": f'url({hourlyReportDir}/a'.replace("\\", "/"),
+            "const buffNames = []": f'const buffNames = {[k for k,v in buffs]}',
+            "const buffValues = []": f'const buffValues = {buffQuantity}',
+            "const nectarValues = []": f'const nectarValues = {nectarQuantity}'
+        }
+
+        if planterData:
+            planterData = ast.literal_eval(planterData)
+            planterReplaceDict = {
+                "const planterNames = []": f'const planterNames = {planterData["planters"]}', 
+                "const planterTimes = []": f'const planterTimes = {[planterData["harvestTime"]-time.time()]*3}',
+                "const planterFields = []": f'const planterFields = {planterData["fields"]}',
+            }
+            replaceDict = {**replaceDict, **planterReplaceDict}
+        for k,v in replaceDict.items():
+            htmlString = htmlString.replace(k,str(v))
+        #save the html as an image
+        hti.screenshot(html_str=htmlString, save_as=f"{pageName}.png")
+        #open the image
+        image = cv2.imread(f"{pageName}.png")
+        #print(htmlString)
+
+        #crop the image to remove any excess empty space at the bottom
+        #this allows for seamless merging of images
+        # Define the BGR color value for #0E0F13 (the background)
+        targetColor = np.array([19, 15, 14])
+        # Tolerance for matching the color
+        tolerance = 5
+        height, width, _ = image.shape
+        # Function to check if a row contains the specified color
+        def is_color_row(row):
+            return np.all(np.abs(row - targetColor) < tolerance, axis=1).all()
+
+        # Find the row where the empty space starts (from the bottom of the image going upwards)
+        emptyAreaStart = height
+        for row in range(height-1, -1, -1):
+            if is_color_row(image[row, :]):
+                emptyAreaStart = row
+            else:
+                break
+
+        # Crop the image above the space
+        image = image[:emptyAreaStart, :]
+
+        pageImages.append(image)
+
+    imgOut = cv2.vconcat(pageImages) 
+    #Get the original dimensions
+    height, width = imgOut.shape[:2]
+    # Resize the image
+    imgOut = cv2.resize(imgOut, (width*2, height*2))
+    cv2.imwrite("hourlyReport.png", imgOut) 
+    return hourlyReportData
+
+def generateHourlyReport12(newUI):
+    global y
+    if newUI: y=52
+    pages = ["page3.html", "page2.html"]
     pageImages = []
     buffQuantity = getBuffs()
     nectarQuantity = getNectars()

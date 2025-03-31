@@ -22,5 +22,13 @@ if self.isBesideE(["talk", "polar"]):
     self.keyboard.press("space")
     time.sleep(1.5)
     self.keyboard.keyUp("w")
-
-    
+if self.isBesideE(["dig", "feast"]):
+    self.keyboard.walk("d", 0.15)
+    time.sleep(0.3)
+if self.isBesideE(["dig", "feast"]):
+    self.keyboard.walk("d", 0.1)
+    time.sleep(0.3)
+if self.isBesideE(["dig", "feast"]):
+    self.keyboard.walk("d", 0.05)
+    time.sleep(0.1)
+self.keyboard.walk("w", 0.1)

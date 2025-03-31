@@ -39,7 +39,12 @@ self.keyboard.keyUp("w")
 self.keyboard.walk("w",1)
 self.keyboard.press(".")
 self.keyboard.walk("w",0.965)
-self.keyboard.walk("d",0.2)
+self.keyboard.walk("d",0.3)
+for i in range(5):
+    if self.isBesideE(["spend", "play"]):
+        self.keyboard.walk("s",0.2)
+    else:
+        break
 
 
 
