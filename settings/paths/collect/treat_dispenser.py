@@ -9,7 +9,7 @@ time.sleep(2.81)
 self.keyboard.slowPress(",")
 self.keyboard.slowPress(",")
 time.sleep(1.35)
+self.keyboard.walk("d",0.05)
 self.keyboard.keyUp("w")
 self.keyboard.slowPress("space")
 time.sleep(0.7)
-    

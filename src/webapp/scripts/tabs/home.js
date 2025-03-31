@@ -122,7 +122,7 @@ $("#home-placeholder")
 })
 .on("click", "#update-btn", async (event) => { //start button
     if (!event.currentTarget.classList.contains("active")){
-        purpleButtonToggle(event.currentTarget, ["Update","Updating"])
+        purpleButtonToggle(event.currentTarget, ["Unmodify","Unmodifying..."])
         await eel.update()
     }
 })

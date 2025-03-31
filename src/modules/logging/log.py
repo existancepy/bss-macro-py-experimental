@@ -1,3 +1,4 @@
+#24 hour format
 import time
 import threading
 import queue
@@ -13,7 +14,9 @@ colors = {
     "dark brown": "5C4033",
     "brown": "D27D2D",
     "purple": "954cf5",
-    "orange": "FFA500"
+    "orange": "FFA500",
+    "white": "FFFFFF",
+    "yellow": "FFFF00",
 }
 
 mw, mh = pag.size()
@@ -22,6 +25,7 @@ newUI = False
 def sendWebhook(url, title, desc, time, colorHex, ss=None):
     screenshotRegions = {
         "screen": None,
+        "honey": (mw/3.17, 26.5 if newUI else 0, mw/5.6, 28),
         "honey-pollen": (mw/3.5, 23 if newUI else 0, mw/2.4, 40),
         "sticker": (200, 70, mw/2.5-200, mh/4),
         "blue": (mw*3/4, mh*2/3, mw//4, mh//3),
