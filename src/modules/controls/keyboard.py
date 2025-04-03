@@ -9,9 +9,10 @@ from modules.submacros.hasteCompensation import HasteCompensation
 
 
 class keyboard:
-    def __init__(self, walkspeed, haste):
+    def __init__(self, walkspeed, haste, enableHasteCompensation):
         self.ws = walkspeed
         self.haste = haste
+        self.enableHasteCompensation = enableHasteCompensation
         self.hasteCompensation = HasteCompensation(True, walkspeed)
     
     def getMoveSpeed(self):
@@ -26,6 +27,9 @@ class keyboard:
         pag.press(k)
     @staticmethod
     def keyDown(k, pause = True):
+        #for some reason, the function key is sometimes held down, causing it to open the dock or enable dictation
+        if sys.platform == "darwin":
+            keyboard.keyUp('fn', False)
         pag.keyDown(k, _pause = pause)
 
     @staticmethod
@@ -34,9 +38,6 @@ class keyboard:
 
     #pyautogui without the pause
     def press(self,key, delay = 0.02):
-        #for some reason, the function key is sometimes held down, causing it to open the dock or enable dictation
-        if sys.platform == "darwin":
-            keyboard.keyUp('fn', False)
         keyboard.keyDown(key, False)
         time.sleep(delay)
         keyboard.keyUp(key, False)
@@ -80,9 +81,9 @@ class keyboard:
     def walk(self,k,t,applyHaste = True):
         #print(self.haste.value)
         if applyHaste:
-            self.keyDown(k, False)
+            keyboard.keyDown(k, False)
             self.timeWait(t)
-            self.keyUp(k, False)
+            keyboard.keyUp(k, False)
         else:
             self.press(k, t*28/self.ws)
 

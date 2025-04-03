@@ -37,12 +37,10 @@ def detect_text(img):
         textImg =  Image.fromarray(img_gray[y:y+h, x:x+w])
         temp = []
         for a in ocr.ocrRead(textImg):
-            print(a)
             temp.append(a[1][0].strip().lower())
+        print(temp)
         out.append(' '.join(temp))
         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 255), 2)  # Green box
-
-    print(out)
     # Show the processed image
     cv2.imshow("res", img)
     cv2.waitKey(0)
@@ -57,7 +55,7 @@ def quest_found(texts):
     return False  # Not found
 
 # Main loop to scroll and search
-screen_img = cv2.imread("quest.png")
+screen_img = cv2.imread("quest2.png")
 detected_text = detect_text(screen_img)
 
 print("Detected Text:", detected_text)  # Debugging output
