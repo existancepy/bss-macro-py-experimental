@@ -679,7 +679,7 @@ class macro:
         
         def scrollToTop():
             prevHash = None
-            for i in range(80):
+            for i in range(9):
                 mouse.scroll(100)
                 sleep(0.05)
                 if i > 10:
@@ -720,10 +720,10 @@ class macro:
             max_val, max_loc = locateImageOnScreen(itemImg, 0, 90, 100, self.mh-180)
             data = (max_val, max_loc, i)
             #most likely the correct item, stop searching
-            if max_val > 0.8:
-                itemScreenshot = mssScreenshot(90, (max_loc[1]//2 if self.display_type == "retina" else max_loc[1])+60, 220, 60, True)
+            if max_val > 0.6:
+                itemScreenshot = mssScreenshot(90, (max_loc[1]//2 if self.display_type == "retina" else max_loc[1])+60, 220, 60)
                 itemOCRText = ''.join([x[1][0] for x in ocr.ocrRead(itemScreenshot)]).replace(" ","").replace("-","").lower()
-                if itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.6:
+                if itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.7:
                     bestY = max_loc[1]
                     foundEarly = True
                     break
@@ -735,8 +735,8 @@ class macro:
                 if len(bestResults) > 5: 
                     bestResults.pop()
                     
-            mouse.scroll(-40, True)
-            time.sleep(0.04)
+            mouse.scroll(-3, True)
+            time.sleep(0.06)
 
             screen = cv2.cvtColor(mssScreenshotNP(0, 90, 100, 200), cv2.COLOR_BGRA2RGB)
             hash = imagehash.average_hash(Image.fromarray(screen))
@@ -2775,8 +2775,8 @@ class macro:
                 
             if questTitle:
                 break
-            mouse.scroll(-40, True)
-            time.sleep(0.04)
+            mouse.scroll(-3, True)
+            time.sleep(0.06)
 
         if questTitle is None:
             self.logger.webhook("", f"Could not find {questGiver} quest", "dark brown")
