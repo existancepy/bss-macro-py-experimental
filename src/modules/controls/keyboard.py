@@ -9,16 +9,11 @@ from modules.submacros.hasteCompensation import HasteCompensation
 
 
 class keyboard:
-    def __init__(self, walkspeed, haste):
+    def __init__(self, walkspeed, haste, enableHasteCompensation):
         self.ws = walkspeed
         self.haste = haste
+        self.enableHasteCompensation = enableHasteCompensation
         self.hasteCompensation = HasteCompensation(True, walkspeed)
-    
-    def getMoveSpeed(self):
-        st = time.perf_counter()
-        movespeed = self.haste.value
-        et = time.perf_counter()
-        return st, et, movespeed
 
     @staticmethod
     #call the press function of the pag library
@@ -26,6 +21,9 @@ class keyboard:
         pag.press(k)
     @staticmethod
     def keyDown(k, pause = True):
+        #for some reason, the function key is sometimes held down, causing it to open the dock or enable dictation
+        if sys.platform == "darwin":
+            keyboard.keyUp('fn', False)
         pag.keyDown(k, _pause = pause)
 
     @staticmethod
@@ -34,9 +32,6 @@ class keyboard:
 
     #pyautogui without the pause
     def press(self,key, delay = 0.02):
-        #for some reason, the function key is sometimes held down, causing it to open the dock or enable dictation
-        if sys.platform == "darwin":
-            keyboard.keyUp('fn', False)
         keyboard.keyDown(key, False)
         time.sleep(delay)
         keyboard.keyUp(key, False)
@@ -50,39 +45,31 @@ class keyboard:
         pag.keyUp(k)
 
     def timeWait(self, duration):
-        base_speed = 28
-        target_distance = base_speed * duration  # Total distance the player should travel
-        traveled_distance = 0  # Tracks total integrated distance
+        baseSpeed = 28
+        targetDistance = baseSpeed * duration  # Total distance the player should travel
+        traveledDistance = 0  # Tracks total integrated distance
+        startTime = time.perf_counter()
+        prevTime = startTime
 
-        start_time = time.perf_counter()
-        prev_time = start_time
-        _, _, prev_speed = self.getMoveSpeed()
+        while traveledDistance < targetDistance:
+            currentTime = time.perf_counter()
+            deltaT = currentTime - prevTime
+            speed = self.haste.value
+            traveledDistance += speed * deltaT
 
-        while traveled_distance < target_distance:
-            # Get new speed and current timestamp
-            current_time = time.perf_counter()
-            _, _, current_speed = self.getMoveSpeed()
+            prevTime = currentTime
+            time.sleep(0.008)
 
-            # Compute time difference (delta_t)
-            delta_t = current_time - prev_time
-
-            # Apply trapezoidal integration to calculate traveled distance
-            traveled_distance += ((prev_speed + current_speed) / 2) * delta_t
-
-            # Update previous values
-            prev_time = current_time
-            prev_speed = current_speed
-
-        elapsed_time = time.perf_counter() - start_time
-        print(f"current speed: {current_speed}, original time: {duration}, actual travel time: {elapsed_time}")
+        elapsed_time = time.perf_counter() - startTime
+        print(f"current speed: {speed}, original time: {duration}, actual travel time: {elapsed_time}")
 
     #like press, but with walkspeed and haste compensation
     def walk(self,k,t,applyHaste = True):
         #print(self.haste.value)
         if applyHaste:
-            self.keyDown(k, False)
+            keyboard.keyDown(k, False)
             self.timeWait(t)
-            self.keyUp(k, False)
+            keyboard.keyUp(k, False)
         else:
             self.press(k, t*28/self.ws)
 

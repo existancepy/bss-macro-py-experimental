@@ -48,7 +48,6 @@ def macro(status, log, haste, updateGUI):
     #Limit werewolf to just pumpkin 
     regularMobData["werewolf"] = ["pumpkin"]
     
-    originalSetdat = copy.deepcopy(macro.setdat)
     if "share" in macro.setdat["private_server_link"] and macro.setdat["rejoin_method"] == "deeplink":
                 messageBox.msgBox(text="You entered a 'share?code' link!\n\nTo fix this:\n1. Paste the link in your browser\n2. Wait for roblox to load in\n3. Copy the link from the top of your browser.  It should now be a 'privateServerLinkCode' link", title='Unsupported private server link')
                 return
@@ -77,7 +76,7 @@ def macro(status, log, haste, updateGUI):
 
     #macro.rejoin()
     while True:
-        macro.setdat = copy.deepcopy(originalSetdat)
+        macro.setdat = settingsManager.loadAllSettings()
         #run empty task
         #this is in case no other settings are selected 
         runTask(resetAfter=False)
@@ -92,6 +91,7 @@ def macro(status, log, haste, updateGUI):
                 questObjective = macro.getNewQuest(questGiver, False)
             elif not len(questObjective): #quest completed
                 questObjective = macro.getNewQuest(questGiver, True)
+                macro.incrementHourlyStat("quests_completed", 1)
             else:
                 for obj in questObjective:
                     objData = obj.split("_")

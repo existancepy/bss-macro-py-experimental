@@ -1,6 +1,6 @@
 fields_enabled=[True, False, False]
 fields=['pine tree', 'sunflower', 'dandelion']
-wealth_clock=True
+wealth_clock=False
 blueberry_dispenser=False
 strawberry_dispenser=False
 royal_jelly_dispenser=False
@@ -152,3 +152,6 @@ hotbar7_use_every_value=30
 hotbar7_use_every_format=secs
 convert_balloon_every=30
 convert_balloon=always
+polar_bear_quest=False
+quest_gather_mins=2
+quest_gather_return=no override

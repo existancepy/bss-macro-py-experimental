@@ -293,7 +293,7 @@ class macro:
         self.mw, self.mh = pag.size()
         screenData = getScreenData()
         self.display_type, self.ww, self.wh, self.ysm, self.xsm, self.ylm, self.xlm = itemgetter("display_type", "screen_width","screen_height", "y_multiplier", "x_multiplier", "y_length_multiplier", "x_length_multiplier")(screenData)
-        self.keyboard = keyboard(self.setdat["movespeed"], haste)
+        self.keyboard = keyboard(self.setdat["movespeed"], haste, self.setdat["haste_compensation"])
         self.logger = logModule.log(log, self.setdat["enable_webhook"], self.setdat["webhook_link"])
         #setup an internal cooldown tracker. The cooldowns can be modified
         self.collectCooldowns = dict([(k, v[2]) for k,v in mergedCollectData.items()])
@@ -676,6 +676,18 @@ class macro:
         return SequenceMatcher(None, str1, str2).ratio()
     
     def findItemInInventory(self, itemName):
+        
+        def scrollToTop():
+            prevHash = None
+            for i in range(9):
+                mouse.scroll(100)
+                sleep(0.05)
+                if i > 10:
+                    screen = cv2.cvtColor(mssScreenshotNP(0, 90, 100, 200), cv2.COLOR_BGRA2RGB)
+                    hash = imagehash.average_hash(Image.fromarray(screen))
+                    if not prevHash is None and prevHash == hash:
+                        break
+                    prevHash = hash
         #for retina, just a regular image search
         #for built-in, a transparency search
         itemImg = self.adjustImage("./images/inventory/old", itemName)
@@ -683,52 +695,82 @@ class macro:
 
         itemOCRName = itemName.lower().replace("planter", "") #the name of the item used to check with the ocr to verify its correct
         itemH, itemW, *_ = itemImg.shape
+        if self.display_type == "retina":
+            itemW //= 2
+            itemH //= 2
+
         #open inventory
         self.toggleInventory("open")
         time.sleep(0.3)
         mouse.moveTo(312, 200)
         mouse.click()
         #scroll to top
-        for _ in range(80):
-            mouse.scroll(100)
+        scrollToTop()
         #scroll down, note the best match
-        bestScroll, bestX, bestY = None, None, None
-        valBest = 0
+        bestResults = []
+        bestY = None
         foundEarly = False #if the max_val > 0.9, end searching early to save time
+
+        prevHash = None
         time.sleep(0.3)
-        for i in range(80):
+        for i in range(100):
             #screen = cv2.cvtColor(mssScreenshotNP(90, 90, 300-90, self.mh-180), cv2.COLOR_RGBA2GRAY)
             #max_loc = fastFeatureMatching(screen, itemImg)
             #max_val = 1 if max_loc else 0
             max_val, max_loc = locateImageOnScreen(itemImg, 0, 90, 100, self.mh-180)
-                
-            if max_val > valBest:
-                valBest = max_val
-                bestX, bestY = max_loc
-                bestScroll = i
-                if max_val > 0.93:
+            data = (max_val, max_loc, i)
+            #most likely the correct item, stop searching
+            if max_val > 0.6:
+                itemScreenshot = mssScreenshot(90, (max_loc[1]//2 if self.display_type == "retina" else max_loc[1])+60, 220, 60)
+                itemOCRText = ''.join([x[1][0] for x in ocr.ocrRead(itemScreenshot)]).replace(" ","").replace("-","").lower()
+                if itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.7:
+                    bestY = max_loc[1]
                     foundEarly = True
                     break
-            mouse.scroll(-40, True)
-            time.sleep(0.04)
-        if valBest < 0.77:
-            self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
-            self.toggleInventory("close")
-            return None
+            
+            #store the top 5 results
+            if len(bestResults) < 5 or max_val > bestResults[-1][0]:
+                bestResults.append(data) 
+                bestResults.sort(reverse=True, key=lambda x: x[0]) #sort by confidence value
+                if len(bestResults) > 5: 
+                    bestResults.pop()
+                    
+            mouse.scroll(-3, True)
+            time.sleep(0.06)
+
+            screen = cv2.cvtColor(mssScreenshotNP(0, 90, 100, 200), cv2.COLOR_BGRA2RGB)
+            hash = imagehash.average_hash(Image.fromarray(screen))
+            if not prevHash is None and prevHash == hash:
+                break
+            prevHash = hash
+
+            # self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
+            # self.toggleInventory("close")
+            # return None
 
         if not foundEarly:
-            #scroll to the top
-            for _ in range(80):
-                mouse.scroll(100)
-            time.sleep(0.3)
-            #scroll to item
-            for _ in range(bestScroll):
-                mouse.scroll(-40, True)
-        if self.display_type == "retina":
-            bestX //= 2
-            bestY //= 2
-            itemW //= 2
-            itemH //= 2
+            pass
+            # #scroll through the top items and find them
+            # scrollToTop()
+            # time.sleep(0.3)
+            # currentScrollCount = 0
+            # #sort by scroll count (start with highest item first)
+            # bestResults.sort(key=lambda x: x[2])
+            # print(bestResults)
+            # for val, loc, scrollCount in bestResults:
+            #     #scroll to item
+            #     for _ in range(scrollCount-currentScrollCount):
+            #         mouse.scroll(-40, True)
+            #         time.sleep(0.03)
+            #     currentScrollCount = scrollCount
+            #     time.sleep(0.7)
+            #     #use ocr to check that the item has been found
+            #     itemScreenshot = mssScreenshot(90, (loc[1]//2 if self.display_type == "retina" else loc[1])+60, 220, 60, True)
+            #     itemOCRText = ''.join([x[1][0] for x in ocr.ocrRead(itemScreenshot)]).replace(" ","").replace("-","").lower()
+            #     if itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.6:
+            #         bestY = loc[1]
+            #         break
+        
         #use ocr to check that the item has been found
         '''
         itemScreenshot = mssScreenshot(90+bestX, 90+bestY-itemH/2, itemW, itemH, True)
@@ -736,8 +778,13 @@ class macro:
         if not (itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.6):
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
             return None
-        '''            
+        '''          
+        if not bestY:   
+            self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
+            return
         #return (bestX+20, bestY+80+20)
+        if self.display_type == "retina":
+            bestY //= 2
         return (40, bestY+80)
     
     #click at the specified coordinates to use an item in the inventory
@@ -1110,7 +1157,7 @@ class macro:
                     self.keyboard.tileWalk("a", 9.2)
                     #self.keyboard.tileWalk("a", 11)
 
-                if self.isBesideE(["claim", "hive"], ["send", "trade"]):
+                if self.isBesideE(["claim", "hive"], ["send", "trade"], log=True):
                     availableSlots.append(j)
             
             #selected hive claimed
@@ -1124,7 +1171,7 @@ class macro:
                 if availableSlots:
                     targetSlot = min(availableSlots)
                     self.keyboard.tileWalk("d", 9.2*(hiveNumber - targetSlot))
-                    if self.isBesideE(["claim", "hive"], ["send", "trade"]):
+                    if self.isBesideE(["claim", "hive"], ["send", "trade"], log=True):
                         newHiveNumber = targetSlot
                         rejoinSuccess = True
 
@@ -1135,8 +1182,8 @@ class macro:
                         if j > 1:
                             self.keyboard.tileWalk("a", 9.2)
 
-                        if self.isBesideE(["claim", "hive"], ["send", "trade"]):
-                            newHiveNumber = j
+                        if self.isBesideE(["claim", "hive"], ["send", "trade"], log=True):
+                            newHiveNumber = j + hiveNumber
                             rejoinSuccess = True
 
             # #find the hive in hive number
@@ -1186,8 +1233,10 @@ class macro:
             if rejoinSuccess and self.isBesideEImage("ebutton"):
                 self.clickPermissionPopup()
                 self.keyboard.press("e")
+                time.sleep(1)
                 self.logger.webhook("",f'Claimed hive {newHiveNumber}', "bright green", "screen")
                 self.setdat["hive_number"] = newHiveNumber
+                settingsManager.saveGeneralSetting("hive_number", newHiveNumber)
                 for _ in range(8):
                     self.keyboard.press("o")
                 self.moveMouseToDefault()
@@ -1258,7 +1307,7 @@ class macro:
             #place sprinkler + check if in field
             if self.placeSprinkler(): 
                 break
-            self.logger.webhook("", f"Failed to land in field", "red")
+            self.logger.webhook("", f"Failed to land in field", "red", "screen")
             self.reset()
         else: #failed too many times
             return
@@ -1342,6 +1391,11 @@ class macro:
                                         Avoid using this pattern in the future. If you are the creator of this pattern, the error can be found in terminal", "red")
                     pattern = "e_lol"
             firstPattern = False
+
+            #field drift compensation
+            if fieldSetting["field_drift_compensation"]:
+                self.fieldDriftCompensation.run()
+
             #cycle ends
             mouse.mouseUp()
             self.clickPermissionPopup()
@@ -1375,9 +1429,6 @@ class macro:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Backpack - Return: {returnType}", "light green", "honey-pollen")
                 keepGathering = False
 
-            #field drift compensation
-            if fieldSetting["field_drift_compensation"]:
-                self.fieldDriftCompensation.run()
         self.status.value = ""
         self.isGathering = False
         gatherBackgroundThread.join()
@@ -1942,10 +1993,14 @@ class macro:
         self.reset()
 
     def stumpSnail(self):
-        self.cannon()
-        self.logger.webhook("","Travelling: Stump Snail", "dark brown")
-        self.goToField("stump")
-        self.placeSprinkler()
+        for _ in range(3):
+            self.cannon()
+            self.logger.webhook("","Travelling: Stump Snail", "dark brown")
+            self.goToField("stump")
+            if self.placeSprinkler():
+                break
+            self.logger.webhook("", "Failed to land in stump field", "red", "screen")
+            self.reset()
         while True:
             mouse.click()
             keepOldData = self.keepOldCheck()
@@ -2720,8 +2775,8 @@ class macro:
                 
             if questTitle:
                 break
-            mouse.scroll(-40, True)
-            time.sleep(0.04)
+            mouse.scroll(-3, True)
+            time.sleep(0.06)
 
         if questTitle is None:
             self.logger.webhook("", f"Could not find {questGiver} quest", "dark brown")
@@ -2740,7 +2795,8 @@ class macro:
         img = cv2.threshold(screen, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
         img = cv2.GaussianBlur(img, (5, 5), 0)
         #dilute the image so that texts can be merged into chunks
-        kernel = np.ones((12, 12), np.uint8) 
+        kernelSize = 12 if self.display_type == "retina" else 6
+        kernel = np.ones((kernelSize, kernelSize), np.uint8) 
         img = cv2.dilate(img, kernel, iterations=1)
 
         contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
