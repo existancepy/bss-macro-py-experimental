@@ -1,67 +1,24 @@
 import cv2
 import numpy as np
-import modules.screen.ocr as ocr
-import pyautogui
-import mss
-import time
-from rapidfuzz import fuzz
-from PIL import Image
 
-# Set up Tesseract path if needed (Windows users)
-# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+resetLower1 = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
+resetUpper1 = np.array([40, 255, 30])  # Upper bound of the color (H, L, S)
+resetLower2 = np.array([105, 140, 210])  # Lower bound of the color (H, L, S)
+resetUpper2 = np.array([120, 220, 255])  # Upper bound of the color (H, L, S)
+resetKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(16,6))
 
-TARGET_QUEST = "polar bear"  # Change this to your target quest title
-CONFIDENCE_THRESHOLD = 80  # Adjust for fuzzy matching
-SCROLL_AMOUNT = -500  # Adjust based on your screen's scroll sensitivity
-
-# Function to detect and recognize quest text
-def detect_text(img):
-    # Preprocess the image
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # Apply threshold
-    thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-
-    # Apply Gaussian blur to reduce noise
-    blurred = cv2.GaussianBlur(thresh, (5, 5), 0)
-
-    kernel = np.ones((12, 12), np.uint8)  # Adjust kernel size to control merging strength
-    dilated = cv2.dilate(blurred, kernel, iterations=1)
-
-    # Find contours of the merged text chunks
-    contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    # Draw bounding boxes around detected text
-    out = []
-    for contour in contours[::-1]:
-        x, y, w, h = cv2.boundingRect(contour)
-        textImg =  Image.fromarray(img_gray[y:y+h, x:x+w])
-        temp = []
-        for a in ocr.ocrRead(textImg):
-            temp.append(a[1][0].strip().lower())
-        print(temp)
-        out.append(' '.join(temp))
-        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 255), 2)  # Green box
-    # Show the processed image
-    cv2.imshow("res", img)
-    cv2.waitKey(0)
-
-    return ""
-
-# Function to check if quest is found
-def quest_found(texts):
-    for line in texts:
-        if TARGET_QUEST in line:
-            return True  # Quest found!
-    return False  # Not found
-
-# Main loop to scroll and search
-screen_img = cv2.imread("quest2.png")
-detected_text = detect_text(screen_img)
-
-print("Detected Text:", detected_text)  # Debugging output
-
-if quest_found(detected_text):
-    print("Quest found!")
-else:
-    print("Quest not found!")
-
+ww = 1792
+wh = 1166
+screen = cv2.imread("imgtest.png")[wh-10:wh, ww//2-100:ww//2-100+200]
+# Convert the image from BGR to HLS color space
+hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
+# cv2.imshow('image', screen)
+# cv2.waitKey(0)
+# Create a mask for the color range
+mask1 = cv2.inRange(hsl, resetLower1, resetUpper1)  
+mask2 = cv2.inRange(hsl, resetLower2, resetUpper2)    
+mask = cv2.bitwise_or(mask1, mask2)
+mask = cv2.erode(mask, resetKernel)
+#get contours. If contours exist, direction is correct
+contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+print(contours)
