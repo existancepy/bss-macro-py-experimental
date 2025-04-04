@@ -786,6 +786,7 @@ class macro:
         if self.display_type == "retina":
             bestY //= 2
         return (40, bestY+80)
+        
     
     #click at the specified coordinates to use an item in the inventory
     #if x/y is not provided, find the item in inventory
@@ -820,7 +821,8 @@ class macro:
         for _ in range(3):  #must always be an odd number
             self.keyboard.press("e")
             time.sleep(1)
-            if self.isBesideE(["stop"], ["make"], log=True): break
+            if self.isBesideE(["stop", "making"], ["make"], log=True): 
+                break
 
         self.status.value = "converting"
         st = time.time()
@@ -1278,7 +1280,7 @@ class macro:
     def convertSecsToMinsAndSecs(self, n):
         m = n // 60
         s = n % 60
-        return f"{int(m)}:{int(s)}"
+        return f"{int(m)}m:{int(s):02d}s"
     
     def gather(self, field, settingsOverride = {}):
         fieldSetting = {**self.fieldSettings[field], **settingsOverride}

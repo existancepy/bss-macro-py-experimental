@@ -7,6 +7,7 @@ from discord.ext import commands
 from modules.screen.screenshot import mssScreenshot
 import io
 from modules.submacros.hourlyReport import generateHourlyReport
+from modules.misc.messageBox import msgBox
 import subprocess
 import sys
 
@@ -103,4 +104,7 @@ def discordBot(token, run, status):
     '''
         
     #start bot
-    bot.run(token)
+    try:
+        bot.run(token)
+    except discord.errors.LoginFailure:
+        msgBox("Incorrect Bot Token", "The discord bot token you entered is invalid.")
