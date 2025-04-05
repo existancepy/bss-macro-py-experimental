@@ -32,6 +32,7 @@ def sendWebhook(url, title, desc, time, colorHex, ss=None):
         webhookImg = "webhookScreenshot.png"
         screenshotScreen(webhookImg, screenshotRegions[ss])
     logWebhook.webhook(url, title, desc, time, colorHex, webhookImg)
+    print(f"[{time}] {title} {desc}")
 
 class webhookQueue:
     def __init__(self):
