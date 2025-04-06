@@ -283,6 +283,7 @@ for line in qdata:
     
     else:  #quest objectives
         quest_info.append(line)
+quest_data[quest_bear][quest_title] = quest_info 
 
 class macro:
     def __init__(self, status, log, haste, updateGUI):
