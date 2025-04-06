@@ -53,12 +53,12 @@ class keyboard:
 
         while traveledDistance < targetDistance:
             currentTime = time.perf_counter()
-            deltaT = currentTime - prevTime
-            speed = self.haste.value
+            deltaT = deltaT = max(currentTime - prevTime, 1e-6)
+            speed = max(self.haste.value, self.ws)
             traveledDistance += speed * deltaT
 
             prevTime = currentTime
-            time.sleep(0.008)
+            time.sleep(0.01)
 
         elapsed_time = time.perf_counter() - startTime
         print(f"current speed: {speed}, original time: {duration}, actual travel time: {elapsed_time}")
@@ -66,7 +66,7 @@ class keyboard:
     #like press, but with walkspeed and haste compensation
     def walk(self,k,t,applyHaste = True):
         #print(self.haste.value)
-        if applyHaste:
+        if applyHaste and self.hasteCompensation:
             keyboard.keyDown(k, False)
             self.timeWait(t)
             keyboard.keyUp(k, False)

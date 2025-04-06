@@ -1,5 +1,5 @@
 from discord_webhook import DiscordEmbed, DiscordWebhook
-
+from requests.exceptions import SSLError, ConnectionError
 def webhook(url, title, desc, time, color, imagePath = None):
     webhook = DiscordWebhook(url = url,rate_limit_retry=True)
     if title:
@@ -17,5 +17,7 @@ def webhook(url, title, desc, time, color, imagePath = None):
     try:
         webhook.execute()
     except ConnectionError:
-        print("Webhook failed, connection error")
+        print("Connection Error, webhook failed")
+    except SSLError:
+        print("SSL Error")
     

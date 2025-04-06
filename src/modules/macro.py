@@ -98,7 +98,7 @@ mobRespawnTimes = {
 # Define the color range for reset detection (in HSL color space)
 #white color respawn pad
 resetLower1 = np.array([0, 102, 0])  # Lower bound of the color (H, L, S)
-resetUpper1 = np.array([40, 255, 7])  # Upper bound of the color (H, L, S)
+resetUpper1 = np.array([40, 255, 30])  # Upper bound of the color (H, L, S)
 #balloon color
 resetLower2 = np.array([105, 140, 210])  # Lower bound of the color (H, L, S)
 resetUpper2 = np.array([120, 220, 255])  # Upper bound of the color (H, L, S)
@@ -786,6 +786,7 @@ class macro:
         if self.display_type == "retina":
             bestY //= 2
         return (40, bestY+80)
+        
     
     #click at the specified coordinates to use an item in the inventory
     #if x/y is not provided, find the item in inventory
@@ -820,7 +821,8 @@ class macro:
         for _ in range(3):  #must always be an odd number
             self.keyboard.press("e")
             time.sleep(1)
-            if self.isBesideE(["stop"], ["make"], log=True): break
+            if self.isBesideE(["stop", "making"], ["make"], log=True): 
+                break
 
         self.status.value = "converting"
         st = time.time()
@@ -1142,22 +1144,30 @@ class macro:
             availableSlots = [] #store hive slots that are claimable
             newHiveNumber = 0
         
+            # self.keyboard.keyDown("d", False)
+            # self.keyboard.tileWait(4)
+            # self.keyboard.keyDown("w", False)
+            # self.keyboard.tileWait(20)
+            # self.keyboard.keyUp("d", False)
+            # self.keyboard.keyUp("w", False)
             self.keyboard.keyDown("d", False)
-            self.keyboard.tileWait(4)
+            self.keyboard.timeWait(0.6)
             self.keyboard.keyDown("w", False)
-            self.keyboard.tileWait(20)
+            self.keyboard.timeWait(2.9)
             self.keyboard.keyUp("d", False)
             self.keyboard.keyUp("w", False)
+
+            def isHiveAvailable():
+                return self.isBesideE(["claim", "hive"], ["send", "trade"], log=True)
 
             #go to the selected hive. Note down any available hives on the way
             self.logger.webhook("",f'Claiming hive {hiveNumber}', "dark brown")
             for j in range(1, hiveNumber+1):
-                time.sleep(0.4)
                 if j > 1:
-                    self.keyboard.tileWalk("a", 9.2)
-                    #self.keyboard.tileWalk("a", 11)
-
-                if self.isBesideE(["claim", "hive"], ["send", "trade"], log=True):
+                    #self.keyboard.tileWalk("a", 9.2)
+                    self.keyboard.walk("a", 1.3)
+                time.sleep(0.4)
+                if isHiveAvailable():
                     availableSlots.append(j)
             
             #selected hive claimed
@@ -1170,21 +1180,22 @@ class macro:
                 #backtrack and claim the hive closest to cannon
                 if availableSlots:
                     targetSlot = min(availableSlots)
-                    self.keyboard.tileWalk("d", 9.2*(hiveNumber - targetSlot))
-                    if self.isBesideE(["claim", "hive"], ["send", "trade"], log=True):
+                    #self.keyboard.tileWalk("d", 9.2*(hiveNumber - targetSlot))
+                    self.keyboard.walk("d", 1.3*(hiveNumber - targetSlot))
+                    time.sleep(0.4)
+                    if isHiveAvailable():
                         newHiveNumber = targetSlot
                         rejoinSuccess = True
 
                 #no available hive slots found previously, continue finding new ones ahead
                 else:
-                    for j in range(1, 6 - hiveNumber + 1):
+                    for j in range(hiveNumber+1, 7):
+                        self.keyboard.walk("a", 1.3)
                         time.sleep(0.4)
-                        if j > 1:
-                            self.keyboard.tileWalk("a", 9.2)
-
-                        if self.isBesideE(["claim", "hive"], ["send", "trade"], log=True):
-                            newHiveNumber = j + hiveNumber
+                        if isHiveAvailable():
+                            newHiveNumber = j
                             rejoinSuccess = True
+                            break
 
             # #find the hive in hive number
             # self.logger.webhook("",f'Claiming hive {hiveNumber} (guessing hive location)', "dark brown")
@@ -1230,7 +1241,7 @@ class macro:
             #             self.setdat["hive_number"] = hiveClaim
             #             break
             #claim hive and convert
-            if rejoinSuccess and self.isBesideEImage("ebutton"):
+            if rejoinSuccess and isHiveAvailable():
                 self.clickPermissionPopup()
                 self.keyboard.press("e")
                 time.sleep(1)
@@ -1278,7 +1289,7 @@ class macro:
     def convertSecsToMinsAndSecs(self, n):
         m = n // 60
         s = n % 60
-        return f"{int(m)}:{int(s)}"
+        return f"{int(m)}m:{int(s):02d}s"
     
     def gather(self, field, settingsOverride = {}):
         fieldSetting = {**self.fieldSettings[field], **settingsOverride}
@@ -2830,6 +2841,7 @@ class macro:
             self.cannon()
             self.logger.webhook("",f"Travelling: {questGiver} ({reason}) ","brown")
             self.runPath(f"quests/{questGiver}")
+            time.sleep(0.5)
 
             #check if player reached the quest giver
             if self.isBesideE(["talk"] + questGiver.lower().split(" "), log=True):
@@ -2844,10 +2856,30 @@ class macro:
         return False
 
     def clickdialog(self, count):
-        for _ in range(count):
-            mouse.moveTo(self.mw/2, 2*self.mh//3)
+        dialogImg = self.adjustImage("./images/menu", "dialog")
+        x = self.mw/2
+        y = self.mh*2/3
+        a =  locateImageOnScreen(dialogImg, x, y, 300, self.mh/3, 0.5)
+        if a:
+            _, loc = a
+            xr, yr = [j//2 for j in loc] if self.display_type == "retina" else loc
+        else:
+            xr = 0
+            yr = 0
+            print("unable to locate dialog position")
+
+        def screenshotDialog():
+            return imagehash.average_hash(mssScreenshot(x+xr-20, y+yr-20, 20, 20))
+        
+        dialogImg = screenshotDialog()
+        mouse.moveTo(self.mw/2, self.mh*2/3+y-20)
+        for _ in range(70):
             mouse.click()
             time.sleep(0.05)
+            #check if the dialog is still there
+            img = screenshotDialog()
+            if img != dialogImg:
+                break
 
     def getNewQuest(self, questGiver, submitQuest):
         if not self.goToQuestGiver(questGiver, "Get New Quest"): return
@@ -2857,14 +2889,15 @@ class macro:
             "riley bee": 40
         }
         dialogClickCount = dialogClickCountForQuestGivers.get(questGiver, 50)
-        self.clickdialog(dialogClickCount)
+        self.clickdialog()
         #player submitted a quest, then get a new one
         if submitQuest:
             sleep(1)
             self.keyboard.press("e")
             sleep(0.2)
             self.keyboard.press("e")
-            self.clickdialog(dialogClickCount)
+            self.clickdialog()
+        self.reset()
         return self.findQuest(questGiver)
 
 
