@@ -1189,14 +1189,13 @@ class macro:
 
                 #no available hive slots found previously, continue finding new ones ahead
                 else:
-                    for j in range(1, 6 - hiveNumber + 1):
-                        if j > 1:
-                            #self.keyboard.tileWalk("a", 9.2)
-                            self.keyboard.walk("a", 1.3)
+                    for j in range(hiveNumber+1, 7):
+                        self.keyboard.walk("a", 1.3)
                         time.sleep(0.4)
                         if isHiveAvailable():
-                            newHiveNumber = j + hiveNumber
+                            newHiveNumber = j
                             rejoinSuccess = True
+                            break
 
             # #find the hive in hive number
             # self.logger.webhook("",f'Claiming hive {hiveNumber} (guessing hive location)', "dark brown")
