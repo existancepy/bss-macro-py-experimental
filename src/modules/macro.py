@@ -2836,7 +2836,7 @@ class macro:
             return imagehash.average_hash(mssScreenshot(x+xr-20, y+yr-20, 20, 20))
         
         dialogImg = screenshotDialog()
-        mouse.moveTo(self.mw/2, self.mh*2/3+y-20)
+        mouse.moveTo(self.mw/2, y+yr-20)
         for _ in range(70):
             mouse.click()
             time.sleep(0.05)
