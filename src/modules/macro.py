@@ -283,6 +283,7 @@ for line in qdata:
     
     else:  #quest objectives
         quest_info.append(line)
+quest_data[quest_bear][quest_title] = quest_info 
 
 class macro:
     def __init__(self, status, log, haste, updateGUI):
@@ -2579,16 +2580,28 @@ class macro:
             time.sleep(0.1)
             mouse.click()
 
-    def nightAndHotbarBackground(self):
+    def background(self):
+
+        def getHoney():
+            ocrHoney = ocr.imToString("honey")
+            return ocrHoney if ocrHoney else 0
         
+        #first honey
+        settingsManager.saveSettingFile("start_honey", getHoney(), "data/user/hourly_report_bg.txt")
+        settingsManager.saveSettingFile("start_time", time.time(), "data/user/hourly_report_bg.txt")
+        prevMin = -1  
+        currMin = None
+    
         self.nightDetectStreaks = 0
         while True:
             with open("./data/user/hotbar_timings.txt", "r") as f:
                 hotbarSlotTimings = ast.literal_eval(f.read())
             f.close()
+            x
             #night detection
             if self.enableNightDetection:
                 self.detectNight()
+
             #hotbar
             for i in range(1,8):
                 slotUseWhen = self.setdat[f"hotbar{i}_use_when"]
@@ -2606,65 +2619,14 @@ class macro:
                 #press the key
                 for _ in range(2):
                     keyboard.pagPress(str(i))
-                    time.sleep(0.5)
+                    time.sleep(0.4)
                 #update the time pressed
                 hotbarSlotTimings[i] = time.time()
                 with open("./data/user/hotbar_timings.txt", "w") as f:
                     f.write(str(hotbarSlotTimings))
                 f.close()
-                time.sleep(0.2)
             
-            time.sleep(1)
-    
-    def hourlyReportBackground(self):
-        '''
-        honeyY = 23 if self.newUI else 0
-        threshold = 0.75
-        numImages = []
-        for i in range(10):
-            numImages.append(adjustImage("images/misc", f"honey_{i}", self.display_type))
-        '''
-        def getHoney():
-            '''
-            #use image detection to get the amount of honey
-            #get the coordinates of each digit
-            prevResult = 0
-            for _ in range(10):
-                screen = mssScreenshotNP(self.mw//2-241, honeyY, 140, 36)
-                screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
-                numbersRes = []
-                #get all the numbers and their coordinates
-                for i,e in enumerate(numImages):
-                    e = cv2.cvtColor(e, cv2.COLOR_RGB2GRAY)
-                    res = cv2.matchTemplate(screen,e,cv2.TM_CCOEFF_NORMED)
-                    loc = np.where(res >=threshold)
-                    w, h = e.shape[::-1]
-                    screenCopy = screen.copy()
-                    #loop through all found coordinates and append it to numberRes
-                    for pt in zip(*loc[::-1]):
-                        cv2.rectangle(screenCopy, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
-                        numbersRes.append((i, pt[0]))
-                    cv2.imwrite(f'res{i}.png',screenCopy)
-
-                #sort the numbers by their x coordinate
-                #then extract only the numbers and join them together
-                result = ''.join([str(x[0]) for x in sorted(numbersRes, key=lambda x: x[1])])
-                if result and result == prevResult:
-                    return int(result)
-                prevResult = result
-                time.sleep(0.13)
-            #couldnt detect
-            print("image detection for honey failed, using ocr")
-            '''
-            ocrHoney = ocr.imToString("honey")
-            return ocrHoney if ocrHoney else 0
-
-        #first honey
-        settingsManager.saveSettingFile("start_honey", getHoney(), "data/user/hourly_report_bg.txt")
-        settingsManager.saveSettingFile("start_time", time.time(), "data/user/hourly_report_bg.txt")
-        prevMin = -1  
-        currMin = None
-        while True:
+            #Hourly report
             if self.status.value != "rejoining":
                 #instead of using time.sleep, we want to run the code at the start of the min
                 currMin = datetime.now().minute
@@ -2713,6 +2675,8 @@ class macro:
                 with open("data/user/hourly_report_history.txt", "w") as f:
                     f.write(str(history))
                 f.close()
+
+            time.sleep(1)
 
     def toggleQuest(self):
         #click quest icon
@@ -2855,7 +2819,7 @@ class macro:
                 self.reset()
         return False
 
-    def clickdialog(self, count):
+    def clickdialog(self):
         dialogImg = self.adjustImage("./images/menu", "dialog")
         x = self.mw/2
         y = self.mh*2/3
@@ -2872,7 +2836,7 @@ class macro:
             return imagehash.average_hash(mssScreenshot(x+xr-20, y+yr-20, 20, 20))
         
         dialogImg = screenshotDialog()
-        mouse.moveTo(self.mw/2, self.mh*2/3+y-20)
+        mouse.moveTo(self.mw/2, y+yr-20)
         for _ in range(70):
             mouse.click()
             time.sleep(0.05)
@@ -3006,14 +2970,9 @@ class macro:
             self.startDetect()
 
         #enable night detection and hotbar
-        nightAndHotbarThread = threading.Thread(target=self.nightAndHotbarBackground)
-        nightAndHotbarThread.daemon = True
-        nightAndHotbarThread.start()
-
-        #enable hourly report background
-        hourlyReportThread = threading.Thread(target=self.hourlyReportBackground)
-        hourlyReportThread.daemon = True
-        hourlyReportThread.start()
+        backgroundThread = threading.Thread(target=self.background)
+        backgroundThread.daemon = True
+        backgroundThread.start()
 
         self.reset(convert=True)
         self.saveTiming("rejoin_every")
