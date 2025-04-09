@@ -2597,7 +2597,7 @@ class macro:
             with open("./data/user/hotbar_timings.txt", "r") as f:
                 hotbarSlotTimings = ast.literal_eval(f.read())
             f.close()
-            x
+    
             #night detection
             if self.enableNightDetection:
                 self.detectNight()
