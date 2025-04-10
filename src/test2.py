@@ -114,8 +114,8 @@ class HasteCompensation():
 
 h = HasteCompensation(True, 28)
 
-for _ in range(5):
+while True:
     st = time.time()
-    h.getHaste()
+    print(h.getHaste())
     print(time.time()-st)
 

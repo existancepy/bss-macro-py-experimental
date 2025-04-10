@@ -52,7 +52,7 @@ collectData = {
     "wreath": [["admire", "honey"], "a", 30*60], #30mins
     "feast": [["dig", "beesmas"], "s", 1.5*60*60], #1.5hr
     "samovar": [["heat", "samovar", "strange"], "w", 6*60*60], #6hr
-    "snow_machine": [["activ", "snow"], None, 2*60*60], #2hr
+    "snow_machine": [["activ", "machine"], None, 2*60*60], #2hr
     "lid_art": [["gander", "onett", "art"], "s", 8*60*60], #8hr
     "candles": [["admire", "candle", "honey"], "w", 4*60*60], #4hr
     "memory_match": [["spend", "play"], "a", 2*60*60], #2hr
@@ -1017,7 +1017,7 @@ class macro:
             #Move to canon:
             self.keyboard.walk("w",0.8)
             fieldDist = 0.9
-            self.keyboard.walk("d",1.2*(self.setdat["hive_number"])+i, False)
+            self.keyboard.walk("d",1.2*(self.setdat["hive_number"])+i)
             self.keyboard.keyDown("d")
             time.sleep(0.5)
             self.keyboard.slowPress("space")
@@ -1477,10 +1477,10 @@ class macro:
             self.keyboard.keyUp("a")
             #in case we overrun
             time.sleep(0.4)
-            for _ in range(4):
+            for _ in range(7):
                 if self.convert():
                     break
-                self.keyboard.walk("d",0.2)
+                self.keyboard.walk("d",0.1)
                 time.sleep(0.2) #add a delay so that the E can popup
             else:
                 self.logger.webhook("","Can't find hive, resetting", "dark brown", "screen")
@@ -1515,17 +1515,32 @@ class macro:
 
     def antChallenge(self):
         self.logger.webhook("","Travelling: Ant Challenge","dark brown")
-        self.cannon()
-        self.runPath("collect/ant_pass_dispenser")
-        self.keyboard.walk("w",3.5)
-        self.keyboard.walk("a",3)
-        self.keyboard.walk("d",3)
-        self.keyboard.walk("s",0.4)
+        left = 15 / self.setdat["hive_number"]
+        self.keyboard.walk("w", 1, False)
+        self.keyboard.walk("a", left, False)
+        self.keyboard.keyDown("w")
+        time.sleep(2)
+        self.keyboard.press("space")
+        time.sleep(3.5)
+        self.keyboard.keyUp("w")
+        self.keyboard.walk("a", 0.45, False)
+        self.keyboard.keyDown("w")
+        self.keyboard.press("space")
+        time.sleep(1.5)
+        self.keyboard.press("space")
+        time.sleep(3)
+        self.keyboard.keyUp("w")
+        self.keyboard.walk("a", 2.5, False)
+        self.keyboard.keyDown("w")
+        time.sleep(6)
+        self.keyboard.keyUp("w")
+        self.keyboard.walk("s", 0.4)
         time.sleep(0.5)
 
         if self.isBesideE(["spen","play"], ["need"]):
             self.logger.webhook("","Start Ant Challenge","bright green", "screen")
             self.keyboard.press("e")
+            time.sleep(1)
             self.placeSprinkler()
             mouse.click()
             time.sleep(1)
@@ -1538,10 +1553,10 @@ class macro:
                 if keepOld is not None:
                     mouse.mouseUp()
                     self.logger.webhook("","Ant Challenge Complete","bright green", "screen")
-                    time.sleep(1.5)
+                    time.sleep(0.1)
                     mouse.moveTo(*keepOld)
+                    time.sleep(0.2)
                     mouse.click()
-                    breakLoop = True
                     break
             return
         self.logger.webhook("", "Cant start ant challenge", "red", "screen")

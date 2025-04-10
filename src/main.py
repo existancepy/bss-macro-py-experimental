@@ -279,16 +279,6 @@ if __name__ == "__main__":
     generalSettingsReference = settingsManager.readSettingsFile("./data/default_settings/generalsettings.txt")
     settingsManager.saveDict("../settings/generalsettings.txt", {**generalSettingsReference, **generalSettings})
 
-    #check if the user updated the paths (update 6)
-    #TODO: remove this on the actual release
-    with open("../settings/paths/cannon_to_field/blue flower.py", "r") as f:
-        blueFlowerPath = f.read()
-    f.close()
-
-    compareBlueFlowerPath = '\nself.keyboard.press(",")\nself.keyboard.press(",")\nself.keyboard.slowPress("e")\nsleep(0.08)\nself.keyboard.keyDown("w")\nself.keyboard.slowPress("space")\nself.keyboard.slowPress("space")\nsleep(3)\nself.keyboard.keyUp("w")\nself.keyboard.slowPress("space")\nsleep(0.8)'
-    if blueFlowerPath != compareBlueFlowerPath:
-        messageBox.msgBox("Warning", "It looks like you did not update your paths for update 6. The macro will not work properly. Refer to update 6's instructions in #updates")
-    
     #convert ahk pattern
     ahkPatterns = [x for x in os.listdir("../settings/patterns") if ".ahk" in x]
     for pattern in ahkPatterns:
@@ -308,7 +298,7 @@ if __name__ == "__main__":
         print("stop")
         #print(sockets)
         macroProc.kill()
-        if discordBotProc.is_alive(): discordBotProc.kill()
+        #if discordBotProc.is_alive(): discordBotProc.kill()
         keyboardModule.releaseMovement()
         mouse.mouseUp()
         
@@ -332,11 +322,27 @@ if __name__ == "__main__":
                 \nTVisit step 6 of the macro installation guide in the discord for instructions", title="Wrong Color Profile")
         except:
             pass
+
+    discordBotProc = None
+    prevDiscordBotToken = None
+
     while True:
         eel.sleep(0.2)
+        setdat = settingsManager.loadAllSettings()
+
+        #discord bot. Look for changes in the bot token
+        currentDiscordBotToken = setdat["discord_bot_token"]
+        if setdat["discord_bot"] and currentDiscordBotToken and currentDiscordBotToken != prevDiscordBotToken:
+            if discordBotProc is not None and discordBotProc.is_alive():
+                print("Detected change in discord bot token, killing previous bot process")
+                discordBotProc.terminate()
+                discordBotProc.join()
+            discordBotProc = multiprocessing.Process(target=discordBot, args=(currentDiscordBotToken, run, status), daemon=True)
+            prevDiscordBotToken = currentDiscordBotToken
+            discordBotProc.start()
+
         if run.value == 1:
             #create and set webhook obj for the logger
-            setdat = settingsManager.loadAllSettings()
             logger.enableWebhook = setdat["enable_webhook"]
             logger.webhookURL = setdat["webhook_link"]
             haste.value = setdat["movespeed"]
@@ -368,9 +374,6 @@ if __name__ == "__main__":
             settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
 
             #discord bot
-            discordBotProc = multiprocessing.Process(target=discordBot, args=(setdat["discord_bot_token"], run, status), daemon=True)
-            if setdat["discord_bot"]:
-                discordBotProc.start()
             if setdat["enable_webhook"]:
                 logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
             run.value = 2

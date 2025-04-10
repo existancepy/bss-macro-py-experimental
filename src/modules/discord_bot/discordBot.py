@@ -36,6 +36,14 @@ def discordBot(token, run, status):
             imageBinary.seek(0)
             await interaction.followup.send(file = discord.File(fp=imageBinary, filename="screenshot.png"))
 
+    @bot.tree.command(name = "start", description = "Start")
+    async def stop(interaction: discord.Interaction):
+        if run.value == 2: 
+            await interaction.response.send_mesasge("Macro is already running")
+            return 
+        run.value = 1
+        await interaction.response.send_message("Stopping Macro")
+
     @bot.tree.command(name = "stop", description = "Stop the macro")
     async def stop(interaction: discord.Interaction):
         if run.value == 3: 
@@ -52,12 +60,14 @@ def discordBot(token, run, status):
     @bot.tree.command(name = "amulet", description = "Choose to keep or replace an amulet")
     @app_commands.describe(option = "keep or replace an amulet")
     async def amulet(interaction: discord.Interaction, option: str):
+        if run.value != 2:
+            await interaction.response.send_message("Macro is not running")
         option = option.lower()
         keepAlias = ["k", "keep"]
         replaceAlias = ["r", "replace"]
         if not option in keepAlias and not option in replaceAlias:
             await interaction.response.send_message("Unknown option. Enter either `keep` or `replace`")
-            
+        
         elif status.value != "amulet_wait":
             await interaction.response.send_message("There is no amulet to keep or replace")
             return
@@ -107,4 +117,4 @@ def discordBot(token, run, status):
     try:
         bot.run(token)
     except discord.errors.LoginFailure:
-        msgBox("Incorrect Bot Token", "The discord bot token you entered is invalid.")
+        print("Incorrect Bot Token", "The discord bot token you entered is invalid.")
