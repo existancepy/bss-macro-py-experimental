@@ -16,8 +16,5 @@ def webhook(url, title, desc, time, color, imagePath = None):
     webhook.add_embed(embed)
     try:
         webhook.execute()
-    except ConnectionError:
-        print("Connection Error, webhook failed")
-    except SSLError:
-        print("SSL Error")
-    
+    except Exception as e:
+        print(f"Webhook Error: {e}")    
