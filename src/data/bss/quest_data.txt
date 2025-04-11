@@ -55,10 +55,10 @@ gather_mushroom
 kill_3_spider
 
 -exotic salad
+gather_cactus
 gather_rose
 gather_blue flower
 gather_clover
-gather_cactus
 
 - high protein bug
 gather_sunflower
