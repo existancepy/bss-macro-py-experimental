@@ -44,6 +44,7 @@ collectData = {
     "wealth_clock": [["use"], "w", 1*60*60], #1hr
     "blueberry_dispenser": [["use", "dispenser"], "a", 4*60*60], #4hr
     "strawberry_dispenser": [["use", "dispenser"], None, 4*60*60], #4hr
+    "coconut_dispenser": [["use", "dispenser"], "s", 4*60*60], #4hr
     "royal_jelly_dispenser": [["claim", "royal"], "a",22*60*60], #22hr
     "treat_dispenser": [["use", "treat"], "w", 1*60*60], #1hr
     "ant_pass_dispenser": [["use", "free"], "a", 2*60*60], #2hr
@@ -60,6 +61,7 @@ collectData = {
     #"night_memory_match": [["spend", "play"], "w", 8*60*60], #8hr
     "extreme_memory_match": [["spend", "play"], "w", 8*60*60], #8hr
     "winter_memory_match": [["spend", "play"], "a", 4*60*60], #4hr
+    "honeystorm": [["summon", "honeystorm"], "s", 4*60*60], #4hr
 }
 
 fieldBoosterData = {
@@ -911,6 +913,8 @@ class macro:
             blenderImg = self.adjustImage("./images/menu", "blenderclose") #blender
             if locateImageOnScreen(blenderImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
                 self.closeBlenderGUI()
+            
+            self.clickdialog(mustFindDialog=True)
 
             performanceStatsImg = self.adjustImage("./images/menu", "performancestats")
             if locateTransparentImageOnScreen(performanceStatsImg, 0, 20, self.mw/3.5, 70, 0.7):
@@ -1670,15 +1674,18 @@ class macro:
         cooldownRaw = ''.join([x for x in cooldownRaw if x.isdigit() or x == ":" or x == "s"])
         cooldownSeconds = None #cooldown in seconds
 
+        def textToInt(text):
+            return int(''.join([x for x in text if x.isdigit()]))
+        
         #check if its days, hour, mins or seconds
         if cooldownRaw.count(":") == 3: #days
-            d, hr, mins, s = [int(x) for x in cooldownRaw.split(":")]
+            d, hr, mins, s = [textToInt(x) for x in cooldownRaw.split(":")]
             cooldownSeconds = d*24*60*60, hr*60*60 + mins*60 + s
         elif cooldownRaw.count(":") == 2: #hours
-            hr, mins, s = [int(x) for x in cooldownRaw.split(":")]
+            hr, mins, s = [textToInt(x) for x in cooldownRaw.split(":")]
             cooldownSeconds = hr*60*60 + mins*60 + s
         elif cooldownRaw.count(":") == 1: #mins
-            mins, s = [int(x) for x in cooldownRaw.split(":")]
+            mins, s = [textToInt(x) for x in cooldownRaw.split(":")]
             cooldownSeconds = mins*60 + s
         elif "s" in cooldownRaw: #seconds
             cooldownSeconds = int(''.join([x for x in cooldownRaw if x.isdigit()]))
@@ -1826,7 +1833,10 @@ class macro:
     def mobRunLootingBackground(self):
         st = time.time()
         while time.time() - st < 20:
-           if self.blueTextImageSearch("tokenlink", 0.8): break
+           if self.blueTextImageSearch("tokenlink", 0.8):
+            time.sleep(0.5) 
+            self.logger.webhook("","Collected Token Link", "white", "blue")
+            break
         self.mobRunStatus = "done"
 
     def killMob(self, mob, field, walkPath = None):
@@ -2723,9 +2733,11 @@ class macro:
         if not questGiver in questGiverShort:
             raise Exception(f"Unknown Quest Giver: {questGiver}")
         
-        def screenshotQuest(screenshotHeight):
+        def screenshotQuest(screenshotHeight, gray = True):
             #Take a screenshot of the quest page and 
-            screen = cv2.cvtColor(mssScreenshotNP(0, 170, 300, screenshotHeight), cv2.COLOR_BGRA2GRAY)
+            screen = mssScreenshotNP(0, 170, 300, screenshotHeight)
+            if gray:
+                screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
             return screen
         
         #open inventory to ensure quest page is closed
@@ -2779,21 +2791,35 @@ class macro:
 
         #merge the texts into chunks. Using those chunks, compare it with the known objectives
         #assume that the merging is done properly, so 1st chunk = 1st objective
-        screen = screenshotQuest(650)
+        screen = cv2.cvtColor(screenshotQuest(650, gray=False), cv2.COLOR_BGRA2RGB)
         #crop it below the quest title
         screen = screen[questTitleYPos: , : ]
-        img = cv2.threshold(screen, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        #convert to grayscale
+        screenGray = cv2.cvtColor(screen, cv2.COLOR_RGB2GRAY)
+        img = cv2.threshold(screenGray, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
         img = cv2.GaussianBlur(img, (5, 5), 0)
         #dilute the image so that texts can be merged into chunks
-        kernelSize = 12 if self.display_type == "retina" else 6
+        kernelSize = 12 if self.display_type == "retina" else 8
         kernel = np.ones((kernelSize, kernelSize), np.uint8) 
         img = cv2.dilate(img, kernel, iterations=1)
 
         contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        #filter out the contour sizes
+        minArea = 1000       #too small = noise
+        maxArea = 50000      #too big = background or large UI elements
+        maxHeight = 80       #cap height to filter out title bar
+
         completedObjectives = []
         incompleteObjectives = []
-        for i, contour in enumerate(contours[::-1][:len(objectives)]):
+        i = 0
+        for contour in contours[::-1]:
             x, y, w, h = cv2.boundingRect(contour)
+            #check if contour meets size requirements
+            area = w*h
+            if area < minArea or area > maxArea or h > maxHeight:
+                cv2.rectangle(screen, (x, y), (x+w, y+h), (0, 255, 255), 1) #draw a yellow bounding box
+                continue
             textImg =  Image.fromarray(screen[y:y+h, x:x+w])
             textChunk = []
             for line in ocr.ocrRead(textImg):
@@ -2802,8 +2828,22 @@ class macro:
             print(textChunk)
             if "complete" in textChunk:
                 completedObjectives.append(objectives[i])
+                color = (0, 255, 0)  #green
             else:
                 incompleteObjectives.append(objectives[i])
+                color = (0, 0, 255)  #red
+            
+            #draw bounding boxes and add the quest text
+            cv2.rectangle(screen, (x, y), (x+w, y+h), color, 2)
+            cv2.putText(screen, objectives[i], (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+
+            i += 1
+
+            if i == len(objectives):
+                break
+        
+        questImgPath = "latest-quest.png"
+        cv2.imwrite(questImgPath, cv2.cvtColor(screen, cv2.COLOR_RGB2BGR))
         
         print(completedObjectives)
         print(incompleteObjectives)
@@ -2811,7 +2851,7 @@ class macro:
                             "**Completed Objectives:**\n{}\n\n**Incomplete Objectives:**\n{}".format(
                                 '\n'.join(completedObjectives) if completedObjectives else "None", 
                                 '\n'.join(incompleteObjectives) if incompleteObjectives else "None"), 
-                            "light blue")
+                            "light blue", imagePath=questImgPath)
         self.toggleQuest()
         return incompleteObjectives
 
@@ -2834,17 +2874,18 @@ class macro:
                 self.reset()
         return False
 
-    def clickdialog(self):
+    def clickdialog(self, mustFindDialog=False):
         dialogImg = self.adjustImage("./images/menu", "dialog")
         x = self.mw/2
         y = self.mh*2/3
-        a =  locateImageOnScreen(dialogImg, x, y, 300, self.mh/3, 0.5)
+        a =  locateImageOnScreen(dialogImg, x, y, 300, self.mh/3, 0.8 if mustFindDialog else 0.5)
         if a:
             _, loc = a
             xr, yr = [j//2 for j in loc] if self.display_type == "retina" else loc
         else:
             xr = 0
             yr = 0
+            if mustFindDialog: return
             print("unable to locate dialog position")
 
         def screenshotDialog():
