@@ -64,6 +64,7 @@ collectData = {
     "honeystorm": [["summon", "honeystorm"], "s", 4*60*60], #4hr
 }
 
+#these collects are added seperately as they need to be handled seperately instead of being iterated through by the main loop
 fieldBoosterData = {
     "blue_booster": [["use", "booster"], "w", 45*60], #45mins
     "red_booster": [["use", "booster"], "s", 45*60], #45mins
@@ -1294,7 +1295,7 @@ class macro:
     def convertSecsToMinsAndSecs(self, n):
         m = n // 60
         s = n % 60
-        return f"{int(m)}m:{int(s):02d}s"
+        return f"{int(m)}m {int(s):02d}s"
     
     def gather(self, field, settingsOverride = {}):
         fieldSetting = {**self.fieldSettings[field], **settingsOverride}
@@ -1369,7 +1370,7 @@ class macro:
         size = sizeData[sizeword]
         width = fieldSetting["width"]
         maxGatherTime = fieldSetting["mins"]*60
-        gatherTimeLimit = "{:.2f}".format(fieldSetting["mins"])
+        gatherTimeLimit = self.convertSecsToMinsAndSecs(maxGatherTime)
         returnType = fieldSetting["return"]
         pattern = fieldSetting['shape']
         st = time.time()
@@ -1438,11 +1439,11 @@ class macro:
             #check if max time is reached
             gatherTime = self.convertSecsToMinsAndSecs(getGatherTime())
             if getGatherTime() > maxGatherTime:
-                self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType}", "light green", "honey-pollen")
+                self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType.title()}", "light green", "honey-pollen")
                 keepGathering = False
             #check backpack
-            if self.getBackpack() >= fieldSetting["backpack"]:
-                self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Backpack - Return: {returnType}", "light green", "honey-pollen")
+            elif self.getBackpack() >= fieldSetting["backpack"]:
+                self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Backpack - Return: {returnType.title()}", "light green", "honey-pollen")
                 keepGathering = False
 
         self.status.value = ""
@@ -1566,9 +1567,14 @@ class macro:
         self.logger.webhook("", "Cant start ant challenge", "red", "screen")
 
     def collectMondoBuff(self, gatherInterrupt = False, turnOffShiftLock = False):
+        
+        def getCurrentMinute():
+            current_time = datetime.now().strftime("%H:%M:%S")
+            _,m,_ = [int(x) for x in current_time.split(":")]
+            return m
+        
         #check if mondo can be collected (first 10mins)
-        current_time = datetime.now().strftime("%H:%M:%S")
-        _,minute,_ = [int(x) for x in current_time.split(":")]
+        minute = getCurrentMinute()
         #set respawn time to 20mins
         #mostly just to prevent the macro from going to mondo over and over again for the 10mins
         if minute > 10 or not self.hasRespawned("mondo", 20*60): return False
@@ -1584,15 +1590,86 @@ class macro:
         self.cannon()
         self.keyboard.press("e")
         sleep(2.5)
-        self.keyboard.walk("w",1.4)
-        self.keyboard.walk("d",4)
-        #wait
-        self.saveTiming("mondo")
-        self.logger.webhook("","Collecting: Mondo Buff","bright green", "screen")
-        sleep(self.setdat["mondo_buff_wait"]*60)
-        self.logger.webhook("","Collected: Mondo Buff","dark brown")
-        self.reset(convert=True)
+        self.logger.webhook("","Collecting: Mondo Buff","yellow", "screen")
+        self.keyboard.walk("w",1)
+        self.keyboard.walk("d",3) 
+        if self.setdat["mondo_buff_loot"]: # If looting is enabled, wait until mondo is defeated
+            self.logger.webhook("", "Waiting for Mondo to be defeated", "light green")
+            self.keyboard.press("shift") #moves slightly up (or down) when hitting wall, so this reduces that
+            while True:
+                #defeat
+                if self.blueTextImageSearch("defeated") and self.blueTextImageSearch("mondo"): 
+                    self.saveTiming("mondo") 
+                    break
+                #died
+                if self.blueTextImageSearch("died"):
+                    self.died = True
+                    self.keyboard.press("shift")
+                    self.logger.webhook("", "Player Died", "red", "screen")
+                    self.reset(convert=False)
+                    self.collectMondoBuff()
+                #time limit
+                if getCurrentMinute() >= 15: #mondo despawns after 15 minutes if not defeated in time
+                    self.keyboard.walk("s",1, False)
+                    self.keyboard.press(",")
+                    time.sleep(0.5)
+                    self.logger.webhook("", "Time Limit (15 minutes)\n Mondo may have despawned. Resetting", "light green", "screen")
+                    self.keyboard.press("shift")
+                    self.saveTiming("mondo") 
+                    self.reset(convert=True)
+                    return
+                #collect tokens by bees
+                if self.setdat["mondo_collect_token"]: 
+                    self.keyboard.walk("a", 0.45)
+                    for slowmove in range(9):
+                        self.keyboard.walk("d", 0.048, False) #move JUST EVER SO SLIGHTLY, maybe bumps in to wall less
+                        time.sleep(0.035)
+                mouse.click()
+                time.sleep(1.5)
+
+            #loot
+            mondo_loot_times = self.setdat["mondo_loot_times"] #how many loops based on what the user inputted
+            time.sleep(0.1)
+            self.keyboard.walk("d",1,False)
+            time.sleep(0.1)
+            self.keyboard.press("shift")
+            self.keyboard.walk("s",3.15,False)
+            self.logger.webhook("", "Looting: Mondo Chick", "yellow", "screen")
+            if mondo_loot_times == 1:
+                self.logger.webhook("", "Looping 1 time", "light green")
+            else:
+                self.logger.webhook("", f"Looping {mondo_loot_times} times", "light green")
+            self.keyboard.walk("a",3.55)
+            for loops in range(mondo_loot_times): 
+                for looting in range(6):
+                    self.keyboard.walk("w",0.20)
+                    self.keyboard.walk("d",2.65)
+                    self.keyboard.walk("w",0.20)
+                    self.keyboard.walk("a",2.65)
+                for looting in range(6):
+                    self.keyboard.walk("s",0.20)
+                    self.keyboard.walk("d",2.65)
+                    self.keyboard.walk("s",0.20)
+                    self.keyboard.walk("a",2.65)
+        else: #if loot off, just idle
+            end_time = time.perf_counter() + self.setdat["mondo_buff_wait"] * 60  
+            self.logger.webhook("", f"Collecting for: {self.setdat['mondo_buff_wait']} minutes", "yellow")
+            # if collecting tokens produced by bees
+            if self.setdat["mondo_collect_token"]:
+                # enable shiftlock
+                self.keyboard.press("shift")
+                while time.perf_counter() < end_time: 
+                    self.keyboard.walk("a", 0.45)
+                    for slowmove in range(9):
+                        self.keyboard.walk("d", 0.048, False) #move JUST EVER SO SLIGHTLY, maybe bumps in to wall less
+                        time.sleep(0.035) 
+                    time.sleep(3) #longer since we are not detecting anything
+            else:
+                time.sleep(self.setdat['mondo_buff_wait'] * 60)
+            self.saveTiming("mondo") 
         #done
+        self.logger.webhook("","Collected: Mondo Buff","light green")
+        self.reset(convert=True)
         return True
 
     def collectStickerPrinter(self):
@@ -1658,7 +1735,7 @@ class macro:
 
     #convert bss' cooldown text into seconds
     #brackets: account for brackets in the text, where the cooldown value is between said brackets
-    def cdTextToSecs(self, rawText, brackets):
+    def cdTextToSecs(self, rawText, brackets, defaultTime=0):
         if brackets:
             closePos = rawText.rfind(")")
             #get cooldown if close bracket is present or not
@@ -1674,21 +1751,33 @@ class macro:
         cooldownRaw = ''.join([x for x in cooldownRaw if x.isdigit() or x == ":" or x == "s"])
         cooldownSeconds = None #cooldown in seconds
 
-        def textToInt(text):
-            return int(''.join([x for x in text if x.isdigit()]))
+        def extractNumFromText(text):
+            return ''.join(filter(str.isdigit, text))
         
-        #check if its days, hour, mins or seconds
-        if cooldownRaw.count(":") == 3: #days
-            d, hr, mins, s = [textToInt(x) for x in cooldownRaw.split(":")]
-            cooldownSeconds = d*24*60*60, hr*60*60 + mins*60 + s
-        elif cooldownRaw.count(":") == 2: #hours
-            hr, mins, s = [textToInt(x) for x in cooldownRaw.split(":")]
-            cooldownSeconds = hr*60*60 + mins*60 + s
-        elif cooldownRaw.count(":") == 1: #mins
-            mins, s = [textToInt(x) for x in cooldownRaw.split(":")]
-            cooldownSeconds = mins*60 + s
-        elif "s" in cooldownRaw: #seconds
-            cooldownSeconds = int(''.join([x for x in cooldownRaw if x.isdigit()]))
+        #convert time to seconds
+        validTime = True
+        if ":" in cooldownRaw:
+            times = cooldownRaw.split(":")
+            cooldownSeconds = 0
+            #convert
+            for i,e in enumerate(times):
+                num = extractNumFromText(e)
+                if not num:
+                    validTime = False
+                    break
+                cooldownSeconds += int(num) * 60**i
+
+        elif cooldownRaw.count("s") == 1: #only seconds
+            num = extractNumFromText(e)
+            if not num:
+                validTime = False
+            cooldownSeconds = num
+        else:
+            validTime = False
+        
+        if not validTime:
+            cooldownSeconds = defaultTime
+
         return cooldownSeconds
     
     def collect(self, objective):
@@ -1725,7 +1814,7 @@ class macro:
         cooldownSeconds = objectiveData[2]
         returnVal = None #a return value
         if "(" and ":" in reached:
-            cd = self.cdTextToSecs(reached, True)
+            cd = self.cdTextToSecs(reached, True, self.collectCooldowns[objective])
             if cd: cooldownSeconds = cd
             cooldownFormat = timedelta(seconds=cooldownSeconds)
             self.logger.webhook("", f"{displayName} is on cooldown ({cooldownFormat} remaining)", "dark brown", "screen")
@@ -2397,7 +2486,7 @@ class macro:
             cdImg = mssScreenshot(self.mw/2-130, math.floor(self.mh*0.48)-70, 400, 65)
             cdRaw = ocr.ocrRead(cdImg)
             cdRaw = ''.join([x[1][0] for x in cdRaw])
-            cd = self.cdTextToSecs(cdRaw, False)
+            cd = self.cdTextToSecs(cdRaw, False, 3600) #1 hour cd
             if cd:
                 cooldownFormat = timedelta(seconds=cd)
                 self.logger.webhook("", f"Blender is currently crafting an item ({cooldownFormat} remaining)", "dark brown", "screen")
@@ -2503,7 +2592,7 @@ class macro:
                 times.append(15*60 + 10*stickerCount)
                 ocrRes.pop(0)
             if ":" in ocrRes[0]: #direct
-                times.append(self.cdTextToSecs(ocrRes[0], True))
+                times.append(self.cdTextToSecs(ocrRes[0], True, 0))
             if times:
                 finalTime = max(times)
             else:
@@ -2791,11 +2880,11 @@ class macro:
 
         #merge the texts into chunks. Using those chunks, compare it with the known objectives
         #assume that the merging is done properly, so 1st chunk = 1st objective
-        screen = cv2.cvtColor(screenshotQuest(650, gray=False), cv2.COLOR_BGRA2RGB)
+        screen = cv2.cvtColor(screenshotQuest(650, gray=False), cv2.COLOR_BGRA2BGR)
         #crop it below the quest title
         screen = screen[questTitleYPos: , : ]
         #convert to grayscale
-        screenGray = cv2.cvtColor(screen, cv2.COLOR_RGB2GRAY)
+        screenGray = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
         img = cv2.threshold(screenGray, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
         img = cv2.GaussianBlur(img, (5, 5), 0)
         #dilute the image so that texts can be merged into chunks
@@ -2843,7 +2932,7 @@ class macro:
                 break
         
         questImgPath = "latest-quest.png"
-        cv2.imwrite(questImgPath, cv2.cvtColor(screen, cv2.COLOR_RGB2BGR))
+        cv2.imwrite(questImgPath, screen)
         
         print(completedObjectives)
         print(incompleteObjectives)
