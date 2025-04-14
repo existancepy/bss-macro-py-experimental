@@ -47,7 +47,7 @@ collectData = {
     "coconut_dispenser": [["use", "dispenser"], "s", 4*60*60], #4hr
     "royal_jelly_dispenser": [["claim", "royal"], "a",22*60*60], #22hr
     "treat_dispenser": [["use", "treat"], "w", 1*60*60], #1hr
-    "ant_pass_dispenser": [["use", "free"], "a", 2*60*60], #2hr
+    "ant_pass_dispenser": [["use", "free"], "w", 2*60*60], #2hr
     "glue_dispenser": [["use", "glue"], None, 22*60*60], #22hr
     "stockings": [["check", "inside", "stocking"], "a", 1*60*60], #1hr
     "wreath": [["admire", "honey"], "a", 30*60], #30mins
@@ -1390,11 +1390,13 @@ class macro:
         def getGatherTime():
             return time.time() - st
         
-        def turnOffShitLock(): #since shift lock is turned off at the end of the gather, we'll also update the gather time
-            if fieldSetting["shift_lock"]: self.keyboard.press('shift')
+        def stopGather():
+            if fieldSetting["shift_lock"]: 
+                self.keyboard.press('shift')
             self.moveMouseToDefault()
 
-        if fieldSetting["shift_lock"]: self.keyboard.press('shift')
+        if fieldSetting["shift_lock"]: 
+            self.keyboard.press('shift')
         while keepGathering:
             patternStartTime = time.time()
             mouse.mouseDown()
@@ -1418,11 +1420,12 @@ class macro:
             self.clickPermissionPopup()
             #add gather time stat
             self.incrementHourlyStat("gathering_time", time.time()-patternStartTime)
+            gatherTime = self.convertSecsToMinsAndSecs(getGatherTime())
 
             #check for gather interrupts
             if self.night and self.setdat["stinger_hunt"]: 
                 #rely on task function in main to execute the stinger hunt
-                turnOffShitLock()
+                stopGather()
                 self.logger.webhook("Gathering: interrupted","Stinger Hunt","dark brown")
                 self.reset(convert=False)
                 break
@@ -1430,15 +1433,12 @@ class macro:
                 break
             elif self.died:
                 self.status.value = ""
-                turnOffShitLock()
+                stopGather()
                 self.logger.webhook("","Player died", "dark brown","screen")
                 time.sleep(0.4)
                 self.reset()
                 break
-
-            #check if max time is reached
-            gatherTime = self.convertSecsToMinsAndSecs(getGatherTime())
-            if getGatherTime() > maxGatherTime:
+            elif getGatherTime() > maxGatherTime:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Time Limit - Return: {returnType.title()}", "light green", "honey-pollen")
                 keepGathering = False
             #check backpack
@@ -1452,7 +1452,8 @@ class macro:
         #gathering was interrupted
         if keepGathering: 
             return
-        else: turnOffShitLock()
+        else: 
+            stopGather()
 
         #go back to hive
         def walkToHive():
@@ -2978,13 +2979,13 @@ class macro:
             print("unable to locate dialog position")
 
         def screenshotDialog():
-            return imagehash.average_hash(mssScreenshot(x+xr-20, y+yr-20, 20, 20))
+            return imagehash.average_hash(mssScreenshot(x+xr-40, y+yr-40, 40, 40))
         
         dialogImg = screenshotDialog()
         mouse.moveTo(self.mw/2, y+yr-20)
         for _ in range(70):
             mouse.click()
-            time.sleep(0.05)
+            time.sleep(0.1)
             #check if the dialog is still there
             img = screenshotDialog()
             if img != dialogImg:
