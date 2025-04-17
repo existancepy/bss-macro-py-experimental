@@ -1,0 +1,7 @@
+display_type=retina
+screen_width=3420
+screen_height=2214
+y_multiplier=0.9
+x_multiplier=0.95
+y_length_multiplier=1.1
+x_length_multiplier=1.15
