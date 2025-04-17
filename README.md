@@ -3,7 +3,7 @@
 ![GitHub Repo stars](https://img.shields.io/github/stars/existancepy/bss-macro-py?style=flat&label=Stars&color=fff240&logo=github&logocolor=white&link=https://github.com/existancepy/bss-macro-py/stargazers)
 ![GitHub repo size](https://img.shields.io/github/repo-size/sevmanash/sevs-modified-macro?label=Repo%20Size)
 
-I just added/changed some features to the macro
+Some added/changed features to the macro
 
 What’s changed: Mondo Chick, Memory Match, Some paths, Dispensers, All walk-backs, and more
 
