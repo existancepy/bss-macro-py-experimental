@@ -34,7 +34,7 @@ def update(t = "e"):
     
     if t == "e":
         link = "https://github.com/sevmanash/sevs-modified-macro/archive/master.zip"
-        source = f"{destination}/sevs-modified-macro-main
+        source = f"{destination}/sevs-modified-macro-main"
     print(os.listdir(destination))
     #delete all files
     for f in os.listdir(destination):
