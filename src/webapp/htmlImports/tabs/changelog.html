@@ -1,0 +1,191 @@
+<!-- This was hell (low knowledge in html)-->
+
+<div class="poppins-medium standard-container" style="height: 93vh; width: 93vw; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; padding: 1rem; box-sizing: border-box;">
+    <h4>Changelog</h4>
+    <div class="seperator"></div>
+    <ul style="margin-left: 1rem; gap: 1rem; display: flex; flex-direction: column;" class="credits">
+        <ul>
+                <h2>Recent:</h2>
+                <li>Updated to 10.4</li>
+                <div style="height: 0.8rem;"></div>
+                <li>Auto Field Boost:</li>
+                <li>Now works similar to Natro (Dice -> Glitter -> Repeat)</li>
+                <li>Able to choose between inventory</li>
+                <li>Fixed issues</li>
+                <div style="height: 1rem;"></div>
+                <div style="height: 0.8rem;"></div>
+                <li>Readded Honey Bee quest</li>
+                <li>Macro now detects when oil/supersmoothie is active. (smoothie not tested)</li>
+                
+            <div class="seperator"></div>
+            <ul style="margin-left: -1rem; gap: 1rem; display: flex; flex-direction: column;" class="credits">
+            <h4>Modifications:</h4>
+            </ul>
+            <div style="height: 0.8rem;"></div>
+            <ul>
+                <h2>Discord bot:</h2>
+                <ul>
+                        <li>/start</li>
+                        <li>can /stop without terminating the bot</li>
+                        <li>You need to close TERMINAL to stop the bot, but it won't work if you close Chrome either; TERMINAL will keep the bot online.</li>
+                        <li>! No high resources will be used when the macro stops, just like without the bot. !</li>
+                        <li>Can ping the bot to test if working</li>
+                        <li>Returns that you need to start the bot if not started yet (if you use any other commands)</li>
+                    </ul>
+                <div style="height: 1rem;"></div>
+                <h2>e_macro.command:</h2>
+                <ul>
+                    <li>Uses oringal .command as it opens at a similar speed</li>
+                </ul>
+                <div style="height: 1rem;"></div>
+                <h2>Converting:</h2>
+                <ul>
+                    <li>Increased image of current honey threshold</li>
+                    <li>Shows your current honey after converting</li>
+                    <li>Tells how much time has passed since converting</li>
+                    <li>Fixed threshold for the screenshot showing honey </li>
+                </ul>
+                <div style="height: 1rem;"></div>
+                <h2>Resetting:</h2>
+                <ul>
+                    <li>Made restting a tad bit quicker</li>
+                </ul>
+                <div style="height: 1rem;"></div>
+                <h2>Mondo Chick:</h2>
+                <ul>
+                    <li>Upcoming: Trying to make it align to wall via image detection</li>
+                    <div style="height: 0.25rem;"></div>
+                    <li>Takes a screenshot upon arrival, then moves toward the wall</li>
+                    <li>If mondo enabled and is alive, conversion will be skipped</li>
+                    <li>If you die during mondo chick, macro will go back again</li>
+                    <li>You can choose to grab loot</li>
+                    <div style="height: 0.5rem;"></div>
+                    <h1>With looting on:</h1>
+                    <ul>
+                        <li>Can choose to move to collect tokens (some)</li>
+                        <li>15-minute time limit (resets at --:15)</li>
+                        <li>Loops to the top, then back to the bottom</li>
+                        <li>Can choose loop count (1 to 5)</li>
+                        <li>Displays loop count</li>
+                    </ul>
+                    <div style="height: 0.5rem;"></div>
+                    <h1>With looting off:</h1>
+                    <ul>
+                        <li>Can choose to move to collect tokens (some)</li>
+                        <li>Displays collection time in minutes (via webhook)</li>
+                        <li>No time limit; set collection time wisely</li>
+                    </ul>
+                    <div style="height: 0.5rem;"></div>
+                    <li>Detects two images to avoid false positives:</li>
+                    <ul>
+                        <li>Sprout appearing/being planted</li>
+                        <li>Surprise Party</li>
+                    </ul>
+                    <div style="height: 0.45rem;"></div>
+                    <li>Problem: May drift slightly off the wall; use a good animation pack to minimize this.</li>
+                    <li>Fix: Slightly tweaked collecting tokens loop</li>
+                </ul>
+                <div style="height: 1rem;"></div>
+                <h2>Memory Match:</h2>
+                <ul>
+                    <li>After solving, shows items won/or none via webhook</li>
+                    <li>Ends a bit quicker</li>
+                    <li>If it times out (prob broke) (7 minutes), it will rejoin</li>
+                    <li>Fix: Extreme memory match path should now detect cooldowns</li>
+                    <li>Fix: Memory Match saying no items won even though it won items</li>
+                </ul>
+                <div style="height: 1rem;"></div>
+                <h2>Dispensers:</h2>
+                <ul>
+                    <li>Returns a screenshot upon collection (via image detection)</li>
+                    <li>Updated Coconut Dispenser path</li>
+                    <li>Added honeystorm</li>
+                </ul>
+                <div style="height: 1rem;"></div>
+                <h2>Mob Run:</h2>
+                <ul>
+                    <li>Added number of bees for mob runs, will (try to) dodge attacks if under 15 bees, stays still if over</li>
+                    <li>Occurs before placing planters to ensure mobs are killed and loot is collected</li>
+                    <li>Returns that the macro is performing a bug run</li>
+                    <li>Waits for bees (10 seconds) then tells you it’s traveling</li>
+                    <li>After defeating the mob, when token link is collected it will show a screenshot, possibly displaying items collected from the mob</li>
+                    <li>After its done, it’ll return that it ended</li>
+                    <li>Fixed Mob Run double resetting</li>
+                </ul>
+                <div style="height: 1rem;"></div>
+                <h2>Stump Snail:</h2>
+                <ul>
+                    <li>Detects player death and resumes the process</li>
+                    <li>Alerts you if someone may have tried to kill you with their snail</li>
+                </ul>
+                <div style="height: 1rem;"></div>
+                <h2>Planters:</h2>
+                <ul>
+                    <li>After looting, you can make it reverse in case of missed tokens</li>
+                    <li>Fixed planter going backwards feature not working/li>
+                    <li>Fix: Macro saying planter not placed after using glitter (Detects before glitter placed)</li>
+                </ul>
+                <div style="height: 1rem;"></div>
+                <h2>Paths:</h2>
+                <ul>
+                    <li>Reworked [Ant Challenge] and [Ant Pass Dispenser] paths:</li>
+                    <ul>
+                        <li>Now walk left into the Ant Gate</li>
+                        <li>Though slower, paths are more reliable</li>
+                    </ul>
+                    <li>Modified various return paths (Sunflower, Dandelion, Mushroom, etc.)</li>
+                    <li>Updated honey wreath path and looting</li>
+                    <li>Updated lid art path and looting</li>
+                </ul>
+                <div style="height: 1rem;"></div>
+                <h2>Vicious:</h2>
+                <ul>
+                    <li>Slightly changed cactus path; should not fall to strawberry (I didn't test)</li>
+                </ul>
+                <div style="height: 1rem;"></div>
+                <h2>Returning to Hive:</h2>
+                <ul>
+                    <li>All paths move diagonally (left/down) at the end of the walk-back</li>
+                    <div style="height: 0.5rem;"></div>
+                        <h2> Reworked: </h2>
+                        <h1> (S means slightly modified) </h1>
+                        <li>Sunflower</li>
+                            <li>Dandelion (S)</li>
+                                <li>Mushroom</li>
+                                    <li>Blue Flower</li>
+                                        <li>Clover (S)</li>
+                                            <li>Strawberry </li>
+                                                <li>Spider (S)</li>
+                                                    <li>Bamboo (S)</li>
+                                                        <li>Pineapple (S)</li>
+                                                            <li>Stump (S)</li>
+                                                                <li>Cactus (S)</li>
+                                                                    <li>Pumpkin</li>
+                                                                        <li>Pine Tree (Not modified)</li>
+                                                                            <li>Rose</li>
+                                                                                <li>Mountain Top (S)</li>
+                                                                                    <li>Pepper</li>
+                                                                                        <li>Coconut (S)</li>
+                </ul>
+                <div style="height: 1rem;"></div>
+                    <h2>Misc:</h2>
+                <ul>
+                    <li>Fixed/edited some descriptions</li>
+                    <li>Beesmas now show screenshots</li>
+                    <li>Fixed not activating snow machine</li>
+                    <li>Added white, orange, and yellow webhook colors</li>
+                    <li>Included extra patterns in [settings/extra patterns]</li>
+                    <li>Gamemode check now does not detect sleep focus as a false positive</li>
+                    <li>"Existence so broke" inputs time first before message, like Natro...i believe</li>
+                    <li>Can choose 12 or 24 hourly report format</li>
+                    <li>Can choose 12 or 24 hour format for webhook</li>
+                    <li>Macro now detects the "Screen Permission" pop-up (when you stop then start the macro again) and closes it. </li>
+                    
+                </ul>
+                <div style="height: 1rem;"></div>
+                    <li>That should be all.</li>
+                    <li>If any problems, mention sev#3482 in the thread (PLEASE IN THE THREAD).</li>
+            </ul>
+        </ul>
+    </ul>
+</div>  
