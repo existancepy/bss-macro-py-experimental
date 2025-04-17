@@ -1,1 +1,0 @@
-self.keyboard.walk("d",5)
