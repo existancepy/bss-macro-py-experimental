@@ -32,10 +32,10 @@ def disconnectCheck(run, status, display_type):
             time.sleep(300) #5 min cd to let the macro run through all 3 rejoins
 
 #controller for the macro
-def macro(status, log, haste, updateGUI):
+def macro(status, logQueue, haste, updateGUI):
     import modules.misc.settingsManager as settingsManager
     import modules.macro as macroModule
-    macro = macroModule.macro(status, log, haste, updateGUI)
+    macro = macroModule.macro(status, logQueue, haste, updateGUI)
     #invert the regularMobsInFields dict
     #instead of storing mobs in field, store the fields associated with each mob
     regularMobData = {}
@@ -246,6 +246,7 @@ if __name__ == "__main__":
     import modules.misc.settingsManager as settingsManager
     from modules.discord_bot.discordBot import discordBot
     from modules.submacros.convertAhkPattern import ahkPatternToPython
+    from modules.stream.stream import cloudflaredStream
     import os
 
     if sys.platform == "darwin" and sys.version_info[1] <= 7:
@@ -263,11 +264,10 @@ if __name__ == "__main__":
     run = multiprocessing.Value('i', 3)
     updateGUI = multiprocessing.Value('i', 0)
     status = manager.Value(ctypes.c_wchar_p, "none")
-    log = manager.Value(ctypes.c_wchar_p, "")
+    logQueue = manager.Queue()
     haste = multiprocessing.Value('d', 0)
-    prevLog = ""
     watch_for_hotkeys(run)
-    logger = logModule.log(log, False, None, blocking=True)
+    logger = logModule.log(logQueue, False, None, blocking=True)
 
     #update settings
     profileSettings = settingsManager.loadSettings()
@@ -291,6 +291,9 @@ if __name__ == "__main__":
         with open(f"../settings/patterns/{patternName}.py", "w") as f:
             f.write(python)
         f.close()
+    
+    #setup stream class
+    stream = cloudflaredStream()
 
     def stopApp(page= None, sockets = None):
         global stopThreads
@@ -298,6 +301,7 @@ if __name__ == "__main__":
         print("stop")
         #print(sockets)
         macroProc.kill()
+        stream.stop()
         #if discordBotProc.is_alive(): discordBotProc.kill()
         keyboardModule.releaseMovement()
         mouse.mouseUp()
@@ -327,7 +331,7 @@ if __name__ == "__main__":
     prevDiscordBotToken = None
 
     while True:
-        eel.sleep(0.2)
+        eel.sleep(0.5)
         setdat = settingsManager.loadAllSettings()
 
         #discord bot. Look for changes in the bot token
@@ -347,12 +351,34 @@ if __name__ == "__main__":
             logger.webhookURL = setdat["webhook_link"]
             haste.value = setdat["movespeed"]
             stopThreads = False
-            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste, updateGUI), daemon=True)
+
+            #stream
+            def waitForStreamURL():
+                #wait for up to 15 seconds for the public link
+                for _ in range(150):
+                    time.sleep(0.1)
+                    if stream.publicURL:
+                        logger.webhook("Stream Started", f'Stream URL: {stream.publicURL}', "purple")
+                        return
+            
+                logger.webhook("", f'Stream could not start. Check terminal for more info', "red")
+
+            streamLink = None
+            if setdat["enable_stream"]:
+                logger.webhook("", "Starting Stream...", "light blue")
+                streamLink = stream.start(setdat["stream_resolution"])
+                Thread(target=waitForStreamURL, daemon=True).start()
+
+
+            #macro proc
+            macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
             macroProc.start()
+
             #disconnect detection
             disconnectThread = Thread(target=disconnectCheck, args=(run, status, screenInfo["display_type"]))
             disconnectThread.daemon = True
             disconnectThread.start()
+
             #haste compensation
             if setdat["haste_compensation"]:
                 hasteCompThread = Thread(target=hasteCompensationThread, args=(setdat["movespeed"], screenInfo["display_type"] == "retina", haste,))
@@ -373,9 +399,7 @@ if __name__ == "__main__":
                     hourlyReportBgData[k] = 0   
             settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
 
-            #discord bot
-            if setdat["enable_webhook"]:
-                logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
+            logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
             run.value = 2
             gui.toggleStartStop()
         elif run.value == 0:
@@ -391,20 +415,18 @@ if __name__ == "__main__":
             appManager.closeApp("Roblox")
             keyboardModule.releaseMovement()
             mouse.mouseUp()
-            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste, updateGUI), daemon=True)
+            macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
             macroProc.start()
             run.value = 2
 
         #detect a new log message
-        if log.value != prevLog:
-            #get the logData and format the message based on its type
-            logData = ast.literal_eval(log.value)
+        if not logQueue.empty():
+            logData = logQueue.get()
             if logData["type"] == "webhook": #webhook
                 msg = f"{logData['title']}<br>{logData['desc']}"
 
             #add it to gui
             gui.log(logData["time"], msg, logData["color"])
-            prevLog = log.value
         
         #detect if the gui needs to be updated
         if updateGUI.value:

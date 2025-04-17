@@ -39,7 +39,7 @@
     <div id = "setting-bss" class="settings-tab-item active"><span class="fxemoji--honeybee"></span>Bss</div>
     <div id = "setting-other" class = "settings-tab-item"><span class="carbon--settings"></span>Other</div>
     <div id = "setting-discord" class = "settings-tab-item" style="display: flex; align-items: center;"><span class="logos--discord-icon"></span>Discord</div>
-    <!-- <div id = "setting-stream" class = "settings-tab-item" style="display: flex; align-items: center;"><span class="solar--play-stream-bold"></span>Stream</div> -->
+    <div id = "setting-stream" class = "settings-tab-item" style="display: flex; align-items: center;"><span class="solar--play-stream-bold"></span>Stream</div>
 </div>
 <div style="display: flex; justify-content: center; width: 100%;">
     <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="bss">
@@ -262,14 +262,35 @@
     <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="stream">
         <script>
             const parentStream = document.getElementById("stream")
-                buildStandardContainer(parentStream,"General", "",[
+                buildStandardContainer(parentStream,"Stream", "Stream your screen in real-time through a web link",[
                     {
-                        id: "stream_quality",
+                        id: "enable_stream",
+                        title: "Enable Stream",
+                        desc: "Automatically start streaming",
+                        type: {
+                            name: "checkbox",
+                            triggerFunction: saveGeneralTriggerFunction
+                        }
+                    },
+                    // {
+                    //     id: "ngrok_auth",
+                    //     title: "Ngrok Authentication Token",
+                    //     desc: "Instructions for finding your ngrok auth token can be found in #guides",
+                    //     type: {
+                    //         name: "textbox",
+                    //         inputType: "string",
+                    //         length: 13,
+                    //         triggerFunction: saveGeneralTriggerFunction
+                    //     }
+                    // },
+
+                    {
+                        id: "stream_resolution",
                         title: "Stream Quality",
-                        desc: "The resolution of the stream. 1920x1080 (1080p) or 1280x720 (720p) is recommended",
+                        desc: "The resolution of the stream. ",
                         type: {
                             name: "dropdown",
-                            data: ["2560x1440", "1920x1080", "1280x720", "720x480", "640x360"],
+                            data: [1.0, 0.75, 0.5, 0.25],
                             triggerFunction: saveGeneralTriggerFunction
                         }
                     },
@@ -284,17 +305,17 @@
                             triggerFunction: saveGeneralTriggerFunction
                         }
                     },
-                    {
-                        id: "stream_preset",
-                        title: "FFMPEG Preset",
-                        desc: "Encoding quality. Choose ultrafast if your device is unable to keep up with the stream",
-                        type: {
-                            name: "dropdown",
-                            data: ["veryfast", "ultrafast"],
-                            triggerFunction: saveGeneralTriggerFunction
-                        }
+                    // {
+                    //     id: "stream_preset",
+                    //     title: "FFMPEG Preset",
+                    //     desc: "Encoding quality. Choose ultrafast if your device is unable to keep up with the stream",
+                    //     type: {
+                    //         name: "dropdown",
+                    //         data: ["veryfast", "ultrafast"],
+                    //         triggerFunction: saveGeneralTriggerFunction
+                    //     }
                         
-                    }
+                    // }
     
                 ])
         </script>

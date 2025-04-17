@@ -59,8 +59,8 @@ class webhookQueue:
         self.queue.put(data)
 
 class log:
-    def __init__(self, logVar, enableWebhook, webhookURL, blocking=False):
-        self.logVar = logVar
+    def __init__(self, logQueue, enableWebhook, webhookURL, blocking=False):
+        self.logQueue = logQueue
         self.webhookURL = webhookURL
         self.enableWebhook = enableWebhook
         self.blocking = blocking
@@ -81,7 +81,7 @@ class log:
             "desc": desc,
             "color": colors[color]
         }
-        self.logVar.value = str(logData)
+        self.logQueue.put(logData)
 
         if not self.enableWebhook: return
 

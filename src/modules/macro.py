@@ -289,7 +289,7 @@ for line in qdata:
 quest_data[quest_bear][quest_title] = quest_info 
 
 class macro:
-    def __init__(self, status, log, haste, updateGUI):
+    def __init__(self, status, logQueue, haste, updateGUI):
         self.status = status
         self.updateGUI = updateGUI
         self.setdat = settingsManager.loadAllSettings()
@@ -298,7 +298,7 @@ class macro:
         screenData = getScreenData()
         self.display_type, self.ww, self.wh, self.ysm, self.xsm, self.ylm, self.xlm = itemgetter("display_type", "screen_width","screen_height", "y_multiplier", "x_multiplier", "y_length_multiplier", "x_length_multiplier")(screenData)
         self.keyboard = keyboard(self.setdat["movespeed"], haste, self.setdat["haste_compensation"])
-        self.logger = logModule.log(log, self.setdat["enable_webhook"], self.setdat["webhook_link"])
+        self.logger = logModule.log(logQueue, self.setdat["enable_webhook"], self.setdat["webhook_link"])
         #setup an internal cooldown tracker. The cooldowns can be modified
         self.collectCooldowns = dict([(k, v[2]) for k,v in mergedCollectData.items()])
         self.collectCooldowns["sticker_printer"] = 1*60*60
