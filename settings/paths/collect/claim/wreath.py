@@ -1,0 +1,10 @@
+time.sleep(2)
+self.keyboard.slowPress("shift")
+self.keyboard.walk("d", 1, False)
+self.keyboard.walk("w", 1, False)
+self.keyboard.press("shift")
+for i in range (4):
+    self.keyboard.multiWalk(["s","a"], 0.75)
+    self.keyboard.walk("a", 0.12)
+    self.keyboard.multiWalk(["w","d"], 0.95)
+    self.keyboard.walk("a", 0.12)

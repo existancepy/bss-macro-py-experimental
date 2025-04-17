@@ -1,0 +1,17 @@
+self.keyboard.slowPress(",")
+self.keyboard.slowPress(",")
+self.keyboard.slowPress("e")
+time.sleep(0.8)
+self.keyboard.keyDown("w")
+self.keyboard.slowPress("space")
+self.keyboard.slowPress("space")
+sleep(2.6)
+self.keyboard.slowPress(".")
+self.keyboard.slowPress(".")
+sleep(3.55)
+self.keyboard.keyUp("w")
+self.keyboard.slowPress("space")
+sleep(0.5)
+for i in range(10):
+    if self.isBesideE(["check", "inside", "stocking"]):
+        self.keyboard.walk("d",0.6, False)
