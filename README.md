@@ -1,5 +1,6 @@
 # Modified (Existance) Macro
-![Discord](https://img.shields.io/discord/1065032948119769118?logo=discord&label=Discord&labelColor=black&color=blue&link=https%3A%2F%2Fdiscord.gg%2FVYf2A5xtzS)
+<img alt="Discord" src="https://img.shields.io/discord/1065032948119769118?logo=discord&label=Discord&labelColor=black&color=blue&link=https%3A%2F%2Fdiscord.gg%2FVYf2A5xtzS">
+
 ![GitHub Repo stars](https://img.shields.io/github/stars/existancepy/bss-macro-py?style=flat&label=Stars&color=fff240&logo=github&logocolor=white&link=https://github.com/existancepy/bss-macro-py/stargazers)
 ![GitHub repo size](https://img.shields.io/github/repo-size/sevmanash/sevs-modified-macro?label=Repo%20Size)
 
