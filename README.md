@@ -3,7 +3,6 @@
 ![GitHub Repo stars](https://img.shields.io/github/stars/existancepy/bss-macro-py?style=flat&label=Stars&color=fff240&logo=github&logocolor=white&link=https://github.com/existancepy/bss-macro-py/stargazers)
 ![Repo Size](https://img.shields.io/github/repo-size/existancepy/bss-macro-py?label=Repo%20Size&logo=github&logoColor=white)
 
-Modified (Existence) Macro
 I just added/changed some features to the macro, I will list major changes
 
 What’s changed: Mondo Chick, Memory Match, Some paths, Dispensers, All walk-backs
