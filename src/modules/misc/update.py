@@ -33,7 +33,7 @@ def update(t = "e"):
     e_macroPath = f"{destination}/e_macro.command"
     
     if t == "e":
-        link = "https://github.com/sevmanash/bss-macro-modified/archive/master.zip"
+        link = "https://github.com/sevmanash/sevs-modified-macro/archive/master.zip"
         source = f"{destination}/bss-macro-modified-main"
     print(os.listdir(destination))
     #delete all files
