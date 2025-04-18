@@ -246,7 +246,7 @@ if __name__ == "__main__":
     import modules.misc.settingsManager as settingsManager
     from modules.discord_bot.discordBot import discordBot
     from modules.submacros.convertAhkPattern import ahkPatternToPython
-    from modules.stream.stream import cloudflaredStream
+    from modules.submacros.stream import cloudflaredStream
     import os
 
     if sys.platform == "darwin" and sys.version_info[1] <= 7:

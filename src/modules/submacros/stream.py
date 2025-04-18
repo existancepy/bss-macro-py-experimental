@@ -10,6 +10,9 @@ import os
 import gc
 import sys
 from collections import deque
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 
 class cloudflaredStream:
@@ -37,7 +40,7 @@ class cloudflaredStream:
         
         # Resolution and quality settings
         self.resolution = 1.0
-        self.jpeg_quality = 80  # Starting quality
+        self.jpeg_quality = 60  # Starting quality
         self.adaptive_quality = True
 
         # HTML page with added FPS counter
@@ -207,19 +210,19 @@ class cloudflaredStream:
         if self.current_fps < 30:
             if self.jpeg_quality > 40:
                 self.jpeg_quality -= 5
-                print(f"Reducing JPEG quality to {self.jpeg_quality} to improve performance")
+                #print(f"Reducing JPEG quality to {self.jpeg_quality} to improve performance")
             elif self.resolution > 0.5:
                 self.resolution -= 0.1
-                print(f"Reducing resolution to {self.resolution:.1f} to improve performance")
+                #print(f"Reducing resolution to {self.resolution:.1f} to improve performance")
         # If FPS is good, we can try to improve quality
         elif self.current_fps > 55:
             if self.resolution < 1.0:
                 self.resolution += 0.1
                 self.resolution = min(1.0, self.resolution)  # Cap at 1.0
-                print(f"Increasing resolution to {self.resolution:.1f}")
+                #print(f"Increasing resolution to {self.resolution:.1f}")
             elif self.jpeg_quality < 80:
                 self.jpeg_quality += 5
-                print(f"Increasing JPEG quality to {self.jpeg_quality}")
+                #print(f"Increasing JPEG quality to {self.jpeg_quality}")
     
     def _generate_frames_with_restart(self):
         """Wrapper around generateFrames to handle periodic restarting of the capture system"""

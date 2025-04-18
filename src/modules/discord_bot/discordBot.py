@@ -6,7 +6,6 @@ except ImportError:
 from discord.ext import commands
 from modules.screen.screenshot import mssScreenshot
 import io
-from modules.submacros.hourlyReport import generateHourlyReport
 from modules.misc.messageBox import msgBox
 import subprocess
 import sys

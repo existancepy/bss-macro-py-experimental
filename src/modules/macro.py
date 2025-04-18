@@ -31,7 +31,7 @@ from modules.submacros.memoryMatch import solveMemoryMatch
 import math
 import re
 import ast
-from modules.submacros.hourlyReport import generateHourlyReport
+from modules.submacros.hourlyReport import HourlyReport, BuffDetector
 from difflib import SequenceMatcher
 import fuzzywuzzy
 from modules.submacros.walk import Walk
@@ -1394,6 +1394,9 @@ class macro:
             if fieldSetting["shift_lock"]: 
                 self.keyboard.press('shift')
             self.moveMouseToDefault()
+            self.status.value = ""
+            self.isGathering = False
+            gatherBackgroundThread.join()
 
         if fieldSetting["shift_lock"]: 
             self.keyboard.press('shift')
@@ -1446,9 +1449,6 @@ class macro:
                 self.logger.webhook(f"Gathering: Ended", f"Time: {gatherTime} - Backpack - Return: {returnType.title()}", "light green", "honey-pollen")
                 keepGathering = False
 
-        self.status.value = ""
-        self.isGathering = False
-        gatherBackgroundThread.join()
         #gathering was interrupted
         if keepGathering: 
             return
@@ -1580,7 +1580,7 @@ class macro:
         #mostly just to prevent the macro from going to mondo over and over again for the 10mins
         if minute > 10 or not self.hasRespawned("mondo", 20*60): return False
         if gatherInterrupt:
-            if not self.setdat["mondo_buff_interrupt_gathering"]: return
+            if not self.setdat["mondo_buff_interrupt_gathering"]: return False
             if turnOffShiftLock: self.keyboard.press("shift")
             self.logger.webhook("Gathering: interrupted","Mondo Buff","dark brown")
             self.reset(convert=False)
@@ -1608,7 +1608,8 @@ class macro:
                     self.keyboard.press("shift")
                     self.logger.webhook("", "Player Died", "red", "screen")
                     self.reset(convert=False)
-                    self.collectMondoBuff()
+                    if self.collectMondoBuff():
+                        return True
                 #time limit
                 if getCurrentMinute() >= 15: #mondo despawns after 15 minutes if not defeated in time
                     self.keyboard.walk("s",1, False)
@@ -1618,7 +1619,7 @@ class macro:
                     self.keyboard.press("shift")
                     self.saveTiming("mondo") 
                     self.reset(convert=True)
-                    return
+                    return False
                 #collect tokens by bees
                 if self.setdat["mondo_collect_token"]: 
                     self.keyboard.walk("a", 0.45)
@@ -1668,8 +1669,8 @@ class macro:
             else:
                 time.sleep(self.setdat['mondo_buff_wait'] * 60)
             self.saveTiming("mondo") 
+            self.logger.webhook("","Collected: Mondo Buff","light green")
         #done
-        self.logger.webhook("","Collected: Mondo Buff","light green")
         self.reset(convert=True)
         return True
 
@@ -2696,17 +2697,6 @@ class macro:
             mouse.click()
 
     def background(self):
-
-        def getHoney():
-            ocrHoney = ocr.imToString("honey")
-            return ocrHoney if ocrHoney else 0
-        
-        #first honey
-        settingsManager.saveSettingFile("start_honey", getHoney(), "data/user/hourly_report_bg.txt")
-        settingsManager.saveSettingFile("start_time", time.time(), "data/user/hourly_report_bg.txt")
-        prevMin = -1  
-        currMin = None
-    
         self.nightDetectStreaks = 0
         while True:
             with open("./data/user/hotbar_timings.txt", "r") as f:
@@ -2740,7 +2730,36 @@ class macro:
                 with open("./data/user/hotbar_timings.txt", "w") as f:
                     f.write(str(hotbarSlotTimings))
                 f.close()
-            
+
+            time.sleep(1)
+
+    def hourlyReportBackground(self):
+        def getHoney():
+            ocrHoney = ocr.imToString("honey")
+            return ocrHoney if ocrHoney else 0
+        
+        #first honey
+        settingsManager.saveSettingFile("start_honey", getHoney(), "data/user/hourly_report_bg.txt")
+        settingsManager.saveSettingFile("start_time", time.time(), "data/user/hourly_report_bg.txt")
+        prevMin = -1  
+        currMin = None
+
+        buffDetector = BuffDetector(self.newUI, self.display_type)
+        hourlyReport = HourlyReport(buffDetector)
+
+        buffUptimeBuffsImage = {
+            "baby_love": ["middle", True, False],
+            "blue_boost": ["middle", True, True],
+            "wealth_clock": ["top", True, True],
+            "blessing": ["middle", True, True],
+            "bloat": ["top", True, True],
+        }
+
+        buffUptimeBuffsColor = {
+            "focus": ["top", True, True],
+        }
+
+        while True:
             #Hourly report
             if self.status.value != "rejoining":
                 #instead of using time.sleep, we want to run the code at the start of the min
@@ -2757,7 +2776,7 @@ class macro:
 
             #check if its time to send hourly report
             if currMin == 0:
-                hourlyReportData = generateHourlyReport(self.newUI)
+                hourlyReportData = hourlyReport.generateHourlyReport()
                 self.logger.hourlyReport("Hourly Report", "", "purple")
 
                 #reset stats
@@ -2790,7 +2809,7 @@ class macro:
                 with open("data/user/hourly_report_history.txt", "w") as f:
                     f.write(str(history))
                 f.close()
-
+            
             time.sleep(1)
 
     def toggleQuest(self):
@@ -3115,10 +3134,14 @@ class macro:
                 self.toggleFullScreen()
             self.startDetect()
 
-        #enable night detection and hotbar
+        #enable background
         backgroundThread = threading.Thread(target=self.background)
         backgroundThread.daemon = True
         backgroundThread.start()
+
+        #enable hourly report
+        hourlyReportBackgroundThread = threading.Thread(target=self.hourlyReportBackground, daemon=True)
+        hourlyReportBackgroundThread.start()
 
         self.reset(convert=True)
         self.saveTiming("rejoin_every")

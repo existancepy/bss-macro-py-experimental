@@ -16,14 +16,18 @@ def locateImageOnScreen(target, x,y,w,h, threshold = 0):
 
 #used for locating templates with transparency
 #this is done by template matching with the gray color space
-def locateTransparentImageOnScreen(target, x,y,w,h, threshold = 0):
-    screen = mssScreenshotNP(x,y,w,h)
-    
+
+def locateTransparentImage(target, screen, threshold):
     screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
     target = cv2.cvtColor(target, cv2.COLOR_RGB2GRAY)
     _, max_val, _, max_loc = templateMatch(target, screen)
     if max_val < threshold: return None
     return (max_val, max_loc)
+    
+def locateTransparentImageOnScreen(target, x,y,w,h, threshold = 0):
+    screen = mssScreenshotNP(x,y,w,h)
+    return locateTransparentImage(target, screen, threshold)
+
 
 def similarHashes(hash1, hash2, threshold):
     return hash1-hash2 < threshold

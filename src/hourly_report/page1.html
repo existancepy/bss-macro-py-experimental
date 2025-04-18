@@ -241,7 +241,12 @@
         Chart.defaults.font.size = 20
         Chart.defaults.animation = false
         Chart.defaults.color = "#818285"
-        const hourNum = new Date().getHours()-1
+        let hourNum = new Date().getHours()
+        if (hourNum){
+            hourNum -= 1
+        }else{
+            hourNum = 23
+        }
         const hour = leadingZero(hourNum)
         const hourArray = Array.from(Array(61).keys())
         //var honeyPerMin = Array.from({length: 40}, () => Math.floor(Math.random() * 99999999999))

@@ -199,21 +199,19 @@
     </head>
     <body style="background-color: #0E0F13; color: #FFFFFF; display: flex; justify-content: space-between;">
         <div style="padding: 1.6rem 3rem 0 2.5rem; flex-grow: 1; height: 96vh; display: flex; flex-direction: column;">
-            <div style="display: flex; justify-content: space-between; font-size:1.6rem; margin-top: 1rem;">
-                <div style="width: 60%;">
+            <div style="font-size:1.6rem; margin-top: 1rem;">
                     <h2 class="inter-bold" style="margin-bottom: 1rem; display: inline-block;">Backpack</h2>
                     <div class="canvas1">
                         <canvas id="backpackChart"></canvas>
                     </div>
-                </div>
-                <div style="flex-grow: 1; margin-left: 6rem;">
+                <!-- <div style="flex-grow: 1; margin-left: 6rem;">
                     <h2 class="inter-bold" style="margin-bottom: 1rem; display: inline-block;">Task Times</h2>
                     <div id="task-times-legend" class="inter-semibold">
                     </div>
                     <div style="height: calc(38vh - 2rem * 4.5);">
                         <canvas id="taskTimesChart"></canvas>
                     </div>
-                </div>
+                </div> -->
             </div>
         </div>
         <aside style="background-color: #17191D; width: 25%; height: 100vh; box-sizing:border-box; padding-left: 2rem; padding-right: 1.5rem;">
@@ -267,7 +265,12 @@
         Chart.defaults.font.size = 20
         Chart.defaults.animation = false
         Chart.defaults.color = "#818285"
-        const hourNum = new Date().getHours()-1
+        let hourNum = new Date().getHours()
+        if (hourNum){
+            hourNum -= 1
+        }else{
+            hourNum = 23
+        }
         const hour = leadingZero(hourNum)
         const hourArray = Array.from(Array(61).keys())
         //var backpackPerMin = Array.from({length: 40}, () => Math.floor(Math.random() * 100))
@@ -360,41 +363,41 @@
             return `${minutes}m ${seconds}s`
         }
 
-        const taskTimesColors = ["#A909F9","#C95EFF","#DFA0FF","#EDC9FF"]
-        const tasks = ["Gathering", "Converting", "Bug Runs", "Misc"]
-        const taskTimes = []
-        const taskLegendEle = document.getElementById("task-times-legend")
-        for (let i = 0; i < taskTimes.length; i++){
-            taskLegendEle.innerHTML += `
-            <div style="display: flex; align-items: center;">
-                <div style="height: 1rem; aspect-ratio: 1/1; background-color: ${taskTimesColors[i]}; margin-right: 0.9rem;"></div>
-                ${tasks[i]}:<div style="margin-left:1rem">${convertMins(taskTimes[i])}</div>
-            </div>
-            `
-        }
-        new Chart(document.getElementById('taskTimesChart'), {
-            type: 'doughnut',
-            data: {
-                labels: tasks,
-                datasets: [
-                    {
-                        data: taskTimes,
-                        backgroundColor: taskTimesColors,
-                        borderWidth: 0
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins:{
-                    legend: {
-                        display: false
-                    },
-                },
-                cutout: "65%"
-            }
-        })
+        // const taskTimesColors = ["#A909F9","#C95EFF","#DFA0FF","#EDC9FF"]
+        // const tasks = ["Gathering", "Converting", "Bug Runs", "Misc"]
+        // const taskTimes = []
+        // const taskLegendEle = document.getElementById("task-times-legend")
+        // for (let i = 0; i < taskTimes.length; i++){
+        //     taskLegendEle.innerHTML += `
+        //     <div style="display: flex; align-items: center;">
+        //         <div style="height: 1rem; aspect-ratio: 1/1; background-color: ${taskTimesColors[i]}; margin-right: 0.9rem;"></div>
+        //         ${tasks[i]}:<div style="margin-left:1rem">${convertMins(taskTimes[i])}</div>
+        //     </div>
+        //     `
+        // }
+        // new Chart(document.getElementById('taskTimesChart'), {
+        //     type: 'doughnut',
+        //     data: {
+        //         labels: tasks,
+        //         datasets: [
+        //             {
+        //                 data: taskTimes,
+        //                 backgroundColor: taskTimesColors,
+        //                 borderWidth: 0
+        //             }
+        //         ]
+        //     },
+        //     options: {
+        //         responsive: true,
+        //         maintainAspectRatio: false,
+        //         plugins:{
+        //             legend: {
+        //                 display: false
+        //             },
+        //         },
+        //         cutout: "65%"
+        //     }
+        // })
 
         //planters
         function secondsToMinsAndHours(time){
