@@ -38,3 +38,6 @@ def fastClick():
 
 def scroll(clicks, pause = False):
     pag.scroll(clicks, _pause = pause)
+
+def getPos():
+    return pag.position()

@@ -58,17 +58,18 @@ class BuffDetector():
     def screenshotBuffArea(self):
         return mssScreenshotNP(self.x, self.y, ww/1.8, 45)
 
-    def getBuffQuantityFromImg(self, bgrImg,transform, buff=None):
+    def getBuffQuantityFromImg(self, bgrImg,transform, crop=True, buff=None):
         #buff size is 76x76
         lower = np.array([0, 102, 0])
         upper = np.array([100, 255, 31])
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
 
         mask = cv2.cvtColor(bgrImg, cv2.COLOR_BGR2HLS)
-        if transform:
+        if crop:
             #crop the text area
             h, w, *_ = mask.shape
-            mask = mask[int(h * 0.6):, :]
+            mask = mask[int(h * 0.58):, :]
+        if transform:
             #extract only the text (white color)
             mask = cv2.inRange(mask, lower, upper)
             mask = cv2.erode(mask, kernel)
@@ -88,11 +89,12 @@ class BuffDetector():
             print(ocrText)
         return buffCount if buffCount else '1'
 
-    def getBuffsWithImage(self, buffs, save=False):
+    def getBuffsWithImage(self, buffs, save=False, screen = None):
         buffQuantity = []
         buffs = buffs.items()
 
-        screen = self.screenshotBuffArea()
+        if screen is None:
+            screen = self.screenshotBuffArea()
 
         for buff,v in buffs:
             templatePosition, transform, stackable = v
@@ -132,7 +134,6 @@ class BuffDetector():
     def getBuffWithColor(self, buffs):
         buffQuantity = []
         buffs = buffs.items()
-        multi = 2 if self.displayType == "retina" else 1
 
         screen = self.screenshotBuffArea()
         hsv = cv2.cvtColor(screen, cv2.COLOR_BGR2HSV)
@@ -164,6 +165,76 @@ class BuffDetector():
                 else:
                     buffQuantity.append("0")
         return buffQuantity
+    
+    def detectBuffColorInImage(self, screen, hex, minSize, x1=0, y1=0, x2=None, y2=None, variation=0, show=False, searchDirection=1):
+        
+        multi = 2 if self.displayType == "retina" else 1
+        #convert hex to bgr and setup the color range
+        r = (hex >> 16) & 0xFF
+        g = (hex >> 8) & 0xFF
+        b = hex & 0xFF
+        bgr = [b,g,r]
+        lower = np.array([x-variation for x in bgr])
+        upper = np.array([x+variation for x in bgr])
+
+        #crop screen
+        if x2 is None:
+            x2 = screen.shape[1]
+        if y2 is None:
+            y2 = screen.shape[0]
+        
+        cropped = screen[int(y1):int(y2), int(x1):int(x2)]
+
+        mask = cv2.inRange(cropped, lower, upper)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        coords = []
+        for cnt in contours:
+            rect = cv2.boundingRect(cnt)
+            x, y, w, h = rect
+
+            #filter area to avoid noise
+            if w > minSize[0]*multi and h > minSize[1]*multi:
+                coords.append((x + x1, y + y1, w, h))  # Offset by crop origin
+
+        def sort_key(rect):
+            x, y, w, h = rect
+            center_x = x + w // 2
+            center_y = y + h // 2
+
+            if searchDirection == 1:  # top → left → right → bottom
+                return (center_y, center_x)
+            elif searchDirection == 2:  # bottom → left → right → top
+                return (-center_y, center_x)
+            elif searchDirection == 3:  # bottom → right → left → top
+                return (-center_y, -center_x)
+            elif searchDirection == 4:  # top → right → left → bottom
+                return (center_y, -center_x)
+            elif searchDirection == 5:  # left → top → bottom → right
+                return (center_x, center_y)
+            elif searchDirection == 6:  # left → bottom → top → right
+                return (center_x, -center_y)
+            elif searchDirection == 7:  # right → bottom → top → left
+                return (-center_x, -center_y)
+            elif searchDirection == 8:  # right → top → bottom → left
+                return (-center_x, center_y)
+            else:  # fallback to default (top → left)
+                return (center_y, center_x)
+
+        # Sort and return only the first match
+        if coords:
+            coords.sort(key=sort_key)
+            x, y, w, h = coords[0]
+            if show:
+                preview = screen.copy()
+                cv2.rectangle(preview, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.imshow("Detected Buff", preview)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+            return coords[0]
+
+        return None
+
+        
 
 
     def getNectars(self):

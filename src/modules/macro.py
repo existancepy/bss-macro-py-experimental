@@ -846,8 +846,26 @@ class macro:
         if self.enableNightDetection:
             self.keyboard.press(",")
         
-        while not self.isBesideE(["pollen", "flower", "field"]): 
+        while True: 
+            not self.isBesideE(["pollen", "flower", "field"])
+            #check if the macro is done converting/not converting
+            textRaw = ocr.imToString("bee bear").lower()
+            text = self.convertCyrillic(textRaw)
+            #done converting
+            doneConverting = False
+            for i in ["pollen", "flower", "field"]:
+                if i in text:
+                    doneConverting = True
+                    break
+            if doneConverting: 
+                break
+            #not converting
+            if "make" in text:
+                self.keyboard.press("e")
+                time.sleep(0.5)
+
             mouse.click()
+
             if self.night and self.setdat["stinger_hunt"]:
                 self.incrementHourlyStat("converting_time", time.time()-st)
                 self.keyboard.press(".")
@@ -2756,7 +2774,7 @@ class macro:
         }
 
         buffUptimeBuffsColor = {
-            "focus": ["top", True, True],
+            "focus": [[np.array([50, 180, 180]), np.array([80, 255, 255])], True, True],
         }
 
         while True:
@@ -3114,15 +3132,22 @@ class macro:
         #this is done by taking 2 different screenshots
         #if they are both the same, we assume that the keypress didnt go through and hence accessibility is not enabled
         if sys.platform == "darwin":
-            img1 = pillowToHash(mssScreenshot())
-            self.keyboard.press("esc")
-            time.sleep(0.1)
-            time.sleep(0.5)
-            img2 = pillowToHash(mssScreenshot())
-            self.keyboard.press("esc")
-            if similarHashes(img1, img2, 3):
+            originalX = mouse.getPos()[0]
+            mouse.moveBy(50, 0)
+            time.sleep(0.15)
+            newX = mouse.getPos()[0]
+            if originalX == newX:
                 messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions\n\n NOTE: This popup might be incorrect. If the macro is able to input keypresses and interact with the game, you can dismiss this popup', title='Accessibility Permission')
             time.sleep(1)
+            # img1 = pillowToHash(mssScreenshot())
+            # self.keyboard.press("esc")
+            # time.sleep(0.1)
+            # time.sleep(0.5)
+            # img2 = pillowToHash(mssScreenshot())
+            # self.keyboard.press("esc")
+            # if similarHashes(img1, img2, 3):
+            #     messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions\n\n NOTE: This popup might be incorrect. If the macro is able to input keypresses and interact with the game, you can dismiss this popup', title='Accessibility Permission')
+            # time.sleep(1)
 
     def start(self):
         #if roblox is not open, rejoin
