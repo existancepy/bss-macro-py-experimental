@@ -47,11 +47,12 @@ class keyboard:
     def timeWait(self, duration):
         baseSpeed = 28
         targetDistance = baseSpeed * duration  # Total distance the player should travel
+        maxTime = 28/26*duration #fail safe, in case it loops longer than it needs to. Assume that the lowest speed of the user is 26
         traveledDistance = 0  # Tracks total integrated distance
         startTime = time.perf_counter()
         prevTime = startTime
 
-        while traveledDistance < targetDistance:
+        while traveledDistance < targetDistance or prevTime-startTime > maxTime:
             currentTime = time.perf_counter()
             deltaT = deltaT = max(currentTime - prevTime, 1e-6)
             speed = max(self.haste.value, self.ws)

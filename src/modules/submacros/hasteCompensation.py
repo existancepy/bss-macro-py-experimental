@@ -20,7 +20,7 @@ class HasteCompensation():
 
         self.bearMorphs = []
         for i in range(5):
-            self.bearMorphs.append(self.adjustBuffImage(f"./images/buffs/bearmorph{i+1}.png"))
+            self.bearMorphs.append(self.adjustBuffImage(f"./images/buffs/bearmorph{i+1}-retina.png"))
 
         self.hastePlus = self.adjustBuffImage(f"./images/buffs/haste+.png")         
         self.mw, self.mh = pag.size()                 

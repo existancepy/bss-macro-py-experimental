@@ -58,7 +58,7 @@ class BuffDetector():
     def screenshotBuffArea(self):
         return mssScreenshotNP(self.x, self.y, ww/1.8, 45)
 
-    def getBuffQuantityFromImg(self, bgrImg,transform, crop=True, buff=None):
+    def getBuffQuantityFromImg(self, bgrImg,transform, crop=True, buff=None, intOnly=False):
         #buff size is 76x76
         lower = np.array([0, 102, 0])
         upper = np.array([100, 255, 31])
@@ -80,14 +80,31 @@ class BuffDetector():
         
         mask = mask.resize((mask.width * 3, mask.height * 3), Image.LANCZOS)
 
-        mask.save(f"{time.time()}.png")
+        #mask.save(f"{time.time()}.png")
         #read the text
         ocrText = ''.join([x[1][0] for x in ocrRead(mask)]).replace(":", ".")
-        buffCount = ''.join([x for x in ocrText if x.isdigit() or x == "."])
+        buffCount = ''.join([x for x in ocrText if x.isdigit() or (not intOnly and x == ".")])
         if buff:
             print(buff)
             print(ocrText)
         return buffCount if buffCount else '1'
+    
+    def getBuffQuantityFromImgTight(self, bgrImg, show=False):
+        #more aggressive thresholding and masking
+        #get only text (rgb [243, 243, 243])
+        mask = cv2.inRange(bgrImg, np.array([242, 242, 242]), np.array([245, 245, 245]))
+        #dilate to make the text thicker
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+        mask = cv2.dilate(mask, kernel)
+        img = Image.fromarray(mask)
+        img = img.resize((img.width * 3, img.height * 3), Image.LANCZOS)
+        #convert to black text on white background for ocr
+        #img = ImageOps.invert(img)
+        if show:
+            img.show()
+        ocrText = ''.join([x[1][0] for x in ocrRead(img)])
+        hasteVal = ''.join([x for x in ocrText if x.isdigit()])
+        return hasteVal if hasteVal else '1'
 
     def getBuffsWithImage(self, buffs, save=False, screen = None):
         buffQuantity = []
@@ -102,14 +119,10 @@ class BuffDetector():
 
             #find the buff
             buffTemplate = adjustImage("./images/buffs", buff, self.displayType)
-            res = locateTransparentImage(buffTemplate, screen, 0.7)
+            res = locateTransparentImage(buffTemplate, screen, 0.8)
+
             if not res: 
                 buffQuantity.append("0")
-                continue
-            
-            #buff is either present or not, non stackable (0 or 1)
-            if not stackable:
-                buffQuantity.append("1")
                 continue
 
             #get a screenshot of the buff
@@ -123,6 +136,15 @@ class BuffDetector():
 
             cropX = int(rx)
             cropY = int(ry)
+            
+            #buff is either present or not, non stackable (0 or 1)
+            if not stackable:
+                buffQuantity.append("1")
+                if save:
+                    fullBuffImgBGR = cv2.cvtColor(screen, cv2.COLOR_RGBA2BGR)[cropY:cropY+self.buffSize+2, cropX:cropX+self.buffSize+5]
+                    cv2.imwrite(f"{buff}-{time.time()}.png", fullBuffImgBGR)
+                continue
+
 
             fullBuffImgBGR = cv2.cvtColor(screen, cv2.COLOR_RGBA2BGR)[cropY:cropY+self.buffSize+2, cropX:cropX+self.buffSize+5]
             if save:
@@ -166,7 +188,7 @@ class BuffDetector():
                     buffQuantity.append("0")
         return buffQuantity
     
-    def detectBuffColorInImage(self, screen, hex, minSize, x1=0, y1=0, x2=None, y2=None, variation=0, show=False, searchDirection=1):
+    def detectBuffColorInImage(self, screen, hex, minSize, x1=0, y1=0, x2=None, y2=None, variation=0, show=False, searchDirection=1, instances=1):
         
         multi = 2 if self.displayType == "retina" else 1
         #convert hex to bgr and setup the color range
@@ -223,16 +245,24 @@ class BuffDetector():
         # Sort and return only the first match
         if coords:
             coords.sort(key=sort_key)
-            x, y, w, h = coords[0]
+            out = []
+            preview = screen.copy()
+            for i in range(min(len(coords), instances)):
+                x, y, w, h = coords[i]
+                out.append(coords[i])
+                if show:
+                    cv2.rectangle(preview, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
             if show:
-                preview = screen.copy()
-                cv2.rectangle(preview, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 cv2.imshow("Detected Buff", preview)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
-            return coords[0]
+            if instances == 1:
+                return out[0]
+            else:
+                return out
 
-        return None
+        return []
 
         
 
