@@ -839,6 +839,8 @@ class macro:
                 break
 
         self.status.value = "converting"
+        
+        self.moveMouseToDefault()
         st = time.time()
         self.logger.webhook("", "Converting", "brown", "screen")
         self.alreadyConverted = True
@@ -856,21 +858,23 @@ class macro:
         if self.enableNightDetection:
             self.keyboard.press(",")
         
+        afb = False # so it stops spamming webhook messages 😭
         while not self.isBesideE(["pollen", "flower", "field"]): 
             
-            if self.setdat["Auto_Field_Boost"]:
-                if not self.AFBLIMIT: 
-                    if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60-45) and not self.failed: 
-                        if "loaded" in self.setdat["AFB_dice"]: 
-                            self.logger.webhook("","Conversion interrupted: AFB", "brown")
-                            self.converting = False
-                        else: self.logger.webhook("","AFB: Rebuff", "brown")
+            if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and not afb: 
+                afb = True 
+                if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60-45) and not self.failed: 
+                    if "loaded" in self.setdat["AFB_dice"]: 
+                        self.logger.webhook("","Conversion interrupted: AFB", "brown")
+                        self.converting = False
                         self.AFB()
+                    else: self.logger.webhook("","AFB: Rebuff", "brown"), self.AFB()
 
-                    elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60) and not self.failed: #if used dice first
-                        self.logger.webhook("Converting: interrupted","AFB", "brown")
-                        time.sleep(1)
-                        self.AFB()
+                elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60) and not self.failed and not afb: #if used dice first
+                    afb = True
+                    self.logger.webhook("Converting: interrupted","AFB", "brown")
+                    time.sleep(1)
+                    self.AFB()
                     
 
             mouse.click()
@@ -1940,6 +1944,7 @@ class macro:
                                 self.keyboard.press("pagedown")
                                 for i in range(3):
                                     self.keyboard.press("o")
+                                if diceslot == 0: self.toggleInventory("close")
                                 self.logger.webhook("", f"Boosted Field: {field}", "bright green")
                                 returnVal = boostedField
                                 self.saveAFB("AFB_dice_cd") 
@@ -1953,6 +1958,7 @@ class macro:
                                 self.keyboard.press("pagedown")
                                 for i in range(3):
                                     self.keyboard.press("o")
+                                if diceslot == 0: self.toggleInventory("close")
                                 self.logger.webhook("", f"Boosted Field: {field}", "bright green")
                                 returnVal = boostedField
                                 self.saveAFB("AFB_dice_cd")
@@ -1978,26 +1984,15 @@ class macro:
                             self.AFBglitter = True
                             self.saveAFB("AFB_glitter_cd")
                             self.saveAFB("AFB_dice_cd")
-                            if self.isGathering: self.gather()
                             return returnVal
-                        elif self.isGathering: self.gather()
-                        
-                        if self.converting: #if converting was interrupted
-                            if self.isBesideE(["stop"], ["make"]): 
-                                for i in range(1):
-                                    self.keyboard.press("pagedown")
-                                for i in range(3):
-                                    self.keyboard.press("o")
-                                self.convert()
-                            else: self.reset(convert=True)
-                        return returnVal
                         
                     if returnVal is None:
                         self.failed = True
                         self.saveAFB("AFB_dice_cd")
                         self.saveAFB("AFB_glitter_cd")
                         self.logger.webhook("", f"Failed to boost {field}", "red")
-                        if self.converting == False:
+                        if diceslot == 0: self.toggleInventory("close")
+                        if self.converting:
                             self.keyboard.press("pagedown")
                             for i in range(3):
                                 self.keyboard.press("o")
@@ -2026,7 +2021,6 @@ class macro:
                         self.saveAFB("AFB_glitter_cd")
                         self.AFBglitter = False
                         self.reset(convert=True)
-                        if self.isGathering: self.gather()  
 
     def collectStickerPrinter(self):
         reached = False
