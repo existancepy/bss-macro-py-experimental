@@ -71,6 +71,10 @@ def macro(status, log, haste, updateGUI):
             if macro.hasRespawned("rejoin_every", macro.setdat["rejoin_every"]*60*60):
                 macro.rejoin("Rejoining (Scheduled)")
                 macro.saveTiming("rejoin_every")
+                #auto field boost
+        if macro.setdat["Auto_Field_Boost"]:
+            if macro.hasAFBRespawned("AFB_dice_cd", macro.setdat["AFB_rebuff"]*60) or macro.hasAFBRespawned("AFB_glitter_cd", macro.setdat["AFB_rebuff"]*60-30):
+                runTask(macro.AFB)
         status.value = ""
         return returnVal
 
@@ -190,12 +194,6 @@ def macro(status, log, haste, updateGUI):
             if macro.hasRespawned("sticker_stack", stickerStackCD):
                 runTask(macro.collect, args=("sticker_stack",))
 
-        #auto field boost
-        if macro.setdat["Auto_Field_Boost"]:
-            if macro.hasAFBRespawned("AFB_dice_cd", macro.setdat["AFB_rebuff"]*60) or macro.hasAFBRespawned("AFB_glitter_cd", macro.setdat["AFB_rebuff"]*60-20):
-                runTask(macro.AFB)
-            else: continue
-
         #field boosters
         boostedGatherFields = []
         for k, _ in macroModule.fieldBoosterData.items():
@@ -209,11 +207,6 @@ def macro(status, log, haste, updateGUI):
         for field in boostedGatherFields:
             st = time.time()
             while time.time() - st < 15*60:
-                #auto field boost
-                if macro.setdat["Auto_Field_Boost"]:
-                    if macro.hasAFBRespawned("AFB_dice_cd", macro.setdat["AFB_rebuff"]*60) or macro.hasAFBRespawned("AFB_glitter_cd", macro.setdat["AFB_rebuff"]*60-20):                        
-                        macro.reset()
-                        runTask(macro.AFB)
                 runTask(macro.gather, args=(field,), resetAfter=False)
 
         #add gather tab fields
