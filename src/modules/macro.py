@@ -859,7 +859,7 @@ class macro:
         while not self.isBesideE(["pollen", "flower", "field"]): 
             
             if self.setdat["Auto_Field_Boost"]:
-                if self.AFBLIMIT == False: 
+                if not self.AFBLIMIT: 
                     if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60-45) and not self.failed: 
                         if "loaded" in self.setdat["AFB_dice"]: 
                             self.logger.webhook("","Conversion interrupted: AFB", "brown")
@@ -1468,7 +1468,7 @@ class macro:
                 self.reset()
                 break
             if self.setdat["Auto_Field_Boost"]:
-                if self.AFBLIMIT == False:
+                if not self.AFBLIMIT:
                     if self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60-30) and not self.failed: 
                         turnOffShitLock()
                         self.logger.webhook("Gathering: interrupted","Automatic Field Boost", "brown")
@@ -1802,7 +1802,14 @@ class macro:
         return True
     # END
 
-    def AFB(self, gatherInterrupt = False):  # Auto Field Boost - WOOHOO
+    def AFB(self):  # Auto Field Boost - WOOHOO
+        
+        # time limit - :(
+        if self.AFBLIMIT: return True
+        if not self.AFBLIMIT and self.setdat["AFB_limit_on"] and self.hasAFBRespawned("AFB_limit", self.setdat["AFB_limit"]*60*60):
+                self.logger.webhook("AFB", "Time limit reached: Skipping", "red")
+                self.AFBLIMIT = True
+                return True
         
         goToField = threading.Thread(target=self.goToField, args=(self.setdat["AFB_field"],))
         Glitter = threading.Thread(target=self.useGlitterInInventory, args=("glitter",))
@@ -1830,13 +1837,7 @@ class macro:
                                 break
                             prevHash = hash
                             
-                if self.AFBLIMIT == True: return True
-                
-                # time limit - :(
-                if self.AFBLIMIT == False and self.setdat["AFB_limit_on"] and self.hasAFBRespawned("AFB_limit", self.setdat["AFB_limit"]*60*60):
-                        self.logger.webhook("AFB", "Time limit reached: Skipping", "red")
-                        self.AFBLIMIT = True
-                        return True
+  
 
                 if self.hasAFBRespawned("AFB_dice_cd", rebuff*60):
                     # get all fields
@@ -2218,13 +2219,15 @@ class macro:
                 self.claimStickerStack()
             else:
                 timer = time.time()  
-                while time.time() - timer < 10:
+                while time.time() - timer < 60:
                     if objective == "ant_pass_dispenser" and self.isBesideE(["already", "passes"]):
                         self.logger.webhook("", "You already have 10 or more antpasses", "dark brown")
                         self.saveTiming(objective)
+                        fails = 0
                         break
                     if objective in beesmas:
                         self.logger.webhook("", f"Collected: {displayName}", "bright green", "screen")
+                        fails = 0
                         break
                     elif self.blueTextImageSearch("dispen") or self.blueTextImageSearch("antpass") or self.blueTextImageSearch("ticket"):
                         time.sleep(0.3)
@@ -2232,7 +2235,7 @@ class macro:
                         self.logger.webhook("", f"Collected: {displayName}", "bright green", "blue")
                         break
                 else:
-                    self.logger.webhook("", f"Timeout: {displayName}", "red", "screen")
+                    self.logger.webhook("", f"Took too long to collect {displayName}", "red", "screen")
                     fails += 1
                     if fails == 2:
                         fails = 0
