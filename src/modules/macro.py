@@ -857,6 +857,7 @@ class macro:
             self.keyboard.press(",")
         
         while not self.isBesideE(["pollen", "flower", "field"]): 
+            
             if self.setdat["Auto_Field_Boost"]:
                 if self.AFBLIMIT == False: 
                     if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60-45) and not self.failed: 
@@ -1814,7 +1815,7 @@ class macro:
         diceslot = self.setdat["AFB_slotD"]
         glitterslot = self.setdat["AFB_slotG"]
 
-        if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-45): 
+        if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30): 
             self.failed = False
             if self.setdat["Auto_Field_Boost"]:
                 def scrollToTop():
@@ -1953,7 +1954,7 @@ class macro:
                                     self.keyboard.press("o")
                                 self.logger.webhook("", f"Boosted Field: {field}", "bright green")
                                 returnVal = boostedField
-                                self.saveAFB("AFB_dice_cd") 
+                                self.saveAFB("AFB_dice_cd")
                                 
                             else:
                                 self.logger.webhook("", f"Boosted Fields: {', '.join(boostedField)}", "red")
@@ -2021,6 +2022,7 @@ class macro:
                             self.keyboard.press(str(glitterslot))
                         self.logger.webhook("","Rebuffed: Glitter", "white")
                         self.saveAFB("AFB_dice_cd")
+                        self.saveAFB("AFB_glitter_cd")
                         self.AFBglitter = False
                         self.reset(convert=True)
                         if self.isGathering: self.gather()  
