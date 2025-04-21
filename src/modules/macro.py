@@ -75,19 +75,45 @@ mergedCollectData = {**collectData, **fieldBoosterData}
 mergedCollectData["sticker_stack"] = [["add", "sticker"], None, 0]
 
 #werewolf is a unique one. There is only one, but it can be triggered from pine, pumpkin or cactus
-regularMobInFields = {
-    "rose": ["scorpion"],
-    "pumpkin": ["werewolf"],
-    "cactus": ["werewolf"],
-    "spider": ["spider"],
-    "clover": ["ladybug", "rhinobeetle"],
-    "strawberry": ["ladybug"],
-    "bamboo": ["rhinobeetle"],
-    "mushroom": ["ladybug"],
-    "blue flower": ["rhinobeetle"],
-    "pineapple": ["mantis", "rhinobeetle"],
-    "pine tree": ["mantis", "werewolf"],
+regularMobQuantitiesInFields = {
+    "rose": {
+        "scorpion": 2
+    },
+    "pumpkin": {
+        "werewolf": 1
+    },
+    "cactus": {
+        "werewolf": 1
+    },
+    "spider": {
+        "spider": 1
+    },
+    "clover": {
+        "ladybug": 1,
+        "rhinobeetle": 1
+    },
+    "strawberry": {
+        "ladybug": 2,
+    },
+    "bamboo": {
+        "rhinobeetle": 2
+    },
+    "mushroom": {
+        "ladybug": 1
+    },
+    "blue flower": {
+        "rhinobeetle": 1
+    },
+    "pineapple": {
+        "mantis": 1,
+        "rhinobeetle": 1
+    },
+    "pine tree": {
+        "mantis": 2,
+        "werewolf": 1
+    },
 }
+regularMobTypesInFields = {k: [x[0] for x in v] for k, v in {k:list(v.items()) for k,v in regularMobQuantitiesInFields.items()}.items()}
 
 mobRespawnTimes = {
     "ladybug": 5*60, #5mins
@@ -867,7 +893,7 @@ class macro:
             mouse.click()
 
             if self.night and self.setdat["stinger_hunt"]:
-                self.incrementHourlyStat("converting_time", time.time()-st)
+                self.hourlyReport.addHourlyStat("converting_time", time.time()-st)
                 self.keyboard.press(".")
                 self.converting = False
                 self.stingerHunt()
@@ -899,7 +925,7 @@ class macro:
         if self.enableNightDetection:
             self.keyboard.press(".")
         self.converting = False
-        self.incrementHourlyStat("converting_time", time.time()-st)
+        self.hourlyReport.addHourlyStat("converting_time", time.time()-st)
         return True
 
     def moveMouseToDefault(self):
@@ -1440,7 +1466,7 @@ class macro:
             mouse.mouseUp()
             self.clickPermissionPopup()
             #add gather time stat
-            self.incrementHourlyStat("gathering_time", time.time()-patternStartTime)
+            self.hourlyReport.addHourlyStat("gathering_time", time.time()-patternStartTime)
             gatherTime = self.convertSecsToMinsAndSecs(getGatherTime())
 
             #check for gather interrupts
@@ -1807,7 +1833,7 @@ class macro:
         self.location = "collect"
         st = time.time()
         def updateHourlyTime():
-            self.incrementHourlyStat("misc_time", time.time()-st)
+            self.hourlyReport.addHourlyStat("misc_time", time.time()-st)
         #go to collect and check that player has reached
         for i in range(3):
             self.logger.webhook("",f"Travelling: {displayName}","dark brown")
@@ -1902,7 +1928,7 @@ class macro:
     #returns true if there are mobs in the field to be killed (enabled + respawned)
     #returns a list of mobs that have respawned
     def getRespawnedMobs(self, field):
-        mobs = regularMobInFields[field]
+        mobs = regularMobTypesInFields[field]
         out = []
         for m in mobs:
             if self.setdat[m] and self.hasMobRespawned(m, field):
@@ -1911,9 +1937,9 @@ class macro:
     
     #check which mobs have respawned in the field and reset their timings
     def setMobTimer(self, field):
-        if not field in regularMobInFields: return
+        if not field in regularMobTypesInFields: return
         timings = self.getTiming()
-        mobs = regularMobInFields[field]
+        mobs = regularMobTypesInFields[field]
         for m in mobs:
             timingName = self.formatMobTimingName(m, field)
             if not timingName in timings:
@@ -1921,7 +1947,7 @@ class macro:
             #check respawn
             if self.hasMobRespawned(m, field, timings[timingName]):
                 timings[timingName] = time.time()
-                self.incrementHourlyStat("bugs", 1)
+                self.hourlyReport.addHourlyStat("bugs", regularMobQuantitiesInFields[field][m])
         settingsManager.saveDict("./data/user/timings.txt", timings)
 
     #background thread function to determine if player has defeated the mob
@@ -1974,7 +2000,7 @@ class macro:
         
         st = time.time()
         def updateHourlyTime():
-            self.incrementHourlyStat("bug_run_time", time.time()-st)
+            self.hourlyReport.addHourlyStat("bug_run_time", time.time()-st)
         #move in squares to evade attacks
         #save the last entered side and front keys. This will be used for the looting pattern
         distance = 0.7
@@ -2078,7 +2104,7 @@ class macro:
         stingerHuntThread.start()
         vicStartTime = time.time()
         def updateHourlyTime():
-            self.incrementHourlyStat("bug_run_time", time.time()-vicStartTime)
+            self.hourlyReport.addHourlyStat("bug_run_time", time.time()-vicStartTime)
 
         for currField in self.vicFields:
             #go to field
@@ -2123,7 +2149,7 @@ class macro:
                 if self.died or self.vicStatus is not None: break
             if self.vicStatus == "defeated":
                 self.logger.webhook("","Vicious Bee Defeated","light green")
-                self.incrementHourlyStat("vicious_bees", 1)
+                self.hourlyReport.addHourlyStat("vicious_bees", 1)
                 break
             elif self.died:
                 self.logger.webhook("","Player Died","dark brown")
@@ -2252,7 +2278,7 @@ class macro:
             self.nmLoot(9, 4, "d")
             self.nmLoot(9, 4, "a")
         cocoThread.join()
-        self.incrementHourlyStat("bug_run_time", time.time()-st)
+        self.hourlyReport.addHourlyStat("bug_run_time", time.time()-st)
         self.saveTiming("coconut_crab")
         self.reset()
 
@@ -2296,7 +2322,7 @@ class macro:
         name = planter.lower().replace(" ","").replace("-","")
 
         def updateHourlyTime():
-            self.incrementHourlyStat("misc_time", time.time()-st)
+            self.hourlyReport.addHourlyStat("misc_time", time.time()-st)
 
         for _ in range(2):
             #try to place planter
@@ -2349,7 +2375,7 @@ class macro:
     def collectPlanter(self, planter, field):
         st = time.time()
         def updateHourlyTime():
-            self.incrementHourlyStat("misc_time", time.time()-st)
+            self.hourlyReport.addHourlyStat("misc_time", time.time()-st)
         for _ in range(2):
             if self.goToPlanter(planter, field, "collect"): 
                 break
@@ -2414,7 +2440,7 @@ class macro:
         itemNo = blenderData["item"]
         st = time.time()
         def updateHourlyTime():
-            self.incrementHourlyStat("misc_time", time.time()-st)
+            self.hourlyReport.addHourlyStat("misc_time", time.time()-st)
 
         def saveBlenderData():
             with open("./data/user/blender.txt", "w") as f:
@@ -2687,14 +2713,6 @@ class macro:
         with open("./data/user/sticker_stack.txt", "w") as f:
             f.write(str(finalTime))
         f.close()
-
-    def incrementHourlyStat(self, statName, value):
-        data = settingsManager.readSettingsFile("data/user/hourly_report_main.txt")
-        if not statName in data:
-            data[statName] = value
-        else:
-            data[statName] += value
-        settingsManager.saveDict(f"data/user/hourly_report_main.txt", data)
     
     #click the "allow for one month" on the "terminal is requesting to bypass" popup
     def clickPermissionPopup(self):
@@ -2752,18 +2770,11 @@ class macro:
             time.sleep(1)
 
     def hourlyReportBackground(self):
-        def getHoney():
-            ocrHoney = ocr.imToString("honey")
-            return ocrHoney if ocrHoney else 0
         
         #first honey
-        settingsManager.saveSettingFile("start_honey", getHoney(), "data/user/hourly_report_bg.txt")
-        settingsManager.saveSettingFile("start_time", time.time(), "data/user/hourly_report_bg.txt")
+        self.hourlyReport.setSessionStats(self.hourlyReport.getHoney(), time.time())
         prevMin = -1  
         currMin = None
-
-        buffDetector = BuffDetector(self.newUI, self.display_type)
-        hourlyReport = HourlyReport(buffDetector)
 
         buffUptimeBuffsImage = {
             "baby_love": ["middle", True, False],
@@ -2778,36 +2789,26 @@ class macro:
         }
 
         while True:
+            currMin = datetime.now().minute
             #Hourly report
             if self.status.value != "rejoining":
                 #instead of using time.sleep, we want to run the code at the start of the min
-                currMin = datetime.now().minute
                 if currMin == prevMin: continue
                 prevMin = currMin
-                honey = getHoney()
+                honey = self.hourlyReport.getHoney()
                 print(honey)
                 backpack = self.getBackpack()
-                data = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
-                data["honey_per_min"].append(honey)
-                data["backpack_per_min"].append(backpack)
-                settingsManager.saveDict("data/user/hourly_report_bg.txt", data)
+
+                self.hourlyReport.addHourlyStat("honey_per_min", honey)
+                self.hourlyReport.addHourlyStat("backpack_per_min", backpack)
 
             #check if its time to send hourly report
             if currMin == 0:
-                hourlyReportData = hourlyReport.generateHourlyReport()
+                hourlyReportData = self.hourlyReport.generateHourlyReport()
                 self.logger.hourlyReport("Hourly Report", "", "purple")
 
                 #reset stats
-                hourlyReportMainData = settingsManager.readSettingsFile("data/user/hourly_report_main.txt")
-                for k in hourlyReportMainData:
-                    hourlyReportMainData[k] = 0   
-                settingsManager.saveDict(f"data/user/hourly_report_main.txt", hourlyReportMainData)
-
-                hourlyReportBgData = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
-                for k in hourlyReportBgData:
-                    if isinstance(hourlyReportBgData[k], list):
-                        hourlyReportBgData[k] = []
-                settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
+                self.hourlyReport.resetHourlyStats()
 
                 #add to history
                 with open("data/user/hourly_report_history.txt", "r") as f:
@@ -2827,6 +2828,8 @@ class macro:
                 with open("data/user/hourly_report_history.txt", "w") as f:
                     f.write(str(history))
                 f.close()
+
+                break
             
             time.sleep(1)
 
@@ -3165,6 +3168,8 @@ class macro:
         backgroundThread.start()
 
         #enable hourly report
+        self.buffDetector = BuffDetector(self.newUI, self.display_type)
+        self.hourlyReport = HourlyReport(self.buffDetector)
         hourlyReportBackgroundThread = threading.Thread(target=self.hourlyReportBackground, daemon=True)
         hourlyReportBackgroundThread.start()
 

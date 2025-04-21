@@ -14,7 +14,7 @@ from modules.screen.screenshot import mssScreenshotNP, mssScreenshot
 from modules.misc.imageManipulation import adjustImage
 import time
 import pyautogui as pag
-from modules.screen.ocr import ocrRead
+from modules.screen.ocr import ocrRead, imToString
 from modules.screen.screenData import getScreenData
 
 ww, wh = pag.size()
@@ -106,11 +106,11 @@ class BuffDetector():
         hasteVal = ''.join([x for x in ocrText if x.isdigit()])
         return hasteVal if hasteVal else '1'
 
-    def getBuffsWithImage(self, buffs, save=False, screen = None):
+    def getBuffsWithImage(self, buffs, save=False, screen = None, threshold=0.7):
         buffQuantity = []
         buffs = buffs.items()
 
-        if screen is None:
+        if not screen:
             screen = self.screenshotBuffArea()
 
         for buff,v in buffs:
@@ -119,7 +119,7 @@ class BuffDetector():
 
             #find the buff
             buffTemplate = adjustImage("./images/buffs", buff, self.displayType)
-            res = locateTransparentImage(buffTemplate, screen, 0.8)
+            res = locateTransparentImage(buffTemplate, screen, threshold)
 
             if not res: 
                 buffQuantity.append("0")
@@ -131,7 +131,7 @@ class BuffDetector():
             if templatePosition == "bottom": 
                 ry-=self.buffSize-h
             elif templatePosition == "middle":
-                rx -= (self.buffSize-w)/2+8
+                rx = max(0, rx-(self.buffSize-w)/2+8)
                 ry -= 30
 
             cropX = int(rx)
@@ -145,12 +145,11 @@ class BuffDetector():
                     cv2.imwrite(f"{buff}-{time.time()}.png", fullBuffImgBGR)
                 continue
 
-
             fullBuffImgBGR = cv2.cvtColor(screen, cv2.COLOR_RGBA2BGR)[cropY:cropY+self.buffSize+2, cropX:cropX+self.buffSize+5]
             if save:
                 cv2.imwrite(f"{buff}-{time.time()}.png", fullBuffImgBGR)
             #filter out everything but the text
-            buffQuantity.append(self.getBuffQuantityFromImg(fullBuffImgBGR, transform, buff))
+            buffQuantity.append(self.getBuffQuantityFromImg(fullBuffImgBGR, transform, buff=buff))
         return buffQuantity
 
     def getBuffWithColor(self, buffs):
@@ -326,6 +325,13 @@ class HourlyReport():
 
         self.buffDetector = buffDetector
 
+        #setup stats
+        self.hourlyReportStats = {
+            "start_honey": 0,
+            "start_time": 0
+        }
+        self.resetHourlyStats() #add the hourly stats
+
     def millify(self, n):
         if not n: return "0"
         millnames = ['',' K',' M',' B',' T', 'Qd']
@@ -392,7 +398,6 @@ class HourlyReport():
             f.close()
 
             #get the hourly report data
-            hourlyReportData = {**readSettingsFile("data/user/hourly_report_main.txt"), **readSettingsFile("data/user/hourly_report_bg.txt")}
 
             #get planter data
             with open("./data/user/manualplanters.txt", "r") as f:
@@ -404,27 +409,27 @@ class HourlyReport():
                 historyData = ast.literal_eval(f.read())
             f.close()
             
-            if len(hourlyReportData["honey_per_min"]) < 3:
-                hourlyReportData["honey_per_min"] = [0]*3 + hourlyReportData["honey_per_min"]
+            if len(self.hourlyReportStats["honey_per_min"]) < 3:
+                self.hourlyReportStats["honey_per_min"] = [0]*3 + self.hourlyReportStats["honey_per_min"]
             #filter out the honey/min
-            print(hourlyReportData["honey_per_min"])
-            #hourlyReportData["honey_per_min"] = [x for x in hourlyReportData["honey_per_min"] if x]
-            hourlyReportData["honey_per_min"] = self.filterOutliers(hourlyReportData["honey_per_min"])
+            print(self.hourlyReportStats["honey_per_min"])
+            #self.hourlyReportStats["honey_per_min"] = [x for x in self.hourlyReportStats["honey_per_min"] if x]
+            self.hourlyReportStats["honey_per_min"] = self.filterOutliers(self.hourlyReportStats["honey_per_min"])
             #calculate honey/min
             honeyPerMin = [0]
-            prevHoney = hourlyReportData["honey_per_min"][0]
-            for x in hourlyReportData["honey_per_min"][1:]:
+            prevHoney = self.hourlyReportStats["honey_per_min"][0]
+            for x in self.hourlyReportStats["honey_per_min"][1:]:
                 if x > prevHoney:
                     honeyPerMin.append((x-prevHoney)/60)
                 prevHoney = x
             
             #calculate some stats
-            if len(set(hourlyReportData["honey_per_min"])) <= 1:
-                onlyValidHourlyHoney = hourlyReportData["honey_per_min"].copy()
+            if len(set(self.hourlyReportStats["honey_per_min"])) <= 1:
+                onlyValidHourlyHoney = self.hourlyReportStats["honey_per_min"].copy()
             else:
-                onlyValidHourlyHoney = [x for x in hourlyReportData["honey_per_min"] if x] #removes all zeroes
-            sessionHoney = onlyValidHourlyHoney[-1]- hourlyReportData["start_honey"]
-            sessionTime = time.time()-hourlyReportData["start_time"]
+                onlyValidHourlyHoney = [x for x in self.hourlyReportStats["honey_per_min"] if x] #removes all zeroes
+            sessionHoney = onlyValidHourlyHoney[-1]- self.hourlyReportStats["start_honey"]
+            sessionTime = time.time()-self.hourlyReportStats["start_time"]
             honeyThisHour = onlyValidHourlyHoney[-1] - onlyValidHourlyHoney[0]
 
             #replace the contents of the html
@@ -433,15 +438,15 @@ class HourlyReport():
                 '`as': '`{}/as'.format(str(hourlyReportDir).replace("\\", "/")),
                 "-avgHoney": self.millify(sessionHoney/(sessionTime/3600)),
                 "-honey": self.millify(honeyThisHour),
-                "-bugs": hourlyReportData["bugs"],
-                "-quests": hourlyReportData["quests_completed"],
-                "-vicBees": hourlyReportData["vicious_bees"],
+                "-bugs": self.hourlyReportStats["bugs"],
+                "-quests": self.hourlyReportStats["quests_completed"],
+                "-vicBees": self.hourlyReportStats["vicious_bees"],
                 "-currHoney": self.millify(onlyValidHourlyHoney[-1]),
                 "-sessHoney": self.millify(sessionHoney),
                 "-sessTime": self.displayTime(sessionTime, ['d','h','m']),
                 "var honeyPerMin = []": f'var honeyPerMin = {honeyPerMin}',
-                "var backpackPerMin = []": f'var backpackPerMin = {hourlyReportData["backpack_per_min"]}',
-                "const taskTimes = []": f'const taskTimes = [{hourlyReportData["gathering_time"]}, {hourlyReportData["converting_time"]}, {hourlyReportData["bug_run_time"]}, {hourlyReportData["misc_time"]}]',
+                "var backpackPerMin = []": f'var backpackPerMin = {self.hourlyReportStats["backpack_per_min"]}',
+                "const taskTimes = []": f'const taskTimes = [{self.hourlyReportStats["gathering_time"]}, {self.hourlyReportStats["converting_time"]}, {self.hourlyReportStats["bug_run_time"]}, {self.hourlyReportStats["misc_time"]}]',
                 "const historyData = []": f'const historyData = {historyData}',
                 "const honey = 0": f'const honey = {honeyThisHour}',
                 "url(a": f'url({hourlyReportDir}/a'.replace("\\", "/"),
@@ -464,7 +469,7 @@ class HourlyReport():
             hti.screenshot(html_str=htmlString, save_as=f"{pageName}.png")
             #open the image
             image = cv2.imread(f"{pageName}.png")
-            print(htmlString)
+            #print(htmlString)
 
             #crop the image to remove any excess empty space at the bottom
             #this allows for seamless merging of images
@@ -496,4 +501,29 @@ class HourlyReport():
         # Resize the image
         imgOut = cv2.resize(imgOut, (width*2, height*2))
         cv2.imwrite("hourlyReport.png", imgOut) 
-        return hourlyReportData
+        return self.hourlyReportStats
+    
+    def resetHourlyStats(self):
+        self.hourlyReportStats["honey_per_min"] = []
+        self.hourlyReportStats["backpack_per_min"] = []
+        self.hourlyReportStats["bugs"] = 0
+        self.hourlyReportStats["quests_completed"] = 0
+        self.hourlyReportStats["vicious_bees"] = 0
+        self.hourlyReportStats["gathering_time"] = 0
+        self.hourlyReportStats["converting_time"] = 0
+        self.hourlyReportStats["bug_run_time"] = 0
+        self.hourlyReportStats["misc_time"] = 0
+    
+    def addHourlyStat(self, stat, value):
+        if isinstance(self.hourlyReportStats[stat], list):
+            self.hourlyReportStats[stat].append(value)
+        else:
+            self.hourlyReportStats[stat] += value
+    
+    def setSessionStats(self, start_honey, start_time):
+        self.hourlyReportStats["start_honey"] = start_honey
+        self.hourlyReportStats["start_time"] = start_time
+    
+    def getHoney(self):
+        ocrHoney = imToString("honey")
+        return ocrHoney if ocrHoney else 0

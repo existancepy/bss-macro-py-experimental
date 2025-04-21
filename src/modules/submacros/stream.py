@@ -440,6 +440,8 @@ class cloudflaredStream:
 
     def stop(self):
         """Stop all streaming services"""
+        if self.streaming:
+            print("Stream stopped.")
         self.streaming = False
         #self.publicURL = None
         
@@ -457,8 +459,6 @@ class cloudflaredStream:
         with self.frame_lock:
             self.frame_buffer = None
             self.frame_ready.clear()
-        
-        print("Stream stopped.")
 
     def get_stats(self):
         """Return current streaming statistics"""

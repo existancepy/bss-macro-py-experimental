@@ -13,8 +13,8 @@ from modules.misc import messageBox
 import copy
 
 def hasteCompensationThread(baseSpeed, isRetina, haste):
-    from modules.submacros.hasteCompensation import HasteCompensation
-    hasteCompensation = HasteCompensation(isRetina, baseSpeed)
+    from modules.submacros.hasteCompensation import HasteCompensationOptimized
+    hasteCompensation = HasteCompensationOptimized(isRetina, baseSpeed)
     global stopThreads
     while not stopThreads:
         haste.value = hasteCompensation.getHaste()
@@ -39,7 +39,7 @@ def macro(status, logQueue, haste, updateGUI):
     #invert the regularMobsInFields dict
     #instead of storing mobs in field, store the fields associated with each mob
     regularMobData = {}
-    for k,v in macroModule.regularMobInFields.items():
+    for k,v in macroModule.regularMobTypesInFields.items():
         for x in v:
             if x in regularMobData:
                 regularMobData[x].append(k)
@@ -91,7 +91,7 @@ def macro(status, logQueue, haste, updateGUI):
                 questObjective = macro.getNewQuest(questGiver, False)
             elif not len(questObjective): #quest completed
                 questObjective = macro.getNewQuest(questGiver, True)
-                macro.incrementHourlyStat("quests_completed", 1)
+                macro.hourlyReport.addHourlyStat("quests_completed", 1)
             else:
                 for obj in questObjective:
                     objData = obj.split("_")
@@ -301,6 +301,7 @@ if __name__ == "__main__":
         print("stop")
         #print(sockets)
         macroProc.kill()
+        macroProc.join()
         stream.stop()
         #if discordBotProc.is_alive(): discordBotProc.kill()
         keyboardModule.releaseMovement()
@@ -384,20 +385,6 @@ if __name__ == "__main__":
                 hasteCompThread = Thread(target=hasteCompensationThread, args=(setdat["movespeed"], screenInfo["display_type"] == "retina", haste,))
                 hasteCompThread.daemon = True
                 hasteCompThread.start()
-
-            #reset hourly report stats
-            hourlyReportMainData = settingsManager.readSettingsFile("data/user/hourly_report_main.txt")
-            for k in hourlyReportMainData:
-                hourlyReportMainData[k] = 0   
-            settingsManager.saveDict(f"data/user/hourly_report_main.txt", hourlyReportMainData)
-
-            hourlyReportBgData = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
-            for k in hourlyReportBgData:
-                if isinstance(hourlyReportBgData[k], list):
-                    hourlyReportBgData[k] = []
-                else:
-                    hourlyReportBgData[k] = 0   
-            settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
 
             logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
             run.value = 2

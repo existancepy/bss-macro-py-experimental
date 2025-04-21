@@ -7,20 +7,6 @@ import cv2
 from modules.screen.ocr import ocrRead
 
 #time.sleep(2)
-hourBuffs = {
-    "tabby_love": ["top", True, True],
-    "polar_power": ["top", True, True],
-    "wealth_clock": ["top", True, True],
-    "blessing": ["middle", True, True],
-    "bloat": ["top", True, True],
-}
-
-buff = {
-    #"blue_boost": ["middle", True, True],
-    # "baby_love": ["middle", True, True],
-    "melody": ["top", True, True],
-    #"balloon_aura": ["top", True, False]
-}
 
 buffDetector = BuffDetector(True, "retina")
 multi = 2 if "retina" else 1
@@ -61,8 +47,7 @@ for j in ["baby_love"]:
     if buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors[j][0], uptimeBuffsColors[j][1], y1=30*multi, searchDirection=7):
         uptimeBuffsValues[j][i] = 1
 
-bearBuffRes = [int(x) for x in buffDetector.getBuffsWithImage(uptimeBearBuffs, screen=screen)]
-print(bearBuffRes)
+bearBuffRes = [int(x) for x in buffDetector.getBuffsWithImage(uptimeBearBuffs, screen=screen, threshold=0.78)]
 if any(bearBuffRes):
     uptimeBuffsValues["bear"][i] = 1
 

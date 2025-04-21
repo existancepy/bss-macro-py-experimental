@@ -213,10 +213,26 @@
                     </div>
                 </div> -->
             </div>
+            <div style="font-size:1.6rem; margin-top: 5rem;">
+                <h2 class="inter-bold" style="margin-bottom: 1rem; display: inline-block;">Buff Uptime</h2>
+                <div class="canvas1">
+                    <canvas id="boostBuffChart"></canvas>
+                </div>
+            <!-- <div style="flex-grow: 1; margin-left: 6rem;">
+                <h2 class="inter-bold" style="margin-bottom: 1rem; display: inline-block;">Task Times</h2>
+                <div id="task-times-legend" class="inter-semibold">
+                </div>
+                <div style="height: calc(38vh - 2rem * 4.5);">
+                    <canvas id="taskTimesChart"></canvas>
+                </div>
+            </div> -->
+        </div>
         </div>
         <aside style="background-color: #17191D; width: 25%; height: 100vh; box-sizing:border-box; padding-left: 2rem; padding-right: 1.5rem;">
-            <h3 class="inter-semibold title">Planters</h3>
-            <div id = "planter-stats">
+            <div id="planter-section">
+                <h3 class="inter-semibold title">Planters</h3>
+                <div id = "planter-stats">
+                </div>
             </div>
             <h3 class="inter-semibold title">Buffs</h3>
             <div id = "buffs" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.2rem; width: 100%;">
@@ -333,7 +349,9 @@
                 ticks: {
                     maxTicksLimit: 6,
                     autoSkip: false,
-                }
+                },
+                min: 0,
+                max: 100,
               },
               x: {
                 ticks: {
@@ -435,6 +453,11 @@
         const planterNames = []
         const planterTimes = []
         const planterFields = []
+        if (planterNames.length){
+            document.getElementById("planter-section").style.display = "block"
+        }else{
+            document.getElementById("planter-section").style.display = "none"
+        }
         for(let i=0; i < planterNames.length; i++){
             const imgPath = `assets/${planterNames[i].replaceAll(" ", "_")}_planter.png`
             const nectarPath = `assets/${fieldNectarIcons[planterFields[i].replaceAll(" ", "_")]}.png`
