@@ -824,6 +824,12 @@ class macro:
 
 
     def convert(self, bypass = False):
+
+        def click60():
+            while True:
+                time.sleep(60)
+                mouse.click()
+
         self.location = "spawn"
         if not bypass:
             #use ebutton detection, faster detection but more prone to false positives (like detecting trades)
@@ -858,26 +864,30 @@ class macro:
         if self.enableNightDetection:
             self.keyboard.press(",")
         
+        timer_thread = threading.Thread(target=click60, daemon=True) # you get the gist
+        timer_thread.start()
+        
         afb = False # so it stops spamming webhook messages 😭
         while not self.isBesideE(["pollen", "flower", "field"]): 
             
+            if self.isBesideE(["make"], log=True): self.keyboard.press("e")
+
             if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and not afb: 
-                afb = True 
                 if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60-45) and not self.failed: 
                     if "loaded" in self.setdat["AFB_dice"]: 
                         self.logger.webhook("","Conversion interrupted: AFB", "brown")
                         self.converting = False
-                        self.AFB()
-                    else: self.logger.webhook("","AFB: Rebuff", "brown"), self.AFB()
-
-                elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60) and not self.failed and not afb: #if used dice first
-                    afb = True
-                    self.logger.webhook("Converting: interrupted","AFB", "brown")
-                    time.sleep(1)
+                    else: self.logger.webhook("","AFB: Rebuff", "brown")
+                    afb = True 
                     self.AFB()
                     
 
-            mouse.click()
+                elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60) and not self.failed and not afb: #if used dice first
+                    self.logger.webhook("Converting: interrupted","AFB", "brown")
+                    time.sleep(1)
+                    afb = True 
+                    self.AFB()
+        
             if self.night and self.setdat["stinger_hunt"]:
                 self.incrementHourlyStat("converting_time", time.time()-st)
                 self.keyboard.press(".")
@@ -1945,7 +1955,7 @@ class macro:
                                 for i in range(3):
                                     self.keyboard.press("o")
                                 if diceslot == 0: self.toggleInventory("close")
-                                self.logger.webhook("", f"Boosted Field: {field}", "bright green")
+                                self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
                                 returnVal = boostedField
                                 self.saveAFB("AFB_dice_cd") 
                                 
@@ -1959,12 +1969,13 @@ class macro:
                                 for i in range(3):
                                     self.keyboard.press("o")
                                 if diceslot == 0: self.toggleInventory("close")
-                                self.logger.webhook("", f"Boosted Field: {field}", "bright green")
+                                self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
                                 returnVal = boostedField
                                 self.saveAFB("AFB_dice_cd")
                                 
                             else:
                                 self.logger.webhook("", f"Boosted Fields: {', '.join(boostedField)}", "red")
+                                time.sleep(0.5)
                             
                         if glitter and not self.failed and not self.AFBglitter:
                             self.logger.webhook("", f"Using glitter", "white")
@@ -1985,6 +1996,16 @@ class macro:
                             self.saveAFB("AFB_glitter_cd")
                             self.saveAFB("AFB_dice_cd")
                             return returnVal
+                        
+                        if self.converting: #if converting was interrupted
+                            if self.isBesideE(["stop"], ["make"]): 
+                                for i in range(1):
+                                    self.keyboard.press("pagedown")
+                                for i in range(3):
+                                    self.keyboard.press("o")
+                                self.convert()
+                            else: self.reset(convert=True)
+                        return returnVal
                         
                     if returnVal is None:
                         self.failed = True
@@ -2021,6 +2042,7 @@ class macro:
                         self.saveAFB("AFB_glitter_cd")
                         self.AFBglitter = False
                         self.reset(convert=True)
+        else: self.reset()
 
     def collectStickerPrinter(self):
         reached = False
