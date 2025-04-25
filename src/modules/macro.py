@@ -1942,7 +1942,7 @@ class macro:
                                     
                         # field user selected is detected
                         if "field" in dice:
-                            if not field == boostedField:
+                            if field == boostedField:
                                 self.keyboard.press("pagedown")
                                 for i in range(3):
                                     self.keyboard.press("o")
