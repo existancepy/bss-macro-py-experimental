@@ -329,6 +329,7 @@ class macro:
         self.failed = False
         self.AFBglitter = False
         self.isGathering = False  
+        self.stop = False
         # 12 or 24 hour webhook
         if self.setdat["webhook_format"]:
             self.logger = logModulee.log(log, self.setdat["enable_webhook"], self.setdat["webhook_link"])
@@ -825,8 +826,9 @@ class macro:
 
     def convert(self, bypass = False):
 
+        self.stop = False #clicking
         def click60():
-            while True:
+            while not self.stop:
                 time.sleep(60)
                 mouse.click()
 
@@ -879,13 +881,14 @@ class macro:
                         self.converting = False
                     else: self.logger.webhook("","AFB: Rebuff", "brown")
                     afb = True 
+                    self.stop = True
                     self.AFB()
-                    
 
                 elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60) and not self.failed and not afb: #if used dice first
                     self.logger.webhook("Converting: interrupted","AFB", "brown")
                     time.sleep(1)
                     afb = True 
+                    self.stop = True
                     self.AFB()
         
             if self.night and self.setdat["stinger_hunt"]:
