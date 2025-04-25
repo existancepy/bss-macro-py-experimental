@@ -870,7 +870,7 @@ class macro:
         afb = False # so it stops spamming webhook messages 😭
         while not self.isBesideE(["pollen", "flower", "field"]): 
             
-            if self.isBesideE(["make"], log=True): self.keyboard.press("e")
+            if self.isBesideE(["make"], log=True): self.keyboard.press("e"), time.sleep(3)
 
             if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and not afb: 
                 if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60-45) and not self.failed: 
