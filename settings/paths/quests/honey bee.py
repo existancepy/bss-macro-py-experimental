@@ -14,7 +14,7 @@ self.keyboard.walk("d",4, False)
 self.keyboard.walk("w",2)
 self.keyboard.press(".")
 for i in range (8):
-    self.keyboard.walk("s",0.3)
+    self.keyboard.walk("s",0.2)
     if self.isBesideE(["honey"]):
         break
     time.sleep(0.15)
