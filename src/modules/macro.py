@@ -324,11 +324,14 @@ class macro:
 
         self.converting = False
         self.alreadyConverted = False
+
+        #auto field boost
         self.AFBglitter = False
         self.AFBLIMIT = False
         self.failed = False
         self.AFBglitter = False
         self.isGathering = False  
+        self.oAFBglitter = False
         self.stop = False
         # 12 or 24 hour webhook
         if self.setdat["webhook_format"]:
@@ -882,7 +885,7 @@ class macro:
                     else: self.logger.webhook("","AFB: Rebuff", "brown")
                     afb = True 
                     self.stop = True
-                    self.AFB()
+                    self.AFB(gatherInterrupt=False)
                     
 
                 elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60) and not self.failed and not afb: #if used dice first
@@ -890,7 +893,7 @@ class macro:
                     time.sleep(1)
                     afb = True 
                     self.stop = True
-                    self.AFB()
+                    self.AFB(gatherInterrupt=False)
         
             if self.night and self.setdat["stinger_hunt"]:
                 self.incrementHourlyStat("converting_time", time.time()-st)
@@ -1485,19 +1488,8 @@ class macro:
                 time.sleep(0.4)
                 self.reset()
                 break
-            if self.setdat["Auto_Field_Boost"]:
-                if not self.AFBLIMIT:
-                    if self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60-30) and not self.failed: 
-                        turnOffShitLock()
-                        self.logger.webhook("Gathering: interrupted","Automatic Field Boost", "brown")
-                        self.reset(convert=False)
-                        break
-
-                    elif self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60) and not self.failed: 
-                        turnOffShitLock()
-                        self.logger.webhook("Gathering: interrupted","Automatic Field Boost", "brown")
-                        self.reset()
-                        break
+            elif self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and self.AFB(gatherInterrupt=True):
+                    break
 
             #check if max time is reached
             gatherTime = self.convertSecsToMinsAndSecs(getGatherTime())
@@ -1820,7 +1812,7 @@ class macro:
         return True
     # END
 
-    def AFB(self):  # Auto Field Boost - WOOHOO
+    def AFB(self, gatherInterrupt):  # Auto Field Boost - WOOHOO
         def scrollToTop():
                     prevHash = None
                     for i in range(9):
@@ -1832,13 +1824,7 @@ class macro:
                             if not prevHash is None and prevHash == hash:
                                 break
                             prevHash = hash
-        # time limit - :(
-        if self.AFBLIMIT: return True
-        if not self.AFBLIMIT and self.setdat["AFB_limit_on"] and self.hasAFBRespawned("AFB_limit", self.setdat["AFB_limit"]*60*60):
-                self.logger.webhook("AFB", "Time limit reached: Skipping", "red")
-                self.AFBLIMIT = True
-                return True
-        
+
         goToField = threading.Thread(target=self.goToField, args=(self.setdat["AFB_field"],))
         Glitter = threading.Thread(target=self.useGlitterInInventory, args=("glitter",))
         
@@ -1849,6 +1835,22 @@ class macro:
         glitter = self.setdat["AFB_glitter"]
         diceslot = self.setdat["AFB_slotD"]
         glitterslot = self.setdat["AFB_slotG"]
+
+        # time limit - :(
+        if self.AFBLIMIT: return True
+        if not self.AFBLIMIT and self.setdat["AFB_limit_on"] and self.hasAFBRespawned("AFB_limit", self.setdat["AFB_limit"]*60*60):
+                self.logger.webhook("AFB", "Time limit reached: Skipping", "red")
+                self.AFBLIMIT = True
+        
+        if gatherInterrupt:
+            if glitter and self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30) and not self.failed: 
+                self.logger.webhook("Gathering: interrupted","Automatic Field Boost", "brown")
+                self.reset(convert=False)
+                self.AFB(gatherInterrupt=False)
+            elif dice and self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60) and not self.failed: 
+                self.logger.webhook("Gathering: interrupted","Automatic Field Boost", "brown")
+                self.reset()
+                self.AFB(gatherInterrupt=False)
 
         if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60+30): 
             self.failed = False
@@ -1942,12 +1944,12 @@ class macro:
                                     
                         # field user selected is detected
                         if "field" in dice:
-                            if field == boostedField:
+                            if not field == boostedField:
+                                self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
                                 self.keyboard.press("pagedown")
                                 for i in range(3):
                                     self.keyboard.press("o")
                                 if diceslot == 0: self.toggleInventory("close")
-                                self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
                                 returnVal = boostedField
                                 self.saveAFB("AFB_dice_cd") 
                                 if glitter:
@@ -1958,22 +1960,19 @@ class macro:
 
                         else:
                             if field in boostedField:
+                                self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
                                 self.keyboard.press("pagedown")
                                 for i in range(3):
                                     self.keyboard.press("o")
                                 if diceslot == 0: self.toggleInventory("close")
-                                self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
                                 returnVal = boostedField
                                 self.saveAFB("AFB_dice_cd")
-                                if glitter: 
-                                    self.AFBglitter = True
-                                    self.saveAFB("AFB_glitter_cd")
-                                
+
                             else:
                                 self.logger.webhook("", f"Boosted Fields: {', '.join(boostedField)}", "red")
                                 time.sleep(0.5)
                             
-                        if glitter and not self.failed and not self.AFBglitter:
+                        if glitter and not self.failed and not self.AFBglitter and not self.oAFBglitter:
                             self.logger.webhook("", f"Using glitter", "white")
                             if "loaded" not in dice:
                                 if glitterslot == 0: 
@@ -1989,15 +1988,13 @@ class macro:
                                     self.keyboard.press(str(glitterslot))
                             self.logger.webhook("", f"Activated glitter", "white")
                             self.saveAFB("AFB_dice_cd")
+                            self.saveAFB("AFB_glitter_cd")
                             self.AFBglitter = False
+                            self.oAFBglitter = True
                             return returnVal
                         
                         if self.converting: #if converting was interrupted
                             if self.isBesideE(["stop"], ["make"]): 
-                                for i in range(1):
-                                    self.keyboard.press("pagedown")
-                                for i in range(3):
-                                    self.keyboard.press("o")
                                 self.convert()
                             else: self.reset(convert=True)
                         return returnVal
@@ -2005,7 +2002,7 @@ class macro:
                     if returnVal is None:
                         self.failed = True
                         self.saveAFB("AFB_dice_cd")
-                        self.saveAFB("AFB_glitter_cd")
+                        if glitter: self.saveAFB("AFB_glitter_cd")
                         self.logger.webhook("", f"Failed to boost {field}", "red")
                         if diceslot == 0: self.toggleInventory("close")
                         if self.converting:
