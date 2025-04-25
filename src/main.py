@@ -72,9 +72,9 @@ def macro(status, log, haste, updateGUI):
                 macro.rejoin("Rejoining (Scheduled)")
                 macro.saveTiming("rejoin_every")
         #auto field boost
-        if macro.setdat["Auto_Field_Boost"] and not macro.AFBLIMIT: 
+        if macro.setdat["Auto_Field_Boost"] and not macro.AFBLIMIT:
             if macro.hasAFBRespawned("AFB_dice_cd", macro.setdat["AFB_rebuff"]*60) or macro.hasAFBRespawned("AFB_glitter_cd", macro.setdat["AFB_rebuff"]*60-30):
-                    runTask(macro.AFB, resetAfter=False)
+                runTask(macro.AFB, resetAfter=False)
         status.value = ""
         return returnVal
 
