@@ -74,7 +74,7 @@ def macro(status, log, haste, updateGUI):
         #auto field boost
         if macro.setdat["Auto_Field_Boost"] and not macro.AFBLIMIT:
             if macro.hasAFBRespawned("AFB_dice_cd", macro.setdat["AFB_rebuff"]*60) or macro.hasAFBRespawned("AFB_glitter_cd", macro.setdat["AFB_rebuff"]*60-30):
-                runTask(macro.AFB, resetAfter=False)
+                macro.AFB(gatherInterrupt=False)
         status.value = ""
         return returnVal
 
