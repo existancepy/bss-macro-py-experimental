@@ -332,7 +332,8 @@ class macro:
         self.AFBglitter = False
         self.isGathering = False  
         self.oAFBglitter = False
-        self.stop = False
+        self.cAFBglitter = False
+        self.stop = False #not
         # 12 or 24 hour webhook
         if self.setdat["webhook_format"]:
             self.logger = logModulee.log(log, self.setdat["enable_webhook"], self.setdat["webhook_link"])
@@ -828,7 +829,7 @@ class macro:
 
 
     def convert(self, bypass = False):
-
+        
         def click60():
             self.stop = False
             counter = 0
@@ -883,23 +884,24 @@ class macro:
 
             if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and not afb: 
                 if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60-30) and not self.failed: 
-                    self.logger.webhook("","Conversion interrupted: AFB", "brown")
-                    self.incrementHourlyStat("converting_time", time.time()-st)
-                    self.converting = False
-                    afb = True 
+                    self.logger.webhook("Rebuffing","AFB", "brown")
+                    time.sleep(1)
+                    afb = True
                     self.stop = True
                     self.AFB(gatherInterrupt=False)
-                    click = threading.Thread(target=click60, daemon=True)
+                    click = threading.Thread(target=click60, daemon=True) # you get the gist
                     click.start()
                     
 
                 elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60) and not self.failed and not afb: #if used dice first
                     self.logger.webhook("Converting: interrupted","AFB", "brown")
+                    self.converting = False
+                    self.cAFBglitter = True
                     time.sleep(1)
-                    afb = True 
+                    afb = True
                     self.stop = True
                     self.AFB(gatherInterrupt=False)
-                    click = threading.Thread(target=click60, daemon=True)
+                    click = threading.Thread(target=click60, daemon=True) # you get the gist
                     click.start()
         
             if self.night and self.setdat["stinger_hunt"]:
@@ -1980,7 +1982,9 @@ class macro:
                                 if diceslot == 0: self.toggleInventory("close")
                                 returnVal = boostedField
                                 self.saveAFB("AFB_dice_cd")
-                                if glitter: self.AFBglitter = True, self.saveAFB("AFB_glitter_cd")
+                                if glitter: 
+                                    self.AFBglitter = True
+                                    self.saveAFB("AFB_glitter_cd")
 
                             else:
                                 self.logger.webhook("", f"Boosted Fields: {', '.join(boostedField)}", "red")
@@ -2003,11 +2007,11 @@ class macro:
                             self.logger.webhook("", f"Activated glitter", "white")
                             self.saveAFB("AFB_dice_cd")
                             self.saveAFB("AFB_glitter_cd")
-                            self.AFBglitter = False
+                            self.AFBglitter = True
                             self.oAFBglitter = True
                             return returnVal
                         
-                        if not self.converting and self.isBesideE(["make"]) : #if converting was interrupted
+                        if self.converting and self.isBesideE(["make"]) : #if converting was interrupted
                             self.convert()
                         else: self.reset(convert=True)
                         return returnVal
@@ -2016,11 +2020,13 @@ class macro:
                         self.failed = True
                         self.logger.webhook("", f"Failed to boost {field}", "red")
                         self.saveAFB("AFB_dice_cd")
-                        if glitter: self.saveAFB("AFB_glitter_cd"), self.AFBglitter = False
+                        if glitter: 
+                            self.saveAFB("AFB_glitter_cd")
+                            self.AFBglitter = False
                         if diceslot == 0: self.toggleInventory("close")
                         return
                     
-                elif glitter and self.AFBglitter and not self.failed:
+                elif glitter and self.AFBglitter and not self.failed or self.cAFBglitter:
                     if self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30): #if used dice first
                         self.logger.webhook("","Rebuffing: Glitter", "white")
                         if glitterslot == 0:
@@ -2040,6 +2046,7 @@ class macro:
                         self.saveAFB("AFB_dice_cd")
                         self.saveAFB("AFB_glitter_cd")
                         self.AFBglitter = False
+                        self.cAFBglitter = False
                         self.reset(convert=True)
 
     def collectStickerPrinter(self):
@@ -3522,7 +3529,7 @@ class macro:
                 self.logger.webhook("","Attempting to go in fullscreen","red")
                 appManager.openApp("roblox")
                 time.sleep(1)
-                self.toggleFullScreen()
+                if not self.isFullScreen(): self.toggleFullScreen()
                 time.sleep(1)
                 if self.getTop(0):
                     self.newUI = False
@@ -3555,7 +3562,7 @@ class macro:
             self.keyboard.press("esc")
             if similarHashes(img1, img2, 3):
                 messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions\n\n NOTE: This popup might be incorrect. If the macro is able to input keypresses and interact with the game, you can dismiss this popup', title='Accessibility Permission')
-            time.sleep(1)
+            time.sleep(0.5)
 
     def start(self):
         #if roblox is not open, rejoin
