@@ -1965,7 +1965,7 @@ class macro:
                                     
                         # field user selected is detected
                         if "field" in dice:
-                            if not field == boostedField:
+                            if field == boostedField:
                                 self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
                                 returnVal = boostedField
                                 self.keyboard.press("pagedown")
