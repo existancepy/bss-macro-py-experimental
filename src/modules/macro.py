@@ -856,8 +856,6 @@ class macro:
                 break
 
         self.status.value = "converting"
-        
-        
         st = time.time()
         self.logger.webhook("", "Converting", "brown", "screen")
         self.alreadyConverted = True
@@ -886,6 +884,7 @@ class macro:
             if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and not afb: 
                 if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60-30) and not self.failed: 
                     self.logger.webhook("Rebuffing","AFB", "brown")
+                    self.converting = False
                     self.cAFBDice = True
                     time.sleep(1)
                     afb = True
