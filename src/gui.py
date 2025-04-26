@@ -44,7 +44,6 @@ def clearAFB():
     AFBData = {
         "AFB_dice_cd": 0,
         "AFB_glitter_cd": 0,
-        "AFB_rebuff": 0,
         "AFB_limit": 0
     }
     
