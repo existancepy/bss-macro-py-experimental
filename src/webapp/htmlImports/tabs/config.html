@@ -205,6 +205,19 @@
                 },
 
             ])
+            buildStandardContainer(parentOther, "Haste Compensation", "", [
+                {
+                        
+                    id: "gamemode",
+                    title: "Game mode",
+                    desc: "Allow the macro to detect and disable gamemode",
+                    type: {
+                        name: "checkbox",
+                        triggerFunction: saveGeneralTriggerFunction
+                    }
+                        
+                },
+            ])
 
             buildStandardContainer(parentOther, "Haste Compensation", "", [
                 {
