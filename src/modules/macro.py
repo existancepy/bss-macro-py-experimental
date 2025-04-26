@@ -1,4 +1,4 @@
-aimport fuzzywuzzy.process #type: ignore
+import fuzzywuzzy.process #type: ignore
 import modules.screen.ocr as ocr
 from modules.screen.pixelColor import getPixelColor
 import modules.misc.appManager as appManager
