@@ -1869,10 +1869,10 @@ class macro:
                 self.reset()
                 self.AFB(gatherInterrupt=False)
 
-        if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60+30) or self.cAFBDice: 
+        if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60+30): 
             self.failed = False
             if self.setdat["Auto_Field_Boost"]:
-                if not self.AFBglitter and self.hasAFBRespawned("AFB_dice_cd", rebuff*60):
+                if not self.AFBglitter and self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.cAFBDice:
                     # get all fields
                     fields = ["rose", "strawberry", "mushroom", "pepper",  # red
                             "sunflower", "dandelion", "spider", "coconut", # white
