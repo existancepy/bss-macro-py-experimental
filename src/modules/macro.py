@@ -1974,6 +1974,7 @@ class macro:
                                 if glitter: 
                                     self.AFBglitter = True
                                     self.saveAFB("AFB_glitter_cd")
+                                
                             else:
                                 continue  
 
@@ -2015,6 +2016,7 @@ class macro:
                             self.AFBglitter = True
                             self.oAFBglitter = True
                             return returnVal
+                        break
                         
                     if returnVal is None:
                         self.failed = True
