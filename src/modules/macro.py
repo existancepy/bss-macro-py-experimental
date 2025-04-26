@@ -1965,7 +1965,7 @@ class macro:
                                     
                         # field user selected is detected
                         if "field" in dice:
-                            if field == boostedField:
+                            if not field == boostedField:
                                 self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
                                 returnVal = boostedField
                                 self.keyboard.press("pagedown")
@@ -2016,6 +2016,7 @@ class macro:
                             self.AFBglitter = True
                             self.oAFBglitter = True
                             return returnVal
+                        else: return returnVal
                             
                     if returnVal == None:
                         self.failed = True
@@ -3510,8 +3511,9 @@ class macro:
                 #fullscreen back roblox
                 appManager.openApp("roblox")
                 self.toggleFullScreen()
-            time.sleep(1)
-            self.moveMouseToDefault()
+                time.sleep(1)
+                self.moveMouseToDefault()
+            
 
         #detect new/old ui and set 
         #also check for screen recording permission 
