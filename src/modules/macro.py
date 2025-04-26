@@ -2292,7 +2292,7 @@ class macro:
     
     #check which mobs have respawned in the field and reset their timings
     def setMobTimer(self, field):
-        if not field in regularMobInFields: return
+        if field in regularMobInFields: return
         timings = self.getTiming()
         mobs = regularMobInFields[field]
         for m in mobs:
