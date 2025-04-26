@@ -22,3 +22,4 @@ bees=0
 12_Hour=False
 webhook_format=False
 fast=False
+gamemode=True
