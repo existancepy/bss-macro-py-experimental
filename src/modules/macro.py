@@ -1492,6 +1492,11 @@ class macro:
                 break
             elif self.collectMondoBuff(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
                 break
+            elif self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and self.AFB(gatherInterrupt=True):
+                turnOffShitLock()
+                self.status.value = ""
+                keepGathering = False
+                break
             elif self.died:
                 self.status.value = ""
                 turnOffShitLock()
@@ -1499,8 +1504,7 @@ class macro:
                 time.sleep(0.4)
                 self.reset()
                 break
-            elif self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and self.AFB(gatherInterrupt=True):
-                    break
+            
 
             #check if max time is reached
             gatherTime = self.convertSecsToMinsAndSecs(getGatherTime())
@@ -1858,7 +1862,7 @@ class macro:
                 self.logger.webhook("Gathering: interrupted","Automatic Field Boost", "brown")
                 self.reset(convert=False)
                 self.AFB(gatherInterrupt=False)
-            elif dice and self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60) and not self.failed: 
+            elif self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60) and not self.failed: 
                 self.logger.webhook("Gathering: interrupted","Automatic Field Boost", "brown")
                 self.reset()
                 self.AFB(gatherInterrupt=False)
