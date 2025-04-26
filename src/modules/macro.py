@@ -879,15 +879,13 @@ class macro:
         
         afb = False # so it stops spamming webhook messages 😭
         while not self.isBesideE(["pollen", "flower", "field"]): 
-            
             if self.isBesideE(["make"]): self.keyboard.press("e"), time.sleep(3)
 
             if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and not afb: 
                 if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60-30) and not self.failed: 
-                    if "loaded" in self.setdat["AFB_dice"]: 
-                        self.logger.webhook("","Conversion interrupted: AFB", "brown")
-                        self.converting = False
-                    else: self.logger.webhook("","AFB: Rebuff", "brown")
+                    self.logger.webhook("","Conversion interrupted: AFB", "brown")
+                    self.incrementHourlyStat("converting_time", time.time()-st)
+                    self.converting = False
                     afb = True 
                     self.stop = True
                     self.AFB(gatherInterrupt=False)
@@ -1927,6 +1925,8 @@ class macro:
                             if timeout == 300: # else try again after other tasks
                                 self.logger.webhook("", "Auto Field Boost: Timeout", "white")
                                 self.toggleInventory("close")
+                                self.saveAFB("AFB_dice_cd")
+                                self.AFBglitter = False
                                 return
                         for _ in range(4): # detect text
                             bluetexts += ocr.imToString("blue").lower() + "\n"
@@ -1967,9 +1967,7 @@ class macro:
                                 if diceslot == 0: self.toggleInventory("close")
                                 returnVal = boostedField
                                 self.saveAFB("AFB_dice_cd") 
-                                if glitter:
-                                    self.AFBglitter = True
-                                    self.saveAFB("AFB_glitter_cd")
+                                if glitter: self.AFBglitter = True,  self.saveAFB("AFB_glitter_cd")
                             else:
                                 continue  
 
@@ -1982,6 +1980,7 @@ class macro:
                                 if diceslot == 0: self.toggleInventory("close")
                                 returnVal = boostedField
                                 self.saveAFB("AFB_dice_cd")
+                                if glitter: self.AFBglitter = True, self.saveAFB("AFB_glitter_cd")
 
                             else:
                                 self.logger.webhook("", f"Boosted Fields: {', '.join(boostedField)}", "red")
@@ -2008,24 +2007,17 @@ class macro:
                             self.oAFBglitter = True
                             return returnVal
                         
-                        if self.converting: #if converting was interrupted
-                            if self.isBesideE(["stop"], ["make"]): 
-                                self.convert()
-                            else: self.reset(convert=True)
+                        if not self.converting and self.isBesideE(["make"]) : #if converting was interrupted
+                            self.convert()
+                        else: self.reset(convert=True)
                         return returnVal
                         
                     if returnVal is None:
                         self.failed = True
-                        self.saveAFB("AFB_dice_cd")
-                        if glitter: self.saveAFB("AFB_glitter_cd")
                         self.logger.webhook("", f"Failed to boost {field}", "red")
+                        self.saveAFB("AFB_dice_cd")
+                        if glitter: self.saveAFB("AFB_glitter_cd"), self.AFBglitter = False
                         if diceslot == 0: self.toggleInventory("close")
-                        if self.converting:
-                            self.keyboard.press("pagedown")
-                            for i in range(3):
-                                self.keyboard.press("o")
-                            if diceslot == 0: self.toggleInventory("close")
-                            self.converting = True
                         return
                     
                 elif glitter and self.AFBglitter and not self.failed:
