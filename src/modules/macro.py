@@ -1,4 +1,4 @@
-import fuzzywuzzy.process #type: ignore
+aimport fuzzywuzzy.process #type: ignore
 import modules.screen.ocr as ocr
 from modules.screen.pixelColor import getPixelColor
 import modules.misc.appManager as appManager
@@ -829,12 +829,16 @@ class macro:
 
     def convert(self, bypass = False):
 
-        self.stop = False #clicking
         def click60():
+            self.stop = False
+            counter = 0
             while not self.stop:
-                time.sleep(60)
-                mouse.click()
-
+                time.sleep(1)
+                counter += 1
+                if counter >= 60:
+                    mouse.click()
+                    counter = 0
+        
         self.location = "spawn"
         if not bypass:
             #use ebutton detection, faster detection but more prone to false positives (like detecting trades)
@@ -851,7 +855,7 @@ class macro:
 
         self.status.value = "converting"
         
-        self.moveMouseToDefault()
+        
         st = time.time()
         self.logger.webhook("", "Converting", "brown", "screen")
         self.alreadyConverted = True
@@ -869,8 +873,9 @@ class macro:
         if self.enableNightDetection:
             self.keyboard.press(",")
         
-        timer_thread = threading.Thread(target=click60, daemon=True) # you get the gist
-        timer_thread.start()
+        self.moveMouseToDefault()
+        click = threading.Thread(target=click60, daemon=True) # you get the gist
+        click.start()
         
         afb = False # so it stops spamming webhook messages 😭
         while not self.isBesideE(["pollen", "flower", "field"]): 
@@ -886,6 +891,8 @@ class macro:
                     afb = True 
                     self.stop = True
                     self.AFB(gatherInterrupt=False)
+                    click = threading.Thread(target=click60, daemon=True)
+                    click.start()
                     
 
                 elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60) and not self.failed and not afb: #if used dice first
@@ -894,6 +901,8 @@ class macro:
                     afb = True 
                     self.stop = True
                     self.AFB(gatherInterrupt=False)
+                    click = threading.Thread(target=click60, daemon=True)
+                    click.start()
         
             if self.night and self.setdat["stinger_hunt"]:
                 self.incrementHourlyStat("converting_time", time.time()-st)
@@ -914,12 +923,14 @@ class macro:
 
             if time.time()-st > 30*60: #30mins max
                 self.logger.webhook("","Converting timeout (30mins max)", "brown", "screen")
+                self.stop = True
                 break
 
         if convertBalloon: self.saveTiming("convert_balloon")
         self.status.value = ""
         #deal with the extra delay
-        self.logger.webhook("", f"Finished converting (Time: {self.convertSecsToMinsAndSecs(time.time()-st)})", "brown", "honey")
+        self.logger.webhook("", f"Finished converting\n(Time: {self.convertSecsToMinsAndSecs(time.time()-st)})", "brown", "honey")
+        self.stop = True
         wait = self.setdat["convert_wait"]
         if (wait):
             self.logger.webhook("", f'Waiting for an additional {wait} seconds', "light green")
@@ -3451,7 +3462,7 @@ class macro:
             #make sure game mode is a feature (macOS 14.0 and above and apple chips)
             macVersion, _, _ = platform.mac_ver()
             macVersion = float('.'.join(macVersion.split('.')[:2]))
-            if macVersion >= 14 and platform.processor() == "arm":
+            if macVersion >= 14 and platform.processor() == "arm" and self.setdat["gamemode"]:
                 self.logger.webhook("","Detecting and disabling game mode","dark brown")
                 #make sure roblox is not fullscreen
                 self.toggleFullScreen()
