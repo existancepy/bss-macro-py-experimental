@@ -844,7 +844,7 @@ class macro:
                         time.sleep(1)
                         self.AFB()
                         self.cAFBDice = False
-                        if not self.converting: self.convert()
+                        self.logger.webhook("", "Still converting", "brown", "screen")
                         click.start()
                         
 
@@ -858,7 +858,8 @@ class macro:
                         time.sleep(1)
                         self.AFB()
                         self.cAFBglitter = False
-                        if not self.converting: self.convert()
+                        self.logger.webhook("", "Still converting", "brown", "screen")
+                        self.status.value = "converting"
                         click.start()
 
                     counter += 1
@@ -1858,6 +1859,7 @@ class macro:
         if gatherInterrupt:
             if (glitter and self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30) or self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60)) and not self.failed:
                 self.logger.webhook("Gathering: interrupted", "Automatic Field Boost", "brown")
+                if turnOffShiftLock: self.keyboard.press("shift")
                 if glitter and self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30):
                     self.reset(convert=False)
                 else:
@@ -1960,7 +1962,7 @@ class macro:
                                         
                             # field user selected is detected
                             if "field" in dice:
-                                if field == boostedField:
+                                if not field == boostedField:
                                     self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
                                     returnVal = boostedField
                                     self.keyboard.press("pagedown")
