@@ -1965,7 +1965,7 @@ class macro:
                                     
                         # field user selected is detected
                         if "field" in dice:
-                            if not field == boostedField:
+                            if field == boostedField:
                                 self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
                                 returnVal = boostedField
                                 self.keyboard.press("pagedown")
@@ -2009,12 +2009,14 @@ class macro:
                                 else: 
                                     self.cannon() 
                                     self.goToField(field)
+                                    time.sleep(0.5)
                                     self.keyboard.press(str(glitterslot))
                             self.logger.webhook("", f"Activated glitter", "white")
                             self.saveAFB("AFB_dice_cd")
                             self.saveAFB("AFB_glitter_cd")
                             self.AFBglitter = True
                             self.oAFBglitter = True
+                            self.reset()
                             return returnVal
                         else: return returnVal
                             
@@ -2029,21 +2031,20 @@ class macro:
                         return
                         
                 # glitter    
-                elif (glitter and self.AFBglitter and not self.failed) or self.cAFBglitter: 
-                    if self.cAFBglitter and self.hasAFBRespawned("AFB_glitter_cd", rebuff * 60 - 30):
+                elif (glitter and self.AFBglitter and not self.failed) and self.oAFBglitter: 
+                    if self.cAFBglitter or self.hasAFBRespawned("AFB_glitter_cd", rebuff * 60 - 30):
                         self.cAFBglitter = False
                         self.logger.webhook("", "Rebuffing: Glitter", "white")
-                        if glitterslot == 0:
+                        if glitterslot == 0: 
+                            self.cannon() 
                             Glitter.start()
-                            self.cannon()
                             goToField.start()
                             goToField.join()
                             Glitter.join()
                             self.clickYes()
-                            self.toggleInventory("close")
-                        else:
-                            self.cannon()
-                            self.goToField(self.setdat["AFB_field"])
+                        else: 
+                            self.cannon() 
+                            self.goToField(field)
                             time.sleep(0.5)
                             self.keyboard.press(str(glitterslot))
                         self.logger.webhook("", "Rebuffed: Glitter", "white")
