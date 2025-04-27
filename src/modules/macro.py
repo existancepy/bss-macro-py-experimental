@@ -834,7 +834,7 @@ class macro:
         def click60():
             self.stop = False
             counter = 0
-            while not self.stop:
+            while (not self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60-30)) or (self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60) or (self.stop)):
                 time.sleep(1)
                 counter += 1
                 if counter >= 60:
@@ -891,8 +891,6 @@ class macro:
                     self.AFB(gatherInterrupt=False)
                     click = threading.Thread(target=click60, daemon=True) # you get the gist
                     click.start()
-                    
-
                 elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60) and not self.failed and not afb: #if used dice first
                     self.logger.webhook("Converting: interrupted","AFB", "brown")
                     self.converting = False
