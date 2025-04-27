@@ -334,6 +334,7 @@ class macro:
         self.oAFBglitter = False
         self.cAFBglitter = False
         self.cAFBDice = False
+        self.afb = False
         self.stop = False #not
         # 12 or 24 hour webhook
         if self.setdat["webhook_format"]:
@@ -830,17 +831,17 @@ class macro:
 
 
     def convert(self, bypass = False):
-        
+        '''
         def click60():
             self.stop = False
             counter = 0
-            while (not self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60-30)) or (self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60) or (self.stop)):
+            while (not self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60 - 30) or (self.setdat["AFB_glitter"] and not self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60)) or self.stop):
                 time.sleep(1)
                 counter += 1
                 if counter >= 60:
                     mouse.click()
                     counter = 0
-        
+        '''
         self.location = "spawn"
         if not bypass:
             #use ebutton detection, faster detection but more prone to false positives (like detecting trades)
@@ -874,33 +875,35 @@ class macro:
             self.keyboard.press(",")
         
         self.moveMouseToDefault()
-        click = threading.Thread(target=click60, daemon=True) # you get the gist
-        click.start()
+        #click = threading.Thread(target=click60, daemon=True) # you get the gist
+        #click.start()
         
-        afb = False # so it stops spamming webhook messages 😭
+        self.afb = False # so it stops spamming webhook messages 😭
         while not self.isBesideE(["pollen", "flower", "field"]): 
             if self.isBesideE(["make"]): self.keyboard.press("e"), time.sleep(3)
-
+            mouse.click()
             if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and not afb: 
                 if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60-30) and not self.failed: 
                     self.logger.webhook("Rebuffing","AFB", "brown")
                     self.cAFBDice = True
                     time.sleep(1)
-                    afb = True
+                    self.afb = True
                     self.stop = True
                     self.AFB(gatherInterrupt=False)
-                    click = threading.Thread(target=click60, daemon=True) # you get the gist
-                    click.start()
+                    #click = threading.Thread(target=click60, daemon=True) # you get the gist
+                    #click.start()
+
                 elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60) and not self.failed and not afb: #if used dice first
                     self.logger.webhook("Converting: interrupted","AFB", "brown")
+                    self.status.value = ""
                     self.converting = False
                     self.cAFBglitter = True
                     time.sleep(1)
                     afb = True
                     self.stop = True
                     self.AFB(gatherInterrupt=False)
-                    click = threading.Thread(target=click60, daemon=True) # you get the gist
-                    click.start()
+                    #click = threading.Thread(target=click60, daemon=True) # you get the gist
+                    #click.start()
         
             if self.night and self.setdat["stinger_hunt"]:
                 self.incrementHourlyStat("converting_time", time.time()-st)
@@ -1492,7 +1495,6 @@ class macro:
                 break
             elif self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and self.AFB(gatherInterrupt=True):
                 turnOffShitLock()
-                self.status.value = ""
                 keepGathering = False
                 self.reset()
                 break
@@ -1859,20 +1861,17 @@ class macro:
         if gatherInterrupt:
             if glitter and self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30) and not self.failed:
                 self.logger.webhook("Gathering: interrupted", "Automatic Field Boost", "brown")
-                self.AFBglitter = False 
-                return  
             elif self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60) and not self.failed:
                 self.logger.webhook("Gathering: interrupted", "Automatic Field Boost", "brown")
-                self.cAFBDice = False  
-                return 
 
 
         if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60+30): 
             self.failed = False
+            self.afb = False
             if self.setdat["Auto_Field_Boost"]:
                 # dice
                 if (not self.AFBglitter and self.hasAFBRespawned("AFB_dice_cd", rebuff*60)) or self.cAFBDice:
-                    if self.cAFBDice: self.cAFBDice = False
+                    self.cAFBDice = False
                     # get all fields
                     fields = ["rose", "strawberry", "mushroom", "pepper",  # red
                             "sunflower", "dandelion", "spider", "coconut", # white
@@ -2029,7 +2028,7 @@ class macro:
                         return
                         
                 # glitter    
-                elif (glitter and self.AFBglitter and not self.failed) and self.oAFBglitter: 
+                elif glitter and self.AFBglitter and not self.failed and self.oAFBglitter: 
                     if self.cAFBglitter or self.hasAFBRespawned("AFB_glitter_cd", rebuff * 60 - 30):
                         self.cAFBglitter = False
                         self.logger.webhook("", "Rebuffing: Glitter", "white")
@@ -2049,6 +2048,8 @@ class macro:
                         self.saveAFB("AFB_dice_cd")
                         self.saveAFB("AFB_glitter_cd")
                         self.AFBglitter = False
+                else: 
+                    return
                         
 
     def collectStickerPrinter(self):
