@@ -836,30 +836,26 @@ class macro:
             while not self.afb:
                 if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and not self.afb:
                     if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60) and not self.failed: 
-                        self.logger.webhook("Rebuffing","AFB", "brown")
                         self.afb = True
                         self.cAFBDice = True
+                        self.logger.webhook("Rebuffing","AFB", "brown")
                         time.sleep(1)
                         self.AFB()
                         self.cAFBDice = False
-                        self.afb = False
-                        self.logger.webhook("", "Still converting", "brown", "screen")
+                        self.logger.webhook("", "Still converting", "brown")
                         click.start()
-                    elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60-30) and not self.failed and not self.afb:#if used dice first
+                    elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60+30) and not self.failed and not self.afb: #if used dice before
                         self.status.value = ""
-                        self.keyboard.press("e")
-                        self.logger.webhook("Converting: interrupted","AFB", "brown")
                         self.afb = True
-                        self.converting = False
                         self.cAFBglitter = True
+                        self.logger.webhook("Converting: interrupted","AFB", "brown")
                         time.sleep(1)
                         self.AFB()
+                        self.AFBglitter = False
                         self.cAFBglitter = False
-                        self.afb = False
-                        self.logger.webhook("", "Still converting", "brown", "screen")
+                        self.logger.webhook("", "Continuing conversion", "brown")
                         self.status.value = "converting"
                         click.start()
-
                     counter += 1
                     time.sleep(1)
                     if counter >= 60:
@@ -1856,12 +1852,12 @@ class macro:
             if (glitter and self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30)) or (self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60)) and not self.failed:
                 if turnOffShiftLock: self.keyboard.press("shift")
                 self.logger.webhook("Gathering: interrupted", "Automatic Field Boost", "brown")
-                if glitter and self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30):
+                if glitter:
                     self.reset(convert=False)
                 else:
                     self.reset()
         self.status.value = ""
-        if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30) or (self.cAFBDice and self.hasAFBRespawned("AFB_dice_cd", rebuff*60-30)): 
+        if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30) or (self.cAFBDice and self.hasAFBRespawned("AFB_dice_cd", rebuff*60-30)) or (self.cAFBglitter or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30)): 
             self.failed = False
             self.afb = False
             if self.setdat["Auto_Field_Boost"]:
@@ -2012,17 +2008,16 @@ class macro:
                         self.cAFBglitter = False
                         self.afb = False
                         return returnVal
-                else: return
                                         
-            if returnVal == None:
-                self.failed = True
-                self.logger.webhook("", f"Failed to boost {field}", "red")
-                self.saveAFB("AFB_dice_cd")
-                if glitter: 
-                    self.saveAFB("AFB_glitter_cd")
-                    self.AFBglitter = False
-                if diceslot == 0: self.toggleInventory("close")
-                return
+                if returnVal == None:
+                    self.failed = True
+                    self.logger.webhook("", f"Failed to boost {field}", "red")
+                    self.saveAFB("AFB_dice_cd")
+                    if glitter: 
+                        self.saveAFB("AFB_glitter_cd")
+                        self.AFBglitter = False
+                    if diceslot == 0: self.toggleInventory("close")
+                    return
                         
 
     def collectStickerPrinter(self):
