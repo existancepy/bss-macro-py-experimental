@@ -1819,6 +1819,7 @@ class macro:
     # END
 
     def AFB(self, gatherInterrupt = False, turnOffShiftLock = False):  # Auto Field Boost - WOOHOO
+        returnVal = None
         # time limit - :(
         if self.AFBLIMIT: return True
         if not self.AFBLIMIT and self.setdat["AFB_limit_on"] and self.hasAFBRespawned("AFB_limit", self.setdat["AFB_limit"]*60*60):
@@ -1871,7 +1872,7 @@ class macro:
                     # ignore detected lines with these words, reduces false positives
                     ignore = {"strawberry", "strawberries", "blueberry", "blueberries", 
                     "seed", "seeds", "pineapple", "pineapples", "honey", "from"}
-                    returnVal = None
+                    
                     self.cAFBDice = False
                     #begin
                     self.logger.webhook("", f"Auto Field Boost", "white")
@@ -2009,15 +2010,18 @@ class macro:
                         self.afb = False
                         return returnVal
                                         
-                if returnVal == None:
-                    self.failed = True
-                    self.logger.webhook("", f"Failed to boost {field}", "red")
-                    self.saveAFB("AFB_dice_cd")
-                    if glitter: 
-                        self.saveAFB("AFB_glitter_cd")
-                        self.AFBglitter = False
-                    if diceslot == 0: self.toggleInventory("close")
-                    return
+            if returnVal == None:
+                self.failed = True
+                self.keyboard.press("pagedown")
+                for i in range(3):
+                    self.keyboard.press("o")
+                self.logger.webhook("", f"Failed to boost {field}", "red")
+                self.saveAFB("AFB_dice_cd")
+                if glitter: 
+                    self.saveAFB("AFB_glitter_cd")
+                    self.AFBglitter = False
+                if diceslot == 0: self.toggleInventory("close")
+                return
                         
 
     def collectStickerPrinter(self):
