@@ -1015,7 +1015,7 @@ class macro:
             self.keyboard.press('esc')
             time.sleep(0.05)
             self.keyboard.press('r')
-            time.sleep(0.06)
+            time.sleep(0.05)
             self.keyboard.press('enter')
             if self.newUI:
                 emptyHealth = self.adjustImage("./images/menu", "emptyhealth_new")
@@ -1485,14 +1485,14 @@ class macro:
                 break
             elif self.collectMondoBuff(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
                 break
-            elif self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and self.AFB(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
-                break
             elif self.died:
                 self.status.value = ""
                 turnOffShitLock()
                 self.logger.webhook("","Player died", "dark brown","screen")
                 time.sleep(0.4)
                 self.reset()
+                break
+            elif self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and self.AFB(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
                 break
         
 
@@ -1855,8 +1855,10 @@ class macro:
                 self.logger.webhook("Gathering: interrupted", "Automatic Field Boost", "brown")
                 if glitter:
                     self.reset(convert=False)
+                    self.died = False
                 else:
                     self.reset()
+                    self.died = False
         self.status.value = ""
         if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30) or (self.cAFBDice and self.hasAFBRespawned("AFB_dice_cd", rebuff*60-30)) or (self.cAFBglitter or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30)): 
             self.failed = False
