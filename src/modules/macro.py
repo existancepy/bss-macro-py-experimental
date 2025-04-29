@@ -835,7 +835,7 @@ class macro:
             counter = 0
             while not self.afb:
                 if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and not self.afb:
-                    if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60) and not self.failed: 
+                    if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60) and not self.AFBglitter and not self.failed: 
                         self.afb = True
                         self.cAFBDice = True
                         self.logger.webhook("Rebuffing","AFB", "brown")
@@ -844,7 +844,7 @@ class macro:
                         self.cAFBDice = False
                         self.logger.webhook("", "Still converting", "brown")
                         click.start()
-                    elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60+30) and not self.failed and not self.afb: #if used dice before
+                    elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60+30) and self.AFBglitter and not self.failed and not self.afb: #if used dice before
                         self.status.value = ""
                         self.afb = True
                         self.cAFBglitter = True
@@ -1850,17 +1850,16 @@ class macro:
         glitterslot = self.setdat["AFB_slotG"]
         
         if gatherInterrupt:
-            if (glitter and self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30)) or (self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60)) and not self.failed:
+            self.status.value = ""
+            if ((glitter and self.hasAFBRespawned("AFB_glitter_cd", rebuff * 60) and self.AFBglitter) or (self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"] * 60) and not self.AFBglitter)) and not self.failed:                
                 if turnOffShiftLock: self.keyboard.press("shift")
                 self.logger.webhook("Gathering: interrupted", "Automatic Field Boost", "brown")
-                if glitter:
+                if glitter and self.AFBglitter:
                     self.reset(convert=False)
-                    self.died = False
                 else:
                     self.reset()
-                    self.died = False
-        self.status.value = ""
-        if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30) or (self.cAFBDice and self.hasAFBRespawned("AFB_dice_cd", rebuff*60-30)) or (self.cAFBglitter or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30)): 
+        
+        if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60):
             self.failed = False
             self.afb = False
             if self.setdat["Auto_Field_Boost"]:
@@ -1988,8 +1987,8 @@ class macro:
                                 time.sleep(0.5)
 
                         # glitter    
-                elif glitter and self.AFBglitter and not self.failed:
-                    if self.cAFBglitter or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60-30):
+                elif glitter and not self.failed:
+                    if self.cAFBglitter or (self.hasAFBRespawned("AFB_glitter_cd", rebuff*60) and self.AFBglitter):
                         self.logger.webhook("", "Rebuffing: Glitter", "white")
                         if glitterslot == 0: 
                             self.cannon() 
