@@ -35,6 +35,7 @@ from modules.submacros.hourlyReport import HourlyReport, BuffDetector
 from difflib import SequenceMatcher
 import fuzzywuzzy
 from modules.submacros.walk import Walk
+import traceback
 
 
 pynputKeyboard = Controller()
@@ -1009,9 +1010,9 @@ class macro:
             self.moveMouseToDefault()
             time.sleep(0.1)
             self.keyboard.press('esc')
-            time.sleep(0.1)
-            self.keyboard.press('r')
             time.sleep(0.2)
+            self.keyboard.press('r')
+            time.sleep(0.25)
             self.keyboard.press('enter')
             if self.newUI:
                 emptyHealth = self.adjustImage("./images/menu", "emptyhealth_new")
@@ -1476,7 +1477,7 @@ class macro:
                 self.logger.webhook("Gathering: interrupted","Stinger Hunt","dark brown")
                 self.reset(convert=False)
                 break
-            elif self.collectMondoBuff(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
+            elif self.setdat["mondo_buff"] and self.collectMondoBuff(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
                 break
             elif self.died:
                 self.status.value = ""
@@ -1652,8 +1653,8 @@ class macro:
                     self.keyboard.press("shift")
                     self.logger.webhook("", "Player Died", "red", "screen")
                     self.reset(convert=False)
-                    if self.collectMondoBuff():
-                        return True
+                    self.collectMondoBuff()
+                    return
                 #time limit
                 if getCurrentMinute() >= 15: #mondo despawns after 15 minutes if not defeated in time
                     self.keyboard.walk("s",1, False)
@@ -2114,7 +2115,7 @@ class macro:
             time.sleep(0.8)
             self.runPath(f"vic/find_vic/{currField}")
             if self.vicField:
-                self.logger.webhook("",f"Vicious Bee detected ({self.vicField})", "light blue") 
+                self.logger.webhook("",f"Vicious Bee detected ({self.vicField})", "light blue", "screen") 
                 break
             print(self.vicField)
             self.reset(convert=False)
@@ -2123,6 +2124,7 @@ class macro:
             stingerHuntThread.join()
             self.convert()
             updateHourlyTime()
+            self.night = False
             return
         
         #kill vic
@@ -2148,11 +2150,11 @@ class macro:
                 #run checks
                 if self.died or self.vicStatus is not None: break
             if self.vicStatus == "defeated":
-                self.logger.webhook("","Vicious Bee Defeated","light green")
+                self.logger.webhook("","Vicious Bee Defeated","light green", "screen")
                 self.hourlyReport.addHourlyStat("vicious_bees", 1)
                 break
             elif self.died:
-                self.logger.webhook("","Player Died","dark brown")
+                self.logger.webhook("","Player Died","dark brown", "screen")
                 goToVicField()
                 self.died = False
             elif time.time()-st > 180: #max 3 mins to kill vic
@@ -2391,45 +2393,49 @@ class macro:
         self.nmLoot(9, 5, "a")
         updateHourlyTime()
 
-    #iterate through all 3 slots in a cycle
-    def placePlanterCycle(self, cycle):
-        planterGrowthMaxTime = 0
+    #plant all 3 planters in one cycle
+    def placeAllPlantersInCycle(self, cycle):
         planterData = { #planter data to be stored in a file
-            "cycle": cycle,
-            "planters": [],
-            "fields": [],
-            "gatherFields": [],
-            "harvestTime": 0
+            "cycles": [1,1,1],
+            "planters": ["","",""],
+            "fields": ["","",""],
+            "gatherFields": ["","",""],
+            "harvestTimes": [0,0,0]
         }
         for i in range(3):
-            planter = self.setdat[f"cycle{cycle}_{i+1}_planter"]
-            field = self.setdat[f"cycle{cycle}_{i+1}_field"]
-            if planter == "none" or field == "none": continue #check that both the planter and field are present
-            glitter = self.setdat[f"cycle{cycle}_{i+1}_glitter"]
-            #set the cooldown for planters and place them
-            planterGrowthTime = self.placePlanter(planter,field, self.setdat["manual_planters_collect_full"], glitter)
-            if planterGrowthTime is None: #make sure the planter was placed
-                self.reset()
-                continue 
-            #get the maximum planter growth time
-            if planterGrowthTime > planterGrowthMaxTime:
-                planterGrowthMaxTime = planterGrowthTime
-            planterData["planters"].append(planter)
-            planterData["fields"].append(field)
-            #set which fields to gather in
-            if self.setdat[f"cycle{cycle}_{i+1}_gather"]: 
-                planterData["gatherFields"].append(field)
-            self.reset()
+            planterData = self.placePlanterInCycle(i, cycle, planterData)
     
-        planterData["harvestTime"] = time.time() + planterGrowthMaxTime
-        #convert planter growth max time to hrs, mins, secs readable format
-        planterReady = time.strftime("%H:%M:%S", time.gmtime(planterGrowthMaxTime))
-        self.logger.webhook("", f"Planters will be ready in: {planterReady}", "light blue")
+    def placePlanterInCycle(self, slot, cycle, planterData):
+        planter = self.setdat[f"cycle{cycle}_{slot+1}_planter"]
+        field = self.setdat[f"cycle{cycle}_{slot+1}_field"]
+
+        glitter = self.setdat[f"cycle{cycle}_{slot+1}_glitter"]
+        #set the cooldown for planters and place them
+        planterGrowthTime = self.placePlanter(planter,field, self.setdat["manual_planters_collect_full"], glitter)
+        if planterGrowthTime is None: #make sure the planter was placed
+            self.reset()
+            return planterData
         
+        planterData["cycles"][slot] = cycle
+        planterData["planters"][slot] = planter
+        planterData["fields"][slot] = field
+        planterData["harvestTimes"][slot] = time.time() + planterGrowthTime
+        #set which fields to gather in
+        if self.setdat[f"cycle{cycle}_{slot+1}_gather"]: 
+            planterData["gatherFields"][slot] = field
+        else:
+            planterData["gatherFields"][slot] = ""
+        
+        planterReady = time.strftime("%H:%M:%S", time.gmtime(planterGrowthTime))
+        self.logger.webhook("", f"Planter will be ready in: {planterReady}", "light blue")
+
         #save the planter data
         with open("./data/user/manualplanters.txt", "w") as f:
             f.write(str(planterData))
         f.close()
+
+        self.reset()
+        return planterData
     
     def closeBlenderGUI(self):
         mouse.moveTo(self.mw/2-250, math.floor(self.mh*0.48)-200)
@@ -2774,64 +2780,117 @@ class macro:
         #first honey
         self.hourlyReport.setSessionStats(self.hourlyReport.getHoney(), time.time())
         prevMin = -1  
-        currMin = None
+        prevSec = -1
+        multi = 2 if self.display_type == "retina" else 1
+        lastHourlyReport = 0
 
-        buffUptimeBuffsImage = {
-            "baby_love": ["middle", True, False],
-            "blue_boost": ["middle", True, True],
-            "wealth_clock": ["top", True, True],
-            "blessing": ["middle", True, True],
-            "bloat": ["top", True, True],
-        }
+        try:
+            while True:
+                currMin = datetime.now().minute
+                currSec = datetime.now().second
+                #Hourly report
+                if self.status.value != "rejoining":
+                    #instead of using time.sleep, we want to run the code at the start of the min
+                    if currMin != prevMin:
+                        prevMin = currMin
+                        honey = self.hourlyReport.getHoney()
+                        print(honey)
+                        backpack = self.getBackpack()
 
-        buffUptimeBuffsColor = {
-            "focus": [[np.array([50, 180, 180]), np.array([80, 255, 255])], True, True],
-        }
+                        self.hourlyReport.addHourlyStat("honey_per_min", honey)
+                        self.hourlyReport.addHourlyStat("backpack_per_min", backpack)
 
-        while True:
-            currMin = datetime.now().minute
-            #Hourly report
-            if self.status.value != "rejoining":
-                #instead of using time.sleep, we want to run the code at the start of the min
-                if currMin == prevMin: continue
-                prevMin = currMin
-                honey = self.hourlyReport.getHoney()
-                print(honey)
-                backpack = self.getBackpack()
+                if self.status.value != "rejoining" and not currSec%6 and currSec != prevSec:
+                    i = (60*currMin + currSec)//6
+                    screen = cv2.cvtColor(self.buffDetector.screenshotBuffArea(), cv2.COLOR_BGRA2BGR)
+                    uptimeBuffsColors = self.hourlyReport.uptimeBuffsColors
+                    uptimeBearBuffs = self.hourlyReport.uptimeBearBuffs
 
-                self.hourlyReport.addHourlyStat("honey_per_min", honey)
-                self.hourlyReport.addHourlyStat("backpack_per_min", backpack)
+                    for j in ["baby_love"]:
+                        if self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors[j][0], uptimeBuffsColors[j][1], y1=30*multi, searchDirection=7):
+                            self.hourlyReport.uptimeBuffsValues[j][i] = 1
 
-            #check if its time to send hourly report
-            if currMin == 0:
-                hourlyReportData = self.hourlyReport.generateHourlyReport()
-                self.logger.hourlyReport("Hourly Report", "", "purple")
+                    bearBuffRes = [int(x) for x in self.buffDetector.getBuffsWithImage(uptimeBearBuffs, screen=screen, threshold=0.78)]
+                    if any(bearBuffRes):
+                        self.hourlyReport.uptimeBuffsValues["bear"][i] = 1
 
-                #reset stats
-                self.hourlyReport.resetHourlyStats()
+                    for j in ["focus", "bomb_combo", "balloon_aura", "inspire"]:
+                        res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors[j][0], uptimeBuffsColors[j][1], y1=30*multi, y2=50*multi, searchDirection=7)
+                        if res:
+                            x = res[0]+res[2]
+                            buffImg = screen[15*multi:50*multi , x-25*multi:x+5*multi]
+                            self.hourlyReport.uptimeBuffsValues[j][i] = int(self.buffDetector.getBuffQuantityFromImgTight(buffImg))
 
-                #add to history
-                with open("data/user/hourly_report_history.txt", "r") as f:
-                    history = ast.literal_eval(f.read())
-                f.close()
+                    x = 0
+                    for _ in range(3):
+                        res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["haste"][0], uptimeBuffsColors["haste"][1],x, 30*multi, searchDirection=6)
+                        if not res:
+                            break
+                        x = res[0]
+                        if self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["melody"][0], uptimeBuffsColors["melody"][1], x+2*multi, 30, x+34*multi, 40*multi, 12):
+                            self.hourlyReport.uptimeBuffsValues["melody"][i] = 1
+                        elif not self.hourlyReport.uptimeBuffsValues["haste"][i]:
+                            buffImg = screen.copy()[15*multi:50*multi , x+6*multi:x+44*multi]
+                            self.hourlyReport.uptimeBuffsValues["haste"][i] = int(self.buffDetector.getBuffQuantityFromImgTight(buffImg))
+                        x += 44*multi
+                    #print(bd.detectBuffColorInImage(screen, 0xff242424, variation=12, minSize=(3*2,2*2), show=True))
 
-                historyObj = {
-                    "endHour": datetime.now().hour,
-                    "date": str(datetime.today().date()),
-                    "honey": hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]
-                }
-                #max 5 objs
-                if len(history) > 4:
-                    history.pop(-1)
-                history.insert(0,historyObj)
+                    x = screen.shape[1]
+                    for _ in range(3):
+                        res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["boost"][0], uptimeBuffsColors["boost"][1], y1=30*multi, x2=x, searchDirection=7)
+                        if not res:
+                            break
+                        x = res[0]+res[2]
+                        y = res[1] + res[3]
 
-                with open("data/user/hourly_report_history.txt", "w") as f:
-                    f.write(str(history))
-                f.close()
+                        if len(self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["red_boost"][0], uptimeBuffsColors["red_boost"][1], x-30*multi, 15*multi, x-4*multi, 34*multi, 20)):
+                            buffType = "red_boost"
+                        elif len(self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["blue_boost"][0], uptimeBuffsColors["blue_boost"][1], x-30*multi, 15*multi, x-4*multi, 34*multi, 20)):
+                            buffType = "blue_boost"
+                        else:
+                            buffType = "white_boost"
 
-                break
-            
-            time.sleep(1)
+                        buffImg = screen[15*multi: 50*multi,x-25*multi: x]
+                        self.hourlyReport.uptimeBuffsValues[buffType][i] = int(self.buffDetector.getBuffQuantityFromImgTight(buffImg))
+
+                        x -= 40*multi
+                    
+                    prevSec = currSec
+
+                    if "gather_" in self.status.value:
+                        self.hourlyReport.buffGatherIntervals[i] = 1
+
+                #check if its time to send hourly report
+                if currMin == 0 and time.time() - lastHourlyReport > 120:
+                    hourlyReportData = self.hourlyReport.generateHourlyReport()
+                    self.logger.hourlyReport("Hourly Report", "", "purple")
+
+                    #add to history
+                    with open("data/user/hourly_report_history.txt", "r") as f:
+                        history = ast.literal_eval(f.read())
+                    f.close()
+
+                    historyObj = {
+                        "endHour": datetime.now().hour,
+                        "date": str(datetime.today().date()),
+                        "honey": hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]
+                    }
+                    #max 5 objs
+                    if len(history) > 4:
+                        history.pop(-1)
+                    history.insert(0,historyObj)
+
+                    with open("data/user/hourly_report_history.txt", "w") as f:
+                        f.write(str(history))
+                    f.close()
+
+                    lastHourlyReport = time.time()
+                    #reset stats
+                    self.hourlyReport.resetHourlyStats()
+                
+                time.sleep(1)
+        except Exception:
+            self.logger.webhook("Hourly Report Error", traceback.format_exc(), "red")
 
     def toggleQuest(self):
         #click quest icon
@@ -3120,8 +3179,6 @@ class macro:
         elif self.getTop(30):
             self.newUI = True
             self.logger.webhook("","Detected: New Roblox UI","light blue")
-            ocr.newUI = True
-            logModule.newUI = True
         else:
             self.logger.webhook("","Unable to detect Roblox UI","red", "screen")
             self.newUI = True
@@ -3131,12 +3188,16 @@ class macro:
                 if not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.75):
                     messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal. After that, restart the macro.\n\nVisit #6system-settings in the discord for more detailed instructions\n\n NOTE: This popup might be incorrect. If the macro is able to detect objects on the screen, you can dismiss this popup', title='Screen Recording Permission')
 
+        if self.newUI:
+            ocr.newUI = True
+            logModule.newUI = True
+
         #check for accessibility
         #this is done by taking 2 different screenshots
         #if they are both the same, we assume that the keypress didnt go through and hence accessibility is not enabled
         if sys.platform == "darwin":
             originalX = mouse.getPos()[0]
-            mouse.moveBy(50, 0)
+            mouse.moveBy(100, 0)
             time.sleep(0.15)
             newX = mouse.getPos()[0]
             if originalX == newX:
@@ -3151,6 +3212,12 @@ class macro:
             # if similarHashes(img1, img2, 3):
             #     messageBox.msgBox(text='It seems like terminal does not have the accessibility permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Accessibility -> add and enable Terminal.\n\nVisit #6system-settings in the discord for more detailed instructions\n\n NOTE: This popup might be incorrect. If the macro is able to input keypresses and interact with the game, you can dismiss this popup', title='Accessibility Permission')
             # time.sleep(1)
+        
+        if "share" in self.setdat["private_server_link"] and self.setdat["rejoin_method"] == "deeplink":
+            messageBox.msgBox(text="You entered a 'share?code' private server link!\n\nTo fix this:\n1. Paste the link in your browser\n2. Wait for roblox to load in\n3. Copy the link from the top of your browser.  It should now be a 'privateServerLinkCode' link", title='Unsupported private server link')
+        
+        self.buffDetector = BuffDetector(self.newUI, self.display_type)
+        self.hourlyReport = HourlyReport(self.buffDetector)
 
     def start(self):
         #if roblox is not open, rejoin
@@ -3168,8 +3235,6 @@ class macro:
         backgroundThread.start()
 
         #enable hourly report
-        self.buffDetector = BuffDetector(self.newUI, self.display_type)
-        self.hourlyReport = HourlyReport(self.buffDetector)
         hourlyReportBackgroundThread = threading.Thread(target=self.hourlyReportBackground, daemon=True)
         hourlyReportBackgroundThread.start()
 

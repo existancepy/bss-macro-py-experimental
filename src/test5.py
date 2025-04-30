@@ -36,7 +36,13 @@ for k in ["bear", "white_boost"]:
     uptimeBuffsValues[k] = [0]
 #screen = bd.screenshotBuffArea()
 #screen = cv2.cvtColor(screen, cv2.COLOR_RGBA2BGR)
-screen = cv2.imread("hah4.png")
+
+# screen = cv2.imread("hah5.png")
+time.sleep(2)
+screen = cv2.cvtColor(buffDetector.screenshotBuffArea(), cv2.COLOR_BGRA2BGR)
+cv2.imshow("",screen)
+cv2.waitKey(0)
+cv2.imwrite(f"{time.time()}.png", screen)
 #print(bd.getBuffsWithImage(buff, True))
 currMin = 0
 currSec = 0
@@ -55,7 +61,7 @@ for j in ["focus", "bomb_combo", "balloon_aura"]:
     res = buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors[j][0], uptimeBuffsColors[j][1], y1=30*multi, y2=50*multi, searchDirection=7)
     if res:
         x = res[0]+res[2]
-        buffImg = screen.copy()[15*multi:50*multi , x-25*multi:x+5*multi]
+        buffImg = screen.copy()[15*multi:50*multi , x-25*multi:x+15*multi]
         uptimeBuffsValues[j][i] = int(buffDetector.getBuffQuantityFromImgTight(buffImg))
 
 x = 0

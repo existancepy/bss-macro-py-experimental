@@ -11,10 +11,11 @@ import ast
 import subprocess
 from modules.misc import messageBox
 import copy
+import atexit
 
 def hasteCompensationThread(baseSpeed, isRetina, haste):
-    from modules.submacros.hasteCompensation import HasteCompensationOptimized
-    hasteCompensation = HasteCompensationOptimized(isRetina, baseSpeed)
+    from modules.submacros.hasteCompensation import HasteCompensation
+    hasteCompensation = HasteCompensation(isRetina, baseSpeed)
     global stopThreads
     while not stopThreads:
         haste.value = hasteCompensation.getHaste()
@@ -118,40 +119,40 @@ def macro(status, logQueue, haste, updateGUI):
             #check if its time to collect the previous item
             if blenderData["collectTime"] > -1 and time.time() > blenderData["collectTime"]:
                 runTask(macro.blender, args=(blenderData,))
+
         #planters
-        def goToNextCycle(cycle):
+        def goToNextCycle(cycle, slot):
             #go to the next cycle
-            for _ in range(6):
+            for _ in range(8):
                 cycle += 1
                 if cycle > 5:
                     cycle = 1
-                for i in range(3): #make sure the cycle is occupied
-                    if macro.setdat[f"cycle{cycle}_{i+1}_planter"] != "none" and macro.setdat[f"cycle{cycle}_{i+1}_field"] != "none":
-                        return cycle
+                if macro.setdat[f"cycle{cycle}_{slot+1}_planter"] != "none" and macro.setdat[f"cycle{cycle}_{slot+1}_field"] != "none":
+                    return cycle
             else: 
                 return False
-        planterDataRaw = None
+            
         if macro.setdat["planters_mode"] == 1:
             with open("./data/user/manualplanters.txt", "r") as f:
                 planterDataRaw = f.read()
             f.close()
-            cycle = goToNextCycle(0)
-            #Ensure that there is at least 1 valid slot
-            if not planterDataRaw and cycle: #check if planter data exists
-                #place planters in cycle
-                runTask(macro.placePlanterCycle, args = (cycle,),resetAfter=False)
-            elif cycle: #planter data does exist, check if its time to collect them
+            #no data, place planters
+            if not planterDataRaw:
+                runTask(macro.placeAllPlantersInCycle, args = (1,),resetAfter=False)
+            #planter data does exist, check if its time to collect them
+            else: 
                 planterData = ast.literal_eval(planterDataRaw)
-                cycle = planterData["cycle"]
-                if time.time() > planterData["harvestTime"]:
-                    #Collect planters
-                    for i in range(len(planterData["planters"])):
+                #check all 3 slots
+                for i in range(3):
+                    cycle = planterData["cycles"][i]
+                    if time.time() > planterData["harvestTimes"][i] and planterData["planters"][i]:
+                        #Collect planters
                         runTask(macro.collectPlanter, args=(planterData["planters"][i], planterData["fields"][i]))
-                    settingsManager.clearFile("./data/user/manualplanters.txt")
-                    #go to the next cycle
-                    cycle = goToNextCycle(cycle)
-                    #place them
-                    runTask(macro.placePlanterCycle, args = (cycle,),resetAfter=False) 
+                        settingsManager.clearFile("./data/user/manualplanters.txt")
+                        #go to the next cycle
+                        cycle = goToNextCycle(cycle, i)
+                        #place them
+                        runTask(macro.placePlanterInCycle, args = (i, cycle, planterData),resetAfter=False) 
         #mob runs
         for mob, fields in regularMobData.items():
             if not macro.setdat[mob]: continue
@@ -199,7 +200,10 @@ def macro(status, logQueue, haste, updateGUI):
                 gatherFields.append(macro.setdat["fields"][i])
         
         #add planter gather fields
-        planterGatherFields = ast.literal_eval(planterDataRaw)["gatherFields"] if planterDataRaw else []
+        if planterDataRaw:
+            planterGatherFields = [x for x in ast.literal_eval(planterDataRaw)["gatherFields"] if x]
+        else:
+            planterGatherFields = []
         gatherFields.extend([x for x in planterGatherFields if x not in gatherFields])
 
         #remove fields that are already in boosted fields
@@ -210,7 +214,7 @@ def macro(status, logQueue, haste, updateGUI):
 
         #do quests
         questGatherFields = [x for x in questGatherFields if not (x in gatherFields or x in boostedGatherFields)]
-        print(questGatherFields)
+
         #setup the override
         questGatherOverrides = {}
         if macro.setdat["quest_gather_mins"]:
@@ -295,17 +299,26 @@ if __name__ == "__main__":
     #setup stream class
     stream = cloudflaredStream()
 
+    def onExit():
+        stopApp()
+        if discordBotProc and discordBotProc.is_alive():
+            discordBotProc.terminate()
+            discordBotProc.join()
+        
     def stopApp(page= None, sockets = None):
         global stopThreads
         stopThreads = True
         print("stop")
         #print(sockets)
-        macroProc.kill()
-        macroProc.join()
+        if macroProc.is_alive():
+            macroProc.kill()
+            macroProc.join()
         stream.stop()
         #if discordBotProc.is_alive(): discordBotProc.kill()
         keyboardModule.releaseMovement()
         mouse.mouseUp()
+    
+    atexit.register(onExit)
         
     #setup and launch gui
     gui.run = run

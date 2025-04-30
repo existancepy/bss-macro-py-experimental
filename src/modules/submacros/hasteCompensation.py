@@ -20,7 +20,7 @@ class HasteCompensation():
 
         self.bearMorphs = []
         for i in range(5):
-            self.bearMorphs.append(self.adjustBuffImage(f"./images/buffs/bearmorph{i+1}-retina.png"))
+            self.bearMorphs.append(self.adjustBuffImage(f"./images/buffs/bearmorph{i+1}-retina.png", grayscale=True))
 
         self.hastePlus = self.adjustBuffImage(f"./images/buffs/haste+.png")         
         self.mw, self.mh = pag.size()                 
@@ -30,7 +30,7 @@ class HasteCompensation():
         self.prevHasteEnds = 0
 
 
-    def adjustBuffImage(self, path):
+    def adjustBuffImage(self, path, grayscale=False):
         img = Image.open(path)
         #get original size of image
         width, height = img.size
@@ -39,6 +39,9 @@ class HasteCompensation():
         #resize image
         img = img.resize((int(width/scaling), int(height/scaling)))
         #convert to cv2
+        img = pillowToCv2(img)
+        if grayscale:
+                return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         return pillowToCv2(img)
 
     def thresholdMatch(self, target, screen, threshold=0.7):
@@ -49,6 +52,7 @@ class HasteCompensation():
     def getHaste(self):
         st = time.perf_counter()
         screen = np.array(mssScreenshot(0,30,self.mw/1.8,70))
+        screenGray = cv2.cvtColor(screen.copy(), cv2.COLOR_RGB2GRAY)
         bestHaste = 0
         bestHasteMaxVal = 0
         #match haste
@@ -64,7 +68,7 @@ class HasteCompensation():
                 bestHaste = 3
             elif self.prevHaste368 == 5:
                 bestHaste = 6
-            else:
+            elif self.prevHaste368 == 7:
                 bestHaste = 8
         elif bestHaste:
             self.prevHaste368 = bestHaste
@@ -86,14 +90,14 @@ class HasteCompensation():
 
         self.prevHaste = bestHaste
         #match bear morph
-        bearMorph = any(self.thresholdMatch(x, screen, 0.75)[0] for x in self.bearMorphs)
+        bearMorph = any(self.thresholdMatch(x, screenGray, 0.75)[0] for x in self.bearMorphs)
         if bearMorph: 
             bearMorph = 4
         
         #match haste+
         if self.thresholdMatch(self.hastePlus, screen, 0.75)[0]:
             hasteOut += 10
-        print(f"Haste stacks: {hasteOut}, Bear: {bearMorph}") # Debug
+        #print(f"Haste stacks: {hasteOut}, Bear: {bearMorph}") # Debug
         out = (self.baseMoveSpeed+bearMorph)*(1+(0.1*hasteOut))
         
         return out
@@ -182,8 +186,9 @@ class HasteCompensationOptimized():
                 bestHaste = 3
             elif self.prevHaste368 == 5: 
                 bestHaste = 6 
-            else: bestHaste = 8 
-        else:
+            elif self.prevHaste368 == 7:
+                bestHaste = 8
+        elif bestHaste:
             self.prevHaste368 = bestHaste 
 
 
@@ -220,7 +225,7 @@ class HasteCompensationOptimized():
             print("hastePlus")
             hasteOut += 10
 
-        print(f"Haste stacks: {hasteOut}, Bear: {bearMorph}")
+        #print(f"Haste stacks: {hasteOut}, Bear: {bearMorph}")
         final_speed = (self.baseMoveSpeed + bearMorph) * (1 + (0.1 * hasteOut))
 
         # print(f"Calculation time: {time.perf_counter() - st:.4f}s") # Debug timing

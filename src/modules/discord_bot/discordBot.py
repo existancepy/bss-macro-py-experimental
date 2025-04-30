@@ -41,7 +41,7 @@ def discordBot(token, run, status):
             await interaction.response.send_mesasge("Macro is already running")
             return 
         run.value = 1
-        await interaction.response.send_message("Stopping Macro")
+        await interaction.response.send_message("Starting Macro")
 
     @bot.tree.command(name = "stop", description = "Stop the macro")
     async def stop(interaction: discord.Interaction):

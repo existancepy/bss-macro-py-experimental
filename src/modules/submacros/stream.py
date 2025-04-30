@@ -18,7 +18,7 @@ log.setLevel(logging.ERROR)
 class cloudflaredStream:
     def __init__(self):
         self.app = Flask(__name__)
-        self.streaming = True
+        self.streaming = False
         self.serverThread = None
         self.publicURL = None
         self.cfProc = None
@@ -420,15 +420,7 @@ class cloudflaredStream:
         self.resolution = resolution
         self.streaming = True
         self.restart_count = 0
-        
-        # Platform-specific optimizations
-        if sys.platform == 'darwin':  # macOS
-            gc.set_threshold(700, 10, 5)  # macOS-specific GC tuning
-            # Check if we're running on Apple Silicon
-            if os.uname().machine == 'arm64':
-                print("Applying Apple Silicon optimizations")
-                cv2.setUseOptimized(True)
-        
+
         # Start the server thread if not already running
         if not self.serverThread or not self.serverThread.is_alive():
             self.serverThread = threading.Thread(target=self._run_server, daemon=True)

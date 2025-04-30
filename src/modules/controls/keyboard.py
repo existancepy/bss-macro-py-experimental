@@ -45,10 +45,8 @@ class keyboard:
         pag.keyUp(k)
 
     def getMoveSpeed(self):
-        st = time.perf_counter()
         movespeed = self.haste.value
-        et = time.perf_counter()
-        return st, et, movespeed
+        return movespeed
     
     def timeWait(self, duration):
         # baseSpeed = 28
@@ -77,11 +75,11 @@ class keyboard:
 
         st = time.perf_counter()
         prevTime = st
-        _, _, prevSpeed = self.getMoveSpeed()
+        prevSpeed = self.getMoveSpeed()
 
         while traveledDistance < target_distance and prevTime-st < maxTime:
             currentTime = time.perf_counter()
-            _, _, speed = self.getMoveSpeed()
+            speed = self.getMoveSpeed()
 
             delta_t = currentTime - prevTime
 
@@ -93,7 +91,7 @@ class keyboard:
             prevSpeed = speed
 
         elapsed_time = time.perf_counter() - st
-        #print(f"current speed: {speed}, original time: {duration}, actual travel time: {elapsed_time}")
+        print(f"current speed: {speed}, original time: {duration}, actual travel time: {elapsed_time}")
 
     #like press, but with walkspeed and haste compensation
     def walk(self,k,t,applyHaste = True):

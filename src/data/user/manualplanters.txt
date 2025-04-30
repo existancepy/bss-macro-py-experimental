@@ -1,0 +1,1 @@
+{'cycles': [2, 2, 1], 'planters': ['tacky', 'pesticide', 'candy'], 'fields': ['pumpkin', 'mountain top', 'stump'], 'gatherFields': ['', '', ''], 'harvestTimes': [1745983549.3548968, 1745983640.531515, 1745983734.4039721]}
