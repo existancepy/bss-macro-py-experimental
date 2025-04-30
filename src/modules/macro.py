@@ -333,6 +333,7 @@ class macro:
         self.cAFBglitter = False
         self.cAFBDice = False
         self.afb = False
+        self.stop = False
         # 12 or 24 hour webhook
         if self.setdat["webhook_format"]:
             self.logger = logModulee.log(log, self.setdat["enable_webhook"], self.setdat["webhook_link"])
@@ -828,15 +829,16 @@ class macro:
 
 
     def convert(self, bypass = False):
-        
+        self.stop = False
         if self.setdat["Auto_Field_Boost"]: self.afb = False # so it stops spamming webhook messages 😭
         def click60():
             click = threading.Thread(target=click60, daemon=True)
             counter = 0
-            while not self.afb:
+            while not self.afb and not self.stop:
                 if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and not self.afb:
                     if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60) and not self.AFBglitter and not self.failed: 
                         self.afb = True
+                        self.stop = True
                         self.cAFBDice = True
                         self.logger.webhook("Rebuffing","AFB", "brown")
                         time.sleep(1)
@@ -847,6 +849,7 @@ class macro:
                     elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60+30) and self.AFBglitter and not self.failed and not self.afb: #if used dice before
                         self.status.value = ""
                         self.afb = True
+                        self.stop = True
                         self.cAFBglitter = True
                         self.logger.webhook("Converting: interrupted","AFB", "brown")
                         time.sleep(1)
@@ -856,11 +859,11 @@ class macro:
                         self.logger.webhook("", "Continuing conversion", "brown")
                         self.status.value = "converting"
                         click.start()
-                    counter += 1
-                    time.sleep(1)
-                    if counter >= 60:
-                        mouse.click()
-                        counter = 0
+                counter += 1
+                time.sleep(1)
+                if counter >= 60:
+                    mouse.click()
+                    counter = 0
         click = threading.Thread(target=click60, daemon=True)
         self.location = "spawn"
         if not bypass:
@@ -924,6 +927,7 @@ class macro:
         self.status.value = ""
         #deal with the extra delay
         self.logger.webhook("", f"Finished converting\n(Time: {self.convertSecsToMinsAndSecs(time.time()-st)})", "brown", "honey")
+        self.stop = True
         wait = self.setdat["convert_wait"]
         if (wait):
             self.logger.webhook("", f'Waiting for an additional {wait} seconds', "light green")
