@@ -1858,8 +1858,9 @@ class macro:
             if ((glitter and self.hasAFBRespawned("AFB_glitter_cd", rebuff * 60) and self.AFBglitter) or (self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"] * 60) and not self.AFBglitter)) and not self.failed:                
                 if turnOffShiftLock: self.keyboard.press("shift")
                 self.logger.webhook("Gathering: interrupted", "Automatic Field Boost", "brown")
-                time.sleep(0.5)
                 self.reset()
+                self.logger.webhook("", "AFB: Cooldown (10 seconds)", "brown")
+                time.sleep(10)
         
         if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60):
             self.failed = False
