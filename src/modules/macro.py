@@ -1048,6 +1048,7 @@ class macro:
             if AFB: 
                 self.logger.webhook("", "AFB: Cooldown (10 seconds)", "brown")
                 time.sleep(10)
+                self.died = False
 
             self.canDetectNight = True
             self.location = "spawn"
@@ -1488,6 +1489,8 @@ class macro:
             self.incrementHourlyStat("gathering_time", time.time()-patternStartTime)
 
             #check for gather interrupts
+            if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and self.AFB(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
+                return
             if self.night and self.setdat["stinger_hunt"]: 
                 #rely on task function in main to execute the stinger hunt
                 turnOffShitLock()
@@ -1496,8 +1499,6 @@ class macro:
                 break
             elif self.collectMondoBuff(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
                 break
-            elif self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and self.AFB(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
-                break
             elif self.died and not self.afb:
                 self.status.value = ""
                 turnOffShitLock()
@@ -1505,8 +1506,6 @@ class macro:
                 time.sleep(0.4)
                 self.reset()
                 break
-            
-        
 
             #check if max time is reached
             gatherTime = self.convertSecsToMinsAndSecs(getGatherTime())
@@ -1880,7 +1879,6 @@ class macro:
                 # dice
                 if self.cAFBDice or (self.hasAFBRespawned("AFB_dice_cd", rebuff*60) and not self.AFBglitter):
                     self.cAFBDice = False
-                    self.afb = False
                     # get all fields
                     fields = ["rose", "strawberry", "mushroom", "pepper",  # red
                             "sunflower", "dandelion", "spider", "coconut", # white
