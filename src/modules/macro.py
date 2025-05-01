@@ -1046,8 +1046,8 @@ class macro:
                 time.sleep(8-3)
 
             if AFB: 
-                self.logger.webhook("", "AFB: Cooldown (10 seconds)", "brown")
-                time.sleep(10)
+                self.logger.webhook("", "AFB: Cooldown (17.5 seconds)", "brown")
+                time.sleep(17.5)
                 self.died = False
 
             self.canDetectNight = True
