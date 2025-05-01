@@ -835,6 +835,11 @@ class macro:
             click = threading.Thread(target=click60, daemon=True)
             counter = 0
             while not self.afb and not self.stop:
+                counter += 1
+                time.sleep(1)
+                if counter >= 60:
+                    mouse.click()
+                    counter = 0
                 if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and not self.afb:
                     if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60) and not self.AFBglitter and not self.failed: 
                         self.afb = True
@@ -859,11 +864,8 @@ class macro:
                         self.logger.webhook("", "Continuing conversion", "brown")
                         self.status.value = "converting"
                         click.start()
-                counter += 1
-                time.sleep(1)
-                if counter >= 60:
-                    mouse.click()
-                    counter = 0
+                    if not self.converting: break
+
         click = threading.Thread(target=click60, daemon=True)
         self.location = "spawn"
         if not bypass:
@@ -925,6 +927,7 @@ class macro:
 
         if convertBalloon: self.saveTiming("convert_balloon")
         self.status.value = ""
+        if self.afb: click.join()
         #deal with the extra delay
         self.logger.webhook("", f"Finished converting\n(Time: {self.convertSecsToMinsAndSecs(time.time()-st)})", "brown", "honey")
         self.stop = True
@@ -944,7 +947,7 @@ class macro:
         if self.newUI: yOffset += 20
         mouse.moveTo(370, 100+yOffset)
 
-    def reset(self, hiveCheck = False, convert = True):
+    def reset(self, hiveCheck = False, convert = True, AFB = False):
         self.alreadyConverted = False
         self.keyboard.releaseMovement()
 
@@ -1041,6 +1044,10 @@ class macro:
                         break
             else:
                 time.sleep(8-3)
+
+            if AFB: 
+                self.logger.webhook("", "AFB: Cooldown (10 seconds)", "brown")
+                time.sleep(10)
 
             self.canDetectNight = True
             self.location = "spawn"
@@ -1327,7 +1334,7 @@ class macro:
                 self.canDetectNight = True
                 self.status.value = ""
                 return
-            self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
+            else: self.logger.webhook("",f'Rejoin unsuccessful, attempt {i+2}','dark brown', "screen")
         self.status.value = ""
     
     def blueTextImageSearch(self, text, threshold=0.7):
@@ -1489,15 +1496,16 @@ class macro:
                 break
             elif self.collectMondoBuff(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
                 break
-            elif self.died:
+            elif self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and self.AFB(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
+                break
+            elif self.died and not self.afb:
                 self.status.value = ""
                 turnOffShitLock()
                 self.logger.webhook("","Player died", "dark brown","screen")
                 time.sleep(0.4)
                 self.reset()
                 break
-            elif self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and self.AFB(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
-                break
+            
         
 
             #check if max time is reached
@@ -1854,20 +1862,25 @@ class macro:
         glitterslot = self.setdat["AFB_slotG"]
         
         if gatherInterrupt:
-            self.status.value = ""
             if ((glitter and self.hasAFBRespawned("AFB_glitter_cd", rebuff * 60) and self.AFBglitter) or (self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"] * 60) and not self.AFBglitter)) and not self.failed:                
+                self.status.value = ""
+                self.afb = True
                 if turnOffShiftLock: self.keyboard.press("shift")
                 self.logger.webhook("Gathering: interrupted", "Automatic Field Boost", "brown")
-                self.reset()
-                self.logger.webhook("", "AFB: Cooldown (10 seconds)", "brown")
-                time.sleep(10)
+                if self.AFBglitter: 
+                    self.reset(convert=False) 
+                else: 
+                    self.reset(AFB=True)
+                
+
         
         if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60):
             self.failed = False
-            self.afb = False
             if self.setdat["Auto_Field_Boost"]:
                 # dice
                 if self.cAFBDice or (self.hasAFBRespawned("AFB_dice_cd", rebuff*60) and not self.AFBglitter):
+                    self.cAFBDice = False
+                    self.afb = False
                     # get all fields
                     fields = ["rose", "strawberry", "mushroom", "pepper",  # red
                             "sunflower", "dandelion", "spider", "coconut", # white
@@ -1877,7 +1890,6 @@ class macro:
                     ignore = {"strawberry", "strawberries", "blueberry", "blueberries", 
                     "seed", "seeds", "pineapple", "pineapples", "honey", "from"}
                     
-                    self.cAFBDice = False
                     #begin
                     self.logger.webhook("", f"Auto Field Boost", "white")
                     for i in range(2):
@@ -1942,7 +1954,7 @@ class macro:
                         if "field" in dice: 
                             boostedField = None
                             for f in fields:  
-                                if f.lower() in bluetexts: 
+                                if f.lower() in bluetexts and not any(word in f.lower() for word in ignore): 
                                     if f.lower() == field.lower():  # only allow the chosen field
                                         boostedField = f
                                         break 
