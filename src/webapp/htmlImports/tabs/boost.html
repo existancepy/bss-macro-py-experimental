@@ -115,6 +115,18 @@
                     
                 },
                 {
+                    id: "AFB_wait",
+                    title: "Wait",
+                    desc: "How long the Macro waits to begin AFB after a gather interrupt",
+                    type: {
+                        name: "textbox",
+                            inputType: "int",
+                            inputLimit: 3,
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                    
+                },
+                {
                     id: "AFB_attempts",
                     title: "Attempts",
                     desc: "Gives up after X attempts",
