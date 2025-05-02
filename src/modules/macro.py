@@ -1046,8 +1046,8 @@ class macro:
                 time.sleep(8-3)
 
             if AFB: 
-                self.logger.webhook("", "AFB: Cooldown (17.5 seconds)", "brown")
-                time.sleep(17.5)
+                self.logger.webhook("", f"AFB: Cooldown: {self.setdat['AFB_wait']} seconds", "brown")
+                time.sleep(self.setdat["AFB_wait"])
                 self.died = False
 
             self.canDetectNight = True
@@ -1870,8 +1870,6 @@ class macro:
                     self.reset(convert=False) 
                 else: 
                     self.reset(AFB=True)
-                
-
         
         if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60):
             self.failed = False
@@ -1968,7 +1966,7 @@ class macro:
                                     
                         # field user selected is detected
                         if "field" in dice:
-                            if field == boostedField:
+                            if not field == boostedField:
                                 self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
                                 returnVal = field
                                 self.keyboard.press("pagedown")
@@ -3568,6 +3566,8 @@ class macro:
         backgroundThread = threading.Thread(target=self.background)
         backgroundThread.daemon = True
         backgroundThread.start()
+
+        
 
         current_time = datetime.now().strftime("%H:%M:%S")
         _,minute,_ = [int(x) for x in current_time.split(":")]
