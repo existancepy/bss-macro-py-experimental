@@ -176,3 +176,4 @@ AFB_dice_slot=7
 AFB_attempts=0
 AFB_slotD=0
 AFB_slotG=0
+AFB_wait=8
