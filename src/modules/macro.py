@@ -443,7 +443,7 @@ class macro:
             
             return False
         
-        if self.canDetectNight and isNight():
+        if self.canDetectNight and self.setdat["stinger_hunt"] and isNight():
             self.night = True
             self.logger.webhook("","Night detected","dark brown", "screen")
             time.sleep(200) #wait for night to end
@@ -3422,7 +3422,8 @@ class macro:
         dialogClickCountForQuestGivers = {
             "polar bear": 25,
             "bucko bee": 40,
-            "riley bee": 40
+            "riley bee": 40,
+            "honey bee": 10
         }
         dialogClickCount = dialogClickCountForQuestGivers.get(questGiver, 50)
         self.clickdialog()
