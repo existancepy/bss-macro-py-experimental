@@ -804,6 +804,33 @@ class HourlyReportDrawer:
         for i, dataset in enumerate(datasets):
             self.draw.text((imageX, imageY - (90+60*i)), dataset["average"], font=self.getFont("semibold", 60), fill=dataset["lineColor"])
 
+    def drawBuffUptimeGraphUnstackableBuff(self, y, datasets, imageName, renderTime = False):
+
+        def transformXLabel(i, val):
+            if i%10:
+                return
+            hour = self.hour
+            if val == 60:
+                hour += 1
+                if hour == 24:
+                    hour = 0
+                val = 0
+            return f"{str(hour).zfill(2)}:{str(val).zfill(2)}"
+
+        #draw the graph
+        graphHeight = 250
+        graphXStart = self.leftPadding+450
+        xData = list(range(601))
+        self.drawGraph(graphXStart, y, self.availableSpace-570, graphHeight, xData, datasets, maxY=1, showXAxisLabels=renderTime, showYAxisLabels=False, ticks=2, xLabelFunc=transformXLabel)
+
+        #load the icon
+        imageDimension = 170
+        imageX = graphXStart - 200 - imageDimension
+        imageY = y - graphHeight//2 - imageDimension//2 + len(datasets)*10
+        img = Image.open(f"{self.assetPath}/{imageName}.png").convert("RGBA")
+        img = img.resize((imageDimension, imageDimension))
+        self.canvas.paste(img, (imageX, imageY), img)
+
     def drawSessionStat(self, y, imageName, label, value, valueColor):
         imgContainerDimension = 180
         self.draw.rounded_rectangle((self.sidebarX, y, self.sidebarX+imgContainerDimension, y+imgContainerDimension), radius=50, fill=(int(45*1.1), int(46*1.1), int(53*1.1)))
@@ -1124,6 +1151,45 @@ class HourlyReportDrawer:
         }
         ]
         self.drawBuffUptimeGraphStackableBuff(y, dataset, "inspire_buff")
+
+        y += 260
+        dataset = [
+        {
+            "data": uptimeBuffsValues["melody"],
+            "lineColor": (200,200,200),
+            "gradientFill": {
+                0: (200,200,200,255),
+                1: (200,200,200,255),
+            }
+        }
+        ]
+        self.drawBuffUptimeGraphUnstackableBuff(y, dataset, "melody_buff")
+
+        y += 260
+        dataset = [
+        {
+            "data": [1]*600, #uptimeBuffsValues["bear"],
+            "lineColor": (115,71,40),
+            "gradientFill": {
+                0: (115,71,40,255),
+                1: (115,71,40,255),
+            }
+        }
+        ]
+        self.drawBuffUptimeGraphUnstackableBuff(y, dataset, "bear_buff")
+
+        y += 260
+        dataset = [
+        {
+            "data": [1]*600, #uptimeBuffsValues["baby_love"],
+            "lineColor": (112,181,195),
+            "gradientFill": {
+                0: (112,181,195,255),
+                1: (112,181,195,255),
+            }
+        }
+        ]
+        self.drawBuffUptimeGraphUnstackableBuff(y, dataset, "baby_love_buff", renderTime=True)
 
         #side bar 
 
