@@ -873,6 +873,8 @@ class HourlyReportDrawer:
         fieldFont = self.getFont("semibold", 68)
         timeFont = self.getFont("semibold", 55)
         for i in range(len(planterNames)):
+            if not planterNames[i]:
+                continue
             bbox = self.draw.textbbox((0, 0), planterFields[i].title(), font=fieldFont)
             fieldTextWidth = bbox[2] - bbox[0]
 

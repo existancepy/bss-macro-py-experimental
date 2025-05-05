@@ -233,3 +233,8 @@ gather_strawberry
 gather_rose
 kill_5_ladybug
 kill_3_scorpion
+
+==honey bee==
+
+-honey hunt
+token_honey

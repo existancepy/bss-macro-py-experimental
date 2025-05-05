@@ -100,6 +100,19 @@ def macro(status, logQueue, haste, updateGUI):
                         questGatherFields.append(objData[1])
                     elif objData[0] == "kill":
                         macro.setdat[objData[2]] = True
+        
+        if macro.setdat["honey_bee_quest"]:
+            questGiver = "honey bee"
+            questObjective = macro.findQuest(questGiver)
+            if questObjective is None:  # quest does not exist
+                questObjective = macro.getNewQuest(questGiver, False)
+            elif not len(questObjective):  # quest completed
+                questObjective = macro.getNewQuest(questGiver, True)
+            else:
+                for obj in questObjective:
+                    objData = obj.split("_")
+                    if objData[0] == "token" and objData[1] == "honeytoken":
+                        macro.setdat[objData[0] and objData[1]] = True
                     
         #collect
         for k, _ in macroModule.collectData.items():

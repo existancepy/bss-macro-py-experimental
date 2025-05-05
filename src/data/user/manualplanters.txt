@@ -1,1 +1,1 @@
-{'cycles': [2, 2, 1], 'planters': ['tacky', 'pesticide', 'candy'], 'fields': ['pumpkin', 'mountain top', 'stump'], 'gatherFields': ['', '', ''], 'harvestTimes': [1745983549.3548968, 1745983640.531515, 1745983734.4039721]}
+{'cycles': [1, 1, 1], 'planters': ['red clay', '', ''], 'fields': ['rose', '', ''], 'gatherFields': ['', '', ''], 'harvestTimes': [1746453529.021246, 0, 0]}

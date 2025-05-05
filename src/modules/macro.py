@@ -754,7 +754,8 @@ class macro:
             if max_val > 0.6:
                 itemScreenshot = mssScreenshot(90, (max_loc[1]//2 if self.display_type == "retina" else max_loc[1])+60, 220, 60)
                 itemOCRText = ''.join([x[1][0] for x in ocr.ocrRead(itemScreenshot)]).replace(" ","").replace("-","").lower()
-                if itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.7:
+                if itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.8:
+                    print(itemOCRText)
                     bestY = max_loc[1]
                     foundEarly = True
                     break
@@ -2403,6 +2404,8 @@ class macro:
             "harvestTimes": [0,0,0]
         }
         for i in range(3):
+            if self.setdat[f"cycle{cycle}_{i+1}_planter"] == "none" or self.setdat[f"cycle{cycle}_{i+1}_field"] == "none":
+                continue
             planterData = self.placePlanterInCycle(i, cycle, planterData)
     
     def placePlanterInCycle(self, slot, cycle, planterData):
@@ -2908,7 +2911,8 @@ class macro:
         questGiverShort = {
             "polar bear": "polar",
             "bucko bee": "bucko",
-            "riley bee": "riley"
+            "riley bee": "riley",
+            "honey bee": "honey"
         }
 
         #prevent the macro from false detecting beesmas quests
@@ -2981,6 +2985,7 @@ class macro:
         #merge the texts into chunks. Using those chunks, compare it with the known objectives
         #assume that the merging is done properly, so 1st chunk = 1st objective
         screen = cv2.cvtColor(screenshotQuest(650, gray=False), cv2.COLOR_BGRA2BGR)
+        screenOriginal = np.copy(screen)
         #crop it below the quest title
         screen = screen[questTitleYPos: , : ]
         #convert to grayscale
@@ -3032,7 +3037,7 @@ class macro:
                 break
         
         questImgPath = "latest-quest.png"
-        cv2.imwrite(questImgPath, screen)
+        cv2.imwrite(questImgPath, screenOriginal)
         
         print(completedObjectives)
         print(incompleteObjectives)
@@ -3084,7 +3089,7 @@ class macro:
         mouse.moveTo(self.mw/2, y+yr-20)
         for _ in range(70):
             mouse.click()
-            time.sleep(0.1)
+            time.sleep(0.2)
             #check if the dialog is still there
             img = screenshotDialog()
             if img != dialogImg:
@@ -3095,6 +3100,7 @@ class macro:
         dialogClickCountForQuestGivers = {
             "polar bear": 25,
             "bucko bee": 40,
+            "honey bee": 40,
             "riley bee": 40
         }
         dialogClickCount = dialogClickCountForQuestGivers.get(questGiver, 50)
