@@ -443,7 +443,7 @@ class macro:
             
             return False
         
-        if self.canDetectNight and self.setdat["stinger_hunt"] and isNight():
+        if self.canDetectNight and isNight():
             self.night = True
             self.logger.webhook("","Night detected","dark brown", "screen")
             time.sleep(200) #wait for night to end
@@ -928,6 +928,7 @@ class macro:
         if convertBalloon: self.saveTiming("convert_balloon")
         self.status.value = ""
         if self.afb: click.join()
+        if self.afb: time.sleep(1)
         #deal with the extra delay
         self.logger.webhook("", f"Finished converting\n(Time: {self.convertSecsToMinsAndSecs(time.time()-st)})", "brown", "honey")
         self.stop = True
@@ -1662,7 +1663,7 @@ class macro:
                     self.reset(convert=False)
                     self.collectMondoBuff()
                 #time limit
-                if minute >= 15: #mondo despawns after 15 minutes if not defeated in time
+                if minute > 14: #mondo despawns after 15 minutes if not defeated in time
                     self.keyboard.walk("s",1, False)
                     self.keyboard.press(",")
                     time.sleep(0.5)
@@ -1677,7 +1678,7 @@ class macro:
                     for slowmove in range(9):
                         self.keyboard.walk("d", 0.048, False) #move JUST EVER SO SLIGHTLY, maybe bumps in to wall less
                         time.sleep(0.035)
-                time.sleep(1.5)
+                time.sleep(1)
 
             #loot
             mondo_loot_times = self.setdat["mondo_loot_times"] #how many loops based on what the user inputted
@@ -1966,7 +1967,7 @@ class macro:
                                     
                         # field user selected is detected
                         if "field" in dice:
-                            if not field == boostedField:
+                            if field == boostedField:
                                 self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
                                 returnVal = field
                                 self.keyboard.press("pagedown")
