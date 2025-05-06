@@ -99,7 +99,7 @@ def macro(status, logQueue, haste, updateGUI):
             if objData[0] == "gather":
                 gatherFieldsList.append(objData[1])
             elif objData[0] == "gathergoo":
-                if macro.setdat["quest_use_gumdrop"]:
+                if macro.setdat["quest_use_gumdrops"]:
                     gumdropGatherFieldsList.append(objData[1])
                 else:
                     gatherFieldsList.append(objData[1])
@@ -125,12 +125,12 @@ def macro(status, logQueue, haste, updateGUI):
             elif objData[0] == "pollen" and objData[1] == "red":
                 requireRedField = True
             elif objData[0] == "pollengoo" and objData[1] == "blue":
-                if macro.setdat["quest_use_gumdrop"]:
+                if macro.setdat["quest_use_gumdrops"]:
                     requireBlueGumdropField = True
                 else:
                     requireBlueField = True
             elif objData[0] == "pollengoo" and objData[1] == "red":
-                if macro.setdat["quest_use_gumdrop"]:
+                if macro.setdat["quest_use_gumdrops"]:
                     requireRedGumdropField = True
                 else:
                     requireBlueField = True

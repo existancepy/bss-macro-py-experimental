@@ -91,7 +91,7 @@ class keyboard:
             prevSpeed = speed
 
         elapsed_time = time.perf_counter() - st
-        print(f"current speed: {speed}, original time: {duration}, actual travel time: {elapsed_time}")
+        #print(f"current speed: {speed}, original time: {duration}, actual travel time: {elapsed_time}")
 
     #like press, but with walkspeed and haste compensation
     def walk(self,k,t,applyHaste = True):

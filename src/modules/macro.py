@@ -1453,14 +1453,14 @@ class macro:
             #quest gumdrops
             if questGumdrops:
                 for _ in range(2):
-                    self.keyboard.press(self.setdat["quest_gumdrop_slot"])
+                    self.keyboard.press(str(self.setdat["quest_gumdrop_slot"]))
                     time.sleep(0.05)
 
             #ensure that the pattern works  
             try:
                 exec(open(f"../settings/patterns/{pattern}.py").read())
             except Exception as e:
-                print(e)
+                print(traceback.format_exc())
                 if firstPattern:
                     self.logger.webhook("Incompatible pattern", f"The pattern {pattern} is incompatible with the macro. Defaulting to e_lol instead.\
                                         Avoid using this pattern in the future. If you are the creator of this pattern, the error can be found in terminal", "red")
@@ -2798,6 +2798,35 @@ class macro:
             while True:
                 currMin = datetime.now().minute
                 currSec = datetime.now().second
+                
+                #check if its time to send hourly report
+                if currMin == 0 and time.time() - lastHourlyReport > 120:
+                    hourlyReportData = self.hourlyReport.generateHourlyReport()
+                    self.logger.hourlyReport("Hourly Report", "", "purple")
+
+                    #add to history
+                    with open("data/user/hourly_report_history.txt", "r") as f:
+                        history = ast.literal_eval(f.read())
+                    f.close()
+
+                    historyObj = {
+                        "endHour": datetime.now().hour,
+                        "date": str(datetime.today().date()),
+                        "honey": hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]
+                    }
+                    #max 5 objs
+                    if len(history) > 4:
+                        history.pop(-1)
+                    history.insert(0,historyObj)
+
+                    with open("data/user/hourly_report_history.txt", "w") as f:
+                        f.write(str(history))
+                    f.close()
+
+                    lastHourlyReport = time.time()
+                    #reset stats
+                    self.hourlyReport.resetHourlyStats()
+
                 #Hourly report
                 if self.status.value != "rejoining":
                     #instead of using time.sleep, we want to run the code at the start of the min
@@ -2869,34 +2898,6 @@ class macro:
 
                     if "gather_" in self.status.value:
                         self.hourlyReport.buffGatherIntervals[i] = 1
-
-                #check if its time to send hourly report
-                if currMin == 0 and time.time() - lastHourlyReport > 120:
-                    hourlyReportData = self.hourlyReport.generateHourlyReport()
-                    self.logger.hourlyReport("Hourly Report", "", "purple")
-
-                    #add to history
-                    with open("data/user/hourly_report_history.txt", "r") as f:
-                        history = ast.literal_eval(f.read())
-                    f.close()
-
-                    historyObj = {
-                        "endHour": datetime.now().hour,
-                        "date": str(datetime.today().date()),
-                        "honey": hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]
-                    }
-                    #max 5 objs
-                    if len(history) > 4:
-                        history.pop(-1)
-                    history.insert(0,historyObj)
-
-                    with open("data/user/hourly_report_history.txt", "w") as f:
-                        f.write(str(history))
-                    f.close()
-
-                    lastHourlyReport = time.time()
-                    #reset stats
-                    self.hourlyReport.resetHourlyStats()
                 
                 time.sleep(1)
         except Exception:
