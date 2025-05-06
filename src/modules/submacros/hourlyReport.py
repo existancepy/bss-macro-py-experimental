@@ -1168,7 +1168,7 @@ class HourlyReportDrawer:
         y += 260
         dataset = [
         {
-            "data": [1]*600, #uptimeBuffsValues["bear"],
+            "data": uptimeBuffsValues["bear"],
             "lineColor": (115,71,40),
             "gradientFill": {
                 0: (115,71,40,255),
@@ -1181,7 +1181,7 @@ class HourlyReportDrawer:
         y += 260
         dataset = [
         {
-            "data": [1]*600, #uptimeBuffsValues["baby_love"],
+            "data": uptimeBuffsValues["baby_love"],
             "lineColor": (112,181,195),
             "gradientFill": {
                 0: (112,181,195,255),

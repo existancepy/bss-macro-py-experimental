@@ -3106,7 +3106,7 @@ class macro:
         dialogClickCount = dialogClickCountForQuestGivers.get(questGiver, 50)
         self.clickdialog()
         #player submitted a quest, then get a new one
-        if submitQuest:
+        if True: #submitQuest:
             sleep(1)
             self.keyboard.press("e")
             sleep(0.2)
