@@ -1,4 +1,4 @@
-exec(open("./paths/field_blue flower.py").read())
+self.goToField("blue flower", "south")
 self.keyboard.press("space")
 self.keyboard.keyDown("a")
 sleep(8)

@@ -3,81 +3,100 @@ import modules.screen.ocr as ocr
 from PIL import Image
 import numpy as np
 
-objectives = ["gather_blue flower", "kill_30_ladybug"]
+#Load quest data from quest_data.txt
+quest_data = {}
+quest_bear = ""
+quest_title = ""
+quest_info = []
 
-def convertCyrillic(original):
-    out = ""
-    for x in original:
-        if x in cyrillicToLatin:
-            x = cyrillicToLatin[x]
-        out += x
-    return out
+with open("./data/bss/quest_data.txt", "r") as f:
+    qdata = [x for x in f.read().split("\n") if x]
 
-cyrillicToLatin = {
-    'А': 'A', 'В': 'B', 'Е': 'E', 'К': 'K', 'М': 'M', 'Н': 'H',
-    'О': 'O', 'Р': 'P', 'С': 'C', 'Т': 'T', 'У': 'Y', 'Х': 'X',
-    'а': 'a', 'в': 'B', 'е': 'e', 'к': 'k', 'м': 'm', 'н': 'h',
-    'о': 'o', 'р': 'p', 'с': 'c', 'т': 't', 'у': 'y', 'х': 'x'
-}
+for line in qdata:
+    if line.startswith("==") and line.endswith("=="): #bear
+        if quest_title:
+            quest_data[quest_bear][quest_title] = quest_info  
+        quest_bear = line.strip("=")
+        quest_data[quest_bear] = {}
+        quest_title, quest_info = "", []
+    
+    elif line.startswith("-"): #new quest title
+        if quest_title:  
+            quest_data[quest_bear][quest_title] = quest_info
+        quest_title = line.lstrip("-").strip()
+        quest_info = []
+    
+    else:  #quest objectives
+        quest_info.append(line)
+quest_data[quest_bear][quest_title] = quest_info 
 
-# Load image in grayscale and also in color for drawing
-screen_gray = cv2.imread("quest.png", 0)
-screen_color = cv2.imread("quest.png")
+#quest title found, now find the objectives
+questTitle = "scorpion salad"
+questGiver = "polar bear"
+objectives = quest_data[questGiver][questTitle]
 
-# Preprocess the image
-img = cv2.threshold(screen_gray, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+#merge the texts into chunks. Using those chunks, compare it with the known objectives
+#assume that the merging is done properly, so 1st chunk = 1st objective
+screen = cv2.imread("quest2.png")
+#crop it below the quest title
+questTitleYPos = 80
+screen = screen[questTitleYPos: , : ]
+
+screenOriginal = np.copy(screen)
+#convert to grayscale
+screenGray = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
+img = cv2.threshold(screenGray, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
 img = cv2.GaussianBlur(img, (5, 5), 0)
-
-# Dilate the image to merge text into chunks
+#dilute the image so that texts can be merged into chunks
 kernelSize = 10
 kernel = np.ones((kernelSize, kernelSize), np.uint8) 
 img = cv2.dilate(img, kernel, iterations=1)
-cv2.imshow("sussy", img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-# Find contours
+
 contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+#filter out the contour sizes
+minArea = 10000       #too small = noise
+maxArea = 80000      #too big = background or large UI elements
+maxHeight = 150       #cap height to filter out title bar
+
 completedObjectives = []
 incompleteObjectives = []
-
-min_area = 1000       # Too small = noise
-max_area = 50000      # Too big = background or large UI elements
-max_height = 80       # Cap height to filter out title bar
-
-count = 0
-# Process and draw bounding boxes
+i = 0
 for contour in contours[::-1]:
     x, y, w, h = cv2.boundingRect(contour)
+    #check if contour meets size requirements
     area = w*h
-    if area < min_area or area > max_area or h > max_height:
-        cv2.rectangle(screen_color, (x, y), (x+w, y+h), (0, 255, 255), 1)  # Yellow = skipped
+    if area < minArea or area > maxArea or h > maxHeight:
+        cv2.rectangle(screen, (x, y), (x+w, y+h), (0, 255, 255), 1) #draw a yellow bounding box
+        print(area)
+        print(h)
         continue
-
-    textImg = Image.fromarray(screen_gray[y:y+h, x:x+w])
-    
+    textImg =  Image.fromarray(screen[y:y+h, x:x+w])
     textChunk = []
     for line in ocr.ocrRead(textImg):
-        textChunk.append(convertCyrillic(line[1][0].strip().lower()))
+        textChunk.append(line[1][0].strip().lower())
     textChunk = ''.join(textChunk)
     print(textChunk)
-
     if "complete" in textChunk:
-        completedObjectives.append(objectives[count])
-        color = (0, 255, 0)  # Green
+        completedObjectives.append(objectives[i])
+        color = (0, 255, 0)  #green
     else:
-        incompleteObjectives.append(objectives[count])
-        color = (0, 0, 255)  # Red
+        incompleteObjectives.append(objectives[i])
+        color = (0, 0, 255)  #red
+    
+    #draw bounding boxes and add the quest text
+    cv2.rectangle(screen, (x, y), (x+w, y+h), color, 2)
+    cv2.putText(screen, objectives[i], (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
-    # Draw rectangle on the color image
-    cv2.rectangle(screen_color, (x, y), (x+w, y+h), color, 2)
-    cv2.putText(screen_color, objectives[count], (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+    i += 1
 
-    count += 1
+    if i == len(objectives):
+        break
 
-# Show and/or save the result
-cv2.imshow("Detected Objectives", screen_color)
+questImgPath = "latest-quest.png"
+cv2.imshow("a", screen)
 cv2.waitKey(0)
-cv2.destroyAllWindows()
+#cv2.imwrite(questImgPath, screenOriginal)
 
-print("Completed:", completedObjectives)
-print("Incomplete:", incompleteObjectives)
+print(completedObjectives)
+print(incompleteObjectives)

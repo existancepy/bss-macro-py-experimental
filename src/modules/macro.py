@@ -1343,7 +1343,7 @@ class macro:
         s = n % 60
         return f"{int(m)}m {int(s):02d}s"
     
-    def gather(self, field, settingsOverride = {}):
+    def gather(self, field, settingsOverride = {}, questGumdrops=False):
         fieldSetting = {**self.fieldSettings[field], **settingsOverride}
         for i in range(3):
             #wait for bees to wake up
@@ -1449,6 +1449,13 @@ class macro:
         while keepGathering:
             patternStartTime = time.time()
             mouse.mouseDown()
+
+            #quest gumdrops
+            if questGumdrops:
+                for _ in range(2):
+                    self.keyboard.press(self.setdat["quest_gumdrop_slot"])
+                    time.sleep(0.05)
+
             #ensure that the pattern works  
             try:
                 exec(open(f"../settings/patterns/{pattern}.py").read())
@@ -2985,24 +2992,24 @@ class macro:
         #merge the texts into chunks. Using those chunks, compare it with the known objectives
         #assume that the merging is done properly, so 1st chunk = 1st objective
         screen = cv2.cvtColor(screenshotQuest(650, gray=False), cv2.COLOR_BGRA2BGR)
-        screenOriginal = np.copy(screen)
         #crop it below the quest title
         screen = screen[questTitleYPos: , : ]
+        screenOriginal = np.copy(screen)
         #convert to grayscale
         screenGray = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
         img = cv2.threshold(screenGray, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
         img = cv2.GaussianBlur(img, (5, 5), 0)
         #dilute the image so that texts can be merged into chunks
-        kernelSize = 12 if self.display_type == "retina" else 8
+        kernelSize = 10 if self.display_type == "retina" else 7
         kernel = np.ones((kernelSize, kernelSize), np.uint8) 
         img = cv2.dilate(img, kernel, iterations=1)
 
         contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         #filter out the contour sizes
-        minArea = 1000       #too small = noise
-        maxArea = 50000      #too big = background or large UI elements
-        maxHeight = 80       #cap height to filter out title bar
+        minArea = 10000       #too small = noise
+        maxArea = 80000      #too big = background or large UI elements
+        maxHeight = 150       #cap height to filter out title bar
 
         completedObjectives = []
         incompleteObjectives = []
@@ -3087,16 +3094,16 @@ class macro:
         
         dialogImg = screenshotDialog()
         mouse.moveTo(self.mw/2, y+yr-20)
-        for _ in range(70):
+        for _ in range(80):
             mouse.click()
-            time.sleep(0.2)
+            time.sleep(0.1)
             #check if the dialog is still there
             img = screenshotDialog()
-            if img != dialogImg:
+            if abs(img - dialogImg) > 15:
                 break
 
     def getNewQuest(self, questGiver, submitQuest):
-        if not self.goToQuestGiver(questGiver, "Get New Quest"): return
+        if not self.goToQuestGiver(questGiver, "Submit Quest" if submitQuest else "Get New Quest"): return
         dialogClickCountForQuestGivers = {
             "polar bear": 25,
             "bucko bee": 40,
@@ -3114,6 +3121,40 @@ class macro:
             self.clickdialog()
         self.reset()
         return self.findQuest(questGiver)
+
+    def feedBee(self, item, quantity):
+        res = self.findItemInInventory(item)
+        if not res: 
+            return
+        
+        x, y = res
+        #re-adjust camera
+        for _ in range(10):
+            self.keyboard.press("pageup")
+        for _ in range(4):
+            self.keyboard.press("pagedown")
+
+        for _ in range(2):
+            mouse.moveTo(x, y)
+            time.sleep(0.3)
+            pag.dragTo(self.mw//2, self.mh//2-80, 0.6, button='left')
+
+        #change quantity
+        mouse.moveTo((54*self.mw)//100-300+300, 45+(46*self.mh)//100-59+5)
+        time.sleep(0.1)
+        for _ in range(2):
+            mouse.click()
+            time.sleep(0.02)
+        self.keyboard.write(str(quantity))
+
+        #click feed button
+        mouse.moveTo((54*self.mw)//100-300+140, 45+(46*self.mh)//100-59+5)
+        time.sleep(0.1)
+        for _ in range(2):
+            mouse.click()
+            time.sleep(0.02)
+        
+        self.logger.webhook("",f"Fed {quantity} {item}", "bright green")
 
 
     def startDetect(self):

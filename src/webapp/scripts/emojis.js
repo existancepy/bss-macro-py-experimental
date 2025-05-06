@@ -164,7 +164,9 @@ const stickerStackIcon = {
 
 const questGiverEmojis = {
     polar_bear_quest: "🐻‍❄️",
-    honey_bee_quest: "🐝"
+    honey_bee_quest: "🐝",
+    bucko_bee_quest: "💙",
+    riley_bee_quest: "❤️"
 }
 
 const diceIcons = {

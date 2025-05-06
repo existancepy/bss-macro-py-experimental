@@ -106,7 +106,7 @@ kill_10_armyant
 
 -booster
 token_blueboost
-collect_blue_booster
+collect_blue-booster
 
 -clean-up
 gathergoo_blue flower
@@ -132,9 +132,9 @@ gather_pine tree
 -picnic
 gather_blue flower
 fieldtoken_blueberry
-feed_25_blueberry
-kill_5_ant
-kill_5_armyant
+feed_25*_blueberry
+kill_5*_ant
+kill_5*_armyant
 
 -pine trees
 gather_pine tree
@@ -170,7 +170,7 @@ token_redability
 
 -booster
 token_redboost
-collect_red_booster
+collect_red-booster
 
 -clean-up
 gathergoo_mushroom
@@ -196,8 +196,8 @@ gather_mushroom
 -picnic
 gather_mushroom
 fieldtoken_strawberry
-feed_30_strawberry
-kill_15_fireant
+feed_30*_strawberry
+kill_15*_fireant
 
 -pollen
 pollen_red
@@ -205,7 +205,7 @@ pollen_red
 -rampage
 token_rage
 kill_10_ladybug
-kill_30_fireant
+kill_30*_fireant
 
 -roses
 gather_rose

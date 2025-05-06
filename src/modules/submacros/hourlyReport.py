@@ -429,7 +429,7 @@ class HourlyReport():
         w, h = canvas.size
         canvas = canvas.resize((int(w*1.2), int(h*1.2))) 
         canvas.save("hourlyReport.png")
-        canvas.show()
+
         return hourlyReportStats
     
     def resetHourlyStats(self):
@@ -807,8 +807,9 @@ class HourlyReportDrawer:
     def drawBuffUptimeGraphUnstackableBuff(self, y, datasets, imageName, renderTime = False):
 
         def transformXLabel(i, val):
-            if i%10:
+            if i%100:
                 return
+            val //= 10
             hour = self.hour
             if val == 60:
                 hour += 1

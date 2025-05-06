@@ -74,6 +74,70 @@ def macro(status, logQueue, haste, updateGUI):
                 macro.saveTiming("rejoin_every")
         status.value = ""
         return returnVal
+    
+    def handleQuest(questGiver):
+        gatherFieldsList = []
+        gumdropGatherFieldsList = []
+        requireRedField = False
+        requireBlueField = False
+        requireField = False
+        requireBlueGumdropField = False
+        requireRedGumdropField = False
+        feedBees = []
+        setdatEnable = []
+
+        questObjective = macro.findQuest(questGiver)
+
+        if questObjective is None:  # Quest does not exist
+            questObjective = macro.getNewQuest(questGiver, False)
+        elif not len(questObjective):  # Quest completed
+            questObjective = macro.getNewQuest(questGiver, True)
+            macro.hourlyReport.addHourlyStat("quests_completed", 1)
+
+        for obj in questObjective:
+            objData = obj.split("_")
+            if objData[0] == "gather":
+                gatherFieldsList.append(objData[1])
+            elif objData[0] == "gathergoo":
+                if macro.setdat["quest_use_gumdrop"]:
+                    gumdropGatherFieldsList.append(objData[1])
+                else:
+                    gatherFieldsList.append(objData[1])
+            elif objData[0] == "kill":
+                if "ant" in objData[2] and objData[2] != "mantis":
+                    setdatEnable.append("ant_challenge")
+                    setdatEnable.append("ant_pass_dispenser")
+                else:
+                    setdatEnable.append(objData[2])
+            elif objData[0] == "token":
+                requireField = True
+            elif objData[0] == "token" and objData[1] == "honeytoken":
+                setdatEnable.append("honeytoken")
+            elif objData[0] == "fieldtoken" and objData[1] == "blueberry":
+                requireBlueField = True
+            elif objData[0] == "fieldtoken" and objData[1] == "strawberry":
+                requireRedField = True
+            elif objData[0] == "feed":
+                amount = int(''.join([x for x in objData[1] if x.isdigit()]))
+                feedBees.append((objData[2], amount))
+            elif objData[0] == "pollen" and objData[1] == "blue":
+                requireBlueField = True
+            elif objData[0] == "pollen" and objData[1] == "red":
+                requireRedField = True
+            elif objData[0] == "pollengoo" and objData[1] == "blue":
+                if macro.setdat["quest_use_gumdrop"]:
+                    requireBlueGumdropField = True
+                else:
+                    requireBlueField = True
+            elif objData[0] == "pollengoo" and objData[1] == "red":
+                if macro.setdat["quest_use_gumdrop"]:
+                    requireRedGumdropField = True
+                else:
+                    requireBlueField = True
+            elif objData[0] == "collect":
+                setdatEnable.append(objData[1].replace("-","_"))
+        
+        return setdatEnable, gatherFieldsList, gumdropGatherFieldsList, requireRedField, requireBlueField, feedBees, requireRedGumdropField, requireBlueGumdropField, requireField
 
     #macro.rejoin()
     while True:
@@ -84,35 +148,36 @@ def macro(status, logQueue, haste, updateGUI):
 
         #handle quests
         questGatherFields = []
+        questGumdropGatherFields = []
+        redFieldNeeded = False
+        blueFieldNeeded = False
+        fieldNeeded = False
+        itemsToFeedBees = []
+        redGumdropFieldNeeded = False
+        blueGumdropFieldNeeded = False
 
-        if macro.setdat["polar_bear_quest"]:
-            questGiver = "polar bear"
-            questObjective = macro.findQuest(questGiver)
-            if questObjective is None: #quest does not exist
-                questObjective = macro.getNewQuest(questGiver, False)
-            elif not len(questObjective): #quest completed
-                questObjective = macro.getNewQuest(questGiver, True)
-                macro.hourlyReport.addHourlyStat("quests_completed", 1)
-            else:
-                for obj in questObjective:
-                    objData = obj.split("_")
-                    if objData[0] == "gather":
-                        questGatherFields.append(objData[1])
-                    elif objData[0] == "kill":
-                        macro.setdat[objData[2]] = True
+        for questName, enabledKey in [
+            ("polar bear", "polar_bear_quest"),
+            ("honey bee", "honey_bee_quest"),
+            ("bucko bee", "bucko_bee_quest"),
+            ("riley bee", "riley_bee_quest")
+        ]:
+            if macro.setdat.get(enabledKey):
+                setdatEnable, gatherFields, gumdropFields, needsRed, needsBlue, feedBees, needsRedGumdrop, needsBlueGumdrop, needsField = handleQuest(questName)
+                for k in setdatEnable:
+                    macro.setdat[k] = True
+                questGatherFields.extend(gatherFields)
+                questGumdropGatherFields.extend(gumdropFields)
+                redFieldNeeded = redFieldNeeded or needsRed
+                blueFieldNeeded = blueFieldNeeded or needsBlue
+                itemsToFeedBees.extend(feedBees)
+                redGumdropFieldNeeded = redGumdropFieldNeeded or needsRedGumdrop
+                blueGumdropFieldNeeded = blueGumdropFieldNeeded or needsBlueGumdrop
+                fieldNeeded = fieldNeeded or needsField
         
-        if macro.setdat["honey_bee_quest"]:
-            questGiver = "honey bee"
-            questObjective = macro.findQuest(questGiver)
-            if questObjective is None:  # quest does not exist
-                questObjective = macro.getNewQuest(questGiver, False)
-            elif not len(questObjective):  # quest completed
-                questObjective = macro.getNewQuest(questGiver, True)
-            else:
-                for obj in questObjective:
-                    objData = obj.split("_")
-                    if objData[0] == "token" and objData[1] == "honeytoken":
-                        macro.setdat[objData[0] and objData[1]] = True
+        #feed bees for quest
+        for item, quantity in itemsToFeedBees:
+            macro.feedBee(item, quantity)
                     
         #collect
         for k, _ in macroModule.collectData.items():
@@ -144,7 +209,8 @@ def macro(status, logQueue, haste, updateGUI):
                     return cycle
             else: 
                 return False
-            
+        
+        planterDataRaw = None
         if macro.setdat["planters_mode"] == 1:
             with open("./data/user/manualplanters.txt", "r") as f:
                 planterDataRaw = f.read()
@@ -166,7 +232,8 @@ def macro(status, logQueue, haste, updateGUI):
                         cycle = goToNextCycle(cycle, i)
                         #place them
                         runTask(macro.placePlanterInCycle, args = (i, cycle, planterData),resetAfter=False) 
-        #mob runs
+        #mob run
+        print(macro.setdat)
         for mob, fields in regularMobData.items():
             if not macro.setdat[mob]: continue
             for f in fields:
@@ -199,6 +266,9 @@ def macro(status, logQueue, haste, updateGUI):
                 boostedField = runTask(macro.collect, args=(k,))
                 if macro.setdat["gather_boosted"] and boostedField:
                     boostedGatherFields.append(boostedField)
+
+        allGatheredFields = []
+        allGatheredFields.extend(boostedGatherFields)
         #gather in boosted fields
         #gather for the entire 15min duration
         for field in boostedGatherFields:
@@ -221,12 +291,16 @@ def macro(status, logQueue, haste, updateGUI):
 
         #remove fields that are already in boosted fields
         gatherFields = [x for x in gatherFields if not x in boostedGatherFields]
+
+        allGatheredFields.extend(gatherFields)
         
         for field in gatherFields:
             runTask(macro.gather, args=(field,), resetAfter=False)
 
         #do quests
-        questGatherFields = [x for x in questGatherFields if not (x in gatherFields or x in boostedGatherFields)]
+
+        blueFields = ["blue flower", "bamboo", "pine tree", "stump"]
+        redFields = ["mushroom", "strawberry", "rose", "pepper"]
 
         #setup the override
         questGatherOverrides = {}
@@ -234,8 +308,56 @@ def macro(status, logQueue, haste, updateGUI):
             questGatherOverrides["mins"] = macro.setdat["quest_gather_mins"]
         if macro.setdat["quest_gather_return"] != "no override":
             questGatherOverrides["return"] = macro.setdat["quest_gather_return"]
+            
+
+        #do goo-field gathers first
+        if blueGumdropFieldNeeded:
+            for f in blueFields:
+                if f in questGumdropGatherFields:
+                    break
+            else:
+                questGumdropGatherFields.append("pine tree")
+        
+        if redGumdropFieldNeeded:
+            for f in redFields:
+                if f in questGumdropGatherFields:
+                    break
+            else:
+                questGumdropGatherFields.append("rose")
+
+        for field in questGumdropGatherFields:
+            runTask(macro.gather, args=(field, questGatherOverrides, True), resetAfter=False)
+        allGatheredFields.extend(questGumdropGatherFields)
+
+
+        #do regular gathers
+        questGatherFields = [x for x in questGatherFields if not (x in allGatheredFields)]
         for field in questGatherFields:
             runTask(macro.gather, args=(field, questGatherOverrides), resetAfter=False)
+        allGatheredFields.extend(questGatherFields)
+
+        #do required blue/red fields
+        if blueFieldNeeded:
+            for f in blueFields:
+                if f in allGatheredFields:
+                    break
+            else:
+                field = "pine tree"
+                allGatheredFields.append(field)
+                runTask(macro.gather, args=(field, questGatherOverrides), resetAfter=False)
+        
+        if redFieldNeeded:
+            for f in redFields:
+                if f in allGatheredFields:
+                    break
+            else:
+                field = "rose"
+                allGatheredFields.append(field)
+                runTask(macro.gather, args=(field, questGatherOverrides), resetAfter=False)
+        
+        if fieldNeeded and not allGatheredFields:
+            runTask(macro.gather, args=("pine tree",), resetAfter=False)
+        
         
 
 
