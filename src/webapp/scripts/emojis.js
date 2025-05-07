@@ -52,6 +52,7 @@ const collectEmojis = {
     wealth_clock: "🕒",
     blueberry_dispenser: "🔵",
     strawberry_dispenser: "🍓",
+    coconut_dispenser: "🥥",
     royal_jelly_dispenser: "💎",
     treat_dispenser: "🦴",
     ant_pass_dispenser: "🎫",
@@ -68,7 +69,8 @@ const collectEmojis = {
     memory_match: "🍍",
     mega_memory_match: "🌟",
     extreme_memory_match: "🌶️",
-    winter_memory_match: "❄️"
+    winter_memory_match: "❄️",
+    honeystorm: "🟧"
 
 }
 
@@ -149,15 +151,24 @@ const blenderIcons = {
 }
 
 const fieldBoosterEmojis = {
+    
+    Auto_Field_Boost: "🎲",
     blue_booster: "🔵",
     red_booster: "🔴",
-    mountain_booster: "⚪"
+    mountain_booster: "⚪",
 }
 
 const stickerStackIcon = {
     sticker_stack: "sticker_stack"
 }
 
+const diceIcons = {
+    field_dice: "field_dice",
+    smooth_dice: "smooth_dice",
+    loaded_dice: "loaded_dice"
+}
+
 const questGiverEmojis = {
     polar_bear_quest: "🐻‍❄️",
+    honey_bee_quest: "🐝"
 }

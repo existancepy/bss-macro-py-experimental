@@ -33,9 +33,8 @@ def update(t = "e"):
     e_macroPath = f"{destination}/e_macro.command"
     
     if t == "e":
-        link = "https://github.com/existancepy/bss-macro-py-experimental/archive/master.zip"
-        source = f"{destination}/bss-macro-py-experimental-main"
-
+        link = "https://github.com/sevmanash/sevs-modified-macro/archive/master.zip"
+        source = f"{destination}/sevs-modified-macro-main"
     print(os.listdir(destination))
     #delete all files
     for f in os.listdir(destination):
@@ -68,4 +67,4 @@ def update(t = "e"):
     st = os.stat(e_macroPath)
     os.chmod(e_macroPath, st.st_mode | stat.S_IEXEC)
     
-    msgBox("Update success", "Update complete. You can now relaunch the macro")
+    msgBox("Remodified", "You can now relaunch the macro")

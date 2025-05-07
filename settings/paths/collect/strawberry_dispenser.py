@@ -11,6 +11,7 @@ time.sleep(0.1)
 self.keyboard.keyUp("w")
 self.keyboard.slowPress("space")
 time.sleep(0.5)
+self.keyboard.walk("s",0.05)
 self.keyboard.walk("d",1)
 
 

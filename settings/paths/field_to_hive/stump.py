@@ -1,3 +1,4 @@
+
 self.keyboard.walk("s",5)
 self.keyboard.walk("d",6)
 self.keyboard.walk("w",9)
@@ -14,16 +15,16 @@ self.keyboard.walk("a",0.1)
 self.keyboard.keyDown("s")
 time.sleep(0.1)
 self.keyboard.slowPress("space")
-time.sleep(0.15*28/ws)
+time.sleep(0.17*28/ws)
 self.keyboard.keyUp("s")
-self.keyboard.walk("s",0.05)
-time.sleep(2)
+self.keyboard.walk("s",0.08)
+time.sleep(1.2)
 self.keyboard.slowPress("e")
-self.keyboard.walk("w",4)
-self.keyboard.walk("s",0.2)
-self.keyboard.walk("d",4)
-self.keyboard.walk("w",1)
-self.keyboard.walk("s",0.6)
+time.sleep(1.8)
+self.keyboard.multiWalk(["d","w"], 8)
+self.keyboard.multiWalk(["s","a"], 0.9)
+self.keyboard.walk("d",0.25)
+
 
 
     

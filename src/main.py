@@ -71,6 +71,10 @@ def macro(status, log, haste, updateGUI):
             if macro.hasRespawned("rejoin_every", macro.setdat["rejoin_every"]*60*60):
                 macro.rejoin("Rejoining (Scheduled)")
                 macro.saveTiming("rejoin_every")
+        #auto field boost
+        if macro.setdat["Auto_Field_Boost"] and not macro.AFBLIMIT:
+            if macro.hasAFBRespawned("AFB_dice_cd", macro.setdat["AFB_rebuff"]*60) or macro.hasAFBRespawned("AFB_glitter_cd", macro.setdat["AFB_rebuff"]*60-30):
+                macro.AFB(gatherInterrupt=False)
         status.value = ""
         return returnVal
 
@@ -99,6 +103,18 @@ def macro(status, log, haste, updateGUI):
                         questGatherFields.append(objData[1])
                     elif objData[0] == "kill":
                         macro.setdat[objData[2]] = True
+        if macro.setdat["honey_bee_quest"]:
+            questGiver = "honey bee"
+            questObjective = macro.findQuest(questGiver)
+            if questObjective is None:  # quest does not exist
+                questObjective = macro.getNewQuest(questGiver, False)
+            elif not len(questObjective):  # quest completed
+                questObjective = macro.getNewQuest(questGiver, True)
+            else:
+                for obj in questObjective:
+                    objData = obj.split("_")
+                    if objData[0] == "token" and objData[1] == "honeytoken":
+                        macro.setdat[objData[0] and objData[1]] = True
                     
         #collect
         for k, _ in macroModule.collectData.items():
@@ -118,6 +134,12 @@ def macro(status, log, haste, updateGUI):
             #check if its time to collect the previous item
             if blenderData["collectTime"] > -1 and time.time() > blenderData["collectTime"]:
                 runTask(macro.blender, args=(blenderData,))
+        #mob runs
+        for mob, fields in regularMobData.items():
+            if not macro.setdat[mob]: continue
+            for f in fields:
+                if macro.hasMobRespawned(mob, f):
+                    runTask(macro.killMob, args=(mob, f,), convertAfter=False)
         #planters
         def goToNextCycle(cycle):
             #go to the next cycle
@@ -152,12 +174,6 @@ def macro(status, log, haste, updateGUI):
                     cycle = goToNextCycle(cycle)
                     #place them
                     runTask(macro.placePlanterCycle, args = (cycle,),resetAfter=False) 
-        #mob runs
-        for mob, fields in regularMobData.items():
-            if not macro.setdat[mob]: continue
-            for f in fields:
-                if macro.hasMobRespawned(mob, f):
-                    runTask(macro.killMob, args=(mob, f,), convertAfter=False)
         #ant challenge
         if macro.setdat["ant_challenge"]: 
             runTask(macro.antChallenge)
@@ -177,6 +193,7 @@ def macro(status, log, haste, updateGUI):
             f.close()
             if macro.hasRespawned("sticker_stack", stickerStackCD):
                 runTask(macro.collect, args=("sticker_stack",))
+
         #field boosters
         boostedGatherFields = []
         for k, _ in macroModule.fieldBoosterData.items():
@@ -279,6 +296,12 @@ if __name__ == "__main__":
     generalSettingsReference = settingsManager.readSettingsFile("./data/default_settings/generalsettings.txt")
     settingsManager.saveDict("../settings/generalsettings.txt", {**generalSettingsReference, **generalSettings})
 
+    #discord bot
+    if generalSettings["discord_bot"]:
+        discordBotProc = multiprocessing.Process(target=discordBot, args=(settingsManager.loadAllSettings()["discord_bot_token"], run, status))
+        if settingsManager.loadAllSettings()["discord_bot"]:
+            discordBotProc.start()
+
     #check if the user updated the paths (update 6)
     #TODO: remove this on the actual release
     with open("../settings/paths/cannon_to_field/blue flower.py", "r") as f:
@@ -308,7 +331,7 @@ if __name__ == "__main__":
         print("stop")
         #print(sockets)
         macroProc.kill()
-        if discordBotProc.is_alive(): discordBotProc.kill()
+        # if discordBotProc.is_alive(): discordBotProc.kill()
         keyboardModule.releaseMovement()
         mouse.mouseUp()
         
@@ -367,10 +390,6 @@ if __name__ == "__main__":
                     hourlyReportBgData[k] = 0   
             settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
 
-            #discord bot
-            discordBotProc = multiprocessing.Process(target=discordBot, args=(setdat["discord_bot_token"], run, status), daemon=True)
-            if setdat["discord_bot"]:
-                discordBotProc.start()
             if setdat["enable_webhook"]:
                 logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
             run.value = 2

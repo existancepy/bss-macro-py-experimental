@@ -90,6 +90,10 @@ kill_2_werewolf
 -prickly pears
 gather_cactus
 
+==honey bee==
+-honey hunt
+token_honey
+
 ==bucko bee==
 
 -abilities

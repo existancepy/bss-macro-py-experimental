@@ -6,7 +6,7 @@ except ImportError:
 from discord.ext import commands
 from modules.screen.screenshot import mssScreenshot
 import io
-from modules.submacros.hourlyReport import generateHourlyReport
+from modules.submacros.hourlyReport import generateHourlyReport12, generateHourlyReport24
 from modules.misc.messageBox import msgBox
 import subprocess
 import sys
@@ -36,22 +36,48 @@ def discordBot(token, run, status):
             imageBinary.seek(0)
             await interaction.followup.send(file = discord.File(fp=imageBinary, filename="screenshot.png"))
 
+    @bot.tree.command(name="start", description="Start the macro")
+    async def start(interaction: discord.Interaction):
+        if run.value == 2:
+            try:
+                await interaction.response.send_message("Macro is already running")
+            except discord.errors.NotFound: #sends an error when already running/stopped, even though it works, so ignore it
+                pass
+            return
+        run.value = 1
+        try:
+            await interaction.response.send_message("Starting Macro")
+        except discord.errors.NotFound:
+            pass
+
     @bot.tree.command(name = "stop", description = "Stop the macro")
     async def stop(interaction: discord.Interaction):
-        if run.value == 3: 
-            await interaction.response.send_mesasge("Macro is already stopped")
-            return 
+        if run.value == 3:
+            try:
+                await interaction.response.send_message("Macro is already stopped")
+            except discord.errors.NotFound:
+                pass
+            return
         run.value = 0
-        await interaction.response.send_message("Stopping Macro")
+        try:
+            await interaction.response.send_message("Stopping Macro")
+        except discord.errors.NotFound:
+            pass   
         
     @bot.tree.command(name = "rejoin", description = "Make the macro rejoin the game.")
     async def rejoin(interaction: discord.Interaction):
+        if run.value == 3 or 0:
+            await interaction.response.send_message("Macro needs to start")
+            return
         run.value = 4
         await interaction.response.send_message("Macro is rejoining")
 
     @bot.tree.command(name = "amulet", description = "Choose to keep or replace an amulet")
     @app_commands.describe(option = "keep or replace an amulet")
     async def amulet(interaction: discord.Interaction, option: str):
+        if run.value == 3 or 0:
+            await interaction.response.send_message("Macro needs to start")
+            return
         option = option.lower()
         keepAlias = ["k", "keep"]
         replaceAlias = ["r", "replace"]
