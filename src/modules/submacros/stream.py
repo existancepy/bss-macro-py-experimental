@@ -435,7 +435,7 @@ class cloudflaredStream:
         if self.streaming:
             print("Stream stopped.")
         self.streaming = False
-        #self.publicURL = None
+        self.publicURL = None
         
         # Stop the capture thread
         if self.capture_thread and self.capture_thread.is_alive():
