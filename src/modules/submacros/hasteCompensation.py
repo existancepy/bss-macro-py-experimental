@@ -22,7 +22,9 @@ class HasteCompensation():
         for i in range(5):
             self.bearMorphs.append(self.adjustBuffImage(f"./images/buffs/bearmorph{i+1}.png"))
 
-        self.hastePlus = self.adjustBuffImage(f"./images/buffs/haste+.png")         
+        self.hastePlus = self.adjustBuffImage(f"./images/buffs/haste+.png")   
+        self.oil = self.adjustBuffImage(f"./images/buffs/oil.png")   
+        self.ssmoothie = self.adjustBuffImage(f"./images/buffs/supersmoothie.png")         
         self.mw, self.mh = pag.size()                 
         self.prevHaste = 0         
         self.prevHaste368 = 0 #tracking the previous haste to accurately determine if the haste stack is 3,6 or 8
@@ -95,6 +97,12 @@ class HasteCompensation():
         if self.thresholdMatch(self.hastePlus, screen, 0.75)[0]:
             hasteOut += 10
         #print("hastePlus")
+        #match oil
+        if self.thresholdMatch(self.oil, screen, 0.75)[0]:
+            hasteOut += 2
+        #match super smoothie
+        if self.thresholdMatch(self.ssmoothie, screen, 0.75)[0]:
+            hasteOut += 2.5
         #if hasteOut: print(f"Haste stacks: {hasteOut}")
         out = (self.baseMoveSpeed+bearMorph)*(1+(0.1*hasteOut))
         
