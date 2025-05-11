@@ -36,7 +36,7 @@ from difflib import SequenceMatcher
 import fuzzywuzzy
 from modules.submacros.walk import Walk
 import traceback
-
+import atexit
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -349,8 +349,18 @@ class macro:
         #memory match
         self.latestMM = "normal"
 
+        self.isGathering = False
         self.converting = False
         self.alreadyConverted = False
+
+        #auto field boost
+        self.failed = False
+        self.AFBLIMIT = False
+        self.AFBglitter = False
+        self.cAFBglitter = False
+        self.cAFBDice = False
+        self.afb = False
+        self.stop = False
 
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
@@ -2798,7 +2808,7 @@ class macro:
             while True:
                 currMin = datetime.now().minute
                 currSec = datetime.now().second
-                
+
                 #check if its time to send hourly report
                 if currMin == 0 and time.time() - lastHourlyReport > 120:
                     hourlyReportData = self.hourlyReport.generateHourlyReport()

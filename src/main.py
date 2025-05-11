@@ -31,6 +31,7 @@ def disconnectCheck(run, status, display_type):
             print("disconnected")
             run.value = 4
             time.sleep(300) #5 min cd to let the macro run through all 3 rejoins
+        time.sleep(1)
 
 #controller for the macro
 def macro(status, logQueue, haste, updateGUI):
@@ -72,6 +73,12 @@ def macro(status, logQueue, haste, updateGUI):
             if macro.hasRespawned("rejoin_every", macro.setdat["rejoin_every"]*60*60):
                 macro.rejoin("Rejoining (Scheduled)")
                 macro.saveTiming("rejoin_every")
+        
+        #auto field boost
+        if macro.setdat["Auto_Field_Boost"] and not macro.AFBLIMIT:
+            if macro.hasAFBRespawned("AFB_dice_cd", macro.setdat["AFB_rebuff"]*60) or macro.hasAFBRespawned("AFB_glitter_cd", macro.setdat["AFB_rebuff"]*60-30):
+                macro.AFB(gatherInterrupt=False)
+
         status.value = ""
         return returnVal
     

@@ -25,6 +25,16 @@ function loadBoost(){
     switchBoostTab(document.getElementById("boost-hotbar"))
 }
 
+
+function clearAFBData(ele){
+    if (ele.classList.contains("active")) return
+    eel.clearAFB()
+    ele.classList.add("active")
+    setTimeout(() => {
+        ele.classList.remove("active")
+      }, 700)
+}
+
 $("#boost-placeholder")
 .load("../htmlImports/tabs/boost.html", loadBoost) //load kill tab
 .on("click", ".boost-tab-item", (event) => switchBoostTab(event.currentTarget)) //navigate between tabs

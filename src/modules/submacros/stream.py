@@ -27,23 +27,20 @@ class cloudflaredStream:
         self.frame_count = 0
         self.restart_count = 0
         
-        # Frame buffer for producer/consumer pattern
         self.frame_buffer = None
         self.frame_lock = threading.Lock()
         self.frame_ready = threading.Event()
         self.capture_thread = None
         
-        # Performance tracking
-        self.fps_history = deque(maxlen=60)  # Track last 60 frames for avg FPS
+        self.fps_history = deque(maxlen=60)
         self.last_fps_check = time.time()
         self.current_fps = 0
         
-        # Resolution and quality settings
         self.resolution = 1.0
-        self.jpeg_quality = 60  # Starting quality
+        self.jpeg_quality = 60 
         self.adaptive_quality = True
 
-        # HTML page with added FPS counter
+ 
         self.HTML_PAGE = """
         <!DOCTYPE html>
         <html lang="en">
@@ -171,9 +168,9 @@ class cloudflaredStream:
         self.app.add_url_rule('/video_feed', 'video_feed', self.videoFeed)
         self.app.add_url_rule('/fps', 'fps', self.get_fps, methods=['GET'])
         
-        # Enable garbage collection with optimized settings
+        #enable garbage collection
         gc.enable()
-        gc.set_threshold(700, 10, 5)  # Tuned threshold
+        gc.set_threshold(700, 10, 5)
 
     def index(self):
         return render_template_string(self.HTML_PAGE, streaming=self.streaming)
@@ -190,12 +187,12 @@ class cloudflaredStream:
                         mimetype='multipart/x-mixed-replace; boundary=frame')
     
     def update_fps(self):
-        """Calculate and update current FPS"""
+
         now = time.time()
         self.fps_history.append(now)
         
         # Calculate FPS over recent history
-        if len(self.fps_history) >= 10:  # Need at least 10 frames for calculation
+        if len(self.fps_history) >= 10:
             time_diff = self.fps_history[-1] - self.fps_history[0]
             if time_diff > 0:  # Avoid division by zero
                 self.current_fps = (len(self.fps_history) - 1) / time_diff
@@ -205,34 +202,29 @@ class cloudflaredStream:
             self._adjust_quality()
     
     def _adjust_quality(self):
-        """Dynamically adjust quality settings based on performance"""
-        # If FPS is too low, reduce quality or resolution
+
         if self.current_fps < 30:
             if self.jpeg_quality > 40:
                 self.jpeg_quality -= 5
-                #print(f"Reducing JPEG quality to {self.jpeg_quality} to improve performance")
+                
             elif self.resolution > 0.5:
                 self.resolution -= 0.1
-                #print(f"Reducing resolution to {self.resolution:.1f} to improve performance")
-        # If FPS is good, we can try to improve quality
+
         elif self.current_fps > 55:
             if self.resolution < 1.0:
                 self.resolution += 0.1
-                self.resolution = min(1.0, self.resolution)  # Cap at 1.0
-                #print(f"Increasing resolution to {self.resolution:.1f}")
+                self.resolution = min(1.0, self.resolution)
             elif self.jpeg_quality < 80:
                 self.jpeg_quality += 5
-                #print(f"Increasing JPEG quality to {self.jpeg_quality}")
     
     def _generate_frames_with_restart(self):
-        """Wrapper around generateFrames to handle periodic restarting of the capture system"""
         max_restarts = 5
         restart_count = 0
         
         while self.streaming and restart_count < max_restarts:
             try:
                 yield from self.generateFrames()
-                # If we get here, the generator exited normally
+                #generator exited normally
                 time.sleep(0.5)
                 restart_count += 1
                 print(f"Restarting frame generator (attempt {restart_count}/{max_restarts})")
@@ -245,14 +237,12 @@ class cloudflaredStream:
         print("Max restarts reached or streaming stopped.")
 
     def start_capture_thread(self):
-        """Start a dedicated thread for screen capture"""
         if self.capture_thread is None or not self.capture_thread.is_alive():
             self.capture_thread = threading.Thread(target=self._capture_screen, daemon=True)
             self.capture_thread.start()
             print("Capture thread started")
     
     def _capture_screen(self):
-        """Dedicated thread for screen capture only"""
         # Optimize process priority on macOS
         if sys.platform == 'darwin':
             try:
@@ -261,23 +251,21 @@ class cloudflaredStream:
                 pass
         
         with mss.mss() as sct:
-            monitor = sct.monitors[1]  # Get primary monitor
+            monitor = sct.monitors[1]
             
             while self.streaming:
                 try:
-                    # Capture screen directly to numpy array
                     screen = np.array(sct.grab(monitor), dtype=np.uint8)
                     
-                    # Apply resolution scaling if needed (efficient resize)
+                    #resolution scaling if needed
                     if self.resolution < 1.0:
                         h, w = screen.shape[:2]
                         new_h, new_w = int(h * self.resolution), int(w * self.resolution)
                         screen = cv2.resize(screen, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
                     
-                    # Skip color conversion (faster) - just drop alpha channel
+                    #drop alpha channel
                     screen = screen[:, :, :3]
-                    
-                    # Update the shared frame buffer
+
                     with self.frame_lock:
                         self.frame_buffer = screen
                         self.frame_ready.set()
@@ -285,24 +273,23 @@ class cloudflaredStream:
                 except Exception as e:
                     print(f"Capture error: {e}")
                 
-                # Target 120 captures per second to ensure we have fresh frames
+                #120 captures per second
                 time.sleep(1/120)
 
     def generateFrames(self):
-        """Generate encoded frames from the capture buffer"""
-        self.start_capture_thread()  # Ensure capture thread is running
+        self.start_capture_thread()
         
-        # Initialize timing variables
+        #timing variables
         frame_interval = 1.0 / self.target_fps
         last_gc_time = time.time()
         start_time = time.time()
         frames_since_gc = 0
         
-        # Pre-configure JPEG encoding parameters
+        #JPEG encoding parameters
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), self.jpeg_quality,
                        int(cv2.IMWRITE_JPEG_OPTIMIZE), 1]
         
-        # Auto-restart after 30 seconds to prevent degradation
+        #restart after 30 seconds to prevent degradation
         max_run_time = 30  # seconds
         
         # Frame tracking
@@ -310,65 +297,59 @@ class cloudflaredStream:
         self.fps_history.clear()
         
         while self.streaming:
-            # Check if we need to do a periodic restart
             if time.time() - start_time > max_run_time:
                 print("Periodic capture restart for performance")
                 break
             
-            # Timing control - only process at target frame rate
             current_time = time.time()
             elapsed = current_time - self.last_frame_time
             
             if elapsed < frame_interval:
-                # Sleep precisely the right amount
                 sleep_time = frame_interval - elapsed
-                if sleep_time > 0.001:  # Only sleep for meaningful durations
-                    time.sleep(sleep_time - 0.001)  # Slightly less to account for processing
+                if sleep_time > 0.001:
+                    time.sleep(sleep_time - 0.001)  #slightly less to account for processing
                 continue
             
-            # Wait for a frame to be ready
+            #wait for a frame to be ready
             if not self.frame_ready.is_set():
                 self.frame_ready.wait(timeout=0.5)
                 if not self.frame_ready.is_set():
                     continue
             
-            # Get the latest frame from buffer
+            #get the latest frame
             with self.frame_lock:
                 if self.frame_buffer is None:
                     continue
                 
-                frame = self.frame_buffer.copy()  # Copy to avoid race conditions
+                frame = self.frame_buffer.copy()
                 self.frame_ready.clear()
             
             try:
-                # Update timing and counters
+                #update timing and counters
                 self.last_frame_time = time.time()
                 self.frame_count += 1
                 frames_since_gc += 1
                 
-                # Update FPS calculation
+                #update FPS calculation
                 self.update_fps()
                 
-                # Encode frame efficiently
+                #encode frame
                 ret, buffer = cv2.imencode('.jpg', frame, encode_param)
                 
                 if not ret:
                     continue
                 
-                # Get frame bytes
+                #yield frame
                 frame_data = buffer.tobytes()
-                
-                # Yield the encoded frame
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame_data + b'\r\n')
                 
-                # Clear references
                 frame = None
                 buffer = None
                 frame_data = None
                 
-                # Periodic garbage collection
-                if frames_since_gc >= 180:  # Every 3 seconds at 60fps
+                #garbage collection
+                if frames_since_gc >= 180:
                     gc.collect()
                     frames_since_gc = 0
                 
@@ -378,12 +359,10 @@ class cloudflaredStream:
                 gc.collect()
                 time.sleep(0.1)
             
-            # Prevent thread starvation
             time.sleep(0.0001)
 
     def _run_server(self):
-        """Run the Flask server with optimized settings"""
-        # Use the production WSGI server if available
+        #use the production WSGI server if available
         try:
             from waitress import serve
             print("Starting server with Waitress WSGI server")
@@ -395,7 +374,6 @@ class cloudflaredStream:
             run_simple('0.0.0.0', 5000, self.app, threaded=True, use_reloader=False)
     
     def _run_cloudflared(self):
-        """Start and manage the Cloudflare tunnel"""
         time.sleep(2)
         print("Launching Cloudflare tunnel")
         self.cfProc = subprocess.Popen(
@@ -405,7 +383,7 @@ class cloudflaredStream:
             text=True
         )
         
-        # Extract the cloudflare link
+        #extract the cloudflare link
         for line in self.cfProc.stdout:
             if "trycloudflare.com" in line and "https://" in line:
                 match = re.search(r"https://[a-zA-Z0-9\-]+\.trycloudflare\.com", line)
@@ -416,44 +394,43 @@ class cloudflaredStream:
                     break
 
     def start(self, resolution=1.0):
-        """Start the streaming server with given resolution"""
         self.resolution = resolution
         self.streaming = True
         self.restart_count = 0
 
-        # Start the server thread if not already running
+        #start the server thread if not already running
         if not self.serverThread or not self.serverThread.is_alive():
             self.serverThread = threading.Thread(target=self._run_server, daemon=True)
             self.serverThread.start()
             print(f"Stream started on http://localhost:5000 (Target: {self.target_fps} FPS)")
             
-        # Start the Cloudflare tunnel
+        #start the Cloudflare tunnel
         threading.Thread(target=self._run_cloudflared, daemon=True).start()
 
     def stop(self):
-        """Stop all streaming services"""
+
         if self.streaming:
             print("Stream stopped.")
         self.streaming = False
         self.publicURL = None
         
-        # Stop the capture thread
+        #stop the capture thread
         if self.capture_thread and self.capture_thread.is_alive():
             self.capture_thread.join(timeout=1.0)
         
-        # Stop Cloudflare tunnel
+        #stop Cloudflare tunnel
         if self.cfProc:
             self.cfProc.terminate()
             self.cfProc.wait()
             self.cfProc = None
         
-        # Clear frame buffer
+        #clear frame buffer
         with self.frame_lock:
             self.frame_buffer = None
             self.frame_ready.clear()
 
     def get_stats(self):
-        """Return current streaming statistics"""
+        #return current streaming statistics
         return {
             "fps": self.current_fps,
             "resolution": self.resolution,

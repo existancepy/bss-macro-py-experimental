@@ -40,6 +40,20 @@ def clearBlender():
     f.close()
 
 @eel.expose
+def clearAFB():
+    AFBData = {
+        "AFB_dice_cd": 0,
+        "AFB_glitter_cd": 0,
+        "AFB_limit": 0
+    }
+
+    # convert to format like in timings.txt
+    data_str = "\n".join([f"{key}={value}" for key, value in AFBData.items()])
+
+    with open("data/user/AFB.txt", "w") as f:
+        f.write(data_str)
+        
+@eel.expose
 def update():
     updateFunc()
     eel.closeWindow()

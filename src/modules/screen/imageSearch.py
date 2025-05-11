@@ -7,6 +7,14 @@ def templateMatch(smallImg, bigImg):
     res = cv2.matchTemplate(bigImg, smallImg, cv2.TM_CCOEFF_NORMED)
     return cv2.minMaxLoc(res)
 
+# def templateMatch(smallImg, bigImg, scale=0.5):
+#     small_resized = cv2.resize(smallImg, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+#     big_resized = cv2.resize(bigImg, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+#     res = cv2.matchTemplate(big_resized, small_resized, cv2.TM_CCOEFF_NORMED)
+#     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+#     # scale back to original coordinates
+#     return min_val, max_val, (int(min_loc[0] / scale), int(min_loc[1] / scale)), (int(max_loc[0] / scale), int(max_loc[1] / scale))
+
 def locateImageOnScreen(target, x,y,w,h, threshold = 0):
     screen = mssScreenshot(x,y,w,h)
     screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
