@@ -32,6 +32,15 @@
                     }
                 },
                 {
+                    id: "coconut_dispenser",
+                    title: "Coconut Dispenser",
+                    desc: "Collect the Coconut Dispenser in the Coconut Cave <br> Note: Coconut Crab can respawn at any time, be certain it can be collected",
+                    type: {
+                        name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+                {
                     id: "royal_jelly_dispenser",
                     title: "(Free) Royal Jelly Dispenser",
                     desc: "Collect the free royal jelly dispenser in the star hall",
@@ -63,6 +72,15 @@
                     id: "glue_dispenser",
                     title: "Glue Dispenser",
                     desc: "Collect the glue dispenser in gummy bear's lair",
+                    type: {
+                        name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+                {
+                    id: "honeystorm",
+                    title: "Honey Storm",
+                    desc: "Summon a Honey Storm",
                     type: {
                         name: "checkbox",
                             triggerFunction: saveProfileTriggerFunction
@@ -111,6 +129,34 @@
                         name: "textbox",
                             inputType: "int",
                             inputLimit: 3,
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "mondo_buff_loot",
+                    title: "Collect Loot From Mondo",
+                    desc: "Collect loot when mondo chick is defeated.<br>Ignores the 'Damage Mondo for X mins' setting ",
+                    type: {
+                        name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                id: "mondo_loot_times",
+                    title: "Loops",
+                    desc: "Requires 'Collect Loot From Mondo' active <br>How many loops while collecting loot<br>One loop is going up then down once.<br>1-2 is recommended",
+                    type: {
+                        name: "dropdown",
+                            data: [1,2,3,4,5],
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "mondo_collect_token",
+                    title: "Collect Tokens From Bees",
+                    desc: "Collect tokens during from bees by moving every few seconds. <br> Recommend if you don't have a Cub Buddy.<br>Note: Your avatar may move slightly and drift away from the wall.<br> It is recommend to have a animation that minimizes slight movement.",
+                    type: {
+                        name: "checkbox",
                             triggerFunction: saveProfileTriggerFunction
                         }
                 },

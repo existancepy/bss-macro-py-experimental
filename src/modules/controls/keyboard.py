@@ -5,7 +5,7 @@ if sys.platform == "win32":
 else:
     import pyautogui as pag
 import time
-from modules.submacros.hasteCompensation import HasteCompensation
+from modules.submacros.hasteCompensation import HasteCompensationOptimized
 
 
 class keyboard:
@@ -13,7 +13,7 @@ class keyboard:
         self.ws = walkspeed
         self.haste = haste
         self.enableHasteCompensation = enableHasteCompensation
-        self.hasteCompensation = HasteCompensation(True, walkspeed)
+        self.hasteCompensation = HasteCompensationOptimized(True, walkspeed)
 
     @staticmethod
     #call the press function of the pag library
@@ -44,24 +44,54 @@ class keyboard:
         time.sleep(0.08)
         pag.keyUp(k)
 
+    def getMoveSpeed(self):
+        movespeed = self.haste.value
+        return movespeed
+    
     def timeWait(self, duration):
+        # baseSpeed = 28
+        # targetDistance = baseSpeed * duration  # Total distance the player should travel
+        # maxTime = 28/24*duration #fail safe, in case it loops longer than it needs to.
+        # traveledDistance = 0  # Tracks total integrated distance
+        # startTime = time.perf_counter()
+        # prevTime = startTime
+
+        # while traveledDistance < targetDistance and prevTime-startTime < maxTime:
+        #     currentTime = time.perf_counter()
+        #     deltaT = currentTime - prevTime
+        #     speed = max(self.haste.value, self.ws)
+        #     traveledDistance += speed * deltaT
+
+        #     prevTime = currentTime
+        #     time.sleep(0.01)
+
+        # elapsed_time = time.perf_counter() - startTime
+        # print(f"current speed: {speed}, original time: {duration}, actual travel time: {elapsed_time}")
+
         baseSpeed = 28
-        targetDistance = baseSpeed * duration  # Total distance the player should travel
-        traveledDistance = 0  # Tracks total integrated distance
-        startTime = time.perf_counter()
-        prevTime = startTime
+        target_distance = baseSpeed * duration  # Total distance the player should travel
+        traveledDistance = 0
+        maxTime = baseSpeed/24*duration
 
-        while traveledDistance < targetDistance:
+        st = time.perf_counter()
+        prevTime = st
+        prevSpeed = self.getMoveSpeed()
+
+        while traveledDistance < target_distance and prevTime-st < maxTime:
             currentTime = time.perf_counter()
-            deltaT = deltaT = max(currentTime - prevTime, 1e-6)
-            speed = max(self.haste.value, self.ws)
-            traveledDistance += speed * deltaT
+            speed = self.getMoveSpeed()
 
+            delta_t = currentTime - prevTime
+
+            # Apply trapezoidal integration to calculate traveled distance
+            traveledDistance += ((prevSpeed + speed) / 2) * delta_t
+
+            # Update previous values
             prevTime = currentTime
-            time.sleep(0.01)
+            prevSpeed = speed
 
-        elapsed_time = time.perf_counter() - startTime
-        print(f"current speed: {speed}, original time: {duration}, actual travel time: {elapsed_time}")
+        elapsed_time = time.perf_counter() - st
+        #print(f"current speed: {speed}, original time: {duration}, actual travel time: {elapsed_time}")
 
     #like press, but with walkspeed and haste compensation
     def walk(self,k,t,applyHaste = True):

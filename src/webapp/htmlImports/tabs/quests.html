@@ -30,6 +30,28 @@
                 },
             ])
 
+            buildStandardContainer(questsSettingsParent,"Goo Settings", "Decide how the macro wants to handle gathering goo",[
+                {
+                    id: "quest_use_gumdrops",
+                    title: "Use Gumdrops",
+                    desc: "Use gumdrops when gathering for goo quests",
+                    type: {
+                        name: "checkbox",
+                        triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+                {
+                    id: "quest_gumdrop_slot",
+                    title: "Gumdrop Slot",
+                    desc: "The hotbar slot of the gumdrops to use",
+                    type: {
+                        name: "dropdown",
+                        data: [1,2,3,4,5,6,7],
+                        triggerFunction: saveProfileTriggerFunction
+                    }
+                },
+            ])
+
         </script>
     </div>
 
@@ -40,21 +62,39 @@
                 {
                     id: "polar_bear_quest",
                     title: "Polar Bear",
-                    desc: "Complete Polar Bear Quests",
+                    desc: "Complete Polar Bear's Quests",
                     type: {
                             name: "checkbox",
                             triggerFunction: saveProfileTriggerFunction
                         }
                 },
-                // {
-                //     id: "honey_bee_quest",
-                //     title: "Honey Bee",
-                //     desc: "Complete Honey Bee Quests",
-                //     type: {
-                //             name: "checkbox",
-                //             triggerFunction: saveProfileTriggerFunction
-                //         }
-                // },
+                {
+                    id: "honey_bee_quest",
+                    title: "Honey Bee",
+                    desc: "Complete Honey Bee's Quests",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "bucko_bee_quest",
+                    title: "Bucko Bee",
+                    desc: "Complete Bucko Bee's Quests",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
+                {
+                    id: "riley_bee_quest",
+                    title: "Riley Bee",
+                    desc: "Complete Riley Bee's Quests",
+                    type: {
+                            name: "checkbox",
+                            triggerFunction: saveProfileTriggerFunction
+                        }
+                },
             ])
         </script>
     </div>

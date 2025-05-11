@@ -13,13 +13,15 @@ colors = {
     "dark brown": "5C4033",
     "brown": "D27D2D",
     "purple": "954cf5",
-    "orange": "FFA500"
+    "orange": "FFA500",
+    "white": "FFFFFF",
+    "yellow": "FFFF00",
 }
 
 mw, mh = pag.size()
 newUI = False
 
-def sendWebhook(url, title, desc, time, colorHex, ss=None):
+def sendWebhook(url, title, desc, time, colorHex, ss=None, imagePath=None):
     screenshotRegions = {
         "screen": None,
         "honey-pollen": (mw/3.5, 23 if newUI else 0, mw/2.4, 40),
@@ -28,7 +30,9 @@ def sendWebhook(url, title, desc, time, colorHex, ss=None):
     }
     
     webhookImg = None
-    if ss is not None:
+    if imagePath:
+        webhookImg = imagePath
+    elif ss:
         webhookImg = "webhookScreenshot.png"
         screenshotScreen(webhookImg, screenshotRegions[ss])
     logWebhook.webhook(url, title, desc, time, colorHex, webhookImg)
@@ -55,8 +59,8 @@ class webhookQueue:
         self.queue.put(data)
 
 class log:
-    def __init__(self, logVar, enableWebhook, webhookURL, blocking=False):
-        self.logVar = logVar
+    def __init__(self, logQueue, enableWebhook, webhookURL, blocking=False):
+        self.logQueue = logQueue
         self.webhookURL = webhookURL
         self.enableWebhook = enableWebhook
         self.blocking = blocking
@@ -68,7 +72,7 @@ class log:
         # Display in GUI or macro logs (to be implemented)
         pass
 
-    def webhook(self, title, desc, color, ss=None):
+    def webhook(self, title, desc, color, ss=None, imagePath=None):
         # Update logs
         logData = {
             "type": "webhook",
@@ -77,7 +81,7 @@ class log:
             "desc": desc,
             "color": colors[color]
         }
-        self.logVar.value = str(logData)
+        self.logQueue.put(logData)
 
         if not self.enableWebhook: return
 
@@ -87,7 +91,8 @@ class log:
             "desc": desc,
             "time": time.strftime("%H:%M:%S", time.localtime()),
             "colorHex": colors[color],
-            "ss": ss
+            "ss": ss,
+            "imagePath": imagePath
         }
 
         # Add the webhook message to the queue

@@ -11,6 +11,7 @@ import ast
 import subprocess
 from modules.misc import messageBox
 import copy
+import atexit
 
 def hasteCompensationThread(baseSpeed, isRetina, haste):
     from modules.submacros.hasteCompensation import HasteCompensation
@@ -30,16 +31,17 @@ def disconnectCheck(run, status, display_type):
             print("disconnected")
             run.value = 4
             time.sleep(300) #5 min cd to let the macro run through all 3 rejoins
+        time.sleep(1)
 
 #controller for the macro
-def macro(status, log, haste, updateGUI):
+def macro(status, logQueue, haste, updateGUI):
     import modules.misc.settingsManager as settingsManager
     import modules.macro as macroModule
-    macro = macroModule.macro(status, log, haste, updateGUI)
+    macro = macroModule.macro(status, logQueue, haste, updateGUI)
     #invert the regularMobsInFields dict
     #instead of storing mobs in field, store the fields associated with each mob
     regularMobData = {}
-    for k,v in macroModule.regularMobInFields.items():
+    for k,v in macroModule.regularMobTypesInFields.items():
         for x in v:
             if x in regularMobData:
                 regularMobData[x].append(k)
@@ -71,8 +73,78 @@ def macro(status, log, haste, updateGUI):
             if macro.hasRespawned("rejoin_every", macro.setdat["rejoin_every"]*60*60):
                 macro.rejoin("Rejoining (Scheduled)")
                 macro.saveTiming("rejoin_every")
+        
+        #auto field boost
+        if macro.setdat["Auto_Field_Boost"] and not macro.AFBLIMIT:
+            if macro.hasAFBRespawned("AFB_dice_cd", macro.setdat["AFB_rebuff"]*60) or macro.hasAFBRespawned("AFB_glitter_cd", macro.setdat["AFB_rebuff"]*60-30):
+                macro.AFB(gatherInterrupt=False)
+
         status.value = ""
         return returnVal
+    
+    def handleQuest(questGiver):
+        gatherFieldsList = []
+        gumdropGatherFieldsList = []
+        requireRedField = False
+        requireBlueField = False
+        requireField = False
+        requireBlueGumdropField = False
+        requireRedGumdropField = False
+        feedBees = []
+        setdatEnable = []
+
+        questObjective = macro.findQuest(questGiver)
+
+        if questObjective is None:  # Quest does not exist
+            questObjective = macro.getNewQuest(questGiver, False)
+        elif not len(questObjective):  # Quest completed
+            questObjective = macro.getNewQuest(questGiver, True)
+            macro.hourlyReport.addHourlyStat("quests_completed", 1)
+
+        for obj in questObjective:
+            objData = obj.split("_")
+            if objData[0] == "gather":
+                gatherFieldsList.append(objData[1])
+            elif objData[0] == "gathergoo":
+                if macro.setdat["quest_use_gumdrops"]:
+                    gumdropGatherFieldsList.append(objData[1])
+                else:
+                    gatherFieldsList.append(objData[1])
+            elif objData[0] == "kill":
+                if "ant" in objData[2] and objData[2] != "mantis":
+                    setdatEnable.append("ant_challenge")
+                    setdatEnable.append("ant_pass_dispenser")
+                else:
+                    setdatEnable.append(objData[2])
+            elif objData[0] == "token":
+                requireField = True
+            elif objData[0] == "token" and objData[1] == "honeytoken":
+                setdatEnable.append("honeytoken")
+            elif objData[0] == "fieldtoken" and objData[1] == "blueberry":
+                requireBlueField = True
+            elif objData[0] == "fieldtoken" and objData[1] == "strawberry":
+                requireRedField = True
+            elif objData[0] == "feed":
+                amount = int(''.join([x for x in objData[1] if x.isdigit()]))
+                feedBees.append((objData[2], amount))
+            elif objData[0] == "pollen" and objData[1] == "blue":
+                requireBlueField = True
+            elif objData[0] == "pollen" and objData[1] == "red":
+                requireRedField = True
+            elif objData[0] == "pollengoo" and objData[1] == "blue":
+                if macro.setdat["quest_use_gumdrops"]:
+                    requireBlueGumdropField = True
+                else:
+                    requireBlueField = True
+            elif objData[0] == "pollengoo" and objData[1] == "red":
+                if macro.setdat["quest_use_gumdrops"]:
+                    requireRedGumdropField = True
+                else:
+                    requireBlueField = True
+            elif objData[0] == "collect":
+                setdatEnable.append(objData[1].replace("-","_"))
+        
+        return setdatEnable, gatherFieldsList, gumdropGatherFieldsList, requireRedField, requireBlueField, feedBees, requireRedGumdropField, requireBlueGumdropField, requireField
 
     #macro.rejoin()
     while True:
@@ -83,22 +155,36 @@ def macro(status, log, haste, updateGUI):
 
         #handle quests
         questGatherFields = []
+        questGumdropGatherFields = []
+        redFieldNeeded = False
+        blueFieldNeeded = False
+        fieldNeeded = False
+        itemsToFeedBees = []
+        redGumdropFieldNeeded = False
+        blueGumdropFieldNeeded = False
 
-        if macro.setdat["polar_bear_quest"]:
-            questGiver = "polar bear"
-            questObjective = macro.findQuest(questGiver)
-            if questObjective is None: #quest does not exist
-                questObjective = macro.getNewQuest(questGiver, False)
-            elif not len(questObjective): #quest completed
-                questObjective = macro.getNewQuest(questGiver, True)
-                macro.incrementHourlyStat("quests_completed", 1)
-            else:
-                for obj in questObjective:
-                    objData = obj.split("_")
-                    if objData[0] == "gather":
-                        questGatherFields.append(objData[1])
-                    elif objData[0] == "kill":
-                        macro.setdat[objData[2]] = True
+        for questName, enabledKey in [
+            ("polar bear", "polar_bear_quest"),
+            ("honey bee", "honey_bee_quest"),
+            ("bucko bee", "bucko_bee_quest"),
+            ("riley bee", "riley_bee_quest")
+        ]:
+            if macro.setdat.get(enabledKey):
+                setdatEnable, gatherFields, gumdropFields, needsRed, needsBlue, feedBees, needsRedGumdrop, needsBlueGumdrop, needsField = handleQuest(questName)
+                for k in setdatEnable:
+                    macro.setdat[k] = True
+                questGatherFields.extend(gatherFields)
+                questGumdropGatherFields.extend(gumdropFields)
+                redFieldNeeded = redFieldNeeded or needsRed
+                blueFieldNeeded = blueFieldNeeded or needsBlue
+                itemsToFeedBees.extend(feedBees)
+                redGumdropFieldNeeded = redGumdropFieldNeeded or needsRedGumdrop
+                blueGumdropFieldNeeded = blueGumdropFieldNeeded or needsBlueGumdrop
+                fieldNeeded = fieldNeeded or needsField
+        
+        #feed bees for quest
+        for item, quantity in itemsToFeedBees:
+            macro.feedBee(item, quantity)
                     
         #collect
         for k, _ in macroModule.collectData.items():
@@ -118,41 +204,43 @@ def macro(status, log, haste, updateGUI):
             #check if its time to collect the previous item
             if blenderData["collectTime"] > -1 and time.time() > blenderData["collectTime"]:
                 runTask(macro.blender, args=(blenderData,))
+
         #planters
-        def goToNextCycle(cycle):
+        def goToNextCycle(cycle, slot):
             #go to the next cycle
-            for _ in range(6):
+            for _ in range(8):
                 cycle += 1
                 if cycle > 5:
                     cycle = 1
-                for i in range(3): #make sure the cycle is occupied
-                    if macro.setdat[f"cycle{cycle}_{i+1}_planter"] != "none" and macro.setdat[f"cycle{cycle}_{i+1}_field"] != "none":
-                        return cycle
+                if macro.setdat[f"cycle{cycle}_{slot+1}_planter"] != "none" and macro.setdat[f"cycle{cycle}_{slot+1}_field"] != "none":
+                    return cycle
             else: 
                 return False
+        
         planterDataRaw = None
         if macro.setdat["planters_mode"] == 1:
             with open("./data/user/manualplanters.txt", "r") as f:
                 planterDataRaw = f.read()
             f.close()
-            cycle = goToNextCycle(0)
-            #Ensure that there is at least 1 valid slot
-            if not planterDataRaw and cycle: #check if planter data exists
-                #place planters in cycle
-                runTask(macro.placePlanterCycle, args = (cycle,),resetAfter=False)
-            elif cycle: #planter data does exist, check if its time to collect them
+            #no data, place planters
+            if not planterDataRaw:
+                runTask(macro.placeAllPlantersInCycle, args = (1,),resetAfter=False)
+            #planter data does exist, check if its time to collect them
+            else: 
                 planterData = ast.literal_eval(planterDataRaw)
-                cycle = planterData["cycle"]
-                if time.time() > planterData["harvestTime"]:
-                    #Collect planters
-                    for i in range(len(planterData["planters"])):
+                #check all 3 slots
+                for i in range(3):
+                    cycle = planterData["cycles"][i]
+                    if time.time() > planterData["harvestTimes"][i] and planterData["planters"][i]:
+                        #Collect planters
                         runTask(macro.collectPlanter, args=(planterData["planters"][i], planterData["fields"][i]))
-                    settingsManager.clearFile("./data/user/manualplanters.txt")
-                    #go to the next cycle
-                    cycle = goToNextCycle(cycle)
-                    #place them
-                    runTask(macro.placePlanterCycle, args = (cycle,),resetAfter=False) 
-        #mob runs
+                        settingsManager.clearFile("./data/user/manualplanters.txt")
+                        #go to the next cycle
+                        cycle = goToNextCycle(cycle, i)
+                        #place them
+                        runTask(macro.placePlanterInCycle, args = (i, cycle, planterData),resetAfter=False) 
+        #mob run
+        print(macro.setdat)
         for mob, fields in regularMobData.items():
             if not macro.setdat[mob]: continue
             for f in fields:
@@ -185,6 +273,9 @@ def macro(status, log, haste, updateGUI):
                 boostedField = runTask(macro.collect, args=(k,))
                 if macro.setdat["gather_boosted"] and boostedField:
                     boostedGatherFields.append(boostedField)
+
+        allGatheredFields = []
+        allGatheredFields.extend(boostedGatherFields)
         #gather in boosted fields
         #gather for the entire 15min duration
         for field in boostedGatherFields:
@@ -199,26 +290,81 @@ def macro(status, log, haste, updateGUI):
                 gatherFields.append(macro.setdat["fields"][i])
         
         #add planter gather fields
-        planterGatherFields = ast.literal_eval(planterDataRaw)["gatherFields"] if planterDataRaw else []
+        if planterDataRaw:
+            planterGatherFields = [x for x in ast.literal_eval(planterDataRaw)["gatherFields"] if x]
+        else:
+            planterGatherFields = []
         gatherFields.extend([x for x in planterGatherFields if x not in gatherFields])
 
         #remove fields that are already in boosted fields
         gatherFields = [x for x in gatherFields if not x in boostedGatherFields]
+
+        allGatheredFields.extend(gatherFields)
         
         for field in gatherFields:
             runTask(macro.gather, args=(field,), resetAfter=False)
 
         #do quests
-        questGatherFields = [x for x in questGatherFields if not (x in gatherFields or x in boostedGatherFields)]
-        print(questGatherFields)
+
+        blueFields = ["blue flower", "bamboo", "pine tree", "stump"]
+        redFields = ["mushroom", "strawberry", "rose", "pepper"]
+
         #setup the override
         questGatherOverrides = {}
         if macro.setdat["quest_gather_mins"]:
             questGatherOverrides["mins"] = macro.setdat["quest_gather_mins"]
         if macro.setdat["quest_gather_return"] != "no override":
             questGatherOverrides["return"] = macro.setdat["quest_gather_return"]
+            
+
+        #do goo-field gathers first
+        if blueGumdropFieldNeeded:
+            for f in blueFields:
+                if f in questGumdropGatherFields:
+                    break
+            else:
+                questGumdropGatherFields.append("pine tree")
+        
+        if redGumdropFieldNeeded:
+            for f in redFields:
+                if f in questGumdropGatherFields:
+                    break
+            else:
+                questGumdropGatherFields.append("rose")
+
+        for field in questGumdropGatherFields:
+            runTask(macro.gather, args=(field, questGatherOverrides, True), resetAfter=False)
+        allGatheredFields.extend(questGumdropGatherFields)
+
+
+        #do regular gathers
+        questGatherFields = [x for x in questGatherFields if not (x in allGatheredFields)]
         for field in questGatherFields:
             runTask(macro.gather, args=(field, questGatherOverrides), resetAfter=False)
+        allGatheredFields.extend(questGatherFields)
+
+        #do required blue/red fields
+        if blueFieldNeeded:
+            for f in blueFields:
+                if f in allGatheredFields:
+                    break
+            else:
+                field = "pine tree"
+                allGatheredFields.append(field)
+                runTask(macro.gather, args=(field, questGatherOverrides), resetAfter=False)
+        
+        if redFieldNeeded:
+            for f in redFields:
+                if f in allGatheredFields:
+                    break
+            else:
+                field = "rose"
+                allGatheredFields.append(field)
+                runTask(macro.gather, args=(field, questGatherOverrides), resetAfter=False)
+        
+        if fieldNeeded and not allGatheredFields:
+            runTask(macro.gather, args=("pine tree",), resetAfter=False)
+        
         
 
 
@@ -246,6 +392,7 @@ if __name__ == "__main__":
     import modules.misc.settingsManager as settingsManager
     from modules.discord_bot.discordBot import discordBot
     from modules.submacros.convertAhkPattern import ahkPatternToPython
+    from modules.submacros.stream import cloudflaredStream
     import os
 
     if sys.platform == "darwin" and sys.version_info[1] <= 7:
@@ -263,11 +410,10 @@ if __name__ == "__main__":
     run = multiprocessing.Value('i', 3)
     updateGUI = multiprocessing.Value('i', 0)
     status = manager.Value(ctypes.c_wchar_p, "none")
-    log = manager.Value(ctypes.c_wchar_p, "")
+    logQueue = manager.Queue()
     haste = multiprocessing.Value('d', 0)
-    prevLog = ""
     watch_for_hotkeys(run)
-    logger = logModule.log(log, False, None, blocking=True)
+    logger = logModule.log(logQueue, False, None, blocking=True)
 
     #update settings
     profileSettings = settingsManager.loadSettings()
@@ -279,16 +425,6 @@ if __name__ == "__main__":
     generalSettingsReference = settingsManager.readSettingsFile("./data/default_settings/generalsettings.txt")
     settingsManager.saveDict("../settings/generalsettings.txt", {**generalSettingsReference, **generalSettings})
 
-    #check if the user updated the paths (update 6)
-    #TODO: remove this on the actual release
-    with open("../settings/paths/cannon_to_field/blue flower.py", "r") as f:
-        blueFlowerPath = f.read()
-    f.close()
-
-    compareBlueFlowerPath = '\nself.keyboard.press(",")\nself.keyboard.press(",")\nself.keyboard.slowPress("e")\nsleep(0.08)\nself.keyboard.keyDown("w")\nself.keyboard.slowPress("space")\nself.keyboard.slowPress("space")\nsleep(3)\nself.keyboard.keyUp("w")\nself.keyboard.slowPress("space")\nsleep(0.8)'
-    if blueFlowerPath != compareBlueFlowerPath:
-        messageBox.msgBox("Warning", "It looks like you did not update your paths for update 6. The macro will not work properly. Refer to update 6's instructions in #updates")
-    
     #convert ahk pattern
     ahkPatterns = [x for x in os.listdir("../settings/patterns") if ".ahk" in x]
     for pattern in ahkPatterns:
@@ -301,16 +437,30 @@ if __name__ == "__main__":
         with open(f"../settings/patterns/{patternName}.py", "w") as f:
             f.write(python)
         f.close()
+    
+    #setup stream class
+    stream = cloudflaredStream()
 
+    def onExit():
+        stopApp()
+        if discordBotProc and discordBotProc.is_alive():
+            discordBotProc.terminate()
+            discordBotProc.join()
+        
     def stopApp(page= None, sockets = None):
         global stopThreads
         stopThreads = True
         print("stop")
         #print(sockets)
-        macroProc.kill()
-        if discordBotProc.is_alive(): discordBotProc.kill()
+        if macroProc.is_alive():
+            macroProc.kill()
+            macroProc.join()
+        stream.stop()
+        #if discordBotProc.is_alive(): discordBotProc.kill()
         keyboardModule.releaseMovement()
         mouse.mouseUp()
+    
+    atexit.register(onExit)
         
     #setup and launch gui
     gui.run = run
@@ -332,47 +482,66 @@ if __name__ == "__main__":
                 \nTVisit step 6 of the macro installation guide in the discord for instructions", title="Wrong Color Profile")
         except:
             pass
+
+    discordBotProc = None
+    prevDiscordBotToken = None
+
     while True:
-        eel.sleep(0.2)
+        eel.sleep(0.5)
+        setdat = settingsManager.loadAllSettings()
+
+        #discord bot. Look for changes in the bot token
+        currentDiscordBotToken = setdat["discord_bot_token"]
+        if setdat["discord_bot"] and currentDiscordBotToken and currentDiscordBotToken != prevDiscordBotToken:
+            if discordBotProc is not None and discordBotProc.is_alive():
+                print("Detected change in discord bot token, killing previous bot process")
+                discordBotProc.terminate()
+                discordBotProc.join()
+            discordBotProc = multiprocessing.Process(target=discordBot, args=(currentDiscordBotToken, run, status), daemon=True)
+            prevDiscordBotToken = currentDiscordBotToken
+            discordBotProc.start()
+
         if run.value == 1:
             #create and set webhook obj for the logger
-            setdat = settingsManager.loadAllSettings()
             logger.enableWebhook = setdat["enable_webhook"]
             logger.webhookURL = setdat["webhook_link"]
             haste.value = setdat["movespeed"]
             stopThreads = False
-            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste, updateGUI), daemon=True)
+
+            #stream
+            def waitForStreamURL():
+                #wait for up to 15 seconds for the public link
+                for _ in range(150):
+                    time.sleep(0.1)
+                    if stream.publicURL:
+                        logger.webhook("Stream Started", f'Stream URL: {stream.publicURL}', "purple")
+                        return
+            
+                logger.webhook("", f'Stream could not start. Check terminal for more info', "red")
+
+            streamLink = None
+            if setdat["enable_stream"]:
+                logger.webhook("", "Starting Stream...", "light blue")
+                streamLink = stream.start(setdat["stream_resolution"])
+                Thread(target=waitForStreamURL, daemon=True).start()
+
+
+            #macro proc
+            macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
             macroProc.start()
+
             #disconnect detection
             disconnectThread = Thread(target=disconnectCheck, args=(run, status, screenInfo["display_type"]))
             disconnectThread.daemon = True
             disconnectThread.start()
+
             #haste compensation
             if setdat["haste_compensation"]:
                 hasteCompThread = Thread(target=hasteCompensationThread, args=(setdat["movespeed"], screenInfo["display_type"] == "retina", haste,))
                 hasteCompThread.daemon = True
                 hasteCompThread.start()
 
-            #reset hourly report stats
-            hourlyReportMainData = settingsManager.readSettingsFile("data/user/hourly_report_main.txt")
-            for k in hourlyReportMainData:
-                hourlyReportMainData[k] = 0   
-            settingsManager.saveDict(f"data/user/hourly_report_main.txt", hourlyReportMainData)
-
-            hourlyReportBgData = settingsManager.readSettingsFile("data/user/hourly_report_bg.txt")
-            for k in hourlyReportBgData:
-                if isinstance(hourlyReportBgData[k], list):
-                    hourlyReportBgData[k] = []
-                else:
-                    hourlyReportBgData[k] = 0   
-            settingsManager.saveDict(f"data/user/hourly_report_bg.txt", hourlyReportBgData)
-
-            #discord bot
-            discordBotProc = multiprocessing.Process(target=discordBot, args=(setdat["discord_bot_token"], run, status), daemon=True)
-            if setdat["discord_bot"]:
-                discordBotProc.start()
-            if setdat["enable_webhook"]:
-                logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
+            logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
             run.value = 2
             gui.toggleStartStop()
         elif run.value == 0:
@@ -388,20 +557,18 @@ if __name__ == "__main__":
             appManager.closeApp("Roblox")
             keyboardModule.releaseMovement()
             mouse.mouseUp()
-            macroProc = multiprocessing.Process(target=macro, args=(status, log, haste, updateGUI), daemon=True)
+            macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
             macroProc.start()
             run.value = 2
 
         #detect a new log message
-        if log.value != prevLog:
-            #get the logData and format the message based on its type
-            logData = ast.literal_eval(log.value)
+        if not logQueue.empty():
+            logData = logQueue.get()
             if logData["type"] == "webhook": #webhook
                 msg = f"{logData['title']}<br>{logData['desc']}"
 
             #add it to gui
             gui.log(logData["time"], msg, logData["color"])
-            prevLog = log.value
         
         #detect if the gui needs to be updated
         if updateGUI.value:

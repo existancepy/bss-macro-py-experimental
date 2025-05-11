@@ -52,6 +52,7 @@ const collectEmojis = {
     wealth_clock: "🕒",
     blueberry_dispenser: "🔵",
     strawberry_dispenser: "🍓",
+    coconut_dispenser: "🥥",
     royal_jelly_dispenser: "💎",
     treat_dispenser: "🦴",
     ant_pass_dispenser: "🎫",
@@ -68,7 +69,10 @@ const collectEmojis = {
     memory_match: "🍍",
     mega_memory_match: "🌟",
     extreme_memory_match: "🌶️",
-    winter_memory_match: "❄️"
+    winter_memory_match: "❄️",
+    honeystorm: "🟧",
+    Auto_Field_Boost: "🎲"
+    
 
 }
 
@@ -160,4 +164,13 @@ const stickerStackIcon = {
 
 const questGiverEmojis = {
     polar_bear_quest: "🐻‍❄️",
+    honey_bee_quest: "🐝",
+    bucko_bee_quest: "💙",
+    riley_bee_quest: "❤️"
+}
+
+const diceIcons = {
+    field_dice: "field_dice",
+    smooth_dice: "smooth_dice",
+    loaded_dice: "loaded_dice"
 }

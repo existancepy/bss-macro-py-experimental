@@ -4,78 +4,8 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Hourly Report</title>
+        <link rel="stylesheet" href="style.css">
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
-            @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
-
-            .inter-bold {
-                font-family: 'Montserrat', sans-serif;
-                font-optical-sizing: auto;
-                font-weight: 700;
-                font-style: normal;
-            }
-
-            .inter-semibold {
-                font-family: 'Montserrat', sans-serif;
-                font-optical-sizing: auto;
-                font-weight: 600;
-                font-style: normal;
-            }
-
-            .inter-medium {
-                font-family: 'Montserrat', sans-serif;
-                font-optical-sizing: auto;
-                font-weight: 400;
-                font-style: normal;
-            }
-
-            .inter-regular {
-                font-family: 'Montserrat', sans-serif;
-                font-optical-sizing: auto;
-                font-weight: 300;
-                font-style: normal;
-            }
-
-            /*Responsive font sizes*/
-            @media (min-width: 2000px) {
-                html {
-                    font-size: 16px;
-                }
-            }
-
-            @media (max-width: 2000px) {
-                html {
-                    font-size: 16px;
-                }
-            }
-
-            @media (max-width: 1200px) {
-                html {
-                    font-size: 11px;
-                }
-            }
-
-            @media (max-width: 900px) {
-                html {
-                    font-size: 9.5px;
-                }
-            }
-
-            @media (max-width: 700px) {
-                html {
-                    font-size: 8px;
-                }
-            }
-
-            @media (max-width: 560px) {
-                html {
-                    font-size: 7px;
-                }
-            }
-
-            h1, h2, h3, body{
-                all: unset;
-            }
 
             .canvas1{
                 height: 38vh;
@@ -88,19 +18,6 @@
                 gap: 0.4rem;
                 font-size: 1.1rem;
                 margin-bottom: 1rem;
-            }
-
-            aside .title{
-                font-size: 1.5rem; 
-                margin-top: 2.5rem; 
-                display: inline-block; 
-                margin-bottom: 0.5rem;
-            }
-
-            .aside-stat{
-                display: flex; 
-                align-items: center;
-                margin-top: 1.2rem;
             }
 
             #planter-stats{
@@ -176,7 +93,7 @@
                 align-items: center;
                 justify-content: center;
                 text-align: center;
-                font-size: 0.9rem;
+                font-size: 0.95rem;
             }
             .chart canvas {
                 position: absolute;
@@ -195,30 +112,60 @@
                 margin-top: 0.9rem;
                 width: 1.5rem;
             }
+
+            .buff-uptime-container img{
+                width: 3rem;
+                height: 3rem;
+            }
+
+            .buff-uptime-container .label{
+                display: flex;
+                gap: 1rem;
+                font-size: 1rem;
+                align-items: center;
+                margin-bottom: 0.5rem;
+            }
         </style>
     </head>
     <body style="background-color: #0E0F13; color: #FFFFFF; display: flex; justify-content: space-between;">
         <div style="padding: 1.6rem 3rem 0 2.5rem; flex-grow: 1; height: 96vh; display: flex; flex-direction: column;">
-            <div style="display: flex; justify-content: space-between; font-size:1.6rem; margin-top: 1rem;">
-                <div style="width: 60%;">
-                    <h2 class="inter-bold" style="margin-bottom: 1rem; display: inline-block;">Backpack</h2>
+            <div style="font-size:1.6rem; margin-top: 1rem;">
+                    <h2 class="inter-bold" style="margin-bottom: 2rem; display: inline-block;">Backpack</h2>
                     <div class="canvas1">
                         <canvas id="backpackChart"></canvas>
                     </div>
-                </div>
-                <div style="flex-grow: 1; margin-left: 6rem;">
+                <!-- <div style="flex-grow: 1; margin-left: 6rem;">
                     <h2 class="inter-bold" style="margin-bottom: 1rem; display: inline-block;">Task Times</h2>
                     <div id="task-times-legend" class="inter-semibold">
                     </div>
                     <div style="height: calc(38vh - 2rem * 4.5);">
                         <canvas id="taskTimesChart"></canvas>
                     </div>
+                </div> -->
+            </div>
+            <div style="font-size:1.6rem; margin-top: 3rem;">
+                <h2 class="inter-bold" style="margin-bottom: 1rem; display: inline-block;">Buff Uptime</h2>
+                <div class="buff-uptime-container">
+                    <div class="label inter-semibold">
+                        <img src="assets/boost_buff.png">
+                        <div style="display: flex; flex-direction: column; gap: 0.1rem;">
+                            <p style="color: #56a4e4;">-blue-boost-avg</p>
+                            <p style="color: #e46156;">-red-boost-avg</p>
+                            <p>-white-boost-avg</p>
+                        </div>
+                    </div>
+                    <div class="canvas2">
+                        <canvas id="boostBuffChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
+        </div>
         <aside style="background-color: #17191D; width: 25%; height: 100vh; box-sizing:border-box; padding-left: 2rem; padding-right: 1.5rem;">
-            <h3 class="inter-semibold title">Planters</h3>
-            <div id = "planter-stats">
+            <div id="planter-section">
+                <h3 class="inter-semibold title">Planters</h3>
+                <div id = "planter-stats">
+                </div>
             </div>
             <h3 class="inter-semibold title">Buffs</h3>
             <div id = "buffs" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.2rem; width: 100%;">
@@ -249,28 +196,8 @@
         </aside>
     </body>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
     <script>
-        function leadingZero(inp){
-            if (inp < 10) return `0${inp}`
-            return inp
-        }
-
-        function millify(n){
-            if (!n) return 0
-            var millnames = ['','K','M','B','T','Qd']
-            var digitCount = Math.floor(Math.log10(Math.abs(n))/3)
-            var millidx = Math.max(0,Math.min(millnames.length -1, digitCount))
-
-            return `${(n / 10**(3 * millidx)).toFixed(1)}${millnames[millidx]}`
-        }
-
-        Chart.defaults.font.size = 20
-        Chart.defaults.animation = false
-        Chart.defaults.color = "#818285"
-        const hourNum = new Date().getHours()-1
-        const hour = leadingZero(hourNum)
-        const hourArray = Array.from(Array(61).keys())
-        //var backpackPerMin = Array.from({length: 40}, () => Math.floor(Math.random() * 100))
         var backpackPerMin = []
         for(let i = backpackPerMin.length; i < 60; i++){
             backpackPerMin.unshift(0)
@@ -330,7 +257,9 @@
                 ticks: {
                     maxTicksLimit: 6,
                     autoSkip: false,
-                }
+                },
+                min: 0,
+                max: 100,
               },
               x: {
                 ticks: {
@@ -360,41 +289,41 @@
             return `${minutes}m ${seconds}s`
         }
 
-        const taskTimesColors = ["#A909F9","#C95EFF","#DFA0FF","#EDC9FF"]
-        const tasks = ["Gathering", "Converting", "Bug Runs", "Misc"]
-        const taskTimes = []
-        const taskLegendEle = document.getElementById("task-times-legend")
-        for (let i = 0; i < taskTimes.length; i++){
-            taskLegendEle.innerHTML += `
-            <div style="display: flex; align-items: center;">
-                <div style="height: 1rem; aspect-ratio: 1/1; background-color: ${taskTimesColors[i]}; margin-right: 0.9rem;"></div>
-                ${tasks[i]}:<div style="margin-left:1rem">${convertMins(taskTimes[i])}</div>
-            </div>
-            `
-        }
-        new Chart(document.getElementById('taskTimesChart'), {
-            type: 'doughnut',
-            data: {
-                labels: tasks,
-                datasets: [
-                    {
-                        data: taskTimes,
-                        backgroundColor: taskTimesColors,
-                        borderWidth: 0
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins:{
-                    legend: {
-                        display: false
-                    },
-                },
-                cutout: "65%"
-            }
-        })
+        // const taskTimesColors = ["#A909F9","#C95EFF","#DFA0FF","#EDC9FF"]
+        // const tasks = ["Gathering", "Converting", "Bug Runs", "Misc"]
+        // const taskTimes = []
+        // const taskLegendEle = document.getElementById("task-times-legend")
+        // for (let i = 0; i < taskTimes.length; i++){
+        //     taskLegendEle.innerHTML += `
+        //     <div style="display: flex; align-items: center;">
+        //         <div style="height: 1rem; aspect-ratio: 1/1; background-color: ${taskTimesColors[i]}; margin-right: 0.9rem;"></div>
+        //         ${tasks[i]}:<div style="margin-left:1rem">${convertMins(taskTimes[i])}</div>
+        //     </div>
+        //     `
+        // }
+        // new Chart(document.getElementById('taskTimesChart'), {
+        //     type: 'doughnut',
+        //     data: {
+        //         labels: tasks,
+        //         datasets: [
+        //             {
+        //                 data: taskTimes,
+        //                 backgroundColor: taskTimesColors,
+        //                 borderWidth: 0
+        //             }
+        //         ]
+        //     },
+        //     options: {
+        //         responsive: true,
+        //         maintainAspectRatio: false,
+        //         plugins:{
+        //             legend: {
+        //                 display: false
+        //             },
+        //         },
+        //         cutout: "65%"
+        //     }
+        // })
 
         //planters
         function secondsToMinsAndHours(time){
@@ -432,6 +361,11 @@
         const planterNames = []
         const planterTimes = []
         const planterFields = []
+        if (planterNames.length){
+            document.getElementById("planter-section").style.display = "block"
+        }else{
+            document.getElementById("planter-section").style.display = "none"
+        }
         for(let i=0; i < planterNames.length; i++){
             const imgPath = `assets/${planterNames[i].replaceAll(" ", "_")}_planter.png`
             const nectarPath = `assets/${fieldNectarIcons[planterFields[i].replaceAll(" ", "_")]}.png`
@@ -837,12 +771,70 @@
             scaleLength: false,
             animate: false,
             lineCap: "square",
-            lineWidth: 7,
+            lineWidth: 5,
             size: nectarChartSize,
             barColor: nectarColors[i],
             trackColor: `${nectarColors[i]}80`
         });
     }
+
+    const blueBoostBuffData = []
+    const redBoostBuffData = []
+    const whiteBoostBuffData = []
+
+    makeStackableBuffChart(
+        document.getElementById("boostBuffChart"), 
+        [{
+            data: blueBoostBuffData,
+            fill: false,
+            borderColor: 'rgb(86,164,228)',
+            tension: 0.3,
+            fill: {
+                target: 'origin',
+                above: (context) => {
+                    const {ctx, chartArea} = context.chart
+                    let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top)
+                    gradient.addColorStop(0, 'rgba(86,164,228,0)')
+                    gradient.addColorStop(1, 'rgba(86,164,228,0.4)')
+                    return gradient
+                }
+            }
+        },
+        {
+            data: redBoostBuffData,
+            fill: false,
+            borderColor: 'rgb(228,97,86)',
+            tension: 0.3,
+            fill: {
+                target: 'origin',
+                above: (context) => {
+                    const {ctx, chartArea} = context.chart
+                    let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top)
+                    gradient.addColorStop(0, 'rgba(228,97,86,0)')
+                    gradient.addColorStop(1, 'rgba(228,97,86,0.4)')
+                    return gradient
+                }
+            }
+        },
+        {
+            data: whiteBoostBuffData,
+            fill: false,
+            borderColor: 'rgb(250,250,250)',
+            tension: 0.3,
+            fill: {
+                target: 'origin',
+                above: (context) => {
+                    const {ctx, chartArea} = context.chart
+                    let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top)
+                    gradient.addColorStop(0, 'rgba(250,250,250,0)')
+                    gradient.addColorStop(1, 'rgba(250,250,250,0.4)')
+                    return gradient
+                }
+            }
+        }
+        ]
+        
+    )
 
     </script>
 </html>
