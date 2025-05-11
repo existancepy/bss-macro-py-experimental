@@ -366,18 +366,18 @@ class cloudflaredStream:
         try:
             from waitress import serve
             print("Starting server with Waitress WSGI server")
-            serve(self.app, host='0.0.0.0', port=5000, threads=4)
+            serve(self.app, host='0.0.0.0', port=8081, threads=4)
         except ImportError:
             # Fall back to Werkzeug server
             from werkzeug.serving import run_simple
             print("Starting server with Werkzeug (install waitress for better performance)")
-            run_simple('0.0.0.0', 5000, self.app, threaded=True, use_reloader=False)
+            run_simple('0.0.0.0', 8081, self.app, threaded=True, use_reloader=False)
     
     def _run_cloudflared(self):
         time.sleep(2)
         print("Launching Cloudflare tunnel")
         self.cfProc = subprocess.Popen(
-            ["cloudflared", "tunnel", "--url", "http://localhost:5000"],
+            ["cloudflared", "tunnel", "--url", "http://localhost:8081"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True
@@ -402,7 +402,7 @@ class cloudflaredStream:
         if not self.serverThread or not self.serverThread.is_alive():
             self.serverThread = threading.Thread(target=self._run_server, daemon=True)
             self.serverThread.start()
-            print(f"Stream started on http://localhost:5000 (Target: {self.target_fps} FPS)")
+            print(f"Stream started on http://localhost:8081 (Target: {self.target_fps} FPS)")
             
         #start the Cloudflare tunnel
         threading.Thread(target=self._run_cloudflared, daemon=True).start()
