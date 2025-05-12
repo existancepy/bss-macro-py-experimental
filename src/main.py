@@ -117,7 +117,13 @@ def macro(status, logQueue, haste, updateGUI):
                 else:
                     setdatEnable.append(objData[2])
             elif objData[0] == "token":
-                requireField = True
+                if questGiver == "riley bee":
+                    requireRedField = True
+                elif questGiver == "bucko bee":
+                    requireBlueField = True
+                else:
+                    requireField = True
+
             elif objData[0] == "token" and objData[1] == "honeytoken":
                 setdatEnable.append("honeytoken")
             elif objData[0] == "fieldtoken" and objData[1] == "blueberry":
