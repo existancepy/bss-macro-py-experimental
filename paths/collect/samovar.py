@@ -4,7 +4,7 @@ def jump(self):
     sleep(0.23)
     self.keyboard.keyUp("w")
 
-exec(open("../settings/paths/cannon_to_field/stump.py").read())
+self.runPath("cannon_to_field/stump")
 self.keyboard.press(',')
 self.keyboard.press(',')
 self.keyboard.walk("w",5)

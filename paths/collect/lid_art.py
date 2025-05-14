@@ -4,7 +4,7 @@ def jump(self):
     sleep(0.25)
     self.keyboard.keyUp("w")
 
-exec(open("../settings/paths/cannon_to_field/mountain top.py").read())
+self.runPath("cannon_to_field/mountain top")
 for _ in range(4):
     self.keyboard.press(",")
 self.keyboard.walk("w",3)

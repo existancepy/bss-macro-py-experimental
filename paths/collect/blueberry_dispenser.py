@@ -1,4 +1,4 @@
-exec(open("../settings/paths/cannon_to_field/blue flower.py").read())
+self.runPath("cannon_to_field/blue flower")
 for _ in range(2):
     self.keyboard.press(".")
 self.keyboard.press("space")

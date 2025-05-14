@@ -506,7 +506,7 @@ class macro:
     #file must exist: if set to False, will not attempt to run the file if it doesnt exist
     def runPath(self, name, fileMustExist = True):
         ws = self.setdat["movespeed"]
-        path = f"../settings/paths/{name}"
+        path = f"../paths/{name}"
         #try running a automator workflow
         #if it doesnt exist, run the .py file instead
 
@@ -2158,7 +2158,7 @@ class macro:
         
         #run the dodge pattern
         #similar to the search pattern, between each line of code, check if vic has been defeated/player died
-        pathLines = open(f"../settings/paths/vic/kill_vic/{self.vicField}.py").read().split("\n")
+        pathLines = open(f"../paths/vic/kill_vic/{self.vicField}.py").read().split("\n")
         loop = True
         self.died = False
         st = time.time() 
@@ -2310,7 +2310,7 @@ class macro:
         self.goToField(field, "north")
         #move from center of field to planter spot
         finalKey = None
-        path = f"../settings/paths/planters/{field}.py"
+        path = f"../paths/planters/{field}.py"
         if os.path.isfile(path): #not all fields have a planter path
             exec(open(path).read())
         #go to the planter
