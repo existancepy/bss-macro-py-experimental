@@ -3022,6 +3022,11 @@ class macro:
         maxArea = 80000      #too big = background or large UI elements
         maxHeight = 150       #cap height to filter out title bar
 
+        if self.display_type != "retina":
+            minArea //= 2
+            maxArea //= 2
+            maxHeight //= 2
+
         completedObjectives = []
         incompleteObjectives = []
         i = 0
@@ -3038,6 +3043,15 @@ class macro:
                 textChunk.append(self.convertCyrillic(line[1][0].strip().lower()))
             textChunk = ''.join(textChunk)
             print(textChunk)
+
+            #detect amount of items to feed
+            objectiveData = objectives[i].split("_")
+            if objectiveData[0] == "feed":
+                amount = ''.join([x for x in textChunk if x.isdigit()])
+                if amount:
+                    objectiveData[1] = amount
+                    objectives[i] = "_".join(objectiveData)
+
             if "complete" in textChunk:
                 completedObjectives.append(objectives[i])
                 color = (0, 255, 0)  #green

@@ -101,8 +101,8 @@ gather_bamboo
 -bombard
 token_bomb
 kill_10_rhinobeetle
-kill_20_ant
-kill_10_armyant
+kill_ant
+kill_armyant
 
 -booster
 token_blueboost
@@ -132,9 +132,9 @@ gather_pine tree
 -picnic
 gather_blue flower
 fieldtoken_blueberry
-feed_25*_blueberry
-kill_5*_ant
-kill_5*_armyant
+feed_*_blueberry
+kill_ant
+kill_armyant
 
 -pine trees
 gather_pine tree
@@ -196,7 +196,7 @@ gather_mushroom
 -picnic
 gather_mushroom
 fieldtoken_strawberry
-feed_30*_strawberry
+feed_*_strawberry
 kill_15*_fireant
 
 -pollen

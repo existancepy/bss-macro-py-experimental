@@ -3,6 +3,7 @@ import modules.screen.ocr as ocr
 from PIL import Image
 import numpy as np
 
+display_type = "built-in"
 #Load quest data from quest_data.txt
 quest_data = {}
 quest_bear = ""
@@ -37,10 +38,10 @@ objectives = quest_data[questGiver][questTitle]
 
 #merge the texts into chunks. Using those chunks, compare it with the known objectives
 #assume that the merging is done properly, so 1st chunk = 1st objective
-screen = cv2.imread("quest2.png")
+screen = cv2.imread("quest.png")
 #crop it below the quest title
 questTitleYPos = 80
-screen = screen[questTitleYPos: , : ]
+# screen = screen[questTitleYPos: , : ]
 
 screenOriginal = np.copy(screen)
 #convert to grayscale
@@ -48,7 +49,7 @@ screenGray = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
 img = cv2.threshold(screenGray, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
 img = cv2.GaussianBlur(img, (5, 5), 0)
 #dilute the image so that texts can be merged into chunks
-kernelSize = 10
+kernelSize = 10 if display_type == "retina" else 7
 kernel = np.ones((kernelSize, kernelSize), np.uint8) 
 img = cv2.dilate(img, kernel, iterations=1)
 
@@ -58,6 +59,12 @@ contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 minArea = 10000       #too small = noise
 maxArea = 80000      #too big = background or large UI elements
 maxHeight = 150       #cap height to filter out title bar
+
+if display_type == "built-in":
+    minArea //= 2
+    maxArea //= 2
+    maxHeight //= 2
+
 
 completedObjectives = []
 incompleteObjectives = []
