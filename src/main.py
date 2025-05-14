@@ -101,6 +101,9 @@ def macro(status, logQueue, haste, updateGUI):
             questObjective = macro.getNewQuest(questGiver, True)
             macro.hourlyReport.addHourlyStat("quests_completed", 1)
 
+        if questObjective is None: #still not able to find quest
+            return setdatEnable, gatherFieldsList, gumdropGatherFieldsList, requireRedField, requireBlueField, feedBees, requireRedGumdropField, requireBlueGumdropField, requireField
+
         for obj in questObjective:
             objData = obj.split("_")
             if objData[0] == "gather":
@@ -111,7 +114,7 @@ def macro(status, logQueue, haste, updateGUI):
                 else:
                     gatherFieldsList.append(objData[1])
             elif objData[0] == "kill":
-                if "ant" in objData[2] and objData[2] != "mantis":
+                if "ant" in objData[1] and objData[1] != "mantis":
                     setdatEnable.append("ant_challenge")
                     setdatEnable.append("ant_pass_dispenser")
                 else:
@@ -131,7 +134,10 @@ def macro(status, logQueue, haste, updateGUI):
             elif objData[0] == "fieldtoken" and objData[1] == "strawberry":
                 requireRedField = True
             elif objData[0] == "feed":
-                amount = int(''.join([x for x in objData[1] if x.isdigit()]))
+                if objData[1] == "*":
+                    amount = 25
+                else:
+                    amount = int(objData[1])
                 feedBees.append((objData[2], amount))
             elif objData[0] == "pollen" and objData[1] == "blue":
                 requireBlueField = True
