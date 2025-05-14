@@ -135,6 +135,10 @@ class BuffDetector():
 
             cropX = int(rx)
             cropY = int(ry)
+
+            imgHeight, imgWidth, *_ = screen.shape
+            cropX = np.clip(cropX, 0, w_img - self.buffSize - 5)
+            cropY = np.clip(cropY, 0, h_img - self.buffSize - 2)
             
             #buff is either present or not, non stackable (0 or 1)
             if not stackable:
@@ -143,7 +147,7 @@ class BuffDetector():
                     fullBuffImgBGR = cv2.cvtColor(screen, cv2.COLOR_RGBA2BGR)[cropY:cropY+self.buffSize+2, cropX:cropX+self.buffSize+5]
                     cv2.imwrite(f"{buff}-{time.time()}.png", fullBuffImgBGR)
                 continue
-
+                
             fullBuffImgBGR = cv2.cvtColor(screen, cv2.COLOR_RGBA2BGR)[cropY:cropY+self.buffSize+2, cropX:cropX+self.buffSize+5]
             if save:
                 cv2.imwrite(f"{buff}-{time.time()}.png", fullBuffImgBGR)
