@@ -101,6 +101,9 @@ def macro(status, logQueue, haste, updateGUI):
             questObjective = macro.getNewQuest(questGiver, True)
             macro.hourlyReport.addHourlyStat("quests_completed", 1)
 
+        if questObjective is None: #still not able to find quest
+            return setdatEnable, gatherFieldsList, gumdropGatherFieldsList, requireRedField, requireBlueField, feedBees, requireRedGumdropField, requireBlueGumdropField, requireField
+
         for obj in questObjective:
             objData = obj.split("_")
             if objData[0] == "gather":
