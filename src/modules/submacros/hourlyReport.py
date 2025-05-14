@@ -137,8 +137,8 @@ class BuffDetector():
             cropY = int(ry)
 
             imgHeight, imgWidth, *_ = screen.shape
-            cropX = np.clip(cropX, 0, w_img - self.buffSize - 5)
-            cropY = np.clip(cropY, 0, h_img - self.buffSize - 2)
+            cropX = np.clip(cropX, 0, imgHeight - self.buffSize - 5)
+            cropY = np.clip(cropY, 0, imgWidth - self.buffSize - 2)
             
             #buff is either present or not, non stackable (0 or 1)
             if not stackable:
