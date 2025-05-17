@@ -149,6 +149,12 @@ class BuffDetector():
                 continue
                 
             fullBuffImgBGR = cv2.cvtColor(screen, cv2.COLOR_RGBA2BGR)[cropY:cropY+self.buffSize+2, cropX:cropX+self.buffSize+5]
+
+            if fullBuffImgBGR.size == 0:
+                print(f"Warning: Empty image for buff '{buff}' at ({cropX}, {cropY})")
+                buffQuantity.append("1")  # default fallback or "0" if appropriate
+                continue
+            
             if save:
                 cv2.imwrite(f"{buff}-{time.time()}.png", fullBuffImgBGR)
             #filter out everything but the text

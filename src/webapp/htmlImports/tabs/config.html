@@ -196,6 +196,18 @@
                 },
             ])
 
+            buildStandardContainer(parentOther, "Low Performance", "", [
+                {
+                    id: "low_performance",
+                    title: "Enable Low Performance mode",
+                    desc: "Reduce the number of the macro's background processes",
+                    type: {
+                        name: "checkbox",
+                        triggerFunction: saveGeneralTriggerFunction
+                    }
+                },
+            ])
+
         </script>
     </div>
     <div style="width: 74%; overflow-y: auto; height: 94vh; display: none;" id="discord">
