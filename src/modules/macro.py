@@ -2769,159 +2769,161 @@ class macro:
             time.sleep(0.1)
             mouse.click()
 
-    def background(self):
-        self.nightDetectStreaks = 0
-        while True:
-            with open("./data/user/hotbar_timings.txt", "r") as f:
-                hotbarSlotTimings = ast.literal_eval(f.read())
+    def backgroundOnce(self):
+        with open("./data/user/hotbar_timings.txt", "r") as f:
+            hotbarSlotTimings = ast.literal_eval(f.read())
+        f.close()
+
+        #night detection
+        if self.enableNightDetection:
+            self.detectNight()
+
+        #hotbar
+        for i in range(1,8):
+            slotUseWhen = self.setdat[f"hotbar{i}_use_when"]
+            #check if use when is correct
+            if slotUseWhen == "never": continue
+            elif self.status.value == "rejoining": continue
+            elif slotUseWhen == "gathering" and not "gather_" in self.status.value: continue 
+            elif slotUseWhen == "converting" and not self.status.value == "converting": continue 
+            #check cd
+            cdSecs = self.setdat[f"hotbar{i}_use_every_value"]
+            if self.setdat[f"hotbar{i}_use_every_format"] == "mins": 
+                cdSecs *= 60
+            if time.time() - hotbarSlotTimings[i] < cdSecs: continue
+            print(f"pressed hotbar {i}")
+            #press the key
+            for _ in range(2):
+                keyboard.pagPress(str(i))
+                time.sleep(0.4)
+            #update the time pressed
+            hotbarSlotTimings[i] = time.time()
+            with open("./data/user/hotbar_timings.txt", "w") as f:
+                f.write(str(hotbarSlotTimings))
             f.close()
     
-            #night detection
-            if self.enableNightDetection:
-                self.detectNight()
-
-            #hotbar
-            for i in range(1,8):
-                slotUseWhen = self.setdat[f"hotbar{i}_use_when"]
-                #check if use when is correct
-                if slotUseWhen == "never": continue
-                elif self.status.value == "rejoining": continue
-                elif slotUseWhen == "gathering" and not "gather_" in self.status.value: continue 
-                elif slotUseWhen == "converting" and not self.status.value == "converting": continue 
-                #check cd
-                cdSecs = self.setdat[f"hotbar{i}_use_every_value"]
-                if self.setdat[f"hotbar{i}_use_every_format"] == "mins": 
-                    cdSecs *= 60
-                if time.time() - hotbarSlotTimings[i] < cdSecs: continue
-                print(f"pressed hotbar {i}")
-                #press the key
-                for _ in range(2):
-                    keyboard.pagPress(str(i))
-                    time.sleep(0.4)
-                #update the time pressed
-                hotbarSlotTimings[i] = time.time()
-                with open("./data/user/hotbar_timings.txt", "w") as f:
-                    f.write(str(hotbarSlotTimings))
-                f.close()
-
+    def background(self):
+        while True:
+            self.backgroundOnce()
             time.sleep(1)
 
-    def hourlyReportBackground(self):
-        
-        #first honey
-        self.hourlyReport.setSessionStats(self.hourlyReport.getHoney(), time.time())
-        self.prevMin = -1  
-        self.prevSec = -1
-        self.multi = 2 if self.display_type == "retina" else 1
-
+    def hourlyReportBackgroundOnce(self):
         try:
-            while True:
-                currMin = datetime.now().minute
-                currSec = datetime.now().second
+            currMin = datetime.now().minute
+            currSec = datetime.now().second
 
-                #check if its time to send hourly report
-                if currMin == 0 and time.time() - lastHourlyReport > 120:
-                    hourlyReportData = self.hourlyReport.generateHourlyReport()
-                    self.logger.hourlyReport("Hourly Report", "", "purple")
+            #check if its time to send hourly report
+            if currMin == 0 and time.time() - self.lastHourlyReport > 120:
+                hourlyReportData = self.hourlyReport.generateHourlyReport()
+                self.logger.hourlyReport("Hourly Report", "", "purple")
 
-                    #add to history
-                    with open("data/user/hourly_report_history.txt", "r") as f:
-                        history = ast.literal_eval(f.read())
-                    f.close()
+                #add to history
+                with open("data/user/hourly_report_history.txt", "r") as f:
+                    history = ast.literal_eval(f.read())
+                f.close()
 
-                    historyObj = {
-                        "endHour": datetime.now().hour,
-                        "date": str(datetime.today().date()),
-                        "honey": hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]
-                    }
-                    #max 5 objs
-                    if len(history) > 4:
-                        history.pop(-1)
-                    history.insert(0,historyObj)
+                historyObj = {
+                    "endHour": datetime.now().hour,
+                    "date": str(datetime.today().date()),
+                    "honey": hourlyReportData["honey_per_min"][-1] - hourlyReportData["honey_per_min"][0]
+                }
+                #max 5 objs
+                if len(history) > 4:
+                    history.pop(-1)
+                history.insert(0,historyObj)
 
-                    with open("data/user/hourly_report_history.txt", "w") as f:
-                        f.write(str(history))
-                    f.close()
+                with open("data/user/hourly_report_history.txt", "w") as f:
+                    f.write(str(history))
+                f.close()
 
-                    lastHourlyReport = time.time()
-                    #reset stats
-                    self.hourlyReport.resetHourlyStats()
+                self.lastHourlyReport = time.time()
+                #reset stats
+                self.hourlyReport.resetHourlyStats()
 
-                #Hourly report
-                if self.status.value != "rejoining":
-                    #instead of using time.sleep, we want to run the code at the start of the min
-                    if currMin != self.prevMin:
-                        self.prevMin = currMin
-                        honey = self.hourlyReport.getHoney()
-                        print(honey)
-                        backpack = self.getBackpack()
+            #Hourly report
+            if self.status.value != "rejoining":
+                #instead of using time.sleep, we want to run the code at the start of the min
+                if currMin != self.prevMin:
+                    self.prevMin = currMin
+                    honey = self.hourlyReport.getHoney()
+                    print(honey)
+                    backpack = self.getBackpack()
 
-                        self.hourlyReport.addHourlyStat("honey_per_min", honey)
-                        self.hourlyReport.addHourlyStat("backpack_per_min", backpack)
+                    self.hourlyReport.addHourlyStat("honey_per_min", honey)
+                    self.hourlyReport.addHourlyStat("backpack_per_min", backpack)
 
-                if self.status.value != "rejoining" and not currSec%6 and currSec != self.prevSec:
-                    i = (60*currMin + currSec)//6
-                    screen = cv2.cvtColor(self.buffDetector.screenshotBuffArea(), cv2.COLOR_BGRA2BGR)
-                    uptimeBuffsColors = self.hourlyReport.uptimeBuffsColors
-                    uptimeBearBuffs = self.hourlyReport.uptimeBearBuffs
+            if self.status.value != "rejoining" and not currSec%6 and currSec != self.prevSec:
+                i = (60*currMin + currSec)//6
+                screen = cv2.cvtColor(self.buffDetector.screenshotBuffArea(), cv2.COLOR_BGRA2BGR)
+                uptimeBuffsColors = self.hourlyReport.uptimeBuffsColors
+                uptimeBearBuffs = self.hourlyReport.uptimeBearBuffs
 
-                    for j in ["baby_love"]:
-                        if self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors[j][0], uptimeBuffsColors[j][1], y1=30*self.multi, searchDirection=7):
-                            self.hourlyReport.uptimeBuffsValues[j][i] = 1
+                for j in ["baby_love"]:
+                    if self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors[j][0], uptimeBuffsColors[j][1], y1=30*self.multi, searchDirection=7):
+                        self.hourlyReport.uptimeBuffsValues[j][i] = 1
 
-                    bearBuffRes = [int(x) for x in self.buffDetector.getBuffsWithImage(uptimeBearBuffs, screen=screen, threshold=0.78)]
-                    if any(bearBuffRes):
-                        self.hourlyReport.uptimeBuffsValues["bear"][i] = 1
+                bearBuffRes = [int(x) for x in self.buffDetector.getBuffsWithImage(uptimeBearBuffs, screen=screen, threshold=0.78)]
+                if any(bearBuffRes):
+                    self.hourlyReport.uptimeBuffsValues["bear"][i] = 1
 
-                    for j in ["focus", "bomb_combo", "balloon_aura", "inspire"]:
-                        res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors[j][0], uptimeBuffsColors[j][1], y1=30*self.multi, y2=50*self.multi, searchDirection=7)
-                        if res:
-                            x = res[0]+res[2]
-                            buffImg = screen[15*self.multi:50*self.multi , x-25*self.multi:x+5*self.multi]
-                            self.hourlyReport.uptimeBuffsValues[j][i] = int(self.buffDetector.getBuffQuantityFromImgTight(buffImg))
-
-                    x = 0
-                    for _ in range(3):
-                        res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["haste"][0], uptimeBuffsColors["haste"][1],x, 30*self.multi, searchDirection=6)
-                        if not res:
-                            break
-                        x = res[0]
-                        if self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["melody"][0], uptimeBuffsColors["melody"][1], x+2*self.multi, 30, x+34*self.multi, 40*self.multi, 12):
-                            self.hourlyReport.uptimeBuffsValues["melody"][i] = 1
-                        elif not self.hourlyReport.uptimeBuffsValues["haste"][i]:
-                            buffImg = screen.copy()[15*self.multi:50*self.multi , x+6*self.multi:x+44*self.multi]
-                            self.hourlyReport.uptimeBuffsValues["haste"][i] = int(self.buffDetector.getBuffQuantityFromImgTight(buffImg))
-                        x += 44*self.multi
-                    #print(bd.detectBuffColorInImage(screen, 0xff242424, variation=12, minSize=(3*2,2*2), show=True))
-
-                    x = screen.shape[1]
-                    for _ in range(3):
-                        res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["boost"][0], uptimeBuffsColors["boost"][1], y1=30*self.multi, x2=x, searchDirection=7)
-                        if not res:
-                            break
+                for j in ["focus", "bomb_combo", "balloon_aura", "inspire"]:
+                    res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors[j][0], uptimeBuffsColors[j][1], y1=30*self.multi, y2=50*self.multi, searchDirection=7)
+                    if res:
                         x = res[0]+res[2]
-                        y = res[1] + res[3]
+                        buffImg = screen[15*self.multi:50*self.multi , x-25*self.multi:x+5*self.multi]
+                        self.hourlyReport.uptimeBuffsValues[j][i] = int(self.buffDetector.getBuffQuantityFromImgTight(buffImg))
 
-                        if len(self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["red_boost"][0], uptimeBuffsColors["red_boost"][1], x-30*self.multi, 15*self.multi, x-4*self.multi, 34*self.multi, 20)):
-                            buffType = "red_boost"
-                        elif len(self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["blue_boost"][0], uptimeBuffsColors["blue_boost"][1], x-30*self.multi, 15*self.multi, x-4*self.multi, 34*self.multi, 20)):
-                            buffType = "blue_boost"
-                        else:
-                            buffType = "white_boost"
+                x = 0
+                for _ in range(3):
+                    res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["haste"][0], uptimeBuffsColors["haste"][1],x, 30*self.multi, searchDirection=6)
+                    if not res:
+                        break
+                    x = res[0]
+                    if self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["melody"][0], uptimeBuffsColors["melody"][1], x+2*self.multi, 30, x+34*self.multi, 40*self.multi, 12):
+                        self.hourlyReport.uptimeBuffsValues["melody"][i] = 1
+                    elif not self.hourlyReport.uptimeBuffsValues["haste"][i]:
+                        buffImg = screen.copy()[15*self.multi:50*self.multi , x+6*self.multi:x+44*self.multi]
+                        self.hourlyReport.uptimeBuffsValues["haste"][i] = int(self.buffDetector.getBuffQuantityFromImgTight(buffImg))
+                    x += 44*self.multi
+                #print(bd.detectBuffColorInImage(screen, 0xff242424, variation=12, minSize=(3*2,2*2), show=True))
 
-                        buffImg = screen[15*self.multi: 50*self.multi,x-25*self.multi: x]
-                        self.hourlyReport.uptimeBuffsValues[buffType][i] = int(self.buffDetector.getBuffQuantityFromImgTight(buffImg))
+                x = screen.shape[1]
+                for _ in range(3):
+                    res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["boost"][0], uptimeBuffsColors["boost"][1], y1=30*self.multi, x2=x, searchDirection=7)
+                    if not res:
+                        break
+                    x = res[0]+res[2]
+                    y = res[1] + res[3]
 
-                        x -= 40*self.multi
-                    
-                    self.prevSec = currSec
+                    if len(self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["red_boost"][0], uptimeBuffsColors["red_boost"][1], x-30*self.multi, 15*self.multi, x-4*self.multi, 34*self.multi, 20)):
+                        buffType = "red_boost"
+                    elif len(self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["blue_boost"][0], uptimeBuffsColors["blue_boost"][1], x-30*self.multi, 15*self.multi, x-4*self.multi, 34*self.multi, 20)):
+                        buffType = "blue_boost"
+                    else:
+                        buffType = "white_boost"
 
-                    if "gather_" in self.status.value:
-                        self.hourlyReport.buffGatherIntervals[i] = 1
+                    buffImg = screen[15*self.multi: 50*self.multi,x-25*self.multi: x]
+                    self.hourlyReport.uptimeBuffsValues[buffType][i] = int(self.buffDetector.getBuffQuantityFromImgTight(buffImg))
+
+                    x -= 40*self.multi
                 
-                time.sleep(1)
+                self.prevSec = currSec
+
+                if "gather_" in self.status.value:
+                    self.hourlyReport.buffGatherIntervals[i] = 1
         except Exception:
             self.logger.webhook("Hourly Report Error", traceback.format_exc(), "red")
+        
+    def hourlyReportBackground(self):
+        while True:
+            self.hourlyReportBackgroundOnce()
+            time.sleep(1)
+
+    def mergedBackgrounds(self):
+        while True:
+            self.backgroundOnce()
+            self.hourlyReportBackgroundOnce()
+            time.sleep(1)
 
     def toggleQuest(self):
         #click quest icon
@@ -3311,14 +3313,24 @@ class macro:
                 self.toggleFullScreen()
             self.startDetect()
 
-        #enable background
-        backgroundThread = threading.Thread(target=self.background)
-        backgroundThread.daemon = True
-        backgroundThread.start()
+        #enable background threads
+        self.nightDetectStreaks = 0
+        self.hourlyReport.setSessionStats(self.hourlyReport.getHoney(), time.time())
+        self.prevMin = -1  
+        self.prevSec = -1
+        self.multi = 2 if self.display_type == "retina" else 1
+        self.lastHourlyReport = 0
 
-        #enable hourly report
-        hourlyReportBackgroundThread = threading.Thread(target=self.hourlyReportBackground, daemon=True)
-        hourlyReportBackgroundThread.start()
+        if self.setdat["low_performance"]:
+            mergedBackgroundThread = threading.Thread(target=self.mergedBackgrounds, daemon=True)
+            mergedBackgroundThread.start()
+        else:
+            backgroundThread = threading.Thread(target=self.background, daemon=True)
+            backgroundThread.start()
+
+            hourlyReportBackgroundThread = threading.Thread(target=self.hourlyReportBackground, daemon=True)
+            hourlyReportBackgroundThread.start()
+
 
         self.reset(convert=True)
         self.saveTiming("rejoin_every")
