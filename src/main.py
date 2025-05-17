@@ -572,7 +572,8 @@ if __name__ == "__main__":
                 run.value = 3
                 gui.toggleStartStop()
                 stopApp()
-                disconnectThread.join()
+                if not lowPerformanceMode:
+                    disconnectThread.join()
         elif run.value == 4: #disconnected
             macroProc.kill()
             logger.webhook("","Disconnected", "red", "screen")
