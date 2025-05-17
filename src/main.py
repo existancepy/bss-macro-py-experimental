@@ -12,6 +12,10 @@ import subprocess
 from modules.misc import messageBox
 import copy
 import atexit
+from modules.misc.imageManipulation import adjustImage
+from modules.screen.imageSearch import locateImageOnScreen
+import pyautogui as pag
+mw, mh = pag.size()
 
 def hasteCompensationThread(baseSpeed, isRetina, haste):
     from modules.submacros.hasteCompensation import HasteCompensation
@@ -21,10 +25,6 @@ def hasteCompensationThread(baseSpeed, isRetina, haste):
         haste.value = hasteCompensation.getHaste()
 
 def disconnectCheck(run, status, display_type):
-    from modules.misc.imageManipulation import adjustImage
-    from modules.screen.imageSearch import locateImageOnScreen
-    import pyautogui as pag
-    mw, mh = pag.size()
     img = adjustImage("./images/menu", "disconnect", display_type)
     while not stopThreads:
         if locateImageOnScreen(img, mw/3, mh/2.8, mw/2.3, mh/5, 0.7):
@@ -252,7 +252,6 @@ def macro(status, logQueue, haste, updateGUI):
                         #place them
                         runTask(macro.placePlanterInCycle, args = (i, cycle, planterData),resetAfter=False) 
         #mob run
-        print(macro.setdat)
         for mob, fields in regularMobData.items():
             if not macro.setdat[mob]: continue
             for f in fields:
@@ -384,17 +383,22 @@ def watch_for_hotkeys(run):
     def on_press(key):
         nonlocal run
         if key == keyboard.Key.f1:
-            if run.value == 2: return #already running
+            
+            if run.value == 2: #already running
+                print("Already running")
+                return 
             run.value = 1
         elif key == keyboard.Key.f3:
-            if run.value == 3: return #already stopped
+            if run.value == 3: #already stopped
+                print("Already stopped")
+                return
             run.value = 0
 
     keyboard.Listener(on_press=on_press).start()
 
 if __name__ == "__main__":
     print("Loading gui...")
-    global stopThreads
+    global stopThreads, macroProc
     import gui
     import modules.screen.screenData as screenData
     from modules.controls.keyboard import keyboard as keyboardModule
@@ -426,6 +430,8 @@ if __name__ == "__main__":
     haste = multiprocessing.Value('d', 0)
     watch_for_hotkeys(run)
     logger = logModule.log(logQueue, False, None, blocking=True)
+
+    disconnectCooldownUntil = 0 #only for running disconnect check on low performance
 
     #update settings
     profileSettings = settingsManager.loadSettings()
@@ -461,12 +467,14 @@ if __name__ == "__main__":
         
     def stopApp(page= None, sockets = None):
         global stopThreads
+        global macroProc
         stopThreads = True
         print("stop")
         #print(sockets)
-        if macroProc.is_alive():
+        if macroProc and macroProc.is_alive():
             macroProc.kill()
             macroProc.join()
+            macroProc = None
         stream.stop()
         #if discordBotProc.is_alive(): discordBotProc.kill()
         keyboardModule.releaseMovement()
@@ -501,6 +509,7 @@ if __name__ == "__main__":
     while True:
         eel.sleep(0.5)
         setdat = settingsManager.loadAllSettings()
+        lowPerformanceMode = setdat["low_performance"]
 
         #discord bot. Look for changes in the bot token
         currentDiscordBotToken = setdat["discord_bot_token"]
@@ -543,9 +552,10 @@ if __name__ == "__main__":
             macroProc.start()
 
             #disconnect detection
-            disconnectThread = Thread(target=disconnectCheck, args=(run, status, screenInfo["display_type"]))
-            disconnectThread.daemon = True
-            disconnectThread.start()
+            if not lowPerformanceMode:
+                disconnectThread = Thread(target=disconnectCheck, args=(run, status, screenInfo["display_type"]))
+                disconnectThread.daemon = True
+                disconnectThread.start()
 
             #haste compensation
             if setdat["haste_compensation"]:
@@ -586,6 +596,13 @@ if __name__ == "__main__":
         if updateGUI.value:
             gui.updateGUI()
             updateGUI.value = 0
+        
+        if run.value == 2 and lowPerformanceMode and time.time() > disconnectCooldownUntil:
+            img = adjustImage("./images/menu", "disconnect", screenInfo["display_type"])
+            if locateImageOnScreen(img, mw/3, mh/2.8, mw/2.3, mh/5, 0.7):
+                print("disconnected")
+                run.value = 4
+                disconnectCooldownUntil = time.time() + 300  # 5 min cooldown
     
             
             

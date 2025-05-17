@@ -325,7 +325,7 @@ class macro:
         screenData = getScreenData()
         self.display_type, self.ww, self.wh, self.ysm, self.xsm, self.ylm, self.xlm = itemgetter("display_type", "screen_width","screen_height", "y_multiplier", "x_multiplier", "y_length_multiplier", "x_length_multiplier")(screenData)
         self.keyboard = keyboard(self.setdat["movespeed"], haste, self.setdat["haste_compensation"])
-        self.logger = logModule.log(logQueue, self.setdat["enable_webhook"], self.setdat["webhook_link"])
+        self.logger = logModule.log(logQueue, self.setdat["enable_webhook"], self.setdat["webhook_link"], blocking=self.setdat["low_performance"])
         #setup an internal cooldown tracker. The cooldowns can be modified
         self.collectCooldowns = dict([(k, v[2]) for k,v in mergedCollectData.items()])
         self.collectCooldowns["sticker_printer"] = 1*60*60
@@ -1333,15 +1333,21 @@ class macro:
     #background thread for gather
     #check if mobs have been killed and reset their timings
     #check if player died
+
+    def gatherBackgroundOnce(self, field):
+        #death check
+        st = time.time()
+        if self.blueTextImageSearch("died", 0.8):
+            self.died = True
+        #mob respawn check
+        self.setMobTimer(field)
+        time.sleep(1)
     def gatherBackground(self):
         field = self.status.value.split("_")[1]
         while self.isGathering:
-            #death check
-            st = time.time()
-            if self.blueTextImageSearch("died", 0.8):
-                self.died = True
-            #mob respawn check
-            self.setMobTimer(field)
+            self.gatherBackgroundOnce(field)
+            time.sleep(1)
+
     #use the accurate sleep and sleep for ms
     def sleepMSMove(self, key, time):
         self.keyboard.keyDown(key, False)
@@ -1438,9 +1444,10 @@ class macro:
         firstPattern = True
         self.logger.webhook(f"Gathering: {field.title()}", f"Limit: {gatherTimeLimit} - {fieldSetting['shape']} - Backpack: {fieldSetting['backpack']}%", "light green")
         mouse.moveBy(10,5)
-        gatherBackgroundThread = threading.Thread(target=self.gatherBackground)
-        gatherBackgroundThread.daemon = True
-        gatherBackgroundThread.start()
+        if not self.setdat["low_performance"]:
+            gatherBackgroundThread = threading.Thread(target=self.gatherBackground)
+            gatherBackgroundThread.daemon = True
+            gatherBackgroundThread.start()
         self.keyboard.releaseMovement()
 
         def getGatherTime():
@@ -1452,7 +1459,8 @@ class macro:
             self.moveMouseToDefault()
             self.status.value = ""
             self.isGathering = False
-            gatherBackgroundThread.join()
+            if not self.setdat["low_performance"]:
+                gatherBackgroundThread.join()
 
         if fieldSetting["shift_lock"]: 
             self.keyboard.press('shift')
@@ -1487,6 +1495,9 @@ class macro:
             #add gather time stat
             self.hourlyReport.addHourlyStat("gathering_time", time.time()-patternStartTime)
             gatherTime = self.convertSecsToMinsAndSecs(getGatherTime())
+
+            if self.setdat["low_performance"]:
+                self.gatherBackgroundOnce(field)
 
             #check for gather interrupts
             if self.night and self.setdat["stinger_hunt"]: 
@@ -1825,7 +1836,7 @@ class macro:
             times = cooldownRaw.split(":")
             cooldownSeconds = 0
             #convert
-            for i,e in enumerate(times):
+            for i,e in enumerate(times[::-1]):
                 num = extractNumFromText(e)
                 if not num:
                     validTime = False
@@ -1840,7 +1851,7 @@ class macro:
         else:
             validTime = False
         
-        if not validTime:
+        if not validTime or (defaultTime and cooldownSeconds > defaultTime):
             cooldownSeconds = defaultTime
 
         return cooldownSeconds
@@ -2799,10 +2810,9 @@ class macro:
         
         #first honey
         self.hourlyReport.setSessionStats(self.hourlyReport.getHoney(), time.time())
-        prevMin = -1  
-        prevSec = -1
-        multi = 2 if self.display_type == "retina" else 1
-        lastHourlyReport = 0
+        self.prevMin = -1  
+        self.prevSec = -1
+        self.multi = 2 if self.display_type == "retina" else 1
 
         try:
             while True:
@@ -2840,8 +2850,8 @@ class macro:
                 #Hourly report
                 if self.status.value != "rejoining":
                     #instead of using time.sleep, we want to run the code at the start of the min
-                    if currMin != prevMin:
-                        prevMin = currMin
+                    if currMin != self.prevMin:
+                        self.prevMin = currMin
                         honey = self.hourlyReport.getHoney()
                         print(honey)
                         backpack = self.getBackpack()
@@ -2849,14 +2859,14 @@ class macro:
                         self.hourlyReport.addHourlyStat("honey_per_min", honey)
                         self.hourlyReport.addHourlyStat("backpack_per_min", backpack)
 
-                if self.status.value != "rejoining" and not currSec%6 and currSec != prevSec:
+                if self.status.value != "rejoining" and not currSec%6 and currSec != self.prevSec:
                     i = (60*currMin + currSec)//6
                     screen = cv2.cvtColor(self.buffDetector.screenshotBuffArea(), cv2.COLOR_BGRA2BGR)
                     uptimeBuffsColors = self.hourlyReport.uptimeBuffsColors
                     uptimeBearBuffs = self.hourlyReport.uptimeBearBuffs
 
                     for j in ["baby_love"]:
-                        if self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors[j][0], uptimeBuffsColors[j][1], y1=30*multi, searchDirection=7):
+                        if self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors[j][0], uptimeBuffsColors[j][1], y1=30*self.multi, searchDirection=7):
                             self.hourlyReport.uptimeBuffsValues[j][i] = 1
 
                     bearBuffRes = [int(x) for x in self.buffDetector.getBuffsWithImage(uptimeBearBuffs, screen=screen, threshold=0.78)]
@@ -2864,47 +2874,47 @@ class macro:
                         self.hourlyReport.uptimeBuffsValues["bear"][i] = 1
 
                     for j in ["focus", "bomb_combo", "balloon_aura", "inspire"]:
-                        res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors[j][0], uptimeBuffsColors[j][1], y1=30*multi, y2=50*multi, searchDirection=7)
+                        res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors[j][0], uptimeBuffsColors[j][1], y1=30*self.multi, y2=50*self.multi, searchDirection=7)
                         if res:
                             x = res[0]+res[2]
-                            buffImg = screen[15*multi:50*multi , x-25*multi:x+5*multi]
+                            buffImg = screen[15*self.multi:50*self.multi , x-25*self.multi:x+5*self.multi]
                             self.hourlyReport.uptimeBuffsValues[j][i] = int(self.buffDetector.getBuffQuantityFromImgTight(buffImg))
 
                     x = 0
                     for _ in range(3):
-                        res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["haste"][0], uptimeBuffsColors["haste"][1],x, 30*multi, searchDirection=6)
+                        res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["haste"][0], uptimeBuffsColors["haste"][1],x, 30*self.multi, searchDirection=6)
                         if not res:
                             break
                         x = res[0]
-                        if self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["melody"][0], uptimeBuffsColors["melody"][1], x+2*multi, 30, x+34*multi, 40*multi, 12):
+                        if self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["melody"][0], uptimeBuffsColors["melody"][1], x+2*self.multi, 30, x+34*self.multi, 40*self.multi, 12):
                             self.hourlyReport.uptimeBuffsValues["melody"][i] = 1
                         elif not self.hourlyReport.uptimeBuffsValues["haste"][i]:
-                            buffImg = screen.copy()[15*multi:50*multi , x+6*multi:x+44*multi]
+                            buffImg = screen.copy()[15*self.multi:50*self.multi , x+6*self.multi:x+44*self.multi]
                             self.hourlyReport.uptimeBuffsValues["haste"][i] = int(self.buffDetector.getBuffQuantityFromImgTight(buffImg))
-                        x += 44*multi
+                        x += 44*self.multi
                     #print(bd.detectBuffColorInImage(screen, 0xff242424, variation=12, minSize=(3*2,2*2), show=True))
 
                     x = screen.shape[1]
                     for _ in range(3):
-                        res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["boost"][0], uptimeBuffsColors["boost"][1], y1=30*multi, x2=x, searchDirection=7)
+                        res = self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["boost"][0], uptimeBuffsColors["boost"][1], y1=30*self.multi, x2=x, searchDirection=7)
                         if not res:
                             break
                         x = res[0]+res[2]
                         y = res[1] + res[3]
 
-                        if len(self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["red_boost"][0], uptimeBuffsColors["red_boost"][1], x-30*multi, 15*multi, x-4*multi, 34*multi, 20)):
+                        if len(self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["red_boost"][0], uptimeBuffsColors["red_boost"][1], x-30*self.multi, 15*self.multi, x-4*self.multi, 34*self.multi, 20)):
                             buffType = "red_boost"
-                        elif len(self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["blue_boost"][0], uptimeBuffsColors["blue_boost"][1], x-30*multi, 15*multi, x-4*multi, 34*multi, 20)):
+                        elif len(self.buffDetector.detectBuffColorInImage(screen, uptimeBuffsColors["blue_boost"][0], uptimeBuffsColors["blue_boost"][1], x-30*self.multi, 15*self.multi, x-4*self.multi, 34*self.multi, 20)):
                             buffType = "blue_boost"
                         else:
                             buffType = "white_boost"
 
-                        buffImg = screen[15*multi: 50*multi,x-25*multi: x]
+                        buffImg = screen[15*self.multi: 50*self.multi,x-25*self.multi: x]
                         self.hourlyReport.uptimeBuffsValues[buffType][i] = int(self.buffDetector.getBuffQuantityFromImgTight(buffImg))
 
-                        x -= 40*multi
+                        x -= 40*self.multi
                     
-                    prevSec = currSec
+                    self.prevSec = currSec
 
                     if "gather_" in self.status.value:
                         self.hourlyReport.buffGatherIntervals[i] = 1
