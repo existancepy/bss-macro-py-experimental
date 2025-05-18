@@ -3020,7 +3020,7 @@ class macro:
         screenOriginal = np.copy(screen)
         #convert to grayscale
         screenGray = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
-        img = cv2.threshold(screenGray, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        img = cv2.inRange(screenGray, 0, 50)
         img = cv2.GaussianBlur(img, (5, 5), 0)
         #dilute the image so that texts can be merged into chunks
         kernelSize = 10 if self.display_type == "retina" else 7
@@ -3030,7 +3030,7 @@ class macro:
         contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         #filter out the contour sizes
-        minArea = 10000       #too small = noise
+        minArea = 8000       #too small = noise
         maxArea = 80000      #too big = background or large UI elements
         maxHeight = 150       #cap height to filter out title bar
 
