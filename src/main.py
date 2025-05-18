@@ -413,7 +413,7 @@ if __name__ == "__main__":
 
     if sys.platform == "darwin" and sys.version_info[1] <= 7:
         multiprocessing.set_start_method("spawn")
-    macroProc: typing.Optional[multiprocessing.Process] = None
+    macroProc = None
     #set screen data
     screenData.setScreenData()
     screenInfo = screenData.getScreenData()
