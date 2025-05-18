@@ -842,9 +842,10 @@ class macro:
 
         mouse.moveTo(x, y)
         mouse.moveBy(10,15)
-        for _ in range(2):
+        for _ in range(3):
             mouse.click()
             time.sleep(0.1)
+            mouse.moveBy(0,15)
         self.clickYes()
         #close inventory
         self.toggleInventory("close")
