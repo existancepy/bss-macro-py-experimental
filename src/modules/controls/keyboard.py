@@ -45,7 +45,7 @@ class keyboard:
         time.sleep(0.08)
         pag.keyUp(k)
         if k == "space":
-            os.system('osascript -e \'tell application "System Events" to keystroke " "\'')
+            os.system('osascript -e \'tell application "System Events" to key code 49\'')
 
     def getMoveSpeed(self):
         movespeed = self.haste.value
