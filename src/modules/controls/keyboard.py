@@ -1,4 +1,5 @@
 import sys
+import os
 if sys.platform == "win32":
     import pydirectinput as pag
     pag.PAUSE = 0.1
@@ -43,6 +44,8 @@ class keyboard:
         pag.keyDown(k)
         time.sleep(0.08)
         pag.keyUp(k)
+        if k == "space":
+            os.system('osascript -e \'tell application "System Events" to keystroke " "\'')
 
     def getMoveSpeed(self):
         movespeed = self.haste.value
