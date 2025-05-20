@@ -35,7 +35,9 @@ def disconnectCheck(run, status, display_type):
 
 #controller for the macro
 def macro(status, logQueue, haste, updateGUI):
+    print("importing settings manager")
     import modules.misc.settingsManager as settingsManager
+    print("importing macro module")
     import modules.macro as macroModule
     print("macro main process started")
     macro = macroModule.macro(status, logQueue, haste, updateGUI)
@@ -413,6 +415,7 @@ if __name__ == "__main__":
     import os
 
     if sys.platform == "darwin" and sys.version_info[1] <= 7:
+        print("start method set to spawn")
         multiprocessing.set_start_method("spawn")
     macroProc = None
     #set screen data
