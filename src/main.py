@@ -523,12 +523,13 @@ if __name__ == "__main__":
             discordBotProc.start()
 
         if run.value == 1:
-            print("Start")
+            print("start")
             #create and set webhook obj for the logger
             logger.enableWebhook = setdat["enable_webhook"]
             logger.webhookURL = setdat["webhook_link"]
             haste.value = setdat["movespeed"]
             stopThreads = False
+            print("variables initalised")
 
             #stream
             def waitForStreamURL():
@@ -541,13 +542,15 @@ if __name__ == "__main__":
             
                 logger.webhook("", f'Stream could not start. Check terminal for more info', "red")
 
+            print("checking stream")
             streamLink = None
             if setdat["enable_stream"]:
+                print("stream enabled")
                 logger.webhook("", "Starting Stream...", "light blue")
                 streamLink = stream.start(setdat["stream_resolution"])
                 Thread(target=waitForStreamURL, daemon=True).start()
 
-
+            print("starting macro proc")
             #macro proc
             macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
             macroProc.start()

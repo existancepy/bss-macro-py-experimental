@@ -13,7 +13,6 @@ def openLink(link):
     
 @eel.expose
 def start():
-    print(f"[DEBUG] Current run value: {run.value}")
     if run.value == 2: return #already running
     run.value = 1
     
