@@ -37,6 +37,7 @@ def disconnectCheck(run, status, display_type):
 def macro(status, logQueue, haste, updateGUI):
     import modules.misc.settingsManager as settingsManager
     import modules.macro as macroModule
+    print("macro main process started")
     macro = macroModule.macro(status, logQueue, haste, updateGUI)
     #invert the regularMobsInFields dict
     #instead of storing mobs in field, store the fields associated with each mob

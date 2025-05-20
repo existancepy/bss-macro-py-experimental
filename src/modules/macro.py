@@ -3312,6 +3312,7 @@ class macro:
         self.hourlyReport = HourlyReport(self.buffDetector)
 
     def start(self):
+        print("macro object started")
         #if roblox is not open, rejoin
         if not appManager.openApp("roblox"):
             self.rejoin()
