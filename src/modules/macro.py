@@ -754,7 +754,7 @@ class macro:
 
         prevHash = None
         time.sleep(0.3)
-        for i in range(100):
+        for i in range(120):
             #screen = cv2.cvtColor(mssScreenshotNP(90, 90, 300-90, self.mh-180), cv2.COLOR_RGBA2GRAY)
             #max_loc = fastFeatureMatching(screen, itemImg)
             #max_val = 1 if max_loc else 0
@@ -1083,6 +1083,8 @@ class macro:
             self.keyboard.keyDown("d")
             time.sleep(0.5)
             self.keyboard.slowPress("space")
+            for _ in range(2):
+                os.system('osascript -e \'tell application "System Events" to key code 49\'')
             time.sleep(0.2)
             self.keyboard.keyDown("d")
             self.keyboard.walk("w",0.2)
@@ -2374,19 +2376,24 @@ class macro:
             #place planter
             self.useItemInInventory(x=self.planterCoords[0], y=self.planterCoords[1])
             
-            #use glitter
-            if glitter: self.useItemInInventory("glitter")
-            
             #check if planter is placed
             time.sleep(0.5)
             placedPlanter = False
             for _ in range(20):
                 if self.blueTextImageSearch("planter"):
-                    self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
                     placedPlanter = True
                     break
                 time.sleep(0.1)
-            if placedPlanter: break
+            #didnt detect the image, check for harvest planter popup
+            # time.sleep(1)
+            # if self.isBesideE(["harvest", "planter"], []):
+            #     placedPlanter = True
+                
+            if placedPlanter: 
+                self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")          
+                #use glitter
+                if glitter: self.useItemInInventory("glitter")
+                break
             self.logger.webhook("",f"Failed to Place Planter: {planter.title()}", "red", "screen")
             self.reset()
         else:
@@ -3062,7 +3069,7 @@ class macro:
             if objectiveData[0] == "feed":
                 amount = ''.join([x for x in textChunk if x.isdigit()])
                 if amount:
-                    objectiveData[1] = amount
+                    objectiveData[1] = max(amount, 100)
                     objectives[i] = "_".join(objectiveData)
 
             if "complete" in textChunk:

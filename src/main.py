@@ -509,7 +509,6 @@ if __name__ == "__main__":
     while True:
         eel.sleep(0.5)
         setdat = settingsManager.loadAllSettings()
-        lowPerformanceMode = setdat["low_performance"]
 
         #discord bot. Look for changes in the bot token
         currentDiscordBotToken = setdat["discord_bot_token"]
@@ -523,6 +522,7 @@ if __name__ == "__main__":
             discordBotProc.start()
 
         if run.value == 1:
+            print("Start")
             #create and set webhook obj for the logger
             logger.enableWebhook = setdat["enable_webhook"]
             logger.webhookURL = setdat["webhook_link"]
@@ -551,12 +551,6 @@ if __name__ == "__main__":
             macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
             macroProc.start()
 
-            #disconnect detection
-            if not lowPerformanceMode:
-                disconnectThread = Thread(target=disconnectCheck, args=(run, status, screenInfo["display_type"]))
-                disconnectThread.daemon = True
-                disconnectThread.start()
-
             #haste compensation
             if setdat["haste_compensation"]:
                 hasteCompThread = Thread(target=hasteCompensationThread, args=(setdat["movespeed"], screenInfo["display_type"] == "retina", haste,))
@@ -572,8 +566,6 @@ if __name__ == "__main__":
                 run.value = 3
                 gui.toggleStartStop()
                 stopApp()
-                if not lowPerformanceMode:
-                    disconnectThread.join()
         elif run.value == 4: #disconnected
             macroProc.kill()
             logger.webhook("","Disconnected", "red", "screen")
@@ -598,7 +590,7 @@ if __name__ == "__main__":
             gui.updateGUI()
             updateGUI.value = 0
         
-        if run.value == 2 and lowPerformanceMode and time.time() > disconnectCooldownUntil:
+        if run.value == 2 and time.time() > disconnectCooldownUntil:
             img = adjustImage("./images/menu", "disconnect", screenInfo["display_type"])
             if locateImageOnScreen(img, mw/3, mh/2.8, mw/2.3, mh/5, 0.7):
                 print("disconnected")
