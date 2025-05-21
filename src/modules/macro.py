@@ -3068,7 +3068,7 @@ class macro:
             if objectiveData[0] == "feed":
                 amount = ''.join([x for x in textChunk if x.isdigit()])
                 if amount:
-                    objectiveData[1] = max(amount, 100)
+                    objectiveData[1] = max(int(amount), 100)
                     objectives[i] = "_".join(objectiveData)
 
             if "complete" in textChunk:
