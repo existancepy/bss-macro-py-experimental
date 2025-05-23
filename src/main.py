@@ -243,17 +243,25 @@ def macro(status, logQueue, haste, updateGUI):
             #planter data does exist, check if its time to collect them
             else: 
                 planterData = ast.literal_eval(planterDataRaw)
+                planterChanged = False
                 #check all 3 slots
                 for i in range(3):
                     cycle = planterData["cycles"][i]
                     if time.time() > planterData["harvestTimes"][i] and planterData["planters"][i]:
                         #Collect planters
                         runTask(macro.collectPlanter, args=(planterData["planters"][i], planterData["fields"][i]))
-                        settingsManager.clearFile("./data/user/manualplanters.txt")
                         #go to the next cycle
                         cycle = goToNextCycle(cycle, i)
                         #place them
-                        runTask(macro.placePlanterInCycle, args = (i, cycle, planterData),resetAfter=False) 
+                        planterData = runTask(macro.placePlanterInCycle, args = (i, cycle, planterData),resetAfter=False)
+                        planterChanged = True
+                if planterChanged:
+                    #save the planter data
+                    # with open("./data/user/manualplanters.txt", "w") as f:
+                    #     f.write(str(planterData))
+                    # f.close()
+                    pass
+                 
         #mob run
         for mob, fields in regularMobData.items():
             if not macro.setdat[mob]: continue
