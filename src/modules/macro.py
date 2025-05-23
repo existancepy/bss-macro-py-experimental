@@ -966,7 +966,9 @@ class macro:
             
             mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
+                self.canDetectNight = False
                 solveMemoryMatch(self.latestMM, self.display_type)
+                self.canDetectNight = True
 
             blenderImg = self.adjustImage("./images/menu", "blenderclose") #blender
             if locateImageOnScreen(blenderImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
@@ -1915,7 +1917,9 @@ class macro:
                 self.latestMM = mmType
                 time.sleep(2)
                 self.logger.webhook("", f"Solving: {displayName}", "dark brown", "screen")
+                self.canDetectNight = False
                 solveMemoryMatch(mmType, self.display_type)
+                self.canDetectNight = True
                 time.sleep(2)
                 self.logger.webhook("", f"Completed: {displayName}", "bright green", "blue")
             elif objective in fieldBoosterData:
