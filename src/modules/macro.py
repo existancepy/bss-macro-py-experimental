@@ -844,7 +844,7 @@ class macro:
         mouse.moveBy(10,15)
         for _ in range(3):
             mouse.click()
-            time.sleep(0.1)
+            time.sleep(0.03)
             mouse.moveBy(0,15)
         self.clickYes()
         #close inventory
@@ -2395,7 +2395,18 @@ class macro:
                     placedPlanter = True
                     break
                 time.sleep(0.1)
-            #didnt detect the image, check for harvest planter popup
+            #didnt detect the image, check for planter growth bar
+            for _ in range(3):
+                screen = mssScreenshotNP(self.mw/2.14, self.mh/2.9, self.mw/1.8-self.mw/2.14, self.mh/2.2-self.mh/2.9)
+                screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
+                kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
+                if findColorObjectRGB(screen, (86, 120, 72), kernel=kernel, variance=2):
+                    placedPlanter = True
+                    break
+                for _ in range(2):
+                    self.keyboard.press(",")
+                time.sleep(2)
+                
             # time.sleep(1)
             # if self.isBesideE(["harvest", "planter"], []):
             #     placedPlanter = True
@@ -2424,7 +2435,6 @@ class macro:
 
     #locate the planter's growth bar and move there
     def moveToPlanter(self):
-        print("what")
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(2,2))
         def getPlanterLocation():
             screen = mssScreenshotNP(0,0,self.mw,self.mh)
