@@ -3168,12 +3168,10 @@ class macro:
         
         #crop
         if endIndex is not None:
-            screenCropped = screen[endIndex:, :]
-        
-        cv2.imwrite("cropped quest.png", screenCropped)
+            screen = screen[endIndex:, :]
 
         #convert to grayscale
-        screenGray = cv2.cvtColor(screenCropped, cv2.COLOR_BGR2GRAY)
+        screenGray = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
         img = cv2.inRange(screenGray, 0, 50)
         img = cv2.GaussianBlur(img, (5, 5), 0)
         #dilute the image so that texts can be merged into chunks
