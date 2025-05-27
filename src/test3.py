@@ -52,8 +52,14 @@ cropRows = np.any(cropMask > 0, axis=1)
 startIndex = None
 endIndex = None
 
+maxHeight = 20
+if display_type == "retina":
+    maxHeight *= 2
+
 #start searching for the start and end y points of the quest title
 for i, hasColor in enumerate(cropRows):
+    if i > maxHeight and startIndex is None:
+                break
     if hasColor and startIndex is None:
         #found the starting point of the first quest title area
         startIndex = i
