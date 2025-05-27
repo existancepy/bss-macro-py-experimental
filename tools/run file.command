@@ -5,6 +5,15 @@ cd "$(dirname "$0")"
 cd ..
 if [ -d bin ]; then
    source ./bin/activate
+   printf "activating virtual environment"
 fi
 cd src
-python3 $filename
+
+runPython() {
+	if command -v $1 >/dev/null 2>&1; then
+		echo "Trying to run macro with $1"
+		$1 $filename
+	fi
+
+}
+runPython python3.9
