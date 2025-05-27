@@ -538,6 +538,7 @@ if __name__ == "__main__":
             #create and set webhook obj for the logger
             logger.enableWebhook = setdat["enable_webhook"]
             logger.webhookURL = setdat["webhook_link"]
+            print("Setting haste.value")
             haste.value = setdat["movespeed"]
             stopThreads = False
             print("variables initalised")

@@ -2543,6 +2543,7 @@ class macro:
         self.logger.webhook("",f"Looting: {planter.title()} planter","bright green", "screen")
         self.keyboard.multiWalk(["s","d"], 0.87)
         self.nmLoot(9, 5, "a")
+        self.setMobTimer(field)
         updateHourlyTime()
 
     #plant all 3 planters in one cycle
