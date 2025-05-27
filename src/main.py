@@ -594,6 +594,7 @@ if __name__ == "__main__":
         #Check for crash
         if macroProc and not macroProc.is_alive() and hasattr(macroProc, "exitcode") and macroProc.exitcode is not None and macroProc.exitcode < 0:
             logger.webhook("","Crashed", "red", "screen")
+            appManager.openApp("Roblox")
             keyboardModule.releaseMovement()
             mouse.mouseUp()
             macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
