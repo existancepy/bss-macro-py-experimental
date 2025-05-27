@@ -6,5 +6,5 @@ cd ..
 if [ -d bin ]; then
    source ./bin/activate
 fi
-cd macro
+cd src
 python3 $filename
