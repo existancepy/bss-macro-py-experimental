@@ -590,6 +590,14 @@ if __name__ == "__main__":
             macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
             macroProc.start()
             run.value = 2
+        
+        #Check for crash
+        if macroProc and not macroProc.is_alive() and hasattr(macroProc, "exitcode") and macroProc.exitcode is not None and macroProc.exitcode < 0:
+            logger.webhook("","Crashed", "red", "screen")
+            keyboardModule.releaseMovement()
+            mouse.mouseUp()
+            macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
+            macroProc.start()
 
         #detect a new log message
         if not logQueue.empty():
