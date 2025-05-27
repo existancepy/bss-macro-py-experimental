@@ -3157,7 +3157,14 @@ class macro:
         endIndex = None
 
         #start searching for the start and end y points of the quest title
+        #if it can't find the title bar in the first y pixels, stop the search
+        #in some cases, the questTitleYPos already crops below the quest title
+        maxHeight = 20
+        if self.display_type == "retina":
+            maxHeight *= 2
         for i, hasColor in enumerate(cropRows):
+            if i > maxHeight and startIndex is None:
+                break
             if hasColor and startIndex is None:
                 #found the starting point of the first quest title area
                 startIndex = i
