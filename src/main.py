@@ -2,7 +2,6 @@
 from pynput import keyboard
 import multiprocessing
 import ctypes
-import typing
 from threading import Thread
 import eel
 import time
@@ -10,7 +9,6 @@ import sys
 import ast
 import subprocess
 from modules.misc import messageBox
-import copy
 import atexit
 from modules.misc.imageManipulation import adjustImage
 from modules.screen.imageSearch import locateImageOnScreen

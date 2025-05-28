@@ -1,42 +1,73 @@
-import fuzzywuzzy.process
+print("Importing ocr module")
 import modules.screen.ocr as ocr
-from modules.screen.pixelColor import getPixelColor
+print("Importing app manager")
 import modules.misc.appManager as appManager
+print("Importing settings manager")
 import modules.misc.settingsManager as settingsManager
+print("Importing time")
 import time
+print("Importing pyautogui")
 import pyautogui as pag
+print("Importing screenshot module")
 from modules.screen.screenshot import mssScreenshot, mssScreenshotNP
+print("Importing keyboard module")
 from modules.controls.keyboard import keyboard
+print("Importing sleep module")
 from modules.controls.sleep import sleep
+print("Importing mouse module")
 import modules.controls.mouse as mouse
+print("Importing screen data module")
 from modules.screen.screenData import getScreenData
+print("Importing log module")
 import modules.logging.log as logModule
+print("Importing field drift compendation module")
 from modules.submacros.fieldDriftCompensation import fieldDriftCompensation as fieldDriftCompensationClass
+print("Importing operator")
 from operator import itemgetter
+print("Importing sys")
 import sys
+print("Importing platform")
 import platform
+print("Importing os")
 import os
+print("Importing numpy")
 import numpy as np
+print("Importing threading")
 import threading
+print("Importing backpack module")
 from modules.submacros.backpack import bpc
+print("Importing image search module")
 from modules.screen.imageSearch import *
+print("Importing webbrowser")
 import webbrowser
+print("Importing pynput keyboard")
 from pynput.keyboard import Key, Controller
+print("Importing cv2")
 import cv2
+print("Importing datetime")
 from datetime import timedelta, datetime
+print("Importing image manipulation module")
 from modules.misc.imageManipulation import *
+print("Importing pillow")
 from PIL import Image
+print("Importing message box module")
 from modules.misc import messageBox
+print("Importing memory match module")
 from modules.submacros.memoryMatch import solveMemoryMatch
+print("Importing math")
 import math
+print("Importing re")
 import re
+print("Importing ast")
 import ast
+print("Importing hourly report module")
 from modules.submacros.hourlyReport import HourlyReport, BuffDetector
 from difflib import SequenceMatcher
+print("Importing fuzzywuzzy")
+import fuzzywuzzy.process
 import fuzzywuzzy
-from modules.submacros.walk import Walk
+print("Importing traceback")
 import traceback
-import atexit
 
 pynputKeyboard = Controller()
 #data for collectable objectives
