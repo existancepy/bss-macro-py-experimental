@@ -12,7 +12,8 @@ mw, mh = pag.size()
 def mssScreenshotNP(x,y,w,h, save = False):
     screen = pag.screenshot(region=(x//2,y//2,w//2,h//2))
     screen = np.array(screen)
-    screen_bgra = cv2.cvtColor(screen_np, cv2.COLOR_RGB2BGRA)
+    screen_bgra = cv2.cvtColor(screen, cv2.COLOR_RGB2BGRA)
+    return screen_bgra
     # with mss.mss() as sct:
     #     # The screen part to capture
     #     monitor = {"left": int(x), "top": int(y), "width": int(w), "height": int(h)}
