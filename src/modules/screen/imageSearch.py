@@ -2,6 +2,7 @@ import cv2
 from modules.screen.screenshot import mssScreenshot, mssScreenshotNP
 import numpy as np
 import imagehash
+import time.time()
 
 def templateMatch(smallImg, bigImg):
     res = cv2.matchTemplate(bigImg, smallImg, cv2.TM_CCOEFF_NORMED)
@@ -16,9 +17,12 @@ def templateMatch(smallImg, bigImg):
 #     return min_val, max_val, (int(min_loc[0] / scale), int(min_loc[1] / scale)), (int(max_loc[0] / scale), int(max_loc[1] / scale))
 
 def locateImageOnScreen(target, x,y,w,h, threshold = 0):
+    t = time.time()
     screen = mssScreenshot(x,y,w,h)
+    print(f"Obtained screenshot: {time.time()-t}")
     screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
     _, max_val, _, max_loc = templateMatch(target, screen)
+    print(f"Template match complete: {time.time()-t}")
     if max_val < threshold: return None
     return (max_val, max_loc)
 
