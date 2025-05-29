@@ -993,6 +993,7 @@ class macro:
             print(f"checked permission popup: {time.time()-st}")
             
             closeImg = self.adjustImage("./images/menu", "close") #sticker printer
+            print(f"adjusted sticker printer image: {time.time()-st}")
             if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
                 self.keyboard.press("e")
             print(f"check sticker printer popup: {time.time()-st}")
