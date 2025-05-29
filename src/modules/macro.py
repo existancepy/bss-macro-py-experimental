@@ -987,25 +987,30 @@ class macro:
             #set mouse and execute hotkeys
             #mouse.teleport(self.mw/(self.xsm*4.11)+40,(self.mh/(9*self.ysm))+yOffset)
             self.canDetectNight = False
-
+            st = time.time()
             #close any menus if they exist
             self.clickPermissionPopup()
-
+            print(f"checked permission popup: {time.time()-st}")
+            
             closeImg = self.adjustImage("./images/menu", "close") #sticker printer
             if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
                 self.keyboard.press("e")
+            print(f"check sticker printer popup: {time.time()-st}")
             
             mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
                 self.canDetectNight = False
                 solveMemoryMatch(self.latestMM, self.display_type)
                 self.canDetectNight = True
+            print(f"checked memory match popup: {time.time()-st}")
 
             blenderImg = self.adjustImage("./images/menu", "blenderclose") #blender
             if locateImageOnScreen(blenderImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
                 self.closeBlenderGUI()
+            print(f"checked blender popup: {time.time()-st}")
             
             self.clickdialog(mustFindDialog=True)
+            print(f"checked dialog: {time.time()-st}")
 
             performanceStatsImg = self.adjustImage("./images/menu", "performancestats")
             if locateTransparentImageOnScreen(performanceStatsImg, 0, 20, self.mw/3.5, 70, 0.7):
@@ -1023,11 +1028,13 @@ class macro:
                     pass
                 else:
                     pass
+            print(f"checked performance stats: {time.time()-st}")
 
             noImg = self.adjustImage("./images/menu", "no") #yes/no popup
             x = self.mw/3.2
             y = self.mh/2.3
             res = locateImageOnScreen(noImg,x,y,self.mw/2.5,self.mh/3.4, 0.8)
+            print(f"checked yes/no popup: {time.time()-st}")
             #mssScreenshot(x,y,self.mw/2.5,self.mh/3.4, True)
             if res:
                 x2, y2 = res[1]
@@ -1051,6 +1058,7 @@ class macro:
                 mouse.moveBy(1,3)
                 time.sleep(0.1)
                 mouse.click()
+            print(f"checked sticker book popup: {time.time()-st}")
 
             self.moveMouseToDefault()
             time.sleep(0.1)
@@ -1059,6 +1067,8 @@ class macro:
             self.keyboard.press('r')
             time.sleep(0.25)
             self.keyboard.press('enter')
+            print(f"pressed reset keys: {time.time()-st}")
+            
             if self.newUI:
                 emptyHealth = self.adjustImage("./images/menu", "emptyhealth_new")
             else:
@@ -1080,10 +1090,12 @@ class macro:
             else:
                 time.sleep(8-3)
 
+            print(f"respawn complete: {time.time()-st}")
+
             self.canDetectNight = True
             self.location = "spawn"
             #detect if player is at hive. Spin a max of 4 times
-            for _ in range(4):
+            for i in range(4):
                 screen = pillowToCv2(mssScreenshot(self.mw//2-100, self.mh-10, 200, 10))
                 # Convert the image from BGR to HLS color space
                 hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
@@ -1094,6 +1106,7 @@ class macro:
                 mask = cv2.erode(mask, resetKernel)
                 #get contours. If contours exist, direction is correct
                 contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                print(f"spin {i+1}: {time.time()-st}")
                 if contours:
                     for _ in range(8):
                         self.keyboard.press("o")
