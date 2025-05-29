@@ -18,6 +18,6 @@ target = cv2.imread("images/menu/ebutton-retina.png", 0)
 screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
 print(f"Converted to BGR and got target image: {time.time()-st}")
 
-templateMatch(target, screen)
+templateMatch(screen, target)
 print(f"Template match: {time.time()-st}")
 print("done")
