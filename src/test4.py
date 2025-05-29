@@ -3,14 +3,15 @@ from modules.screen.screenshot import mssScreenshot, mssScreenshotNP
 import numpy as np
 import imagehash
 import time
-
+import pyautogui as pag
+mw, mh = pag.size()
 def templateMatch(smallImg, bigImg):
     res = cv2.matchTemplate(bigImg, smallImg, cv2.TM_CCOEFF_NORMED)
     return cv2.minMaxLoc(res)
 
 st = time.time()
 
-screen = mssScreenshot(x,y,w,h)
+screen = mssScreenshot(0,0,mw,mh)
 print(f"Took screenshot: {time.time()-st}")
 
 target = cv2.imread("images/menu/ebutton-retina.png", 0)
