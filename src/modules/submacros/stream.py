@@ -374,6 +374,18 @@ class cloudflaredStream:
             print("Starting server with Werkzeug (install waitress for better performance)")
             run_simple('0.0.0.0', 8081, self.app, threaded=True, use_reloader=False)
     
+    def is_cloudflared_installed():
+        try:
+            result = subprocess.run(
+                ["cloudflared", "--version"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            return result.returncode == 0
+        except FileNotFoundError:
+            return False
+
     def _run_cloudflared(self):
         time.sleep(2)
         print("Launching Cloudflare tunnel")

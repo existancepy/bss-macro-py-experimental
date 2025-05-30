@@ -26,46 +26,38 @@ def pillowGrab(x,y,w,h):
     return im_cropped
 
 def cgGrab(region=None):
-    # Set up the screen capture rectangle
+    main_display_id = CG.CGMainDisplayID()
+
     if region:
         left, top, width, height = region
     else:
-        main_display_id = CG.CGMainDisplayID()
         width = CG.CGDisplayPixelsWide(main_display_id)
         height = CG.CGDisplayPixelsHigh(main_display_id)
         left, top = 0, 0
 
     rect = CG.CGRectMake(left, top, width, height)
 
-    # Capture the screen region as an image
-    image_ref = CG.CGWindowListCreateImage(
-        rect,
-        CG.kCGWindowListOptionOnScreenOnly,
-        CG.kCGNullWindowID,
-        CG.kCGWindowImageDefault
-    )
+    # MUCH faster alternative
+    image_ref = CG.CGDisplayCreateImageForRect(main_display_id, rect)
 
-    # Get image width/height and raw pixel data
+    # Proceed with the same conversion
     width = CG.CGImageGetWidth(image_ref)
     height = CG.CGImageGetHeight(image_ref)
     bytes_per_row = CG.CGImageGetBytesPerRow(image_ref)
     data_provider = CG.CGImageGetDataProvider(image_ref)
     data = CG.CGDataProviderCopyData(data_provider)
 
-    # Convert to NumPy array
     img = np.frombuffer(data, dtype=np.uint8).reshape((height, bytes_per_row // 4, 4))
-    img = img[:, :width, :]  # Trim padding if needed
-
-    # Convert to PIL Image (in BGRA format)
+    img = img[:, :width, :]  # Trim padding
     return img
  
 #returns an NP array, useful for cv2
 def mssScreenshotNP(x,y,w,h, save = False):
-    return cgGrab((x,y,w,h))
-    # screen = pillowGrab(int(x*2),int(y*2),int(w*2),int(h*2))
-    # screen = np.array(screen)
-    # screen_bgra = cv2.cvtColor(screen, cv2.COLOR_RGB2BGRA)
-    # return screen_bgra
+    #return cgGrab((x,y,w,h))
+    screen = pillowGrab(int(x*2),int(y*2),int(w*2),int(h*2))
+    screen = np.array(screen)
+    screen_bgra = cv2.cvtColor(screen, cv2.COLOR_RGB2BGRA)
+    return screen_bgra
 
     # with mss.mss() as sct:
     #     # The screen part to capture
@@ -77,12 +69,12 @@ def mssScreenshotNP(x,y,w,h, save = False):
 
 
 def mssScreenshot(x=0,y=0,w=mw,h=mh, save = False):
-    img = cgGrab((x,y,w,h))
-    img = img[:, :, [2, 1, 0]]
-    img = Image.fromarray(img, 'RGB')
-    return img
+    # img = cgGrab((x,y,w,h))
+    # img = img[:, :, [2, 1, 0]]
+    # img = Image.fromarray(img, 'RGB')
+    # return img
 
-    #return pillowGrab(int(x*2),int(y*2),int(w*2),int(h*2))
+    return pillowGrab(int(x*2),int(y*2),int(w*2),int(h*2))
 
     # st = time.time()
     # print(f"x:{x}, y:{y}, w: {w}, h:{h}")

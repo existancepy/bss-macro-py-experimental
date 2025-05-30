@@ -556,9 +556,12 @@ if __name__ == "__main__":
             streamLink = None
             if setdat["enable_stream"]:
                 print("stream enabled")
-                logger.webhook("", "Starting Stream...", "light blue")
-                streamLink = stream.start(setdat["stream_resolution"])
-                Thread(target=waitForStreamURL, daemon=True).start()
+                if stream.is_cloudflared_installed():
+                    logger.webhook("", "Starting Stream...", "light blue")
+                    streamLink = stream.start(setdat["stream_resolution"])
+                    Thread(target=waitForStreamURL, daemon=True).start()
+                else:
+                    messageBox.msgBox(text='Cloudflared is required for streaming but is not installed. Check the #guides channel for installation instructions', title='Cloudflared not installed')
 
             print("starting macro proc")
             #macro proc
