@@ -8,9 +8,22 @@ import cv2
 import time
 
 mw, mh = pag.size()
+def pillowGrab(x,y,w,h):
+    fh, filepath = tempfile.mkstemp(".png")
+    os.close(fh)
+    args = ["screencapture"]
+    subprocess.call(args + ["-x", filepath])
+    im = Image.open(filepath)
+    im.load()
+    os.unlink(filepath)
+    bbox = (x, y, x + w, y + h)
+    im_cropped = im.crop(bbox)
+    im.close()
+    return im_cropped
+    
 #returns an NP array, useful for cv2
 def mssScreenshotNP(x,y,w,h, save = False):
-    screen = pag.screenshot(region=(int(x*2),int(y*2),int(w*2),int(h*2)))
+    screen = pillowGrab((int(x*2),int(y*2),int(w*2),int(h*2)))
     screen = np.array(screen)
     screen_bgra = cv2.cvtColor(screen, cv2.COLOR_RGB2BGRA)
     return screen_bgra
@@ -24,7 +37,7 @@ def mssScreenshotNP(x,y,w,h, save = False):
 
 
 def mssScreenshot(x=0,y=0,w=mw,h=mh, save = False):
-    return pag.screenshot(region=(int(x*2),int(y*2),int(w*2),int(h*2)))
+    return pillowGrab((int(x*2),int(y*2),int(w*2),int(h*2)))
     # st = time.time()
     # print(f"x:{x}, y:{y}, w: {w}, h:{h}")
     # with mss.mss() as sct:
