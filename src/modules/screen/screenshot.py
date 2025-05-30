@@ -6,6 +6,8 @@ import pyautogui as pag
 import numpy as np
 import cv2
 import time
+import os
+import tempfile
 
 mw, mh = pag.size()
 def pillowGrab(x,y,w,h):
