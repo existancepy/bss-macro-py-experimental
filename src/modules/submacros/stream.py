@@ -364,9 +364,10 @@ class cloudflaredStream:
     def _run_server(self):
         #use the production WSGI server if available
         try:
-            from waitress import serve
-            print("Starting server with Waitress WSGI server")
-            serve(self.app, host='0.0.0.0', port=8081, threads=4)
+            # from waitress import serve
+            # print("Starting server with Waitress WSGI server")
+            # serve(self.app, host='0.0.0.0', port=8081, threads=4)
+            pass
         except ImportError:
             # Fall back to Werkzeug server
             from werkzeug.serving import run_simple
