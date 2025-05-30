@@ -23,7 +23,7 @@ def pillowGrab(x,y,w,h):
     
 #returns an NP array, useful for cv2
 def mssScreenshotNP(x,y,w,h, save = False):
-    screen = pillowGrab((int(x*2),int(y*2),int(w*2),int(h*2)))
+    screen = pillowGrab(int(x*2),int(y*2),int(w*2),int(h*2))
     screen = np.array(screen)
     screen_bgra = cv2.cvtColor(screen, cv2.COLOR_RGB2BGRA)
     return screen_bgra
@@ -37,7 +37,7 @@ def mssScreenshotNP(x,y,w,h, save = False):
 
 
 def mssScreenshot(x=0,y=0,w=mw,h=mh, save = False):
-    return pillowGrab((int(x*2),int(y*2),int(w*2),int(h*2)))
+    return pillowGrab(int(x*2),int(y*2),int(w*2),int(h*2))
     # st = time.time()
     # print(f"x:{x}, y:{y}, w: {w}, h:{h}")
     # with mss.mss() as sct:
