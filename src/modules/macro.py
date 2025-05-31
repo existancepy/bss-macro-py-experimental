@@ -9,7 +9,7 @@ import time
 print("Importing pyautogui")
 import pyautogui as pag
 print("Importing screenshot module")
-from modules.screen.screenshot import mssScreenshot, mssScreenshotNP
+from modules.screen.screenshot import mssScreenshot, mssScreenshotNP, benchmarkMSS
 print("Importing keyboard module")
 from modules.controls.keyboard import keyboard
 print("Importing sleep module")
@@ -3538,6 +3538,7 @@ class macro:
             hourlyReportBackgroundThread = threading.Thread(target=self.hourlyReportBackground, daemon=True)
             hourlyReportBackgroundThread.start()
 
-
+        if not benchmarkMSS():
+            self.logger.webhook("", "MSS is too slow, switching to pillow", "dark brown")
         self.reset(convert=True)
         self.saveTiming("rejoin_every")

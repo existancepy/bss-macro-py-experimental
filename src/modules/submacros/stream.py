@@ -367,14 +367,14 @@ class cloudflaredStream:
             # from waitress import serve
             # print("Starting server with Waitress WSGI server")
             # serve(self.app, host='0.0.0.0', port=8081, threads=4)
-            pass
+            raise ImportError
         except ImportError:
             # Fall back to Werkzeug server
             from werkzeug.serving import run_simple
             print("Starting server with Werkzeug (install waitress for better performance)")
             run_simple('0.0.0.0', 8081, self.app, threaded=True, use_reloader=False)
     
-    def is_cloudflared_installed():
+    def isCloudflaredInstalled(self):
         try:
             result = subprocess.run(
                 ["cloudflared", "--version"],

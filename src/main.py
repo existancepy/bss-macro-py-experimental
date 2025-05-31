@@ -556,7 +556,7 @@ if __name__ == "__main__":
             streamLink = None
             if setdat["enable_stream"]:
                 print("stream enabled")
-                if stream.is_cloudflared_installed():
+                if stream.isCloudflaredInstalled():
                     logger.webhook("", "Starting Stream...", "light blue")
                     streamLink = stream.start(setdat["stream_resolution"])
                     Thread(target=waitForStreamURL, daemon=True).start()
