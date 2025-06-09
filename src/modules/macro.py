@@ -3139,9 +3139,9 @@ class macro:
         #scroll to top
         #stop scrolling when the quest page remains unchanged
         prevHash = None
-        for _ in range(300):
+        for _ in range(200):
             mouse.scroll(100)
-            sleep(0.05)
+            sleep(0.08)
             hash = imagehash.average_hash(Image.fromarray(screenshotQuest(100)))
             if not prevHash is None and prevHash == hash:
                 break
