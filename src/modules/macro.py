@@ -3166,12 +3166,13 @@ class macro:
                         #match text with the closest known quest title
                         questTitleYPos = x[0][0][1] #get the top Y coordinate
                         questTitle, _ = fuzzywuzzy.process.extractOne(text, quest_data[questGiver].keys())
+                        self.logger.webhook("", f"Quest Title: {questTitle}", "dark brown")
                         break
                 
             if questTitle:
                 break
             mouse.scroll(-3, True)
-            time.sleep(0.06)
+            time.sleep(0.08)
 
         if questTitle is None:
             self.logger.webhook("", f"Could not find {questGiver} quest", "dark brown")
