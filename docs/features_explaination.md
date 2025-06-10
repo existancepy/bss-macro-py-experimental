@@ -39,7 +39,7 @@ Invert forward and backward keys of the pattern. Instead of going forwards, the 
 ### Direction
 The direction to turn the camera in before gathering. The initial direction the macro faces varies from field to field. Below is a table of fields and their initial direction. It is the same as Natro Macro
 
-*Note: North is the direction in which the player faces away from the hive*
+*Note: North is the direction where the player faces mountain top*
 | Field | Initial Direction |
 | --- | --- |
 | Sunflower | West |
@@ -141,7 +141,7 @@ Goes to the coconut field and attempts to kill the coconut crab. Since the macro
 ### Misc
 Enable Ant Challenge
 
-## 4. Boost
+## 5. Boost
 
 ### Hotbar
 Allows the user to set how often a hotbar slot should be activated and when
@@ -159,12 +159,12 @@ Collect field boosters
 - **Item** -> Choose if the macro should use stickers or tickets to activate the sticker stack. 
 - **Use Hive Skins** -> Choose if the macro should use hive skins in the sticker stack 
 
-## 5. Planters
+## 6. Planters
 
 ### Manual
 
-**Tracking of Planters**
-The macro is able to "remember" which planters are placed and when they were placed, as it saves the state of planters. However, the growth time of the planters are calculated purely from the time that they are placed and does not consider the time spent in-game. This means, that if the macro places a planter down, and you stop it and leave the game for 2 hours, it will assume that the planter has 2 hours of growth time
+**Tracking of Planters**<br>
+The macro is able to "remember" which planters are placed and when they were placed, as it saves the state of planters. However, the growth time of the planters are calculated purely from the time that they are placed and does not consider the time spent outside the game. This means, that if the macro places a planter down, and you stop it and leave the game for 2 hours, it will assume that the planter has 2 hours of growth time
 
 - **Harvest Every X Hours** -> How often the macro should harvest planters
 - **Harvest When Full** -> Collect the planters when they are fully grown. When this setting is enabled, the macro will ignore the 'Harvest Every X Hours' setting
@@ -179,7 +179,7 @@ As soon as cycle 5 is reached, or there is no planter in the next cycle, the mac
 - **Gather in Planter Field** -> Gather in the same field as the specified planter until that planter is harvested. The gather settings used will be the same ones that are set in the gather tab.
 - **Glitter** -> Use Glitter when the placing the planter.
 
-## 6. Quests
+## 7. Quests
 
 **How macro handles gathering for quests**
 
