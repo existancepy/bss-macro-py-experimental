@@ -68,6 +68,7 @@ import fuzzywuzzy.process
 import fuzzywuzzy
 print("Importing traceback")
 import traceback
+import ctypes
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -3404,6 +3405,12 @@ class macro:
         #disable game mode
         self.moveMouseToDefault()
         if sys.platform == "darwin":
+            #check for screen recording
+            cg = ctypes.cdll.LoadLibrary("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")
+            cg.CGRequestScreenCaptureAccess.restype = ctypes.c_bool
+            if not cg.CGRequestScreenCaptureAccess():
+                messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal. After that, restart the macro')
+
             time.sleep(1)
             #check roblox scaling
             #this is done by checking if all pixels at the top of the screen are black
@@ -3472,13 +3479,6 @@ class macro:
         else:
             self.logger.webhook("","Unable to detect Roblox UI","red", "screen")
             self.newUI = True
-            #2nd check for screen recording perms by checking for sprinkler icon
-            if sys.platform == "darwin":
-                sprinklerImg = self.adjustImage("./images/menu", "sprinkler")
-                if not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.75):
-                    pass
-                    #messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal. After that, restart the macro.\n\nVisit #6system-settings in the discord for more detailed instructions\n\n NOTE: This popup might be incorrect. If the macro is able to detect objects on the screen, you can dismiss this popup', title='Screen Recording Permission')
-
         if self.newUI:
             ocr.newUI = True
             logModule.newUI = True
