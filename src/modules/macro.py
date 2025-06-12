@@ -1131,7 +1131,7 @@ class macro:
             self.keyboard.keyDown("d")
             time.sleep(0.5)
             self.keyboard.slowPress("space")
-            #os.system('osascript -e \'tell application "System Events" to key code 49\'')
+            os.system('osascript -e \'tell application "System Events" to key code 49\'')
             time.sleep(0.2)
             self.keyboard.keyDown("d")
             self.keyboard.walk("w",0.2)
