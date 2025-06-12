@@ -1,42 +1,74 @@
-import fuzzywuzzy.process
+print("Importing ocr module")
 import modules.screen.ocr as ocr
-from modules.screen.pixelColor import getPixelColor
+print("Importing app manager")
 import modules.misc.appManager as appManager
+print("Importing settings manager")
 import modules.misc.settingsManager as settingsManager
+print("Importing time")
 import time
+print("Importing pyautogui")
 import pyautogui as pag
-from modules.screen.screenshot import mssScreenshot, mssScreenshotNP
+print("Importing screenshot module")
+from modules.screen.screenshot import mssScreenshot, mssScreenshotNP, benchmarkMSS
+print("Importing keyboard module")
 from modules.controls.keyboard import keyboard
+print("Importing sleep module")
 from modules.controls.sleep import sleep
+print("Importing mouse module")
 import modules.controls.mouse as mouse
+print("Importing screen data module")
 from modules.screen.screenData import getScreenData
+print("Importing log module")
 import modules.logging.log as logModule
+print("Importing field drift compendation module")
 from modules.submacros.fieldDriftCompensation import fieldDriftCompensation as fieldDriftCompensationClass
+print("Importing operator")
 from operator import itemgetter
+print("Importing sys")
 import sys
+print("Importing platform")
 import platform
+print("Importing os")
 import os
+print("Importing numpy")
 import numpy as np
+print("Importing threading")
 import threading
+print("Importing backpack module")
 from modules.submacros.backpack import bpc
+print("Importing image search module")
 from modules.screen.imageSearch import *
+print("Importing webbrowser")
 import webbrowser
+print("Importing pynput keyboard")
 from pynput.keyboard import Key, Controller
+print("Importing cv2")
 import cv2
+print("Importing datetime")
 from datetime import timedelta, datetime
+print("Importing image manipulation module")
 from modules.misc.imageManipulation import *
+print("Importing pillow")
 from PIL import Image
+print("Importing message box module")
 from modules.misc import messageBox
+print("Importing memory match module")
 from modules.submacros.memoryMatch import solveMemoryMatch
+print("Importing math")
 import math
+print("Importing re")
 import re
+print("Importing ast")
 import ast
+print("Importing hourly report module")
 from modules.submacros.hourlyReport import HourlyReport, BuffDetector
 from difflib import SequenceMatcher
+print("Importing fuzzywuzzy")
+import fuzzywuzzy.process
 import fuzzywuzzy
-from modules.submacros.walk import Walk
+print("Importing traceback")
 import traceback
-import atexit
+import ctypes
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -754,7 +786,7 @@ class macro:
 
         prevHash = None
         time.sleep(0.3)
-        for i in range(100):
+        for i in range(120):
             #screen = cv2.cvtColor(mssScreenshotNP(90, 90, 300-90, self.mh-180), cv2.COLOR_RGBA2GRAY)
             #max_loc = fastFeatureMatching(screen, itemImg)
             #max_val = 1 if max_loc else 0
@@ -842,9 +874,10 @@ class macro:
 
         mouse.moveTo(x, y)
         mouse.moveBy(10,15)
-        for _ in range(2):
+        for _ in range(3):
             mouse.click()
-            time.sleep(0.1)
+            time.sleep(0.03)
+            mouse.moveBy(0,15)
         self.clickYes()
         #close inventory
         self.toggleInventory("close")
@@ -873,12 +906,9 @@ class macro:
         self.converting = True
 
         #check if convert balloon
-        if self.setdat["convert_balloon"] == "always":
-            convertBalloon = True
-        elif self.setdat["convert_balloon"] == "every" and self.hasRespawned("convert_balloon", self.setdat["convert_balloon_every"]*60):
-            convertBalloon = True
-        else:
-            convertBalloon = False
+        convertBalloon = (self.setdat["convert_balloon"] == "always") or \
+                        (self.setdat["convert_balloon"] == "every" and self.hasRespawned("convert_balloon", self.setdat["convert_balloon_every"]*60))
+        
         convertedBackpack = False
 
         if self.enableNightDetection:
@@ -915,8 +945,9 @@ class macro:
             if not convertedBackpack:
                 for _ in range(4):
                     backpack = self.getBackpack()
-                    if backpack: break
+                    if backpack: break #continue converting
                 else:
+                    #backpack is done converting, now convert balloon
                     convertedBackpack = True
                     if not convertBalloon: break
                     self.logger.webhook("", "Converting Balloon", "light blue")
@@ -924,6 +955,33 @@ class macro:
             if time.time()-st > 30*60: #30mins max
                 self.logger.webhook("","Converting timeout (30mins max)", "brown", "screen")
                 break
+
+            #check for afb
+            if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and not self.afb:
+                #glitter is not up, but dice is
+                if self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"]*60) and not self.AFBglitter and not self.failed: 
+                    self.afb = True
+                    self.stop = True
+                    self.cAFBDice = True
+                    self.logger.webhook("Rebuffing","AFB", "brown")
+                    time.sleep(1)
+                    self.AFB()
+                    self.cAFBDice = False
+                    self.logger.webhook("", "Still converting", "brown")
+                #glitter is up
+                elif self.setdat["AFB_glitter"] and self.hasAFBRespawned("AFB_glitter_cd", self.setdat["AFB_rebuff"]*60+30) and self.AFBglitter and not self.failed and not self.afb: #if used dice before
+                    self.status.value = ""
+                    self.afb = True
+                    self.stop = True
+                    self.cAFBglitter = True
+                    self.logger.webhook("Converting: interrupted","AFB", "brown")
+                    time.sleep(1)
+                    self.AFB()
+                    self.AFBglitter = False
+                    self.cAFBglitter = False
+                    self.logger.webhook("", "Continuing conversion", "brown")
+                    self.status.value = "converting"
+                if not self.converting: break
 
         if convertBalloon: self.saveTiming("convert_balloon")
         self.status.value = ""
@@ -945,7 +1003,7 @@ class macro:
         if self.newUI: yOffset += 20
         mouse.moveTo(370, 100+yOffset)
 
-    def reset(self, hiveCheck = False, convert = True):
+    def reset(self, hiveCheck = False, convert = True, AFB = False):
         self.alreadyConverted = False
         self.keyboard.releaseMovement()
 
@@ -955,23 +1013,31 @@ class macro:
             #set mouse and execute hotkeys
             #mouse.teleport(self.mw/(self.xsm*4.11)+40,(self.mh/(9*self.ysm))+yOffset)
             self.canDetectNight = False
-
+            st = time.time()
             #close any menus if they exist
             self.clickPermissionPopup()
-
+            print(f"checked permission popup: {time.time()-st}")
+            
             closeImg = self.adjustImage("./images/menu", "close") #sticker printer
+            print(f"adjusted sticker printer image: {time.time()-st}")
             if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
                 self.keyboard.press("e")
+            print(f"check sticker printer popup: {time.time()-st}")
             
             mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
             if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
+                self.canDetectNight = False
                 solveMemoryMatch(self.latestMM, self.display_type)
+                self.canDetectNight = True
+            print(f"checked memory match popup: {time.time()-st}")
 
             blenderImg = self.adjustImage("./images/menu", "blenderclose") #blender
             if locateImageOnScreen(blenderImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
                 self.closeBlenderGUI()
+            print(f"checked blender popup: {time.time()-st}")
             
             self.clickdialog(mustFindDialog=True)
+            print(f"checked dialog: {time.time()-st}")
 
             performanceStatsImg = self.adjustImage("./images/menu", "performancestats")
             if locateTransparentImageOnScreen(performanceStatsImg, 0, 20, self.mw/3.5, 70, 0.7):
@@ -989,11 +1055,13 @@ class macro:
                     pass
                 else:
                     pass
+            print(f"checked performance stats: {time.time()-st}")
 
             noImg = self.adjustImage("./images/menu", "no") #yes/no popup
             x = self.mw/3.2
             y = self.mh/2.3
             res = locateImageOnScreen(noImg,x,y,self.mw/2.5,self.mh/3.4, 0.8)
+            print(f"checked yes/no popup: {time.time()-st}")
             #mssScreenshot(x,y,self.mw/2.5,self.mh/3.4, True)
             if res:
                 x2, y2 = res[1]
@@ -1017,6 +1085,7 @@ class macro:
                 mouse.moveBy(1,3)
                 time.sleep(0.1)
                 mouse.click()
+            print(f"checked sticker book popup: {time.time()-st}")
 
             self.moveMouseToDefault()
             time.sleep(0.1)
@@ -1025,6 +1094,8 @@ class macro:
             self.keyboard.press('r')
             time.sleep(0.25)
             self.keyboard.press('enter')
+            print(f"pressed reset keys: {time.time()-st}")
+            
             if self.newUI:
                 emptyHealth = self.adjustImage("./images/menu", "emptyhealth_new")
             else:
@@ -1046,10 +1117,17 @@ class macro:
             else:
                 time.sleep(8-3)
 
+            print(f"respawn complete: {time.time()-st}")
+
+            if AFB: 
+                self.logger.webhook("", f"AFB: Cooldown: {self.setdat['AFB_wait']} seconds", "brown")
+                time.sleep(self.setdat["AFB_wait"])
+                self.died = False
+
             self.canDetectNight = True
             self.location = "spawn"
             #detect if player is at hive. Spin a max of 4 times
-            for _ in range(4):
+            for i in range(4):
                 screen = pillowToCv2(mssScreenshot(self.mw//2-100, self.mh-10, 200, 10))
                 # Convert the image from BGR to HLS color space
                 hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
@@ -1060,6 +1138,7 @@ class macro:
                 mask = cv2.erode(mask, resetKernel)
                 #get contours. If contours exist, direction is correct
                 contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                print(f"spin {i+1}: {time.time()-st}")
                 if contours:
                     for _ in range(8):
                         self.keyboard.press("o")
@@ -1082,6 +1161,7 @@ class macro:
             self.keyboard.keyDown("d")
             time.sleep(0.5)
             self.keyboard.slowPress("space")
+            #os.system('osascript -e \'tell application "System Events" to key code 49\'')
             time.sleep(0.2)
             self.keyboard.keyDown("d")
             self.keyboard.walk("w",0.2)
@@ -1218,6 +1298,11 @@ class macro:
             self.keyboard.timeWait(2.9)
             self.keyboard.keyUp("d", False)
             self.keyboard.keyUp("w", False)
+            for _ in range(3):
+                time.sleep(0.4)
+                if self.isBesideE(["claim", "hive", "send", "trad", "has"]):
+                    break
+                self.keyboard.walk("w", 0.15)
 
             def isHiveAvailable():
                 return self.isBesideE(["claim", "hive"], ["send", "trade"], log=True)
@@ -1329,7 +1414,7 @@ class macro:
     
     def blueTextImageSearch(self, text, threshold=0.7):
         target = self.adjustImage("./images/blue", text)
-        return locateImageOnScreen(target, self.mw*3/4, self.mh*2/3, self.mw//4,self.mh//3, threshold)
+        return locateImageOnScreen(target, self.mw*3/4, self.mh*3/5, self.mw/4, self.mh-self.mh*3/5, threshold)
     #background thread for gather
     #check if mobs have been killed and reset their timings
     #check if player died
@@ -1499,14 +1584,21 @@ class macro:
             if self.setdat["low_performance"]:
                 self.gatherBackgroundOnce(field)
 
+            #check for AFB
+            if self.setdat["Auto_Field_Boost"] and not self.AFBLIMIT and self.AFB(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
+                return
             #check for gather interrupts
-            if self.night and self.setdat["stinger_hunt"]: 
+            elif self.night and self.setdat["stinger_hunt"]: 
                 #rely on task function in main to execute the stinger hunt
                 stopGather()
                 self.logger.webhook("Gathering: interrupted","Stinger Hunt","dark brown")
                 self.reset(convert=False)
                 break
-            elif self.setdat["mondo_buff"] and self.collectMondoBuff(gatherInterrupt=True, turnOffShiftLock = fieldSetting["shift_lock"]):
+            elif self.setdat["mondo_buff"] and self.hasMondoRespawned() and self.setdat["mondo_buff_interrupt_gathering"]:
+                stopGather()
+                self.logger.webhook("Gathering: interrupted","Mondo Buff","dark brown")
+                self.reset(convert=False)
+                self.collectMondoBuff()
                 break
             elif self.died:
                 self.status.value = ""
@@ -1534,7 +1626,6 @@ class macro:
             nonlocal self
             #walk to hive
             #face correct direction (towards hive)
-            reverseTurnTimes = 4 - fieldSetting["turn_times"]
             if fieldSetting["turn"] == "left":
                 for _ in range(fieldSetting["turn_times"]):
                     self.keyboard.press(".")
@@ -1641,23 +1732,19 @@ class macro:
             return
         self.logger.webhook("", "Cant start ant challenge", "red", "screen")
 
-    def collectMondoBuff(self, gatherInterrupt = False, turnOffShiftLock = False):
-        
-        def getCurrentMinute():
-            current_time = datetime.now().strftime("%H:%M:%S")
-            _,m,_ = [int(x) for x in current_time.split(":")]
-            return m
-        
+    def getCurrentMinute(self):
+        current_time = datetime.now().strftime("%H:%M:%S")
+        _,m,_ = [int(x) for x in current_time.split(":")]
+        return m
+    
+    def hasMondoRespawned(self):
         #check if mondo can be collected (first 10mins)
-        minute = getCurrentMinute()
+        minute = self.getCurrentMinute()
         #set respawn time to 20mins
         #mostly just to prevent the macro from going to mondo over and over again for the 10mins
-        if minute > 10 or not self.hasRespawned("mondo", 20*60): return False
-        if gatherInterrupt:
-            if not self.setdat["mondo_buff_interrupt_gathering"]: return False
-            if turnOffShiftLock: self.keyboard.press("shift")
-            self.logger.webhook("Gathering: interrupted","Mondo Buff","dark brown")
-            self.reset(convert=False)
+        return minute <= 10 and self.hasRespawned("mondo", 20*60)
+
+    def collectMondoBuff(self, gatherInterrupt = False):
         self.status.value = ""
         st = time.perf_counter()
         self.logger.webhook("","Travelling: Mondo Buff","dark brown")
@@ -1682,10 +1769,12 @@ class macro:
                     self.keyboard.press("shift")
                     self.logger.webhook("", "Player Died", "red", "screen")
                     self.reset(convert=False)
+                    #sev recursion here is pretty weird
+                    #TODO: not make it recursive
                     self.collectMondoBuff()
                     return
                 #time limit
-                if getCurrentMinute() >= 15: #mondo despawns after 15 minutes if not defeated in time
+                if self.getCurrentMinute() >= 15: #mondo despawns after 15 minutes if not defeated in time
                     self.keyboard.walk("s",1, False)
                     self.keyboard.press(",")
                     time.sleep(0.5)
@@ -1908,7 +1997,9 @@ class macro:
                 self.latestMM = mmType
                 time.sleep(2)
                 self.logger.webhook("", f"Solving: {displayName}", "dark brown", "screen")
+                self.canDetectNight = False
                 solveMemoryMatch(mmType, self.display_type)
+                self.canDetectNight = True
                 time.sleep(2)
                 self.logger.webhook("", f"Completed: {displayName}", "bright green", "blue")
             elif objective in fieldBoosterData:
@@ -2331,11 +2422,18 @@ class macro:
                 st = time.time()
                 while time.time()-st < (finalKey[1]+1):
                     self.keyboard.walk(finalKey[0],0.25)
-                    if self.isBesideEImage("ebutton"): return True
-                return False
+                    if self.isBesideEImage("ebutton"): 
+                        return True
             else:
                 time.sleep(1)
-                return self.isBesideEImage("ebutton")
+                if self.isBesideEImage("ebutton"): 
+                    return True
+            #can't find it, try detecting and moving to it
+            self.moveToPlanter()
+            if self.isBesideE(["harvest", "planter"]):
+                return True
+            return False
+                
         else: #place, just walk there
             if finalKey is not None: self.keyboard.walk(finalKey[0], finalKey[1])
             return True
@@ -2373,19 +2471,35 @@ class macro:
             #place planter
             self.useItemInInventory(x=self.planterCoords[0], y=self.planterCoords[1])
             
-            #use glitter
-            if glitter: self.useItemInInventory("glitter")
-            
             #check if planter is placed
             time.sleep(0.5)
             placedPlanter = False
             for _ in range(20):
                 if self.blueTextImageSearch("planter"):
-                    self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")
                     placedPlanter = True
                     break
                 time.sleep(0.1)
-            if placedPlanter: break
+            #didnt detect the image, check for planter growth bar
+            for _ in range(3):
+                screen = mssScreenshotNP(self.mw/2.14, self.mh/2.9, self.mw/1.8-self.mw/2.14, self.mh/2.2-self.mh/2.9)
+                screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
+                kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
+                if findColorObjectRGB(screen, (86, 120, 72), kernel=kernel, variance=2):
+                    placedPlanter = True
+                    break
+                for _ in range(2):
+                    self.keyboard.press(",")
+                time.sleep(2)
+                
+            # time.sleep(1)
+            # if self.isBesideE(["harvest", "planter"], []):
+            #     placedPlanter = True
+                
+            if placedPlanter: 
+                self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")          
+                #use glitter
+                if glitter: self.useItemInInventory("glitter")
+                break
             self.logger.webhook("",f"Failed to Place Planter: {planter.title()}", "red", "screen")
             self.reset()
         else:
@@ -2403,10 +2517,99 @@ class macro:
         else:
             return self.setdat["manual_planters_collect_every"]*60*60 
 
+    #locate the planter's growth bar and move there
+    def moveToPlanter(self):
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(2,2))
+        def getPlanterLocation():
+            screen = mssScreenshotNP(0,0,self.mw,self.mh)
+            screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
+            # #screen = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
+            #screen = cv2.imread("b.png")
+            point = findColorObjectRGB(screen, (134, 213, 112), kernel=kernel, variance=2, draw=False)
+            if not point:
+                point = findColorObjectRGB(screen, (31, 231, 68), kernel=kernel, variance=2)
+            
+            if point and self.display_type == "retina":
+                point = [x//2 for x in point] 
+            return point
+
+        winUp, winDown = self.mh/3.1, self.mh/2.9
+        winLeft, winRight = self.mw/2.14, self.mw/1.88
+
+        hmove, vmove = "", ""
+        for _ in range(10):
+            location = getPlanterLocation()
+            if location:
+                break
+        else:
+            return
+        
+        x,y = location
+        print(y)
+
+        #move towards saturator
+        if x >= winLeft and x <= winRight and y >= winUp and y <= winDown: 
+            return
+        if x < winLeft:
+            keyboard.keyDown("a", False)
+            hmove = "a"
+        elif x > winRight:
+            keyboard.keyDown("d", False)
+            hmove = "d"
+        if y < winUp:
+            keyboard.keyDown("w", False)
+            vmove = "w"
+        elif y > winDown:
+            keyboard.keyDown("s", False)
+            vmove = "s"
+
+        i = 0
+        while hmove or vmove:
+            #check if reached saturator
+            if (hmove == "a" and x >= winLeft) or (hmove == "d" and x <= winRight):
+                keyboard.keyUp(hmove, False)
+                hmove = ""
+                
+            if (vmove == "w" and y >= winUp) or (vmove == "s" and y <= winDown):
+                keyboard.keyUp(vmove, False)
+                vmove = ""
+            
+            time.sleep(0.02)
+            #taking too long, just give up
+            if i >= 100:
+                print("give up")
+                keyboard.releaseMovement()
+                break
+            #update planter location
+            location = getPlanterLocation()
+            if location:
+                x,y = location
+
+            else: #cant find planter, pause
+                keyboard.releaseMovement()
+                #try to find planter
+                for _ in range(10):
+                    time.sleep(0.02)
+                    location = getPlanterLocation()
+                    #planter found
+                    if location:
+                        #move towards planter
+                        if hmove:
+                            keyboard.keyDown(hmove)
+                        if vmove:
+                            keyboard.keyDown(vmove)
+                        x,y = location
+                        break
+                else: #still cant find it, give up
+                    return
+            i += 1
+            
     def collectPlanter(self, planter, field):
         st = time.time()
         def updateHourlyTime():
             self.hourlyReport.addHourlyStat("misc_time", time.time()-st)
+        
+
         for _ in range(2):
             if self.goToPlanter(planter, field, "collect"): 
                 break
@@ -2420,6 +2623,7 @@ class macro:
         self.logger.webhook("",f"Looting: {planter.title()} planter","bright green", "screen")
         self.keyboard.multiWalk(["s","d"], 0.87)
         self.nmLoot(9, 5, "a")
+        self.setMobTimer(field)
         updateHourlyTime()
 
     #plant all 3 planters in one cycle
@@ -2435,6 +2639,8 @@ class macro:
             if self.setdat[f"cycle{cycle}_{i+1}_planter"] == "none" or self.setdat[f"cycle{cycle}_{i+1}_field"] == "none":
                 continue
             planterData = self.placePlanterInCycle(i, cycle, planterData)
+
+        
     
     def placePlanterInCycle(self, slot, cycle, planterData):
         planter = self.setdat[f"cycle{cycle}_{slot+1}_planter"]
@@ -2460,12 +2666,11 @@ class macro:
         planterReady = time.strftime("%H:%M:%S", time.gmtime(planterGrowthTime))
         self.logger.webhook("", f"Planter will be ready in: {planterReady}", "light blue")
 
-        #save the planter data
+        self.reset()
+
         with open("./data/user/manualplanters.txt", "w") as f:
             f.write(str(planterData))
         f.close()
-
-        self.reset()
         return planterData
     
     def closeBlenderGUI(self):
@@ -2969,9 +3174,9 @@ class macro:
         #scroll to top
         #stop scrolling when the quest page remains unchanged
         prevHash = None
-        for _ in range(180):
+        for _ in range(200):
             mouse.scroll(100)
-            sleep(0.05)
+            sleep(0.08)
             hash = imagehash.average_hash(Image.fromarray(screenshotQuest(100)))
             if not prevHash is None and prevHash == hash:
                 break
@@ -2994,14 +3199,15 @@ class macro:
                         if word in text: break
                     else:
                         #match text with the closest known quest title
-                        questTitleYPos = x[0][3][1] #get the bottom Y coordinate
+                        questTitleYPos = x[0][0][1] #get the top Y coordinate
                         questTitle, _ = fuzzywuzzy.process.extractOne(text, quest_data[questGiver].keys())
+                        self.logger.webhook("", f"Quest Title: {questTitle}", "dark brown")
                         break
                 
             if questTitle:
                 break
             mouse.scroll(-3, True)
-            time.sleep(0.06)
+            time.sleep(0.08)
 
         if questTitle is None:
             self.logger.webhook("", f"Could not find {questGiver} quest", "dark brown")
@@ -3015,9 +3221,44 @@ class macro:
         #merge the texts into chunks. Using those chunks, compare it with the known objectives
         #assume that the merging is done properly, so 1st chunk = 1st objective
         screen = cv2.cvtColor(screenshotQuest(650, gray=False), cv2.COLOR_BGRA2BGR)
-        #crop it below the quest title
+        #crop it just above the quest title
         screen = screen[questTitleYPos: , : ]
         screenOriginal = np.copy(screen)
+
+        #crop it below the quest title, to the first objective
+        #this is done by detecting the color of the title bar, since relying on ocr's bounding box can cause it to overcrop
+        cropTargetColor = [247, 240, 229]
+        cropColorTolerance = 3
+        lower = np.array([c - cropColorTolerance for c in cropTargetColor], dtype=np.uint8)
+        upper = np.array([c + cropColorTolerance for c in cropTargetColor], dtype=np.uint8)
+
+        #create a mask for the target color
+        cropMask = cv2.inRange(screen, lower, upper)
+        cropRows = np.any(cropMask > 0, axis=1)
+        startIndex = None
+        endIndex = None
+
+        #start searching for the start and end y points of the quest title
+        #if it can't find the title bar in the first y pixels, stop the search
+        #in some cases, the questTitleYPos already crops below the quest title
+        maxHeight = 20
+        if self.display_type == "retina":
+            maxHeight *= 2
+        for i, hasColor in enumerate(cropRows):
+            if i > maxHeight and startIndex is None:
+                break
+            if hasColor and startIndex is None:
+                #found the starting point of the first quest title area
+                startIndex = i
+            elif not hasColor and startIndex is not None:
+                #found the ending point of the quest title area
+                endIndex = i
+                break
+        
+        #crop
+        if endIndex is not None:
+            screen = screen[endIndex:, :]
+
         #convert to grayscale
         screenGray = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
         img = cv2.inRange(screenGray, 0, 50)
@@ -3061,7 +3302,7 @@ class macro:
             if objectiveData[0] == "feed":
                 amount = ''.join([x for x in textChunk if x.isdigit()])
                 if amount:
-                    objectiveData[1] = amount
+                    objectiveData[1] = str(min(int(amount), 100))
                     objectives[i] = "_".join(objectiveData)
 
             if "complete" in textChunk:
@@ -3193,11 +3434,227 @@ class macro:
         
         self.logger.webhook("",f"Fed {quantity} {item}", "bright green")
 
+    def saveAFB(self, name):
+        return settingsManager.saveSettingFile(name, time.time(), "./data/user/AFB.txt")
+    
+    def getAFBtiming(self,name = None):
+        for _ in range(3):
+            data = settingsManager.readSettingsFile("./data/user/AFB.txt")
+            if data: break #most likely another process is writing to the file
+            time.sleep(0.1)
+        if name is not None:
+            if not name in data:
+                print(f"could not find timing for {name}, setting a new one")
+                self.saveAFB(name)
+                return time.time()
+            return data[name]
+        return data
+    
+    def hasAFBRespawned(self, name, cooldown, applyMobRespawnBonus = False, timing = None):
+        if timing is None: timing = self.getAFBtiming(name)
+        if not isinstance(timing, float) and not isinstance(timing, int):
+            print(f"Timing is not a valid number? {timing}")
+        mobRespawnBonus = 1
+        if applyMobRespawnBonus:
+            mobRespawnBonus -= 0.15 if self.setdat["gifted_vicious"] else 0
+            mobRespawnBonus -= self.setdat["stick_bug_amulet"]/100 
+            mobRespawnBonus -= self.setdat["icicles_beequip"]/100 
+
+        return time.time() - timing >= cooldown*mobRespawnBonus
+    
+    def AFB(self, gatherInterrupt = False, turnOffShiftLock = False):  # Auto Field Boost - WOOHOO
+        returnVal = None
+        # time limit - :(
+        if self.AFBLIMIT: return True
+        if not self.AFBLIMIT and self.setdat["AFB_limit_on"] and self.hasAFBRespawned("AFB_limit", self.setdat["AFB_limit"]*60*60):
+            self.logger.webhook("AFB", "Time limit reached: Skipping", "red")
+            self.AFBLIMIT = True
+
+        goToField = threading.Thread(target=self.goToField, args=(self.setdat["AFB_field"],))
+        Glitter = threading.Thread(target=self.useItemInInventory, args=("glitter",))
+
+        x = self.setdat["AFB_attempts"]
+        field = self.setdat["AFB_field"]
+        rebuff = self.setdat["AFB_rebuff"]
+        dice = self.setdat["AFB_dice"]
+        glitter = self.setdat["AFB_glitter"]
+        diceslot = self.setdat["AFB_slotD"]
+        glitterslot = self.setdat["AFB_slotG"]
+
+        if gatherInterrupt:
+            if ((glitter and self.hasAFBRespawned("AFB_glitter_cd", rebuff * 60) and self.AFBglitter) or (self.hasAFBRespawned("AFB_dice_cd", self.setdat["AFB_rebuff"] * 60) and not self.AFBglitter)) and not self.failed:                
+                self.status.value = ""
+                self.afb = True
+                if turnOffShiftLock: self.keyboard.press("shift")
+                self.logger.webhook("Gathering: interrupted", "Automatic Field Boost", "brown")
+                if self.AFBglitter: 
+                    self.reset(convert=False) 
+                else: 
+                    self.reset(AFB=True)
+
+        if self.hasAFBRespawned("AFB_dice_cd", rebuff*60) or self.hasAFBRespawned("AFB_glitter_cd", rebuff*60):
+            self.failed = False
+            if self.setdat["Auto_Field_Boost"]:
+                # dice
+                if self.cAFBDice or (self.hasAFBRespawned("AFB_dice_cd", rebuff*60) and not self.AFBglitter):
+                    self.cAFBDice = False
+                    # get all fields
+                    fields = ["rose", "strawberry", "mushroom", "pepper",  # red
+                            "sunflower", "dandelion", "spider", "coconut", # white
+                            "pine tree", "blue flower", "bamboo", "stump",  # blue
+                            "clover", "pineapple", "pumpkin", "cactus", "mountain top"]  # colored
+                    # ignore detected lines with these words, reduces false positives
+                    ignore = {"strawberry", "strawberries", "blueberry", "blueberries", 
+                    "seed", "seeds", "pineapple", "pineapples", "honey", "from"}
+
+                    #begin
+                    self.logger.webhook("", f"Auto Field Boost", "white")
+                    for i in range(2):
+                        self.keyboard.press("i") # to avoid clicking on bees
+                    self.keyboard.press("pageup") # to avoid clicking on stickers
+                    # go to field if loaded, chance of field being boosted: 25% - 100%
+                    if "loaded" in dice:
+                        self.cannon()
+                        self.goToField(field)
+
+                    # using inv instead
+                    if diceslot == 0: 
+                        diceCoords = self.findItemInInventory(self.setdat['AFB_dice'])
+
+                    for i in range(x):
+                        bluetexts = ""
+                        self.logger.webhook("", f"{str(dice).title()}, Attempt: {i+1}/{x}", "white")
+
+                        # using inv instead
+                        if diceslot == 0: 
+                            if diceCoords:
+                                self.useItemInInventory(x=diceCoords[0], y=diceCoords[1]) 
+                            # use
+                        else: self.keyboard.press(str(diceslot))
+
+                        #timeout: (IN CASE OF) failed detection or high lag
+                        timeout = 0 
+                        for _ in range(300):
+                            if self.blueTextImageSearch("boosted"): # if message contains "boosted", continue
+                                time.sleep(1.25)
+                                break
+                            timeout += 1    
+                            if timeout == 300: # else try again after other tasks
+                                self.logger.webhook("", "Auto Field Boost: Timeout", "white")
+                                self.toggleInventory("close")
+                                self.saveAFB("AFB_dice_cd")
+                                self.AFBglitter = False
+                                return
+                        for _ in range(4): # detect text
+                            bluetexts += ocr.imToString("blue").lower() + "\n"
+                        bluetexts = " ".join(bluetexts.split())
+
+                        # smooth/loaded
+                        clean = bluetexts.lower().replace(" and the ", " ") 
+                        # "and the" appears when using loaded and smooth
+                        and_the = [line for line in clean.split("\n") if "and the" in line] 
+                        the = bluetexts.split()  # get each line of detected text
+                        boostedField = []
+
+                        # for field dice only
+                        if "field" in dice: 
+                            boostedField = None
+                            for f in fields:  
+                                if f.lower() in bluetexts and not any(word in f.lower() for word in ignore): 
+                                    if f.lower() == field.lower():  # only allow the chosen field
+                                        boostedField = f
+                                        break 
+                        #other die
+                        else:
+                            boostedField = None
+                            for sentence in and_the: 
+                                if "boosted" in sentence:
+                                    for f in fields:
+                                        if f.lower() in sentence and not any(word in sentence for word in ignore):
+                                            boostedField = f
+                                    if boostedField: break  
+
+                        # field user selected is detected
+                        if "field" in dice:
+                            if field == boostedField:
+                                self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
+                                returnVal = field
+                                self.keyboard.press("pagedown")
+                                for i in range(3):
+                                    self.keyboard.press("o")
+                                if diceslot == 0: self.toggleInventory("close")
+                                self.saveAFB("AFB_dice_cd")
+                                if glitter: 
+                                    self.AFBglitter = True
+                                    self.saveAFB("AFB_glitter_cd")
+                                return returnVal
+                            else:
+                                continue
+                        else:
+                            if field in boostedField:
+                                self.logger.webhook("", f"Boosted Field: {field}", "bright green", "blue")
+                                returnVal = field
+                                self.keyboard.press("pagedown")
+                                for i in range(3):
+                                    self.keyboard.press("o")
+                                if diceslot == 0: self.toggleInventory("close")
+                                self.saveAFB("AFB_dice_cd")
+                                if glitter: 
+                                    self.AFBglitter = True
+                                    self.saveAFB("AFB_glitter_cd")
+                                return returnVal
+                            else:
+                                self.logger.webhook("", f"Boosted Fields: {', '.join(boostedField)}", "red")
+                                time.sleep(0.5)
+
+                        # glitter    
+                elif glitter and not self.failed:
+                    if self.cAFBglitter or (self.hasAFBRespawned("AFB_glitter_cd", rebuff*60) and self.AFBglitter):
+                        self.logger.webhook("", "Rebuffing: Glitter", "white")
+                        if glitterslot == 0: 
+                            self.cannon() 
+                            Glitter.start()
+                            goToField.start()
+                            goToField.join()
+                            Glitter.join()
+                            self.clickYes()
+                        else: 
+                            self.cannon() 
+                            self.goToField(field)
+                            time.sleep(0.5)
+                            self.keyboard.press(str(glitterslot))
+                        self.logger.webhook("", "Rebuffed: Glitter", "white")
+                        self.saveAFB("AFB_dice_cd")
+                        self.saveAFB("AFB_glitter_cd")
+                        self.reset()
+                        self.AFBglitter = False
+                        self.cAFBglitter = False
+                        self.afb = False
+                        return returnVal
+
+            if returnVal == None:
+                self.failed = True
+                self.keyboard.press("pagedown")
+                for i in range(3):
+                    self.keyboard.press("o")
+                self.logger.webhook("", f"Failed to boost {field}", "red")
+                self.saveAFB("AFB_dice_cd")
+                if glitter: 
+                    self.saveAFB("AFB_glitter_cd")
+                    self.AFBglitter = False
+                #if diceslot == 0: self.toggleInventory("close")
+                return
 
     def startDetect(self):
         #disable game mode
         self.moveMouseToDefault()
         if sys.platform == "darwin":
+            #check for screen recording
+            cg = ctypes.cdll.LoadLibrary("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")
+            cg.CGRequestScreenCaptureAccess.restype = ctypes.c_bool
+            if not cg.CGRequestScreenCaptureAccess():
+                messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal. After that, restart the macro')
+
             time.sleep(1)
             #check roblox scaling
             #this is done by checking if all pixels at the top of the screen are black
@@ -3266,12 +3723,6 @@ class macro:
         else:
             self.logger.webhook("","Unable to detect Roblox UI","red", "screen")
             self.newUI = True
-            #2nd check for screen recording perms by checking for sprinkler icon
-            if sys.platform == "darwin":
-                sprinklerImg = self.adjustImage("./images/menu", "sprinkler")
-                if not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.75):
-                    messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal. After that, restart the macro.\n\nVisit #6system-settings in the discord for more detailed instructions\n\n NOTE: This popup might be incorrect. If the macro is able to detect objects on the screen, you can dismiss this popup', title='Screen Recording Permission')
-
         if self.newUI:
             ocr.newUI = True
             logModule.newUI = True
@@ -3304,6 +3755,7 @@ class macro:
         self.hourlyReport = HourlyReport(self.buffDetector)
 
     def start(self):
+        print("macro object started")
         #if roblox is not open, rejoin
         if not appManager.openApp("roblox"):
             self.rejoin()
@@ -3331,6 +3783,7 @@ class macro:
             hourlyReportBackgroundThread = threading.Thread(target=self.hourlyReportBackground, daemon=True)
             hourlyReportBackgroundThread.start()
 
-
+        if not benchmarkMSS():
+            self.logger.webhook("", "MSS is too slow, switching to pillow", "dark brown")
         self.reset(convert=True)
         self.saveTiming("rejoin_every")

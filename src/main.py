@@ -67,7 +67,7 @@ def macro(status, logQueue, haste, updateGUI):
         #do priority tasks
         if macro.night and macro.setdat["stinger_hunt"]:
             macro.stingerHunt()
-        if macro.setdat["mondo_buff"]:
+        if macro.setdat["mondo_buff"] and macro.hasMondoRespawned():
             macro.collectMondoBuff()
         if macro.setdat["rejoin_every"]:
             if macro.hasRespawned("rejoin_every", macro.setdat["rejoin_every"]*60*60):
