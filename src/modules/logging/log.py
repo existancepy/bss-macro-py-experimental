@@ -2,8 +2,9 @@ import time
 import threading
 import queue
 import pyautogui as pag
-from modules.screen.screenshot import screenshotScreen
+from modules.screen.screenshot import screenshotRobloxWindow
 import modules.logging.webhook as logWebhook
+import pygetwindow as gw
 
 colors = {
     "red": "D22B2B",
@@ -17,16 +18,14 @@ colors = {
     "white": "FFFFFF",
     "yellow": "FFFF00",
 }
-
-mw, mh = pag.size()
 newUI = False
 
 def sendWebhook(url, title, desc, time, colorHex, ss=None, imagePath=None):
     screenshotRegions = {
         "screen": None,
-        "honey-pollen": (mw/3.5, 23 if newUI else 0, mw/2.4, 40),
-        "sticker": (200, 70, mw/2.5-200, mh/4),
-        "blue": (mw*3/4, mh*2/3, mw//4, mh//3),
+        "honey-pollen": (1/3.5, 23 if newUI else 0, 1/2.4, 40),
+        "sticker": (200, 70, 1/2.5-200, 1/4),
+        "blue": (1*3/4, 1*2/3, 1//4, 1//3),
     }
     
     webhookImg = None
@@ -34,7 +33,7 @@ def sendWebhook(url, title, desc, time, colorHex, ss=None, imagePath=None):
         webhookImg = imagePath
     elif ss:
         webhookImg = "webhookScreenshot.png"
-        screenshotScreen(webhookImg, screenshotRegions[ss])
+        screenshotRobloxWindow(webhookImg, regionMultipliers=screenshotRegions[ss])
     logWebhook.webhook(url, title, desc, time, colorHex, webhookImg)
     print(f"[{time}] {title} {desc}")
 

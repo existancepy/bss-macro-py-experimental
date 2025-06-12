@@ -490,7 +490,7 @@ class macro:
             return False
 
         def isNight():
-            screen = mssScreenshotNP(0,0, self.mw, self.mh)
+            screen = mssScreenshotNP(self.mx+(self.mx+(0)), self.my+(self.my+(0)), self.mw, self.mh)
             # Convert the image from BGRA to HSV
             bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
             hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
@@ -633,7 +633,7 @@ class macro:
     def isBesideEImage(self, name):
         yOffset = 23 if self.newUI else 0
         template = self.adjustImage("./images/menu",name)
-        return locateTransparentImageOnScreen(template, self.mw//2-200,yOffset,400,self.mh//8, 0.75)
+        return locateTransparentImageOnScreen(template, self.mx+(self.mx+(self.mx+(self.mw//2-200))), self.my+(self.my+(self.my+(yOffset))), 400, self.mh//8, 0.75)
 
     def getTiming(self,name = None):
         for _ in range(3):
@@ -714,7 +714,7 @@ class macro:
         time.sleep(0.4)
         threshold = 0
         if detect or detectOnly: threshold = 0.75
-        res = locateImageOnScreen(yesImg,x,y,self.mw/2.5,self.mh/3.4, threshold)
+        res = locateImageOnScreen(yesImg, self.mx+(x), self.my+(y), self.mw/2.5, self.mh/3.4, threshold)
         if res is None: return False
         if detectOnly: return True
         bestX, bestY = res[1]
@@ -732,7 +732,7 @@ class macro:
     def toggleInventory(self, mode):
         invOpenImg = self.adjustImage("./images/menu", "inventoryopen")
         open = False
-        if locateImageOnScreen(invOpenImg, 0, 10, 100, 180, 0.8):
+        if locateImageOnScreen(invOpenImg, self.mx+(0), self.my+(10), 100, 180, 0.8):
             open = True
         
         def clickInv():
@@ -785,7 +785,7 @@ class macro:
                 mouse.scroll(100)
                 sleep(0.05)
                 if i > 10:
-                    screen = cv2.cvtColor(mssScreenshotNP(0, 90, 100, 200), cv2.COLOR_BGRA2RGB)
+                    screen = cv2.cvtColor(mssScreenshotNP(self.mx+(self.mx+(0)), self.my+(self.my+(90)), 100, 200), cv2.COLOR_BGRA2RGB)
                     hash = imagehash.average_hash(Image.fromarray(screen))
                     if not prevHash is None and prevHash == hash:
                         break
@@ -816,14 +816,14 @@ class macro:
         prevHash = None
         time.sleep(0.3)
         for i in range(120):
-            #screen = cv2.cvtColor(mssScreenshotNP(90, 90, 300-90, self.mh-180), cv2.COLOR_RGBA2GRAY)
+            #screen = cv2.cvtColor(mssScreenshotNP(self.mx+(self.mx+(90)), self.my+(self.my+(90)), 300-90, self.mh-180), cv2.COLOR_RGBA2GRAY)
             #max_loc = fastFeatureMatching(screen, itemImg)
             #max_val = 1 if max_loc else 0
             max_val, max_loc = locateImageOnScreen(itemImg, 0, 90, 100, self.mh-180)
             data = (max_val, max_loc, i)
             #most likely the correct item, stop searching
             if max_val > 0.6:
-                itemScreenshot = mssScreenshot(90, (max_loc[1]//2 if self.display_type == "retina" else max_loc[1])+60, 220, 60)
+                itemScreenshot = mssScreenshot(self.mx+(self.mx+(90)), self.my+(self.my+((max_loc[1]//2 if self.display_type == "retina" else max_loc[1])+60)), 220, 60)
                 itemOCRText = ''.join([x[1][0] for x in ocr.ocrRead(itemScreenshot)]).replace(" ","").replace("-","").lower()
                 if itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.8:
                     print(itemOCRText)
@@ -841,7 +841,7 @@ class macro:
             mouse.scroll(-3, True)
             time.sleep(0.06)
 
-            screen = cv2.cvtColor(mssScreenshotNP(0, 90, 100, 200), cv2.COLOR_BGRA2RGB)
+            screen = cv2.cvtColor(mssScreenshotNP(self.mx+(self.mx+(0)), self.my+(self.my+(90)), 100, 200), cv2.COLOR_BGRA2RGB)
             hash = imagehash.average_hash(Image.fromarray(screen))
             if not prevHash is None and prevHash == hash:
                 break
@@ -868,7 +868,7 @@ class macro:
             #     currentScrollCount = scrollCount
             #     time.sleep(0.7)
             #     #use ocr to check that the item has been found
-            #     itemScreenshot = mssScreenshot(90, (loc[1]//2 if self.display_type == "retina" else loc[1])+60, 220, 60, True)
+            #     itemScreenshot = mssScreenshot(self.mx+(self.mx+(90)), self.my+(self.my+((loc[1]//2 if self.display_type == "retina" else loc[1])+60)), 220, 60, True)
             #     itemOCRText = ''.join([x[1][0] for x in ocr.ocrRead(itemScreenshot)]).replace(" ","").replace("-","").lower()
             #     if itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.6:
             #         bestY = loc[1]
@@ -876,7 +876,7 @@ class macro:
         
         #use ocr to check that the item has been found
         '''
-        itemScreenshot = mssScreenshot(90+bestX, 90+bestY-itemH/2, itemW, itemH, True)
+        itemScreenshot = mssScreenshot(self.mx+(self.mx+(90+bestX)), self.my+(self.my+(90+bestY-itemH/2)), itemW, itemH, True)
         itemOCRText = ''.join([x[1][0] for x in ocr.ocrRead(itemScreenshot)]).replace(" ","").replace("-","").lower()
         if not (itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.6):
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
@@ -1050,19 +1050,19 @@ class macro:
             
             closeImg = self.adjustImage("./images/menu", "close") #sticker printer
             print(f"adjusted sticker printer image: {time.time()-st}")
-            if locateImageOnScreen(closeImg, self.mw/4, 100, self.mw/4, self.mh/3.5, 0.7):
+            if locateImageOnScreen(closeImg, self.mx+(self.mw/4), self.my+(100), self.mw/4, self.mh/3.5, 0.7):
                 self.keyboard.press("e")
             print(f"check sticker printer popup: {time.time()-st}")
             
             mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
-            if locateImageOnScreen(mmImg, self.mw/4, self.mh/4, self.mw/4, self.mh/3.5, 0.8):
+            if locateImageOnScreen(mmImg, self.mx+(self.mw/4), self.my+(self.mh/4), self.mw/4, self.mh/3.5, 0.8):
                 self.canDetectNight = False
                 solveMemoryMatch(self.latestMM, self.display_type)
                 self.canDetectNight = True
             print(f"checked memory match popup: {time.time()-st}")
 
             blenderImg = self.adjustImage("./images/menu", "blenderclose") #blender
-            if locateImageOnScreen(blenderImg, self.mw/4, self.mh/5, self.mw/7, self.mh/4, 0.8):
+            if locateImageOnScreen(blenderImg, self.mx+(self.mw/4), self.my+(self.mh/5), self.mw/7, self.mh/4, 0.8):
                 self.closeBlenderGUI()
             print(f"checked blender popup: {time.time()-st}")
             
@@ -1070,7 +1070,7 @@ class macro:
             print(f"checked dialog: {time.time()-st}")
 
             performanceStatsImg = self.adjustImage("./images/menu", "performancestats")
-            if locateTransparentImageOnScreen(performanceStatsImg, 0, 20, self.mw/3.5, 70, 0.7):
+            if locateTransparentImageOnScreen(performanceStatsImg, self.mx+(self.mx+(self.mx+(0))), self.my+(self.my+(self.my+(20))), self.mw/3.5, 70, 0.7):
                 if sys.platform == "darwin":
                     '''
                     #self.keyboard.keyDown("fn", False)
@@ -1090,9 +1090,9 @@ class macro:
             noImg = self.adjustImage("./images/menu", "no") #yes/no popup
             x = self.mw/3.2
             y = self.mh/2.3
-            res = locateImageOnScreen(noImg,x,y,self.mw/2.5,self.mh/3.4, 0.8)
+            res = locateImageOnScreen(noImg, self.mx+(x), self.my+(y), self.mw/2.5, self.mh/3.4, 0.8)
             print(f"checked yes/no popup: {time.time()-st}")
-            #mssScreenshot(x,y,self.mw/2.5,self.mh/3.4, True)
+            #mssScreenshot(self.mx+(self.mx+(x)), self.my+(self.my+(y)), self.mw/2.5, self.mh/3.4, True)
             if res:
                 x2, y2 = res[1]
                 if self.display_type == "retina":
@@ -1107,7 +1107,7 @@ class macro:
             stickerBookImg = self.adjustImage("./images/menu", "stickerbookclose") #sticker book
             x = 250
             y = 130
-            res = locateImageOnScreen(stickerBookImg,x,y,100, 80, 0.8)
+            res = locateImageOnScreen(stickerBookImg, self.mx+(x), self.my+(y), 100, 80, 0.8)
             if res:
                 x2, y2 = res[1]
                 mouse.moveTo(self.mx+(x+x2), self.my+(y+y2))
@@ -1134,14 +1134,14 @@ class macro:
             st = time.time()
             #wait for empty health bar to appear
             while time.time() - st < 3: 
-                if locateImageOnScreen(emptyHealth, self.mw-150, 0, 150, 60, 0.8):
+                if locateImageOnScreen(emptyHealth, self.mx+(self.mw-150), self.my+(0), 150, 60, 0.8):
                     healthBar = True
                     break
             if healthBar: #check if the health bar has b detected. If it hasnt, just wait for a flat time
                 #if the empty health bar disappears, player has respawned
                 st = time.time()
                 while time.time() - st < 8:
-                    if not locateImageOnScreen(emptyHealth, self.mw-150, 0, 150, 60, 0.6):
+                    if not locateImageOnScreen(emptyHealth, self.mx+(self.mw-150), self.my+(0), 150, 60, 0.6):
                         time.sleep(0.5)
                         break
             else:
@@ -1158,7 +1158,7 @@ class macro:
             self.location = "spawn"
             #detect if player is at hive. Spin a max of 4 times
             for i in range(4):
-                screen = pillowToCv2(mssScreenshot(self.mw//2-100, self.mh-10, 200, 10))
+                screen = pillowToCv2(mssScreenshot(self.mx+(self.mx+(self.mw//2-100)), self.my+(self.my+(self.mh-10)), 200, 10))
                 # Convert the image from BGR to HLS color space
                 hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
                 # Create a mask for the color range
@@ -1268,15 +1268,15 @@ class macro:
             loadStartTime = time.time()
             signUpImage = self.adjustImage("./images/menu", "signup")
             robloxHomeImage = self.adjustImage("./images/menu", "robloxhome")
-            while not locateImageOnScreen(sprinklerImg, self.mw//2-300, self.mh*3/4, 300, self.mh*1/4, 0.75) and time.time() - loadStartTime < 60:
+            while not locateImageOnScreen(sprinklerImg, self.mx+(self.mw//2-300), self.my+(self.mh*3/4), 300, self.mh*1/4, 0.75) and time.time() - loadStartTime < 60:
                 if self.setdat["rejoin_method"] == "deeplink":
                     #check if the user is stuck on the sign up screen
-                    if locateImageOnScreen(signUpImage, self.mw/4, self.mh/3, self.mw/2, self.mh*2/3, 0.7):
+                    if locateImageOnScreen(signUpImage, self.mx+(self.mw/4), self.my+(self.mh/3), self.mw/2, self.mh*2/3, 0.7):
                         self.logger.webhook("","Not logged into the roblox app. Rejoining via the browser. For a smoother experience, please ensure you are logged into the Roblox app beforehand.","red","screen")
                         self.setdat["rejoin_method"] = "new tab"
                         continue
                     #check if home page is opened instead of the app
-                    if locateImageOnScreen(robloxHomeImage, 0, 0, self.mw/10, self.mh/6, 0.7):
+                    if locateImageOnScreen(robloxHomeImage, self.mx+(0), self.my+(0), self.mw/10, self.mh/6, 0.7):
                         self.logger.webhook("","Roblox Home Page is open","brown","screen")
                         continue
 
@@ -1449,7 +1449,7 @@ class macro:
     
     def blueTextImageSearch(self, text, threshold=0.7):
         target = self.adjustImage("./images/blue", text)
-        return locateImageOnScreen(target, self.mw*3/4, self.mh*3/5, self.mw/4, self.mh-self.mh*3/5, threshold)
+        return locateImageOnScreen(target, self.mx+(self.mw*3/4), self.my+(self.mh*3/5), self.mw/4, self.mh-self.mh*3/5, threshold)
     #background thread for gather
     #check if mobs have been killed and reset their timings
     #check if player died
@@ -1904,7 +1904,7 @@ class macro:
         mouse.click()
         time.sleep(1)
         confirmImg = self.adjustImage("./images/menu", "confirm")
-        if not locateImageOnScreen(confirmImg, self.mw//2+150, 4*self.mh//10+160, 120, 60, 0.7):
+        if not locateImageOnScreen(confirmImg, self.mx+(self.mw//2+150), self.my+(4*self.mh//10+160), 120, 60, 0.7):
             self.logger.webhook(f"", "Sticker printer on cooldown", "dark brown", "screen")
             self.keyboard.press("e")
             self.saveTiming("sticker_printer")
@@ -2516,7 +2516,7 @@ class macro:
                 time.sleep(0.1)
             #didnt detect the image, check for planter growth bar
             for _ in range(3):
-                screen = mssScreenshotNP(self.mw/2.14, self.mh/2.9, self.mw/1.8-self.mw/2.14, self.mh/2.2-self.mh/2.9)
+                screen = mssScreenshotNP(self.mx+(self.mx+(self.mw/2.14)), self.my+(self.my+(self.mh/2.9)), self.mw/1.8-self.mw/2.14, self.mh/2.2-self.mh/2.9)
                 screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
                 kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
                 if findColorObjectRGB(screen, (86, 120, 72), kernel=kernel, variance=2):
@@ -2556,7 +2556,7 @@ class macro:
     def moveToPlanter(self):
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(2,2))
         def getPlanterLocation():
-            screen = mssScreenshotNP(0,0,self.mw,self.mh)
+            screen = mssScreenshotNP(self.mx+(self.mx+(0)), self.my+(self.my+(0)), self.mw, self.mh)
             screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
             # #screen = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
             #screen = cv2.imread("b.png")
@@ -2784,21 +2784,21 @@ class macro:
         time.sleep(1)
         #check if blender is done and click on end crafting
         doneImg = self.adjustImage("images/menu", "blenderdone")
-        res = locateImageOnScreen(doneImg, x, y, 560, 480, 0.75)
+        res = locateImageOnScreen(doneImg, self.mx+(x), self.my+(y), 560, 480, 0.75)
         if res:
             print("done")
             clickOnBlenderElement(*res[1])
         
         #check for cancel button
         cancelImg = self.adjustImage("images/menu", "blendercancel")
-        res = locateImageOnScreen(cancelImg, x, y, 560, 480, 0.75)
+        res = locateImageOnScreen(cancelImg, self.mx+(x), self.my+(y), 560, 480, 0.75)
         if res:
             print("cancel")
             clickOnBlenderElement(*res[1])
 
         #check if still crafting and get cd
         notDoneImg = self.adjustImage("images/menu", "blenderend")
-        res = locateImageOnScreen(notDoneImg, x, y, 560, 480, 0.75)
+        res = locateImageOnScreen(notDoneImg, self.mx+(x), self.my+(y), 560, 480, 0.75)
 
         def cancelCraft():
             self.logger.webhook("", "Unable to detect remaining crafting time, ending craft", "dark brown", "screen")
@@ -2806,7 +2806,7 @@ class macro:
             clickOnBlenderElement(*res[1])
 
         if res:
-            cdImg = mssScreenshot(self.mw/2-130, math.floor(self.mh*0.48)-70, 400, 65)
+            cdImg = mssScreenshot(self.mx+(self.mx+(self.mw/2-130)), self.my+(self.my+(math.floor(self.mh*0.48)-70)), 400, 65)
             cdRaw = ocr.ocrRead(cdImg)
             cdRaw = ''.join([x[1][0] for x in cdRaw])
             cd = self.cdTextToSecs(cdRaw, False, 3600) #1 hour cd
@@ -2836,7 +2836,7 @@ class macro:
             sleep(0.06)
         #check if the item can be crafted
         canMake = self.adjustImage("images/menu", "blendermake")
-        if not locateImageOnScreen(canMake, x, y, 560, 480, 0.8):
+        if not locateImageOnScreen(canMake, self.mx+(x), self.my+(y), 560, 480, 0.8):
             self.logger.webhook("", f"Unable to craft {itemDisplay}", "dark brown", "screen")
         #open the crafting menu
         mouse.moveTo(self.mx+(self.mw/2), self.my+(math.floor(self.mh*0.48))+130)
@@ -2852,7 +2852,7 @@ class macro:
             #if both screenshots are the same, break
 
             def quantityScreenshot(save = False):
-                return imagehash.average_hash(mssScreenshot(self.mw/2-60-140, math.floor(self.mh*0.48)+140-20, 110, 20*2, save))
+                return imagehash.average_hash(mssScreenshot(self.mx+(self.mx+(self.mw/2-60-140)), self.my+(self.my+(math.floor(self.mh*0.48)+140-20)), 110, 20*2, save))
             quantity1Img = quantityScreenshot()
             while True:
                 for _ in range(5): #add 5 quantity
@@ -2863,7 +2863,7 @@ class macro:
                     break
                 #update the quantity
                 quantity1Img = quantity2Img
-            quantity = ''.join([x[1][0] for x in ocr.ocrRead(mssScreenshot(self.mw/2-60-140, math.floor(self.mh*0.48)+140-20, 110, 23*2))])
+            quantity = ''.join([x[1][0] for x in ocr.ocrRead(mssScreenshot(self.mx+(self.mx+(self.mw/2-60-140)), self.my+(self.my+(math.floor(self.mh*0.48)+140-20)), 110, 23*2))])
             quantity = ''.join([x for x in quantity if x.isdigit()])
             if quantity:
                 quantity = int(quantity)
@@ -2901,7 +2901,7 @@ class macro:
         y = 4*self.mh//10
 
         #detect sticker stack boost time
-        screen = mssScreenshot(x+550/2,y,550/2,40)
+        screen = mssScreenshot(self.mx+(self.mx+(x+550/2)), self.my+(self.my+(y)), 550/2, 40)
         ocrRes = ''.join([x[1][0] for x in ocr.ocrRead(screen)])
         print(ocrRes)
         ocrRes = re.findall(r"\(.*?\)", ocrRes) #get text between brackets
@@ -2927,9 +2927,9 @@ class macro:
         if "sticker" in self.setdat["sticker_stack_item"]:
             regularSticker = self.adjustImage("images/sticker_stack", "regularsticker")
             hiveSticker = self.adjustImage("images/sticker_stack", "hivesticker")
-            stickerLoc = locateTransparentImageOnScreen(regularSticker, x, y, 550, 220, 0.7)
+            stickerLoc = locateTransparentImageOnScreen(regularSticker, self.mx+(self.mx+(self.mx+(x))), self.my+(self.my+(self.my+(y))), 550, 220, 0.7)
             if self.setdat["hive_skin"] and stickerLoc is None: #cant find regular sticker, use hive skin
-                stickerLoc = locateTransparentImageOnScreen(hiveSticker, x, y, 550, 220, 0.7)
+                stickerLoc = locateTransparentImageOnScreen(hiveSticker, self.mx+(self.mx+(self.mx+(x))), self.my+(self.my+(self.my+(y))), 550, 220, 0.7)
             if stickerLoc: #found a available sticker
                 xr, yr = stickerLoc[1]
                 if self.display_type == "retina":
@@ -2996,7 +2996,7 @@ class macro:
         permissionPopup = self.adjustImage("./images/mac", "allow")
         x = self.mw/4
         y = self.mh/3
-        res = locateImageOnScreen(permissionPopup, x, y, self.mw/2, self.mh/3, 0.8)
+        res = locateImageOnScreen(permissionPopup, self.mx+(x), self.my+(y), self.mw/2, self.mh/3, 0.8)
         if res:
             self.logger.webhook("", "Detected: Terminal permission popup", "orange")
             x2, y2 = res[1]
@@ -3198,7 +3198,7 @@ class macro:
         
         def screenshotQuest(screenshotHeight, gray = True):
             #Take a screenshot of the quest page and 
-            screen = mssScreenshotNP(0, 170, 300, screenshotHeight)
+            screen = mssScreenshotNP(self.mx+(self.mx+(0)), self.my+(self.my+(170)), 300, screenshotHeight)
             if gray:
                 screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
             return screen
@@ -3392,7 +3392,7 @@ class macro:
         dialogImg = self.adjustImage("./images/menu", "dialog")
         x = self.mw/2
         y = self.mh*2/3
-        a =  locateImageOnScreen(dialogImg, x, y, 300, self.mh/3, 0.8 if mustFindDialog else 0.5)
+        a =  locateImageOnScreen(dialogImg, self.mx+(x), self.my+(y), 300, self.mh/3, 0.8 if mustFindDialog else 0.5)
         if a:
             _, loc = a
             xr, yr = [j//2 for j in loc] if self.display_type == "retina" else loc
@@ -3403,7 +3403,7 @@ class macro:
             print("unable to locate dialog position")
 
         def screenshotDialog():
-            return imagehash.average_hash(mssScreenshot(x+xr-40, y+yr-40, 40, 40))
+            return imagehash.average_hash(mssScreenshot(self.mx+(self.mx+(x+xr-40)), self.my+(self.my+(y+yr-40)), 40, 40))
         
         dialogImg = screenshotDialog()
         mouse.moveTo(self.mx+(self.mw/2), self.my+(y+yr-20))
@@ -3693,7 +3693,7 @@ class macro:
             time.sleep(1)
             #check roblox scaling
             #this is done by checking if all pixels at the top of the screen are black
-            topScreen = mssScreenshot(0, 0, self.mw, 2)
+            topScreen = mssScreenshot(self.mx+(self.mx+(0)), self.my+(self.my+(0)), self.mw, 2)
             extrema = topScreen.convert("L").getextrema()
             #all are black
             if extrema == (0, 0):
@@ -3712,9 +3712,9 @@ class macro:
             #     x = self.mw/2.3
             #     time.sleep(1.2)
             #     #find light mode
-            #     res = locateImageOnScreen(lightGameMode,x, 0, self.mw-x, 60, 0.7)
+            #     res = locateImageOnScreen(lightGameMode, self.mx+(x), self.my+(0), self.mw-x, 60, 0.7)
             #     if res is None: #cant find light, find dark
-            #         res = locateImageOnScreen(darkGameMode,x, 0, self.mw-x, 60, 0.7)
+            #         res = locateImageOnScreen(darkGameMode, self.mx+(x), self.my+(0), self.mw-x, 60, 0.7)
             #     #found either light or dark
             #     if not res is None:
             #         gx, gy = res[1]
@@ -3726,7 +3726,7 @@ class macro:
             #         mouse.fastClick()
             #         time.sleep(0.5)
             #         #check if game mode is enabled
-            #         screen = mssScreenshot(x, 0, self.mw-x, 150)
+            #         screen = mssScreenshot(self.mx+(self.mx+(x)), self.my+(self.my+(0)), self.mw-x, 150)
             #         ocrRes = ocr.ocrRead(screen)
             #         for i in ocrRes:
             #             if "mode off" in i[1][0].lower():

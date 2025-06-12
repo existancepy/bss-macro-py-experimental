@@ -4,7 +4,7 @@ try:
 except ImportError:
     print("discord bot not supported")
 from discord.ext import commands
-from modules.screen.screenshot import mssScreenshot
+from modules.screen.screenshot import screenshotRobloxWindow
 import io
 from modules.misc.messageBox import msgBox
 from modules.misc.appManager import closeApp
@@ -31,7 +31,7 @@ def discordBot(token, run, status):
     @bot.tree.command(name = "screenshot", description = "Send a screenshot of your screen")
     async def screenshot(interaction: discord.Interaction):
         await interaction.response.defer()
-        img = mssScreenshot()
+        img = screenshotRobloxWindow()
         with io.BytesIO() as imageBinary:
             img.save(imageBinary, "PNG")
             imageBinary.seek(0)
@@ -106,7 +106,7 @@ def discordBot(token, run, status):
         except Exception as e:
             await interaction.response.send_message(f"An error occurred: {e}")
     
-    @bot.tree.command(name = "shut down", description = "Close the macro and roblox")
+    @bot.tree.command(name = "shut-down", description = "Close the macro and roblox")
     async def battery(interaction: discord.Interaction):
         closeApp("Roblox")
         os._exit(1)

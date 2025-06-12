@@ -54,8 +54,19 @@ class BuffDetector():
         self.nectars = nectars.items()
         self.nectarKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
 
+        self.mx = 0
+        self.my = 0
+        self.mw = ww
+
     def screenshotBuffArea(self):
-        return mssScreenshotNP(self.x, self.y, ww/1.8, 45)
+        print(self.mx)
+        return mssScreenshotNP(self.mx+self.x, self.my+self.y, self.mw, 45, save=True)
+    
+    def setRobloxWindowBounds(self,x,y,w):
+        print(x)
+        self.mx = x
+        self.my = y
+        self.mw = w
 
     def getBuffQuantityFromImg(self, bgrImg,transform, crop=True, buff=None, intOnly=False):
         #buff size is 76x76
@@ -213,7 +224,7 @@ class BuffDetector():
         if y2 is None:
             y2 = screen.shape[0]
         
-        cropped = screen[int(y1):int(y2), int(x1):int(x2)]
+        cropped = screen[int(y1):int(y2), max(int(x1),0):int(x2)]
 
         if cropped is None or cropped.size == 0:
             print(f"Image is blank")
@@ -468,10 +479,6 @@ class HourlyReport():
     def setSessionStats(self, start_honey, start_time):
         self.hourlyReportStats["start_honey"] = start_honey
         self.hourlyReportStats["start_time"] = start_time
-    
-    def getHoney(self):
-        ocrHoney = imToString("honey")
-        return ocrHoney if ocrHoney else 0
 
 
 class HourlyReportDrawer:

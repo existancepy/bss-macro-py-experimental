@@ -8,12 +8,20 @@ from modules.screen.ocr import ocrRead
 from PIL import Image
 from modules.misc.imageManipulation import adjustImage
 from modules.screen.imageSearch import locateImageOnScreen
+from modules.misc.appManager import getWindowSize
 
 #V1's memory match, slightly modified for lag compensation
 #TODO: clean up the code, really messy, lots of copy paste
-mw, mh = pag.size()
 def solveMemoryMatch(mmType, displayType):
     blankTile = imagehash.average_hash(Image.open("./images/menu/mmempty.png"))
+    windowSize = getWindowSize("roblox roblox")
+    if windowSize:
+        mx, my, mw, mh = windowSize
+    else:
+        mx = 0
+        my = 0
+        mw, mh = pag.size()
+        
     def mmclick(x,y):
         mouse.moveTo(x, y, 0.2)
         time.sleep(0.3)
@@ -45,8 +53,8 @@ def solveMemoryMatch(mmType, displayType):
     gridSize = [4,4]
     checkedCoords = set() #store the coords the macro has checked
     claimedCoords = set() #store the index that has been claimed
-    middleX = mw//2
-    middleY = mh//2
+    middleX = mx+mw//2
+    middleY = my+mh//2
     offsetX = 0
     offsetY = 0
     if mmType.lower() in ["extreme","winter"]:
@@ -86,7 +94,7 @@ def solveMemoryMatch(mmType, displayType):
             continue
         if currAttempt > attempts:
             mmImg = adjustImage("./images/menu", "mmopen", displayType) #memory match
-            if not locateImageOnScreen(mmImg, mw/4, mh/4, mw/4, mh/3.5, 0.8):
+            if not locateImageOnScreen(mmImg, mx+mw/4, my+mh/4, mw/4, mh/3.5, 0.8):
                 #print("Terminated early")
                 #break
                 pass
@@ -100,7 +108,7 @@ def solveMemoryMatch(mmType, displayType):
             y = yr-offsetY
             mmclick(x,y)
             time.sleep(0.1)
-            mouse.moveTo(x = middleX, y = middleY-190) #move the mouse out of the way of the img
+            mouse.moveTo(middleX, middleY-190) #move the mouse out of the way of the img
             tileImg = waitForTileShow(x,y)
             checkedCoords.add((xr,yr))
             #check if the image matches with anything
