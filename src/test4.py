@@ -1,22 +1,13 @@
-import ctypes
-import platform
+import pygetwindow as gw # pip3 install pygetwindow
+import time
 
-def check_screen_recording_permission():
-    if platform.system() != "Darwin":
-        raise RuntimeError("This function is macOS only.")
-
-    try:
-        # Load CoreGraphics framework
-        cg = ctypes.cdll.LoadLibrary("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")
-
-        # Declare return type of the function
-        cg.CGPreflightScreenCaptureAccess.restype = ctypes.c_bool
-
-        has_access = cg.CGPreflightScreenCaptureAccess()
-        return cg.CGPreflightScreenCaptureAccess()
-
-    except Exception as e:
-        print("Error checking screen recording permission:", e)
-        return False
-
-print("Screen Recording Permission:", check_screen_recording_permission())
+time.sleep(2)
+windows = gw.getAllTitles()
+for win in windows:
+    geometry = gw.getWindowGeometry(win)
+    if "roblox roblox" in win.lower():
+        print(f'Window title: {win}')
+        print(f'> top-left X coordinate: {geometry[0]}')
+        print(f'> top-left Y coordinate: {geometry[1]}')
+        print(f'> width: {geometry[2]}')
+        print(f'> height: {geometry[3]}\n')

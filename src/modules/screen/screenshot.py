@@ -11,6 +11,7 @@ import tempfile
 import subprocess
 import Quartz.CoreGraphics as CG
 from modules.screen.screenData import getScreenData
+import pygetwindow as gw
 
 mw, mh = pag.size()
 multi = 2 if getScreenData()["display_type"] == "retina" else 1
@@ -19,6 +20,9 @@ Theres an issue for a few people where the mss screenshot takes almost a minute 
 This seems to affect any screenshots taken with quartz, but not those taken with filepath
 '''
 usePillow = False
+
+screenshotXOffset = 0
+screenshotYOffset = 0
 
 def pillowGrab(x,y,w,h):
     fh, filepath = tempfile.mkstemp(".png")
@@ -69,8 +73,9 @@ def cgGrab(region=None):
  
 #returns an NP array, useful for cv2
 def mssScreenshotNP(x,y,w,h, save = False):
+    x += screenshotXOffset
+    y += screenshotYOffset
     #return cgGrab((x,y,w,h))
-
     if usePillow:
         screen = pillowGrab(int(x*multi),int(y*multi),int(w*multi),int(h*multi))
         screen = np.array(screen)
@@ -93,6 +98,8 @@ def mssScreenshot(x=0,y=0,w=mw,h=mh, save = False):
     # img = Image.fromarray(img, 'RGB')
     # return img
 
+    x += screenshotXOffset
+    y += screenshotYOffset
     if usePillow:
         return pillowGrab(int(x*multi),int(y*multi),int(w*multi),int(h*multi))
     else:
@@ -106,6 +113,8 @@ def mssScreenshot(x=0,y=0,w=mw,h=mh, save = False):
             return img
 
 def screenshotScreen(path, region = None):
+    x += screenshotXOffset
+    y += screenshotYOffset
     with mss.mss() as sct:
         if region is None:
             sct.shot(output=path)

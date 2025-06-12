@@ -59,11 +59,12 @@ class webhookQueue:
         self.queue.put(data)
 
 class log:
-    def __init__(self, logQueue, enableWebhook, webhookURL, blocking=False):
+    def __init__(self, logQueue, enableWebhook, webhookURL, hourlyReportOnly=False, blocking=False):
         self.logQueue = logQueue
         self.webhookURL = webhookURL
         self.enableWebhook = enableWebhook
         self.blocking = blocking
+        self.hourlyReportOnly = hourlyReportOnly
 
         if not self.blocking:
             self.webhookQueue = webhookQueue()
@@ -83,7 +84,7 @@ class log:
         }
         self.logQueue.put(logData)
 
-        if not self.enableWebhook: return
+        if not self.enableWebhook or self.hourlyReportOnly: return
 
         webhookData = {
             "url": self.webhookURL,

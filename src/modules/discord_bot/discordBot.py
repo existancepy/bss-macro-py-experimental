@@ -7,8 +7,10 @@ from discord.ext import commands
 from modules.screen.screenshot import mssScreenshot
 import io
 from modules.misc.messageBox import msgBox
+from modules.misc.appManager import closeApp
 import subprocess
 import sys
+import os
 
 def discordBot(token, run, status):
     bot = commands.Bot(command_prefix="!b", intents=discord.Intents.all())
@@ -103,6 +105,11 @@ def discordBot(token, run, status):
             await interaction.response.send_message("Battery information not found.")
         except Exception as e:
             await interaction.response.send_message(f"An error occurred: {e}")
+    
+    @bot.tree.command(name = "shut down", description = "Close the macro and roblox")
+    async def battery(interaction: discord.Interaction):
+        closeApp("Roblox")
+        os._exit(1)
         
     '''
     @bot.tree.command(name = "hourly report", description = "Send the hourly report")
