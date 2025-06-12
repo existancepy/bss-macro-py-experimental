@@ -1119,11 +1119,14 @@ class macro:
 
             print(f"respawn complete: {time.time()-st}")
 
+<<<<<<< HEAD
             if AFB: 
                 self.logger.webhook("", f"AFB: Cooldown: {self.setdat['AFB_wait']} seconds", "brown")
                 time.sleep(self.setdat["AFB_wait"])
                 self.died = False
 
+=======
+>>>>>>> main
             self.canDetectNight = True
             self.location = "spawn"
             #detect if player is at hive. Spin a max of 4 times

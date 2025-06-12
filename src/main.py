@@ -2,7 +2,6 @@
 from pynput import keyboard
 import multiprocessing
 import ctypes
-import typing
 from threading import Thread
 import eel
 import time
@@ -10,7 +9,6 @@ import sys
 import ast
 import subprocess
 from modules.misc import messageBox
-import copy
 import atexit
 from modules.misc.imageManipulation import adjustImage
 from modules.screen.imageSearch import locateImageOnScreen
@@ -35,8 +33,11 @@ def disconnectCheck(run, status, display_type):
 
 #controller for the macro
 def macro(status, logQueue, haste, updateGUI):
+    print("importing settings manager")
     import modules.misc.settingsManager as settingsManager
+    print("importing macro module")
     import modules.macro as macroModule
+    print("macro main process started")
     macro = macroModule.macro(status, logQueue, haste, updateGUI)
     #invert the regularMobsInFields dict
     #instead of storing mobs in field, store the fields associated with each mob
@@ -240,17 +241,33 @@ def macro(status, logQueue, haste, updateGUI):
             #planter data does exist, check if its time to collect them
             else: 
                 planterData = ast.literal_eval(planterDataRaw)
-                #check all 3 slots
+                planterChanged = False
+                #check all 3 slots to see if planters are ready to harvest
                 for i in range(3):
                     cycle = planterData["cycles"][i]
                     if time.time() > planterData["harvestTimes"][i] and planterData["planters"][i]:
-                        #Collect planters
+                        #planter is ready for harvest, but check for the next planter to place
+                        #if that planter is currently placed down by a different slot, do not harvest and place
+                        #this avoids overlapping the same planter
+                        nextCycle = goToNextCycle(cycle, i)
+                        planterToPlace = macro.setdat[f"cycle{nextCycle}_{i+1}_planter"]
+                        otherSlotPlanters = planterData["planters"][:i] + planterData["planters"][i+1:]
+                        if planterToPlace in otherSlotPlanters:
+                            continue
+                            
+                        #Collect planter
                         runTask(macro.collectPlanter, args=(planterData["planters"][i], planterData["fields"][i]))
-                        settingsManager.clearFile("./data/user/manualplanters.txt")
-                        #go to the next cycle
-                        cycle = goToNextCycle(cycle, i)
+                        
                         #place them
-                        runTask(macro.placePlanterInCycle, args = (i, cycle, planterData),resetAfter=False) 
+                        planterData = runTask(macro.placePlanterInCycle, args = (i, nextCycle, planterData),resetAfter=False)
+                        planterChanged = True
+                if planterChanged:
+                    #save the planter data
+                    # with open("./data/user/manualplanters.txt", "w") as f:
+                    #     f.write(str(planterData))
+                    # f.close()
+                    pass
+                 
         #mob run
         for mob, fields in regularMobData.items():
             if not macro.setdat[mob]: continue
@@ -412,6 +429,7 @@ if __name__ == "__main__":
     import os
 
     if sys.platform == "darwin" and sys.version_info[1] <= 7:
+        print("start method set to spawn")
         multiprocessing.set_start_method("spawn")
     macroProc = None
     #set screen data
@@ -509,7 +527,6 @@ if __name__ == "__main__":
     while True:
         eel.sleep(0.5)
         setdat = settingsManager.loadAllSettings()
-        lowPerformanceMode = setdat["low_performance"]
 
         #discord bot. Look for changes in the bot token
         currentDiscordBotToken = setdat["discord_bot_token"]
@@ -523,11 +540,14 @@ if __name__ == "__main__":
             discordBotProc.start()
 
         if run.value == 1:
+            print("start")
             #create and set webhook obj for the logger
             logger.enableWebhook = setdat["enable_webhook"]
             logger.webhookURL = setdat["webhook_link"]
+            print("Setting haste.value")
             haste.value = setdat["movespeed"]
             stopThreads = False
+            print("variables initalised")
 
             #stream
             def waitForStreamURL():
@@ -540,22 +560,21 @@ if __name__ == "__main__":
             
                 logger.webhook("", f'Stream could not start. Check terminal for more info', "red")
 
+            print("checking stream")
             streamLink = None
             if setdat["enable_stream"]:
-                logger.webhook("", "Starting Stream...", "light blue")
-                streamLink = stream.start(setdat["stream_resolution"])
-                Thread(target=waitForStreamURL, daemon=True).start()
+                print("stream enabled")
+                if stream.isCloudflaredInstalled():
+                    logger.webhook("", "Starting Stream...", "light blue")
+                    streamLink = stream.start(setdat["stream_resolution"])
+                    Thread(target=waitForStreamURL, daemon=True).start()
+                else:
+                    messageBox.msgBox(text='Cloudflared is required for streaming but is not installed. Check the #guides channel for installation instructions', title='Cloudflared not installed')
 
-
+            print("starting macro proc")
             #macro proc
             macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
             macroProc.start()
-
-            #disconnect detection
-            if not lowPerformanceMode:
-                disconnectThread = Thread(target=disconnectCheck, args=(run, status, screenInfo["display_type"]))
-                disconnectThread.daemon = True
-                disconnectThread.start()
 
             #haste compensation
             if setdat["haste_compensation"]:
@@ -572,8 +591,6 @@ if __name__ == "__main__":
                 run.value = 3
                 gui.toggleStartStop()
                 stopApp()
-                if not lowPerformanceMode:
-                    disconnectThread.join()
         elif run.value == 4: #disconnected
             macroProc.kill()
             logger.webhook("","Disconnected", "red", "screen")
@@ -583,6 +600,16 @@ if __name__ == "__main__":
             macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
             macroProc.start()
             run.value = 2
+        
+        #Check for crash
+        if macroProc and not macroProc.is_alive() and hasattr(macroProc, "exitcode") and macroProc.exitcode is not None and macroProc.exitcode < 0:
+            logger.webhook("","Crashed", "red", "screen")
+            macroProc.join()
+            appManager.openApp("Roblox")
+            keyboardModule.releaseMovement()
+            mouse.mouseUp()
+            macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
+            macroProc.start()
 
         #detect a new log message
         if not logQueue.empty():
@@ -598,7 +625,7 @@ if __name__ == "__main__":
             gui.updateGUI()
             updateGUI.value = 0
         
-        if run.value == 2 and lowPerformanceMode and time.time() > disconnectCooldownUntil:
+        if run.value == 2 and time.time() > disconnectCooldownUntil:
             img = adjustImage("./images/menu", "disconnect", screenInfo["display_type"])
             if locateImageOnScreen(img, mw/3, mh/2.8, mw/2.3, mh/5, 0.7):
                 print("disconnected")
