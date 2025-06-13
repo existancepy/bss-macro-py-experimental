@@ -1,1 +1,0 @@
-{'cycles': [1, 1, 1], 'planters': ['plastic', '', ''], 'fields': ['mountain top', '', ''], 'gatherFields': ['', '', ''], 'harvestTimes': [1749728060.777251, 0, 0]}

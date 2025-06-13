@@ -113,5 +113,5 @@ def bpc(x,y):
                         perc=95
                     else:
                         perc=0
-    print("X: {}, Y:{}, Pixel Colour: {}, Backpack Percentage: {}.".format(x,y,col, perc))
+    #print("X: {}, Y:{}, Pixel Colour: {}, Backpack Percentage: {}.".format(x,y,col, perc))
     return perc

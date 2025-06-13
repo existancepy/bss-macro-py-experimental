@@ -59,11 +59,9 @@ class BuffDetector():
         self.mw = ww
 
     def screenshotBuffArea(self):
-        print(self.mx)
-        return mssScreenshotNP(self.mx+self.x, self.my+self.y, self.mw, 45, save=True)
+        return mssScreenshotNP(self.mx+self.x, self.my+self.y, self.mw, 45)
     
     def setRobloxWindowBounds(self,x,y,w):
-        print(x)
         self.mx = x
         self.my = y
         self.mw = w

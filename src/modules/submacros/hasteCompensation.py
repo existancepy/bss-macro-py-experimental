@@ -22,8 +22,7 @@ class HasteCompensation():
         for i in range(5):
             self.bearMorphs.append(self.adjustBuffImage(f"./images/buffs/bearmorph{i+1}-retina.png", grayscale=True))
 
-        self.hastePlus = self.adjustBuffImage(f"./images/buffs/haste+.png")         
-        self.mw, self.mh = pag.size()                 
+        self.hastePlus = self.adjustBuffImage(f"./images/buffs/haste+.png")                       
         self.prevHaste = 0         
         self.prevHaste368 = 0 #tracking the previous haste to accurately determine if the haste stack is 3,6 or 8
         self.hasteEnds = 0
@@ -49,9 +48,9 @@ class HasteCompensation():
         _, val, _, loc = res
         return (val > threshold, val)
 
-    def getHaste(self):
+    def getHaste(self, mx, my, mw):
         st = time.perf_counter()
-        screen = np.array(mssScreenshot(0,30,self.mw/1.8,70))
+        screen = np.array(mssScreenshot(mx,my+30,mw,70))
         screenGray = cv2.cvtColor(screen.copy(), cv2.COLOR_RGB2GRAY)
         bestHaste = 0
         bestHasteMaxVal = 0

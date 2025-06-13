@@ -15,13 +15,6 @@ from modules.screen.imageSearch import locateImageOnScreen
 import pyautogui as pag
 mw, mh = pag.size()
 
-def hasteCompensationThread(baseSpeed, isRetina, haste):
-    from modules.submacros.hasteCompensation import HasteCompensation
-    hasteCompensation = HasteCompensation(isRetina, baseSpeed)
-    global stopThreads
-    while not stopThreads:
-        haste.value = hasteCompensation.getHaste()
-
 def disconnectCheck(run, status, display_type):
     img = adjustImage("./images/menu", "disconnect", display_type)
     while not stopThreads:
@@ -575,12 +568,6 @@ if __name__ == "__main__":
             #macro proc
             macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
             macroProc.start()
-
-            #haste compensation
-            if setdat["haste_compensation"]:
-                hasteCompThread = Thread(target=hasteCompensationThread, args=(setdat["movespeed"], screenInfo["display_type"] == "retina", haste,))
-                hasteCompThread.daemon = True
-                hasteCompThread.start()
 
             logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
             run.value = 2

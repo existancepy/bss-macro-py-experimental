@@ -72,6 +72,8 @@ print("Importing ctypes")
 import ctypes
 print("Importing pygetwindow")
 import pygetwindow as gw
+print("Importing Haste Compensation")
+from modules.submacros.hasteCompensation import HasteCompensation
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -358,7 +360,8 @@ class macro:
         self.fieldSettings = settingsManager.loadFields()
         screenData = getScreenData()
         self.display_type, self.ww, self.wh, self.ysm, self.xsm, self.ylm, self.xlm = itemgetter("display_type", "screen_width","screen_height", "y_multiplier", "x_multiplier", "y_length_multiplier", "x_length_multiplier")(screenData)
-        self.keyboard = keyboard(self.setdat["movespeed"], haste, self.setdat["haste_compensation"])
+        self.haste = haste
+        self.keyboard = keyboard(self.setdat["movespeed"], self.haste, self.setdat["haste_compensation"])
         self.logger = logModule.log(logQueue, self.setdat["enable_webhook"], self.setdat["webhook_link"], blocking=self.setdat["low_performance"], hourlyReportOnly=self.setdat["only_send_hourly_report"])
         #setup an internal cooldown tracker. The cooldowns can be modified
         self.collectCooldowns = dict([(k, v[2]) for k,v in mergedCollectData.items()])
@@ -3036,6 +3039,11 @@ class macro:
             time.sleep(0.1)
             mouse.click()
 
+    def hasteCompensationThread(self):
+        hasteCompensation = HasteCompensation(self.display_type == "retina", self.setdat["movespeed"])
+        while True:
+            self.haste.value = hasteCompensation.getHaste(self.mx, self.my, self.mw)
+
     def backgroundOnce(self):
         with open("./data/user/hotbar_timings.txt", "r") as f:
             hotbarSlotTimings = ast.literal_eval(f.read())
@@ -3076,7 +3084,7 @@ class macro:
 
     def getHoney(self):
         honeyY = 25 if self.newUI else 0
-        cap = mssScreenshot(self.mw//2-241, self.my+honeyY, 140, 36)
+        cap = mssScreenshot(self.mx+(self.mw//2-241), self.my+honeyY, 140, 36)
         ocrres = ocr.ocrFunc(cap)
         honey = ""
         try:
@@ -3098,7 +3106,7 @@ class macro:
             currSec = datetime.now().second
 
             #check if its time to send hourly report
-            if currMin == 20 and time.time() - self.lastHourlyReport > 120:
+            if currMin == 0 and time.time() - self.lastHourlyReport > 120:
                 hourlyReportData = self.hourlyReport.generateHourlyReport()
                 self.logger.hourlyReport("Hourly Report", "", "purple")
 
@@ -3870,6 +3878,12 @@ class macro:
 
             hourlyReportBackgroundThread = threading.Thread(target=self.hourlyReportBackground, daemon=True)
             hourlyReportBackgroundThread.start()
+        
+        #haste compensation
+        if self.setdat["haste_compensation"]:
+            hasteCompThread = threading.Thread(target=self.hasteCompensationThread)
+            hasteCompThread.daemon = True
+            hasteCompThread.start()
 
         if not benchmarkMSS():
             self.logger.webhook("", "MSS is too slow, switching to pillow", "dark brown")
