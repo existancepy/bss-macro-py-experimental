@@ -68,8 +68,6 @@ import fuzzywuzzy.process
 import fuzzywuzzy
 print("Importing traceback")
 import traceback
-print("Importing ctypes")
-import ctypes
 print("Importing pygetwindow")
 import pygetwindow as gw
 print("Importing Haste Compensation")
@@ -2853,12 +2851,12 @@ class macro:
                 cancelCraft()
         
         #time to craft
-        item = self.setdat[f"blender_item_{itemNo}"]
         if not itemNo: #if itemNo is 0, there are no items to craft. The macro has collected the last item to craft
             self.closeBlenderGUI()
             blenderData["collectTime"] = -1 #set collectTime to -1 (disable blender)
             saveBlenderData()
             return
+        item = self.setdat[f"blender_item_{itemNo}"]
         #click to the item
         itemDisplay = item.title()
         mouse.moveTo(self.mx+(self.mw/2+240), self.my+(math.floor(self.mh*0.48))+128)
@@ -3743,12 +3741,6 @@ class macro:
         #disable game mode
         self.moveMouseToDefault()
         if sys.platform == "darwin":
-            #check for screen recording
-            cg = ctypes.cdll.LoadLibrary("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")
-            cg.CGRequestScreenCaptureAccess.restype = ctypes.c_bool
-            if not cg.CGRequestScreenCaptureAccess():
-                messageBox.msgBox(text='It seems like terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal. After that, restart the macro')
-
             time.sleep(1)
             #check roblox scaling
             #this is done by checking if all pixels at the top of the screen are black

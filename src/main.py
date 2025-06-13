@@ -254,6 +254,7 @@ def macro(status, logQueue, haste, updateGUI):
                         #place them
                         planterData = runTask(macro.placePlanterInCycle, args = (i, nextCycle, planterData),resetAfter=False)
                         planterChanged = True
+                #ceck
                 if planterChanged:
                     #save the planter data
                     # with open("./data/user/manualplanters.txt", "w") as f:
@@ -513,6 +514,26 @@ if __name__ == "__main__":
                 \nTVisit step 6 of the macro installation guide in the discord for instructions", title="Wrong Color Profile")
         except:
             pass
+    
+    #check screen recording permissions
+        cg = ctypes.cdll.LoadLibrary("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")
+        cg.CGRequestScreenCaptureAccess.restype = ctypes.c_bool
+        if not cg.CGRequestScreenCaptureAccess():
+            messageBox.msgBox(title="Screen Recording Permission", text='Terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal. After that, restart the macro')
+
+    #check full keyboard access
+    try:
+        result = subprocess.run(
+            ["defaults", "read", "com.apple.universalaccess", "KeyboardAccessEnabled"],
+            capture_output=True,
+            text=True
+        )
+        value = result.stdout.strip()
+        if value == "1":
+            messageBox.msgBox(text = f"Full Keyboard Access is enabled. The macro will not work properly\
+                \nTo disable it, go to System Settings -> Accessibility -> Keyboard -> uncheck 'Full Keyboard Access'")
+    except Exception as e:
+        print("Error reading Full Keyboard Access:", e)
 
     discordBotProc = None
     prevDiscordBotToken = None
@@ -537,7 +558,7 @@ if __name__ == "__main__":
             #create and set webhook obj for the logger
             logger.enableWebhook = setdat["enable_webhook"]
             logger.webhookURL = setdat["webhook_link"]
-            print("Setting haste.value")
+            print("Setting stop threads")
             haste.value = setdat["movespeed"]
             stopThreads = False
             print("variables initalised")
