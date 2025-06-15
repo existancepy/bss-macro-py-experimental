@@ -1,10 +1,9 @@
-import time
+import time as timeModule
 import threading
 import queue
-import pyautogui as pag
 from modules.screen.screenshot import screenshotRobloxWindow
 import modules.logging.webhook as logWebhook
-import pygetwindow as gw
+import mss
 
 colors = {
     "red": "D22B2B",
@@ -33,7 +32,13 @@ def sendWebhook(url, title, desc, time, colorHex, ss=None, imagePath=None):
         webhookImg = imagePath
     elif ss:
         webhookImg = "webhookScreenshot.png"
-        screenshotRobloxWindow(webhookImg, regionMultipliers=screenshotRegions[ss])
+        for _ in range(2):
+            try:
+                screenshotRobloxWindow(webhookImg, regionMultipliers=screenshotRegions[ss])
+                break
+            except mss.exception.ScreenShotError:
+                timeModule.sleep(0.5)
+
     logWebhook.webhook(url, title, desc, time, colorHex, webhookImg)
     print(f"[{time}] {title} {desc}")
 
@@ -76,7 +81,7 @@ class log:
         # Update logs
         logData = {
             "type": "webhook",
-            "time": time.strftime("%H:%M:%S", time.localtime()),
+            "time": timeModule.strftime("%H:%M:%S", timeModule.localtime()),
             "title": title,
             "desc": desc,
             "color": colors[color]
@@ -89,7 +94,7 @@ class log:
             "url": self.webhookURL,
             "title": title,
             "desc": desc,
-            "time": time.strftime("%H:%M:%S", time.localtime()),
+            "time": timeModule.strftime("%H:%M:%S", timeModule.localtime()),
             "colorHex": colors[color],
             "ss": ss,
             "imagePath": imagePath
@@ -103,4 +108,4 @@ class log:
 
     def hourlyReport(self, title, desc, color):
         if not self.enableWebhook: return
-        logWebhook.webhook(self.webhookURL, title, desc, time.strftime("%H:%M:%S", time.localtime()), colors[color], "hourlyReport.png") 
+        logWebhook.webhook(self.webhookURL, title, desc, timeModule.strftime("%H:%M:%S", timeModule.localtime()), colors[color], "hourlyReport.png") 

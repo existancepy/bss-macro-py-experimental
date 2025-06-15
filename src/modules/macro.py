@@ -71,7 +71,7 @@ import traceback
 print("Importing pygetwindow")
 import pygetwindow as gw
 print("Importing Haste Compensation")
-from modules.submacros.hasteCompensation import HasteCompensation
+from modules.submacros.hasteCompensation import HasteCompensationRevamped
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -359,7 +359,8 @@ class macro:
         screenData = getScreenData()
         self.display_type, self.ww, self.wh, self.ysm, self.xsm, self.ylm, self.xlm = itemgetter("display_type", "screen_width","screen_height", "y_multiplier", "x_multiplier", "y_length_multiplier", "x_length_multiplier")(screenData)
         self.haste = haste
-        self.keyboard = keyboard(self.setdat["movespeed"], self.haste, self.setdat["haste_compensation"])
+        self.hasteCompensation = HasteCompensationRevamped(self.display_type == "retina", self.setdat["movespeed"])
+        self.keyboard = keyboard(self.setdat["movespeed"], self.haste, self.setdat["haste_compensation"], self.hasteCompensation)
         self.logger = logModule.log(logQueue, self.setdat["enable_webhook"], self.setdat["webhook_link"], blocking=self.setdat["low_performance"], hourlyReportOnly=self.setdat["only_send_hourly_report"])
         #setup an internal cooldown tracker. The cooldowns can be modified
         self.collectCooldowns = dict([(k, v[2]) for k,v in mergedCollectData.items()])
@@ -423,6 +424,8 @@ class macro:
             self.mw, self.mh = pag.size()
             self.wx = 0
             self.wy = 0
+        
+        self.hasteCompensation.setWindowBounds(self.mx, self.my, self.mw, self.mh)
     
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
@@ -640,8 +643,8 @@ class macro:
         return False
     
     def getTextBesideE(self):
-        ebY = self.mh//14 if self.newUI else self.mh//20
-        img = mssScreenshot(self.mx+(self.mw//2-200), self.my + ebY/1.1, 400, self.mh//8)
+        yOffset = 23 if self.newUI else 0
+        img = mssScreenshot(self.mx+(self.mw//2-200), self.my+32+yOffset, 400, 100)
         textRaw = ''.join([x[1][0] for x in ocr.ocrRead(img)]).lower()
         return self.convertCyrillic(textRaw)
     
@@ -661,7 +664,7 @@ class macro:
     def isBesideEImage(self, name):
         yOffset = 23 if self.newUI else 0
         template = self.adjustImage("./images/menu",name)
-        return locateTransparentImageOnScreen(template, self.mx+(self.mw//2-200), self.my+(yOffset), 400, self.mh//8, 0.75)
+        return locateTransparentImageOnScreen(template, self.mx+(self.mw//2-200), self.my+(yOffset), 400, 100, 0.75)
 
     def getTiming(self,name = None):
         for _ in range(3):
@@ -943,6 +946,7 @@ class macro:
 
 
     def convert(self, bypass = False):
+        print("HELLO")
         self.location = "spawn"
         if not bypass:
             #use ebutton detection, faster detection but more prone to false positives (like detecting trades)
@@ -1308,7 +1312,7 @@ class macro:
                         self.logger.webhook("","Roblox Home Page is open","brown","screen")
                         continue
 
-                self.setRobloxWindowInfo()
+                    self.setRobloxWindowInfo()
 
             appManager.openApp("Roblox")
             #run fullscreen check
@@ -1350,6 +1354,7 @@ class macro:
             rejoinSuccess = False
             availableSlots = [] #store hive slots that are claimable
             newHiveNumber = 0
+            hiveDistance = 1.25 #distance between hives (in seconds)
         
             # self.keyboard.keyDown("d", False)
             # self.keyboard.tileWait(4)
@@ -1358,16 +1363,16 @@ class macro:
             # self.keyboard.keyUp("d", False)
             # self.keyboard.keyUp("w", False)
             self.keyboard.keyDown("d", False)
-            self.keyboard.timeWait(0.6)
+            self.keyboard.timeWait(0.4)
             self.keyboard.keyDown("w", False)
-            self.keyboard.timeWait(2.9)
+            self.keyboard.timeWait(2.7)
             self.keyboard.keyUp("d", False)
             self.keyboard.keyUp("w", False)
             for _ in range(3):
                 time.sleep(0.4)
                 if self.isBesideE(["claim", "hive", "send", "trad", "has"]):
                     break
-                self.keyboard.walk("w", 0.15)
+                self.keyboard.walk("w", 0.1)
 
             def isHiveAvailable():
                 return self.isBesideE(["claim", "hive"], ["send", "trade"], log=True)
@@ -1377,7 +1382,7 @@ class macro:
             for j in range(1, hiveNumber+1):
                 if j > 1:
                     #self.keyboard.tileWalk("a", 9.2)
-                    self.keyboard.walk("a", 1.3)
+                    self.keyboard.walk("a", hiveDistance)
                 time.sleep(0.4)
                 if isHiveAvailable():
                     availableSlots.append(j)
@@ -1393,7 +1398,7 @@ class macro:
                 if availableSlots:
                     targetSlot = min(availableSlots)
                     #self.keyboard.tileWalk("d", 9.2*(hiveNumber - targetSlot))
-                    self.keyboard.walk("d", 1.3*(hiveNumber - targetSlot))
+                    self.keyboard.walk("d", hiveDistance*(hiveNumber - targetSlot))
                     time.sleep(0.4)
                     if isHiveAvailable():
                         newHiveNumber = targetSlot
@@ -1402,7 +1407,7 @@ class macro:
                 #no available hive slots found previously, continue finding new ones ahead
                 else:
                     for j in range(hiveNumber+1, 7):
-                        self.keyboard.walk("a", 1.3)
+                        self.keyboard.walk("a", hiveDistance)
                         time.sleep(0.4)
                         if isHiveAvailable():
                             newHiveNumber = j
@@ -2668,7 +2673,9 @@ class macro:
                     return
             i += 1
             
-    def collectPlanter(self, planter, field):
+    def collectPlanter(self, slot, planterData):
+        planter = planterData["planters"][slot]
+        field = planterData["fields"][slot]
         st = time.time()
         def updateHourlyTime():
             self.hourlyReport.addHourlyStat("misc_time", time.time()-st)
@@ -2681,7 +2688,7 @@ class macro:
             self.reset()
         else:
             updateHourlyTime()
-            return
+            return planterData
         self.keyboard.press("e")
         self.clickYes()
         self.logger.webhook("",f"Looting: {planter.title()} planter","bright green", "screen")
@@ -2689,6 +2696,15 @@ class macro:
         self.nmLoot(9, 5, "a")
         self.setMobTimer(field)
         updateHourlyTime()
+
+        planterData["harvestTimes"][slot] = ""
+        planterData["planters"][slot] = ""
+        planterData["fields"][slot] = ""
+        
+        with open("./data/user/manualplanters.txt", "w") as f:
+            f.write(str(planterData))
+        f.close()
+        return planterData
 
     #plant all 3 planters in one cycle
     def placeAllPlantersInCycle(self, cycle):
@@ -3037,10 +3053,10 @@ class macro:
             time.sleep(0.1)
             mouse.click()
 
-    def hasteCompensationThread(self):
-        hasteCompensation = HasteCompensation(self.display_type == "retina", self.setdat["movespeed"])
-        while True:
-            self.haste.value = hasteCompensation.getHaste(self.mx, self.my, self.mw)
+    # def hasteCompensationThread(self):
+    #     hasteCompensation = HasteCompensation(self.display_type == "retina", self.setdat["movespeed"])
+    #     while True:
+    #       self.haste.value = hasteCompensation.getHaste(self.mx, self.my, self.mw)
 
     def backgroundOnce(self):
         with open("./data/user/hotbar_timings.txt", "r") as f:
@@ -3872,10 +3888,10 @@ class macro:
             hourlyReportBackgroundThread.start()
         
         #haste compensation
-        if self.setdat["haste_compensation"]:
-            hasteCompThread = threading.Thread(target=self.hasteCompensationThread)
-            hasteCompThread.daemon = True
-            hasteCompThread.start()
+        # if self.setdat["haste_compensation"]:
+        #     hasteCompThread = threading.Thread(target=self.hasteCompensationThread)
+        #     hasteCompThread.daemon = True
+        #     hasteCompThread.start()
 
         if not benchmarkMSS():
             self.logger.webhook("", "MSS is too slow, switching to pillow", "dark brown")

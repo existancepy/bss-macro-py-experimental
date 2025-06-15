@@ -239,22 +239,30 @@ def macro(status, logQueue, haste, updateGUI):
                 for i in range(3):
                     cycle = planterData["cycles"][i]
                     if time.time() > planterData["harvestTimes"][i] and planterData["planters"][i]:
-                        #planter is ready for harvest, but check for the next planter to place
-                        #if that planter is currently placed down by a different slot, do not harvest and place
-                        #this avoids overlapping the same planter
-                        nextCycle = goToNextCycle(cycle, i)
-                        planterToPlace = macro.setdat[f"cycle{nextCycle}_{i+1}_planter"]
-                        otherSlotPlanters = planterData["planters"][:i] + planterData["planters"][i+1:]
-                        if planterToPlace in otherSlotPlanters:
-                            continue
-                            
                         #Collect planter
-                        runTask(macro.collectPlanter, args=(planterData["planters"][i], planterData["fields"][i]))
-                        
+                        planterData = runTask(macro.collectPlanter, args=(i, planterData))
+                        print(planterData)
                         #place them
-                        planterData = runTask(macro.placePlanterInCycle, args = (i, nextCycle, planterData),resetAfter=False)
-                        planterChanged = True
-                #ceck
+                        # planterData = runTask(macro.placePlanterInCycle, args = (i, nextCycle, planterData),resetAfter=False)
+                        # planterChanged = True
+
+                #check for planters to place
+                for i in range(3):
+                    cycle = planterData["cycles"][i]
+                    #check if planter slot is occupied
+                    if planterData["planters"]:
+                        continue
+                    #if that planter is currently placed down by a different slot, do not harvest and place
+                    #this avoids overlapping the same planter
+                    nextCycle = goToNextCycle(cycle, i)
+                    planterToPlace = macro.setdat[f"cycle{nextCycle}_{i+1}_planter"]
+                    otherSlotPlanters = planterData["planters"][:i] + planterData["planters"][i+1:]
+                    if planterToPlace in otherSlotPlanters:
+                        continue
+                    
+                    #place planter
+                    planterData = runTask(macro.placePlanterInCycle, args = (i, nextCycle, planterData),resetAfter=False)
+
                 if planterChanged:
                     #save the planter data
                     # with open("./data/user/manualplanters.txt", "w") as f:

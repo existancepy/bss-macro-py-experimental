@@ -1254,10 +1254,16 @@ class HourlyReportDrawer:
         #planters
         y2 += 1500
         #check if there are planters
+        planterNames = [] #planterData["planters"]
+        planterTimes = [] #[x-time.time() for x in planterData["harvestTimes"]]
+        planterFields = [] #planterData["fields"]
         if planterData:
-            planterNames = planterData["planters"]
-            planterTimes = [x-time.time() for x in planterData["harvestTimes"]]
-            planterFields = planterData["fields"]
+            for i in range(len(planterData["planters"])):
+                if planterData["planters"][i]:
+                    planterNames.append(planterData["planters"][i])
+                    planterTimes.append(planterData["harvestTimes"][i] - time.time())
+                    planterFields.append(planterData["fields"][i])
+        if planterNames:
             self.draw.text((self.sidebarX, y2), "Planters", font=self.getFont("semibold", 85), fill=self.bodyColor)
             y2 += 250
             self.drawPlanters(y2, planterNames, planterTimes, planterFields)

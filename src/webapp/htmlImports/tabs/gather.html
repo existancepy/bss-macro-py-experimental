@@ -8,7 +8,8 @@
         <script>
             const parentElement = document.getElementById("gather")
             const triggerFunction = "saveField()"
-            const fields = toEmojiArray(fieldEmojis)
+            const fieldData = toEmojiArray(fieldEmojis)
+            console.log("what")
             buildStandardContainer(parentElement,"Gather Field", "",[
                 {
                     id: "field_enable",
@@ -25,7 +26,7 @@
                     desc: "Which field to gather in",
                     type: {
                             name: "dropdown",
-                            data: fields,
+                            data: fieldData,
                             length: 13,
                             triggerFunction: "loadAndSaveField(this)"
                         }
