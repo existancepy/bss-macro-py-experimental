@@ -417,14 +417,9 @@ class macro:
                 self.wh*=2
                 self.wx*=2
                 self.wy*=2
-        else:
-            self.mx = 0
-            self.my = 0
-            self.mw, self.mh = pag.size()
-            self.wx = 0
-            self.wy = 0
         
         self.hasteCompensation.setWindowBounds(self.mx, self.my, self.mw, self.mh)
+        self.fieldDriftCompensation.setWindowBounds(self.mx, self.my, self.mw, self.mh)
     
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
@@ -2581,7 +2576,7 @@ class macro:
             bonusTime = 0
             if glitter: bonusTime += 0.25
             if field in bonusFields: bonusTime += fieldGrowthBonus
-            return (baseGrowthTime*(1-bonusTime))
+            return (baseGrowthTime/(1+bonusTime))
 
         else:
             return self.setdat["manual_planters_collect_every"]*60*60 

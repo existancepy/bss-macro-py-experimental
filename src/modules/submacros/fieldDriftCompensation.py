@@ -17,6 +17,17 @@ class fieldDriftCompensation():
             self.kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(15,15))
         else:
             self.kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(8,8))
+        
+        self.mx = 0
+        self.my = 0
+        self.mw = mw
+        self.mh = mh
+    
+    def setWindowBounds(self, mx,my,mw,mh):
+        self.mx = mx
+        self.my = my
+        self.mw = mw
+        self.mh = mh
     #imgSRC is a cv2 img
     def getSaturatorInImage(self, imgSRC):
         imgHLS = cv2.cvtColor(imgSRC, cv2.COLOR_BGR2HLS)
@@ -55,7 +66,7 @@ class fieldDriftCompensation():
         return (x+w//2, y+h//2)
 
     def getSaturatorLocation(self):
-        saturatorLocation = self.getSaturatorInImage(pillowToCv2(mssScreenshot(0,100, mw, mh-100)))
+        saturatorLocation = self.getSaturatorInImage(pillowToCv2(mssScreenshot(self.mx,self.my+100, self.mw, self.mh-100-self.my)))
         if saturatorLocation is None: return None
         x,y = saturatorLocation
         if self.isRetina:
@@ -70,8 +81,8 @@ class fieldDriftCompensation():
         keyboard.keyUp(k, False)
         
     def slowFieldDriftCompensation(self, initialSaturatorLocation):
-        winUp, winDown = mh/2.14, mh/1.88
-        winLeft, winRight = mw/2.14, mw/1.88
+        winUp, winDown = self.mh/2.14, self.mh/1.88
+        winLeft, winRight = self.mw/2.14, self.mw/1.88
         saturatorLocation = initialSaturatorLocation
         for _ in range(8):
             if saturatorLocation is None: break #cant find saturator

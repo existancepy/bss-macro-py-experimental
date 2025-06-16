@@ -4,6 +4,8 @@ import os
 import subprocess
 from modules.misc.appleScript import runAppleScript
 import pygetwindow as gw
+import pyautogui as pag
+mw,mh = pag.size()
 
 class WindowMgr:
     """Encapsulates some calls to the winapi for window management"""
@@ -79,11 +81,16 @@ def getWindowSize(windowName):
     for win in windows:
         if windowName.lower() in win.lower():
             x,y,w,h = gw.getWindowGeometry(win)
-            offsetY = 30  #deal with the top bar
+            #check for fullscreen
+            if x==0 and y==0 and w==mw and h==mh:
+                offsetY = 0
+            else:
+                offsetY = 30  #deal with the top bar
             y += offsetY
             h -= offsetY
             return x,y,w,h
-    return None
+    #window not found, most likely also fullscreen (but unfocused)
+    return 0,0,mw,mh
 if sys.platform == "darwin":
     openApp = openAppMac
 else:

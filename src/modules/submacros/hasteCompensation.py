@@ -404,6 +404,8 @@ class HasteCompensationRevamped():
         self.bearMorphs = []
         for i in range(6):
             self.bearMorphs.append(Image.open(f"./images/buffs/bearmorph{i+1}-retina.png").convert('RGBA'))
+        
+        self.hastePlus = Image.open("./images/buffs/haste+-retina.png").convert('RGBA')
 
     def screenshotBuff(self):   
         with mss.mss() as sct:
@@ -457,6 +459,11 @@ class HasteCompensationRevamped():
                 bearmorphSpeed = 4
                 break
         end_time = time.time()
+
+        #search for haste+
+        if bitmap_matcher.find_bitmap_cython(screen, self.hastePlus, variance=20):
+            haste += 10
+            
         print(end_time-start_time)
         print((self.baseMoveSpeed + bearmorphSpeed) * (1 + (0.1 * haste)))
         

@@ -23,9 +23,14 @@ def adjustBuffImage(self, path):
 
 start_time = time.time()
 screen = Image.open(f"what2.png").convert('RGBA')
-
-img = Image.open(f"images/buffs/bearmorph5-retina.png").convert('RGBA')
-res = bitmap_matcher.find_bitmap_cython(screen, img, variance=30)
+width, height = screen.size
+screen = screen.resize((width//2, height//2), resample=Image.NEAREST)
+# a = np.array(screen).copy()
+# a = cv2.cvtColor(a, cv2.COLOR_RGBA2BGRA)  # if image has alpha
+# cv2.imshow("", a)
+# cv2.waitKey(0)
+img = bitmap_matcher.create_bitmap_from_base64("iVBORw0KGgoAAAANSUhEUgAAAA4AAAABBAMAAAAcMII3AAAAFVBMVEUwLi1TTD9lbHNmbXN5enW5oXHQuYJDhTsuAAAAE0lEQVR4AQEIAPf/ACNGUQAVZDIFbwFmjB55HwAAAABJRU5ErkJggg==")#Image.open(f"images/buffs/bearmorph5-retina.png").convert('RGBA')
+res = bitmap_matcher.find_bitmap_cython(screen, img, variance=10)
 if res:
     bearmorphSpeed = 4
     print("bear")
