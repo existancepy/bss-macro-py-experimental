@@ -1,4 +1,5 @@
 import eel
+from modules.misc.messageBox import msgBox
 import webbrowser
 import modules.misc.settingsManager as settingsManager
 import os
@@ -77,5 +78,9 @@ def toggleStartStop():
     eel.toggleStartStop()
 
 def launch():
-    eel.start('index.html',app_mode = True,block = False, cmdline_args=["--incognito", "--new-window"])
+    try:
+        eel.start('index.html',app_mode = True,block = False, cmdline_args=["--incognito", "--new-window"])
+    except EnvironmentError:
+        msgBox(title = "error", text = "Google Chrome could not be found. Ensure that:\
+     \n1. Google Chrome is installed\nGoogle chrome is in the applications folder (open the google chrome dmg file. From the pop up, drag the icon into the folder)")
     
