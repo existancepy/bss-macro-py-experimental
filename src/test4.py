@@ -1,67 +1,58 @@
-from modules import bitmap_matcher
-from PIL import Image
 import time
-from modules.misc.appManager import getWindowSize
-import mss
+import Quartz
+from AppKit import NSWorkspace
+from ApplicationServices import AXUIElementCreateApplication, AXUIElementCopyAttributeValue, kAXChildrenAttribute, kAXTitleAttribute, kAXRoleAttribute
 
-def screenshot(x,y,w,h):        
-    with mss.mss() as sct:
-        monitor = {"left": int(x), "top": int(y), "width": int(w), "height": int(h)}
-        sct_img = sct.grab(monitor)
-        img = Image.frombytes("RGBA", sct_img.size, sct_img.bgra, "raw", "BGRA")
-        return img
+def get_pid_by_app_name(app_name):
+    workspace = NSWorkspace.sharedWorkspace()
+    apps = workspace.runningApplications()
+    for app in apps:
+        if app.localizedName() == app_name:
+            return app.processIdentifier()
+    return None
 
-wx,wy,ww,wh = getWindowSize("Roblox Roblox")
+def get_app_ax_element(pid):
+    return AXUIElementCreateApplication(pid)
 
-bitmaps = []
-for i in range(2,11):
-    bitmaps.append(Image.open(f"counts/{i}.png").convert('RGBA'))
+def get_children(element):
+    try:
+        children = AXUIElementCopyAttributeValue(element, kAXChildrenAttribute)
+        return children or []
+    except Exception:
+        return []
 
-hasteBitmap = Image.new('RGBA', (10, 1), '#f0f0f0ff')
-melodyBitmap = Image.new('RGBA', (3, 2), '#2b2b2bff')
+def find_element_by_title(element, target_title):
+    children = get_children(element)
+    print(children)
+    for child in children:
+        try:
+            title = AXUIElementCopyAttributeValue(child, kAXTitleAttribute)
+            if title == target_title:
+                return child
+            found = find_element_by_title(child, target_title)
+            if found:
+                return found
+        except Exception:
+            continue
+    return None
 
-bearMorphs = []
-for i in range(5):
-    bearMorphs.append(Image.open(f"./images/buffs/bearmorph{i+1}-retina.png").convert('RGBA'))
+def perform_click(element):
+    try:
+        AXUIElementPerformAction(element, "AXPress")
+        print("Clicked!")
+    except Exception as e:
+        print("Click failed:", e)
 
-#similar to natro's implementation for haste detection
-while True:
-    start_time = time.time()
-    screen = screenshot(wx,wy+52,ww,45)
-    haste = 0
-    hasteX = None
+# --- Main logic ---
+pid = get_pid_by_app_name("Brave Browser")
+if not pid:
+    print("Roblox not running.")
+    exit()
 
-    x = 0
-    #locate haste. It shares the same color as melody
-    for _ in range(3):
-        res = bitmap_matcher.find_bitmap_cython(screen, hasteBitmap, x=x, variance=1)
-        if not res:
-            break
-        x = res[0]
-        #can't find melody, so its haste
-        if not bitmap_matcher.find_bitmap_cython(screen, melodyBitmap, x=x+2, w=16*2, variance=2):
-            hasteX = res[0]
-            break
-        #melody, skip this buff
-        x+= 40*2
+app = get_app_ax_element(pid)
+target = find_element_by_title(app, "Game Mode")  # Adjust if needed
 
-    #haste found, get count
-    if hasteX:
-        for i, img in enumerate(bitmaps):
-            res = bitmap_matcher.find_bitmap_cython(screen, img, x=hasteX, w=38*2, variance=3)
-            if res:
-                haste = i+2
-                break
-        else:
-            haste = 1
-    
-    #search for bear morphs
-    bearmorphSpeed = 0
-    for img in bearMorphs:
-        if bitmap_matcher.find_bitmap_cython(screen, img, variance=20):
-            bearmorphSpeed = 4
-            print("bear")
-            break
-    end_time = time.time()
-    #print(end_time-start_time)
-    print(haste)
+if target:
+    perform_click(target)
+else:
+    print("Game Mode button not found.")

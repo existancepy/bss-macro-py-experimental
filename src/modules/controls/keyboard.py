@@ -12,15 +12,14 @@ from collections import deque
 
 
 class keyboard:
-    def __init__(self, walkspeed, haste, enableHasteCompensation, hasteCompensation: HasteCompensationRevamped):
+    def __init__(self, walkspeed, enableHasteCompensation, hasteCompensation: HasteCompensationRevamped):
         self.ws = walkspeed
-        self.haste = haste
         self.enableHasteCompensation = enableHasteCompensation
         self.hasteCompensation = hasteCompensation
 
         self.detection_interval = 0.01
         
-        # Drift correction parameters
+        #drift compensation
         self.accumulated_error = 0
         self.error_correction_factor = 0.1
     
@@ -28,19 +27,16 @@ class keyboard:
     def predictiveTimeWait(self, duration):
         base_speed = self.ws
         target_distance = base_speed * duration
-        
-        # Apply accumulated error correction
         corrected_target = target_distance - self.accumulated_error
         
         traveled_distance = 0
         start_time = time.perf_counter()
         last_time = start_time
         
-        # Safety timeout
+        #safety distance, just in case of infinite drifting
         max_time = duration * 1.2
-        
-        # Simple fixed interval - no need for adaptive sampling
-        sleep_interval = 0.01  # Or even 0.02 would probably work fine
+
+        #sleep_interval = 0.01  # Or even 0.02 would probably work fine
         
         while traveled_distance < corrected_target:
             current_time = time.perf_counter()
@@ -49,25 +45,20 @@ class keyboard:
             # Safety timeout
             if elapsed >= max_time:
                 break
+
+            speed = self.getMoveSpeed()
             
-            # Get current speed directly - no interpolation needed
-            speed = self.getMoveSpeed()  # This is already fast enough
-            
-            # Calculate distance traveled in this interval
             delta_t = current_time - last_time
             distance_increment = speed * delta_t
             traveled_distance += distance_increment
             
             last_time = current_time
-            
-            # Fixed sleep interval
-            time.sleep(sleep_interval)
+            #time.sleep(sleep_interval)
         
-        # Calculate drift and update accumulated error
+        #calculate drift and update accumulated error
         distance_error = traveled_distance - target_distance
         
-        # Update accumulated error with decay
-        self.accumulated_error = (self.accumulated_error * 0.9 + distance_error * self.error_correction_factor)
+        #self.accumulated_error = (self.accumulated_error * 0.9 + distance_error * self.error_correction_factor)
     
     
     def walk(self, k, t, applyHaste=True, method='predictive'):

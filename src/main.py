@@ -25,13 +25,13 @@ def disconnectCheck(run, status, display_type):
         time.sleep(1)
 
 #controller for the macro
-def macro(status, logQueue, haste, updateGUI):
+def macro(status, logQueue, updateGUI):
     print("importing settings manager")
     import modules.misc.settingsManager as settingsManager
     print("importing macro module")
     import modules.macro as macroModule
     print("macro main process started")
-    macro = macroModule.macro(status, logQueue, haste, updateGUI)
+    macro = macroModule.macro(status, logQueue, updateGUI)
     #invert the regularMobsInFields dict
     #instead of storing mobs in field, store the fields associated with each mob
     regularMobData = {}
@@ -447,7 +447,6 @@ if __name__ == "__main__":
     updateGUI = multiprocessing.Value('i', 0)
     status = manager.Value(ctypes.c_wchar_p, "none")
     logQueue = manager.Queue()
-    haste = multiprocessing.Value('d', 0)
     watch_for_hotkeys(run)
     logger = logModule.log(logQueue, False, None, blocking=True)
 
@@ -567,7 +566,6 @@ if __name__ == "__main__":
             logger.enableWebhook = setdat["enable_webhook"]
             logger.webhookURL = setdat["webhook_link"]
             print("Setting stop threads")
-            haste.value = setdat["movespeed"]
             stopThreads = False
             print("variables initalised")
 
@@ -595,7 +593,7 @@ if __name__ == "__main__":
 
             print("starting macro proc")
             #macro proc
-            macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
+            macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, updateGUI), daemon=True)
             macroProc.start()
 
             logger.webhook("Macro Started", f'Existance Macro v2.0\nDisplay: {screenInfo["display_type"]}, {screenInfo["screen_width"]}x{screenInfo["screen_height"]}', "purple")
@@ -613,7 +611,7 @@ if __name__ == "__main__":
             appManager.closeApp("Roblox")
             keyboardModule.releaseMovement()
             mouse.mouseUp()
-            macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
+            macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, updateGUI), daemon=True)
             macroProc.start()
             run.value = 2
         
@@ -624,7 +622,7 @@ if __name__ == "__main__":
             appManager.openApp("Roblox")
             keyboardModule.releaseMovement()
             mouse.mouseUp()
-            macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, haste, updateGUI), daemon=True)
+            macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, updateGUI), daemon=True)
             macroProc.start()
 
         #detect a new log message

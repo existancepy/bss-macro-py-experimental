@@ -351,16 +351,15 @@ for line in qdata:
 quest_data[quest_bear][quest_title] = quest_info 
 
 class macro:
-    def __init__(self, status, logQueue, haste, updateGUI):
+    def __init__(self, status, logQueue, updateGUI):
         self.status = status
         self.updateGUI = updateGUI
         self.setdat = settingsManager.loadAllSettings()
         self.fieldSettings = settingsManager.loadFields()
         screenData = getScreenData()
         self.display_type, self.ww, self.wh, self.ysm, self.xsm, self.ylm, self.xlm = itemgetter("display_type", "screen_width","screen_height", "y_multiplier", "x_multiplier", "y_length_multiplier", "x_length_multiplier")(screenData)
-        self.haste = haste
         self.hasteCompensation = HasteCompensationRevamped(self.display_type == "retina", self.setdat["movespeed"])
-        self.keyboard = keyboard(self.setdat["movespeed"], self.haste, self.setdat["haste_compensation"], self.hasteCompensation)
+        self.keyboard = keyboard(self.setdat["movespeed"], self.setdat["haste_compensation"], self.hasteCompensation)
         self.logger = logModule.log(logQueue, self.setdat["enable_webhook"], self.setdat["webhook_link"], blocking=self.setdat["low_performance"], hourlyReportOnly=self.setdat["only_send_hourly_report"])
         #setup an internal cooldown tracker. The cooldowns can be modified
         self.collectCooldowns = dict([(k, v[2]) for k,v in mergedCollectData.items()])
@@ -644,7 +643,7 @@ class macro:
     
     def getTextBesideE(self):
         yOffset = 23 if self.newUI else 0
-        img = mssScreenshot(self.mx+(self.mw//2-200), self.my+32+yOffset, 400, 100)
+        img = mssScreenshot(self.mx+(self.mw//2-200), self.my+32+yOffset, 400, 140)
         textRaw = ''.join([x[1][0] for x in ocr.ocrRead(img)]).lower()
         return self.convertCyrillic(textRaw)
     
@@ -664,7 +663,7 @@ class macro:
     def isBesideEImage(self, name):
         yOffset = 23 if self.newUI else 0
         template = self.adjustImage("./images/menu",name)
-        return locateTransparentImageOnScreen(template, self.mx+(self.mw//2-200), self.my+(yOffset), 400, 100, 0.75)
+        return locateTransparentImageOnScreen(template, self.mx+(self.mw//2-200), self.my+(yOffset), 400, 140, 0.75)
 
     def getTiming(self,name = None):
         for _ in range(3):
@@ -1354,7 +1353,7 @@ class macro:
             rejoinSuccess = False
             availableSlots = [] #store hive slots that are claimable
             newHiveNumber = 0
-            hiveDistance = 1.25 #distance between hives (in seconds)
+            hiveDistance = 1.23 #distance between hives (in seconds)
         
             # self.keyboard.keyDown("d", False)
             # self.keyboard.tileWait(4)
@@ -1363,9 +1362,9 @@ class macro:
             # self.keyboard.keyUp("d", False)
             # self.keyboard.keyUp("w", False)
             self.keyboard.keyDown("d", False)
-            self.keyboard.timeWait(0.4)
+            self.keyboard.timeWait(0.53)
             self.keyboard.keyDown("w", False)
-            self.keyboard.timeWait(2.7)
+            self.keyboard.timeWait(2.78)
             self.keyboard.keyUp("d", False)
             self.keyboard.keyUp("w", False)
             for _ in range(3):

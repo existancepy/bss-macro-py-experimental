@@ -352,6 +352,7 @@ class HourlyReport():
             "bearmorph3": ["top", True, False],
             "bearmorph4": ["top", True, False],
             "bearmorph5": ["top", True, False],
+            "bearmorph6": ["top", True, False],
         }
 
         self.uptimeBuffsColors = {
