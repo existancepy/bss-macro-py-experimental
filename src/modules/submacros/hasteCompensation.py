@@ -407,6 +407,9 @@ class HasteCompensationRevamped():
         
         self.hastePlus = Image.open("./images/buffs/haste+-retina.png").convert('RGBA')
 
+        self.prevHaste = 0
+        self.endTime = 0
+
     def screenshotBuff(self):   
         with mss.mss() as sct:
             monitor = {"left": int(self.mx), "top": int(self.my+52), "width": int(self.mw), "height": int(45)}
@@ -431,7 +434,7 @@ class HasteCompensationRevamped():
         x = 0
         #locate haste. It shares the same color as melody
         for _ in range(3):
-            res = bitmap_matcher.find_bitmap_cython(screen, self.hasteBitmap, x=x, variance=1)
+            res = bitmap_matcher.find_bitmap_cython(screen, self.hasteBitmap, x=x, variance=0)
             if not res:
                 break
             x = res[0]
@@ -445,12 +448,32 @@ class HasteCompensationRevamped():
         #haste found, get count
         if hasteX:
             for i, img in enumerate(self.countBitmaps):
-                res = bitmap_matcher.find_bitmap_cython(screen, img, x=hasteX, w=38*2, variance=3)
+                res = bitmap_matcher.find_bitmap_cython(screen, img, x=hasteX, w=38*2, variance=0)
                 if res:
                     haste = i+2
                     break
             else:
                 haste = 1
+        
+        #haste is running out, its probably too small to detect so add a linger time
+        # if haste == 1 and self.prevHaste > 1:
+        #     ct = time.time()
+        #     #first time detecting haste loss
+        #     if self.endTime == 0: 
+        #         self.endTime = ct + 0.1  #set linger time
+        #         haste = self.prevHaste  #use previous haste value
+        #     #still within linger time
+        #     elif ct < self.endTime:  
+        #         haste = self.prevHaste
+        #     #linger time expired
+        #     else:
+        #         self.endTime = 0
+        #         haste = 1
+        # elif haste != 1:
+        #     #haste detected, reset the linger timer
+        #     self.endTime = 0
+        # self.prevHaste = haste
+            
         
         #search for bear morphs
         bearmorphSpeed = 0
@@ -465,6 +488,6 @@ class HasteCompensationRevamped():
             haste += 10
             
         print(end_time-start_time)
-        print((self.baseMoveSpeed + bearmorphSpeed) * (1 + (0.1 * haste)))
+        print(f"{(self.baseMoveSpeed + bearmorphSpeed) * (1 + (0.1 * haste))} --- {self.baseMoveSpeed}, {haste}")
         
         return (self.baseMoveSpeed + bearmorphSpeed) * (1 + (0.1 * haste))

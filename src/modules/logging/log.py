@@ -38,6 +38,8 @@ def sendWebhook(url, title, desc, time, colorHex, ss=None, imagePath=None):
                 break
             except mss.exception.ScreenShotError:
                 timeModule.sleep(0.5)
+        else:
+            webhookImg = None
 
     logWebhook.webhook(url, title, desc, time, colorHex, webhookImg)
     print(f"[{time}] {title} {desc}")

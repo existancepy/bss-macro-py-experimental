@@ -13,16 +13,8 @@ import atexit
 from modules.misc.imageManipulation import adjustImage
 from modules.screen.imageSearch import locateImageOnScreen
 import pyautogui as pag
+from modules.misc.appManager import getWindowSize
 mw, mh = pag.size()
-
-def disconnectCheck(run, status, display_type):
-    img = adjustImage("./images/menu", "disconnect", display_type)
-    while not stopThreads:
-        if locateImageOnScreen(img, mw/3, mh/2.8, mw/2.3, mh/5, 0.7):
-            print("disconnected")
-            run.value = 4
-            time.sleep(300) #5 min cd to let the macro run through all 3 rejoins
-        time.sleep(1)
 
 #controller for the macro
 def macro(status, logQueue, updateGUI):
@@ -641,7 +633,8 @@ if __name__ == "__main__":
         
         if run.value == 2 and time.time() > disconnectCooldownUntil:
             img = adjustImage("./images/menu", "disconnect", screenInfo["display_type"])
-            if locateImageOnScreen(img, mw/3, mh/2.8, mw/2.3, mh/5, 0.7):
+            wmx, wmy, wmw, wmh = getWindowSize("roblox roblox")
+            if locateImageOnScreen(img, wmx+wmw/3, wmy+wmh/2.8, wmw/2.3, wmh/5, 0.7):
                 print("disconnected")
                 run.value = 4
                 disconnectCooldownUntil = time.time() + 300  # 5 min cooldown
