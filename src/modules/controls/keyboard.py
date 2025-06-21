@@ -25,7 +25,7 @@ class keyboard:
     
     
     def predictiveTimeWait(self, duration):
-        base_speed = self.ws
+        base_speed = 28
         target_distance = base_speed * duration
         corrected_target = target_distance - self.accumulated_error
         

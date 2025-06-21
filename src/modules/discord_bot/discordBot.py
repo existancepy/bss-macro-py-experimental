@@ -106,7 +106,7 @@ def discordBot(token, run, status):
         except Exception as e:
             await interaction.response.send_message(f"An error occurred: {e}")
     
-    @bot.tree.command(name = "shut-down", description = "Close the macro and roblox")
+    @bot.tree.command(name = "close", description = "Close the macro and roblox")
     async def battery(interaction: discord.Interaction):
         closeApp("Roblox")
         os._exit(1)

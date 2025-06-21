@@ -81,13 +81,6 @@ def getWindowSize(windowName):
     for win in windows:
         if windowName.lower() in win.lower():
             x,y,w,h = gw.getWindowGeometry(win)
-            #check for fullscreen
-            if x==0 and y==0 and w==mw and h==mh:
-                offsetY = 0
-            else:
-                offsetY = 30  #deal with the top bar
-            y += offsetY
-            h -= offsetY
             return x,y,w,h
     #window not found, most likely also fullscreen (but unfocused)
     return 0,0,mw,mh

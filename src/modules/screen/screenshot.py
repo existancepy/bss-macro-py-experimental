@@ -139,3 +139,12 @@ def benchmarkMSS():
         usePillow = True
     
     return False
+
+#returns a rgba pillow screenshot
+def mssScreenshotPillowRGBA(x=0,y=0,w=mw,h=mh):   
+    with mss.mss() as sct:
+        monitor = {"left": int(x), "top": int(y), "width": int(w), "height": int(h)}
+        sct_img = sct.grab(monitor)
+        img = Image.frombytes("RGBA", sct_img.size, sct_img.bgra, "raw", "BGRA")
+        #img.save(f"buff_area.png")
+        return img

@@ -22,7 +22,8 @@ print("Importing log module")
 import modules.logging.log as logModule
 print("Importing field drift compendation module")
 from modules.submacros.fieldDriftCompensation import fieldDriftCompensation as fieldDriftCompensationClass
-print("Importing operator")
+print("Importing roblox window")
+from modules.screen.robloxWindow import RobloxWindowBounds
 from operator import itemgetter
 print("Importing sys")
 import sys
@@ -53,7 +54,7 @@ from PIL import Image
 print("Importing message box module")
 from modules.misc import messageBox
 print("Importing memory match module")
-from modules.submacros.memoryMatch import solveMemoryMatch
+from modules.submacros.memoryMatch import MemoryMatch
 print("Importing math")
 import math
 print("Importing re")
@@ -356,16 +357,20 @@ class macro:
         self.updateGUI = updateGUI
         self.setdat = settingsManager.loadAllSettings()
         self.fieldSettings = settingsManager.loadFields()
-        screenData = getScreenData()
-        self.display_type, self.ww, self.wh, self.ysm, self.xsm, self.ylm, self.xlm = itemgetter("display_type", "screen_width","screen_height", "y_multiplier", "x_multiplier", "y_length_multiplier", "x_length_multiplier")(screenData)
-        self.hasteCompensation = HasteCompensationRevamped(self.display_type == "retina", self.setdat["movespeed"])
+
+        self.robloxWindow = RobloxWindowBounds()
+        
+        self.hasteCompensation = HasteCompensationRevamped(self.robloxWindow, self.setdat["movespeed"])
+        self.fieldDriftCompensation = fieldDriftCompensationClass(self.robloxWindow)
         self.keyboard = keyboard(self.setdat["movespeed"], self.setdat["haste_compensation"], self.hasteCompensation)
-        self.logger = logModule.log(logQueue, self.setdat["enable_webhook"], self.setdat["webhook_link"], blocking=self.setdat["low_performance"], hourlyReportOnly=self.setdat["only_send_hourly_report"])
+        self.logger = logModule.log(logQueue, self.setdat["enable_webhook"], self.setdat["webhook_link"], blocking=self.setdat["low_performance"], hourlyReportOnly=self.setdat["only_send_hourly_report"], robloxWindow=self.robloxWindow)
+        self.buffDetector = BuffDetector(self.robloxWindow)
+        self.hourlyReport = HourlyReport(self.buffDetector)
+        self.memoryMatch = MemoryMatch(self.robloxWindow)
+
         #setup an internal cooldown tracker. The cooldowns can be modified
         self.collectCooldowns = dict([(k, v[2]) for k,v in mergedCollectData.items()])
         self.collectCooldowns["sticker_printer"] = 1*60*60
-        #field drift compensation class
-        self.fieldDriftCompensation = fieldDriftCompensationClass(self.display_type == "retina")
 
         #night detection variables
         self.enableNightDetection = True if self.setdat["stinger_hunt"] else False
@@ -397,29 +402,30 @@ class macro:
         self.afb = False
         self.stop = False
 
-        self.setRobloxWindowInfo()
+
+        self.setRobloxWindowInfo(setYOffset=False)
 
     #get the size of the roblox window and update the relevant variables
-    def setRobloxWindowInfo(self):
+    def setRobloxWindowInfo(self, setYOffset=True):
         res = appManager.getWindowSize("roblox roblox")
         if res:
             wx,wy,ww,wh = res
-            self.mw = ww
-            self.mh = wh
-            self.mx = wx
-            self.my = wy
+            self.robloxWindow.mw = ww
+            self.robloxWindow.mh = wh
+            self.robloxWindow.mx = wx
+            self.robloxWindow.my = wy
             self.ww = ww
             self.wh = wh
             self.wx = wx
             self.wy = wy
-            if self.display_type == "retina":
+            if self.robloxWindow.isRetina:
                 self.ww*=2
                 self.wh*=2
                 self.wx*=2
                 self.wy*=2
-        
-        self.hasteCompensation.setWindowBounds(self.mx, self.my, self.mw, self.mh)
-        self.fieldDriftCompensation.setWindowBounds(self.mx, self.my, self.mw, self.mh)
+        self.robloxWindow.setRobloxWindowBounds(setYOffset=setYOffset)
+        if setYOffset:
+            self.logger.webhook("", f"Detect Y Offset: {self.robloxWindow.contentYOffset}", "dark brown")
     
     #thread to detect night
     #night detection is done by converting the screenshot to hsv and checking the average brightness
@@ -453,10 +459,9 @@ class macro:
             return np.mean(mask)
         
         def isNightSky(bgr):
-            y = 30
-            if self.display_type == "retina": y*=2
+            y = 30*self.robloxWindow.multi
             #crop the image to only the area above buff
-            bgr = bgr[0:y, (360 if self.display_type == "retina" else 180):int(self.mw)]
+            bgr = bgr[0:y, 180*self.robloxWindow.multi:int(self.robloxWindow.mw)]
             w,h = bgr.shape[:2]
             #check if a 15x15 area that is entirely black
             for x in range(w-15):
@@ -483,7 +488,7 @@ class macro:
                 [(17, 71, 28), cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))], #dande
             ]
 
-            bgr = bgr[0:bgr.shape[0]- (200 if self.display_type == "retina" else 100)]
+            bgr = bgr[0:bgr.shape[0]- (100*self.robloxWindow.multi)]
             dayScreen = bgr[int(bgr.shape[0]*2/5):bgr.shape[0]].copy()
             #detect day
             for color, kernel in dayColors:
@@ -498,7 +503,7 @@ class macro:
             return False
 
         def isNight():
-            screen = mssScreenshotNP(self.mx,self.my, self.mw, self.mh)
+            screen = mssScreenshotNP(self.robloxWindow.mx,self.robloxWindow.my, self.robloxWindow.mw, self.robloxWindow.mh)
             # Convert the image from BGRA to HSV
             bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
             hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
@@ -537,7 +542,7 @@ class macro:
             for win in windows:
                 if "roblox roblox" in win.lower():
                     x,y,w,h = gw.getWindowGeometry(win)
-                    return x==0 and y==0 and w==self.mw and h==self.mh
+                    return x==0 and y==0 and w==self.robloxWindow.mw and h==self.robloxWindow.mh
             #can't find the roblox window, most likely fullscreen? Assumes that it exists
             return True
                     
@@ -569,7 +574,7 @@ class macro:
                 time.sleep(0.4)
 
     def adjustImage(self, path, imageName):
-        return adjustImage(path, imageName, self.display_type)
+        return adjustImage(path, imageName, self.robloxWindow.display_type)
         
     #run a path. Choose automater over python if it exists (except on windows)
     #file must exist: if set to False, will not attempt to run the file if it doesnt exist
@@ -588,7 +593,7 @@ class macro:
             exec(open(pyPath).read())
 
     def getBackpack(self):
-        return bpc(self.mx+(self.mw//2+59+3), self.my + (31 if self.newUI else 6))
+        return bpc(self.robloxWindow.mx+(self.robloxWindow.mw//2+59+3), self.robloxWindow.my+self.robloxWindow.yOffset+6)
     
     def faceDirection(self, field, dir):
         keys = fieldFaceNorthKeys[field]
@@ -637,8 +642,7 @@ class macro:
         return False
     
     def getTextBesideE(self):
-        yOffset = 23 if self.newUI else 0
-        img = mssScreenshot(self.mx+(self.mw//2-200), self.my+32+yOffset, 400, 140)
+        img = mssScreenshot(self.robloxWindow.mx+(self.robloxWindow.mw//2-200), self.robloxWindow.my+self.robloxWindow.yOffset+34, 400, 140)
         textRaw = ''.join([x[1][0] for x in ocr.ocrRead(img)]).lower()
         return self.convertCyrillic(textRaw)
     
@@ -656,9 +660,8 @@ class macro:
         return False
     
     def isBesideEImage(self, name):
-        yOffset = 23 if self.newUI else 0
         template = self.adjustImage("./images/menu",name)
-        return locateTransparentImageOnScreen(template, self.mx+(self.mw//2-200), self.my+(yOffset), 400, 140, 0.75)
+        return locateTransparentImageOnScreen(template, self.robloxWindow.mx+(self.robloxWindow.mw//2-200), self.robloxWindow.my+self.robloxWindow.yOffset+34, 400, 140, 0.75)
 
     def getTiming(self,name = None):
         for _ in range(3):
@@ -693,15 +696,15 @@ class macro:
         return self.isInOCR("blue", includeList, excludeList)
     
     #detect the honey/pollen bar to determine if its new or old ui
-    def getTop(self,y):
-        height = 30
-        if self.display_type == "retina":
-            height*=2
-            y*=2
-        res = ocr.customOCR(self.wx+self.ww/3.5, self.wy+y, self.ww/2.5, height,0)
-        if not res: return False
-        text = ''.join([x[1][0].lower() for x in res])
-        return "honey" in text or "pollen" in text
+    # def getTop(self,y):
+    #     height = 30
+    #     if self.display_type == "retina":
+    #         height*=2
+    #         y*=2
+    #     res = ocr.customOCR(self.wx+self.ww/3.5, self.wy+y, self.ww/2.5, height,0)
+    #     if not res: return False
+    #     text = ''.join([x[1][0].lower() for x in res])
+    #     return "honey" in text or "pollen" in text
     
     #place sprinklers by jumping up and down and placing them middair
     def placeSprinkler(self):
@@ -734,19 +737,16 @@ class macro:
     #if detectOnly is set to true, the macro will not click 
     def clickYes(self, detect = False, detectOnly = False, clickOnce=False):
         yesImg = self.adjustImage("./images/menu", "yes")
-        x = self.mw/3.2
-        y = self.mh/2.3
+        x = self.robloxWindow.mx+self.robloxWindow.mw/3.2
+        y = self.robloxWindow.my+self.robloxWindow.mh/2.3
         time.sleep(0.4)
         threshold = 0
         if detect or detectOnly: threshold = 0.75
-        res = locateImageOnScreen(yesImg, self.mx+(x), self.my+(y), self.mw/2.5, self.mh/3.4, threshold)
+        res = locateImageOnScreen(yesImg, x, y, self.robloxWindow.mw/2.5, self.robloxWindow.mh/3.4, threshold)
         if res is None: return False
         if detectOnly: return True
-        bestX, bestY = res[1]
-        if self.display_type == "retina":
-            bestX //=2
-            bestY //=2
-        mouse.moveTo(self.mx+(bestX+x), self.my+(bestY+y))
+        bestX, bestY = [x//self.robloxWindow.multi for x in res[1]]
+        mouse.moveTo(bestX+x, bestY+y)
         time.sleep(0.2)
         mouse.moveBy(5, 5)
         time.sleep(0.1)
@@ -757,11 +757,11 @@ class macro:
     def toggleInventory(self, mode):
         invOpenImg = self.adjustImage("./images/menu", "inventoryopen")
         open = False
-        if locateImageOnScreen(invOpenImg, self.mx+(0), self.my+(10), 100, 180, 0.8):
+        if locateImageOnScreen(invOpenImg, self.robloxWindow.mx, self.robloxWindow.my+10, 100, 180, 0.8):
             open = True
         
         def clickInv():
-            mouse.moveTo(self.mx+(30), self.my+(113))
+            mouse.moveTo(self.robloxWindow.mx+30, self.robloxWindow.my+113)
             time.sleep(0.1)
             mouse.moveBy(0,3)
             time.sleep(0.1)
@@ -810,7 +810,7 @@ class macro:
                 mouse.scroll(100)
                 sleep(0.05)
                 if i > 10:
-                    screen = cv2.cvtColor(mssScreenshotNP(self.mx, self.my+90, 100, 200), cv2.COLOR_BGRA2RGB)
+                    screen = cv2.cvtColor(mssScreenshotNP(self.robloxWindow.mx, self.robloxWindow.my+120, 100, 200), cv2.COLOR_BGRA2RGB)
                     hash = imagehash.average_hash(Image.fromarray(screen))
                     if not prevHash is None and prevHash == hash:
                         break
@@ -822,14 +822,13 @@ class macro:
 
         itemOCRName = itemName.lower().replace("planter", "") #the name of the item used to check with the ocr to verify its correct
         itemH, itemW, *_ = itemImg.shape
-        if self.display_type == "retina":
-            itemW //= 2
-            itemH //= 2
+        itemW //= self.robloxWindow.multi
+        itemH //= self.robloxWindow.multi
 
         #open inventory
         self.toggleInventory("open")
         time.sleep(0.3)
-        mouse.moveTo(self.mx+(312), self.my+(200))
+        mouse.moveTo(self.robloxWindow.mx+312, self.robloxWindow.my+200)
         mouse.click()
         #scroll to top
         scrollToTop()
@@ -841,14 +840,14 @@ class macro:
         prevHash = None
         time.sleep(0.3)
         for i in range(120):
-            #screen = cv2.cvtColor(mssScreenshotNP(90, 90, 300-90, self.mh-180), cv2.COLOR_RGBA2GRAY)
+            #screen = cv2.cvtColor(mssScreenshotNP(90, 90, 300-90, self.robloxWindow.mh-180), cv2.COLOR_RGBA2GRAY)
             #max_loc = fastFeatureMatching(screen, itemImg)
             #max_val = 1 if max_loc else 0
-            max_val, max_loc = locateImageOnScreen(itemImg, self.mx, self.my+90, 100, self.mh-180)
+            max_val, max_loc = locateImageOnScreen(itemImg, self.robloxWindow.mx, self.robloxWindow.my+90, 100, self.robloxWindow.mh-180)
             data = (max_val, max_loc, i)
             #most likely the correct item, stop searching
             if max_val > 0.6:
-                itemScreenshot = mssScreenshot(self.mx+90, self.my+(max_loc[1]//2 if self.display_type == "retina" else max_loc[1])+60, 220, 60)
+                itemScreenshot = mssScreenshot(self.robloxWindow.mx+90, self.robloxWindow.my+(max_loc[1]//self.robloxWindow.multi)+60, 220, 60)
                 itemOCRText = ''.join([x[1][0] for x in ocr.ocrRead(itemScreenshot)]).replace(" ","").replace("-","").lower()
                 if itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.8:
                     print(itemOCRText)
@@ -866,7 +865,7 @@ class macro:
             mouse.scroll(-3, True)
             time.sleep(0.06)
 
-            screen = cv2.cvtColor(mssScreenshotNP(self.mx, self.my+90, 100, 200), cv2.COLOR_BGRA2RGB)
+            screen = cv2.cvtColor(mssScreenshotNP(self.robloxWindow.mx, self.robloxWindow.my+100, 100, 200), cv2.COLOR_BGRA2RGB)
             hash = imagehash.average_hash(Image.fromarray(screen))
             if not prevHash is None and prevHash == hash:
                 break
@@ -911,8 +910,7 @@ class macro:
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
             return
         #return (bestX+20, bestY+80+20)
-        if self.display_type == "retina":
-            bestY //= 2
+        bestY //= self.robloxWindow.multi
         return (40, bestY+80)
         
     
@@ -926,7 +924,7 @@ class macro:
                 return False
             x, y = res
 
-        mouse.moveTo(self.mx+(x), self.my+(y))
+        mouse.moveTo(self.robloxWindow.mx+x, self.robloxWindow.my+y)
         mouse.moveBy(10,15)
         for _ in range(3):
             mouse.click()
@@ -1055,9 +1053,7 @@ class macro:
         return True
 
     def moveMouseToDefault(self):
-        yOffset = 0
-        if self.newUI: yOffset += 20
-        mouse.moveTo(self.mx+(370), self.my+(100+yOffset))
+        mouse.moveTo(self.robloxWindow.mx+370, self.robloxWindow.my+self.robloxWindow.yOffset+110)
 
     def reset(self, hiveCheck = False, convert = True, AFB = False):
         self.alreadyConverted = False
@@ -1067,7 +1063,7 @@ class macro:
         for i in range(5):
             self.logger.webhook("", f"Resetting character, Attempt: {i+1}", "dark brown")
             #set mouse and execute hotkeys
-            #mouse.teleport(self.mw/(self.xsm*4.11)+40,(self.mh/(9*self.ysm))+yOffset)
+            #mouse.teleport(self.robloxWindow.mw/(self.xsm*4.11)+40,(self.robloxWindow.mh/(9*self.ysm))+yOffset)
             self.canDetectNight = False
             st = time.time()
             #close any menus if they exist
@@ -1076,19 +1072,19 @@ class macro:
             
             closeImg = self.adjustImage("./images/menu", "close") #sticker printer
             print(f"adjusted sticker printer image: {time.time()-st}")
-            if locateImageOnScreen(closeImg, self.mx+(self.mw/4), self.my+(100), self.mw/4, self.mh/3.5, 0.7):
+            if locateImageOnScreen(closeImg, self.robloxWindow.mx+(self.robloxWindow.mw/4), self.robloxWindow.my+(100), self.robloxWindow.mw/4, self.robloxWindow.mh/3.5, 0.7):
                 self.keyboard.press("e")
             print(f"check sticker printer popup: {time.time()-st}")
             
             mmImg = self.adjustImage("./images/menu", "mmopen") #memory match
-            if locateImageOnScreen(mmImg, self.mx+(self.mw/4), self.my+(self.mh/4), self.mw/4, self.mh/3.5, 0.8):
+            if locateImageOnScreen(mmImg, self.robloxWindow.mx+(self.robloxWindow.mw/4), self.robloxWindow.my+(self.robloxWindow.mh/4), self.robloxWindow.mw/4, self.robloxWindow.mh/3.5, 0.8):
                 self.canDetectNight = False
-                solveMemoryMatch(self.latestMM, self.display_type)
+                self.memoryMatch.solveMemoryMatch(self.latestMM)
                 self.canDetectNight = True
             print(f"checked memory match popup: {time.time()-st}")
 
             blenderImg = self.adjustImage("./images/menu", "blenderclose") #blender
-            if locateImageOnScreen(blenderImg, self.mx+(self.mw/4), self.my+(self.mh/5), self.mw/7, self.mh/4, 0.8):
+            if locateImageOnScreen(blenderImg, self.robloxWindow.mx+(self.robloxWindow.mw/4), self.robloxWindow.my+(self.robloxWindow.mh/5), self.robloxWindow.mw/7, self.robloxWindow.mh/4, 0.8):
                 self.closeBlenderGUI()
             print(f"checked blender popup: {time.time()-st}")
             
@@ -1096,7 +1092,7 @@ class macro:
             print(f"checked dialog: {time.time()-st}")
 
             performanceStatsImg = self.adjustImage("./images/menu", "performancestats")
-            if locateTransparentImageOnScreen(performanceStatsImg, self.mx+(0), self.my+(20), self.mw/3.5, 70, 0.7):
+            if locateTransparentImageOnScreen(performanceStatsImg, self.robloxWindow.mx, self.robloxWindow.my, self.robloxWindow.mw/3.5, 70, 0.7):
                 if sys.platform == "darwin":
                     '''
                     #self.keyboard.keyDown("fn", False)
@@ -1114,29 +1110,26 @@ class macro:
             print(f"checked performance stats: {time.time()-st}")
 
             noImg = self.adjustImage("./images/menu", "no") #yes/no popup
-            x = self.mw/3.2
-            y = self.mh/2.3
-            res = locateImageOnScreen(noImg, self.mx+(x), self.my+(y), self.mw/2.5, self.mh/3.4, 0.8)
+            x = self.robloxWindow.mx + self.robloxWindow.mw/2-300
+            y = self.robloxWindow.my
+            res = locateImageOnScreen(noImg, x, y, 650, self.robloxWindow.mh, 0.8)
             print(f"checked yes/no popup: {time.time()-st}")
-            #mssScreenshot(x,y,self.mw/2.5,self.mh/3.4, True)
+            #mssScreenshot(x,y,self.robloxWindow.mw/2.5,self.robloxWindow.mh/3.4, True)
             if res:
-                x2, y2 = res[1]
-                if self.display_type == "retina":
-                    x2 /= 2
-                    y2 /= 2
-                mouse.moveTo(self.mx+(x+x2), self.my+(y+y2))
+                x2, y2 = [j//self.robloxWindow.multi for j in res[1]]
+                mouse.moveTo(x+x2, y+y2)
                 time.sleep(0.08)
                 mouse.moveBy(1,1)
                 time.sleep(0.1)
                 mouse.click()
 
             stickerBookImg = self.adjustImage("./images/menu", "stickerbookclose") #sticker book
-            x = 250
-            y = 130
-            res = locateImageOnScreen(stickerBookImg, self.mx+(x), self.my+(y), 100, 80, 0.8)
+            x = self.robloxWindow.mx+250
+            y = self.robloxWindow.my+110
+            res = locateImageOnScreen(stickerBookImg, x, y, 100, 80, 0.8)
             if res:
                 x2, y2 = res[1]
-                mouse.moveTo(self.mx+(x+x2), self.my+(y+y2))
+                mouse.moveTo(x+x2, y+y2)
                 time.sleep(0.08)
                 mouse.moveBy(1,3)
                 time.sleep(0.1)
@@ -1160,14 +1153,14 @@ class macro:
             st = time.time()
             #wait for empty health bar to appear
             while time.time() - st < 3: 
-                if locateImageOnScreen(emptyHealth, self.mx+(self.mw-150), self.my+(0), 150, 60, 0.8):
+                if locateImageOnScreen(emptyHealth, self.robloxWindow.mx+(self.robloxWindow.mw-150), self.robloxWindow.my, 150, 60, 0.8):
                     healthBar = True
                     break
             if healthBar: #check if the health bar has b detected. If it hasnt, just wait for a flat time
                 #if the empty health bar disappears, player has respawned
                 st = time.time()
                 while time.time() - st < 8:
-                    if not locateImageOnScreen(emptyHealth, self.mx+(self.mw-150), self.my+(0), 150, 60, 0.6):
+                    if not locateImageOnScreen(emptyHealth, self.robloxWindow.mx+(self.robloxWindow.mw-150), self.robloxWindow.my, 150, 60, 0.6):
                         time.sleep(0.5)
                         break
             else:
@@ -1180,11 +1173,14 @@ class macro:
                 time.sleep(self.setdat["AFB_wait"])
                 self.died = False
 
+            if self.robloxWindow.contentYOffset == 0:
+                self.robloxWindow.setRobloxWindowBounds()
+
             self.canDetectNight = True
             self.location = "spawn"
             #detect if player is at hive. Spin a max of 4 times
             for i in range(4):
-                screen = pillowToCv2(mssScreenshot(self.mx+(self.mw//2-100), self.my+(self.mh-10), 200, 10))
+                screen = pillowToCv2(mssScreenshot(self.robloxWindow.mx+(self.robloxWindow.mw//2-100), self.robloxWindow.my+(self.robloxWindow.mh-10), 200, 10))
                 # Convert the image from BGR to HLS color space
                 hsl = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
                 # Create a mask for the color range
@@ -1289,26 +1285,30 @@ class macro:
                     self.keyboard.keyUp("ctrl")
             #wait for bss to load
             #if sprinkler image is found, bss is loaded
-            #max 60s of waiting
+            #max 80s of waiting
             sprinklerImg = self.adjustImage("./images/menu", "sprinkler")
             loadStartTime = time.time()
             signUpImage = self.adjustImage("./images/menu", "signup")
             robloxHomeImage = self.adjustImage("./images/menu", "robloxhome")
-            while not locateImageOnScreen(sprinklerImg, self.mx, self.my+(self.mh*3/4), self.mw, self.mh*1/4, 0.75) and time.time() - loadStartTime < 60:
+            rejoinSuccess = True
+            while not locateImageOnScreen(sprinklerImg, self.robloxWindow.mx, self.robloxWindow.my+(self.robloxWindow.mh*3/4), self.robloxWindow.mw, self.robloxWindow.mh*1/4, 0.75) and time.time() - loadStartTime < 80:
                 if self.setdat["rejoin_method"] == "deeplink":
                     #check if the user is stuck on the sign up screen
-                    if locateImageOnScreen(signUpImage, self.mx+(self.mw/4), self.my+(self.mh/3), self.mw/2, self.mh*2/3, 0.7):
+                    if locateImageOnScreen(signUpImage, self.robloxWindow.mx+(self.robloxWindow.mw/4), self.robloxWindow.my+(self.robloxWindow.mh/3), self.robloxWindow.mw/2, self.robloxWindow.mh*2/3, 0.7):
                         self.logger.webhook("","Not logged into the roblox app. Rejoining via the browser. For a smoother experience, please ensure you are logged into the Roblox app beforehand.","red","screen")
                         self.setdat["rejoin_method"] = "new tab"
                         continue
                     #check if home page is opened instead of the app
-                    if locateImageOnScreen(robloxHomeImage, self.mx+(0), self.my+(0), self.mw/10, self.mh/6, 0.7) and time.time() - loadStartTime > 10:
+                    if locateImageOnScreen(robloxHomeImage, self.robloxWindow.mx, self.robloxWindow.my, self.robloxWindow.mw/10, self.robloxWindow.mh/6, 0.7) and time.time() - loadStartTime > 10:
                         self.logger.webhook("","Roblox Home Page is open","brown","screen")
-                        continue
+                        rejoinSuccess = False
+                        break
 
-                    self.setRobloxWindowInfo()
+                    self.setRobloxWindowInfo(setYOffset=False)
 
             appManager.openApp("Roblox")
+            if not rejoinSuccess:
+                continue
             #run fullscreen check
             # if self.isFullScreen(): #check if roblox can be found in menu bar
             #     self.logger.webhook("","Roblox is already in fullscreen, not activating fullscreen", "dark brown")
@@ -1348,7 +1348,7 @@ class macro:
             rejoinSuccess = False
             availableSlots = [] #store hive slots that are claimable
             newHiveNumber = 0
-            hiveDistance = 1.23 #distance between hives (in seconds)
+            hiveDistance = 1.28 #distance between hives (in seconds)
         
             # self.keyboard.keyDown("d", False)
             # self.keyboard.tileWait(4)
@@ -1356,10 +1356,11 @@ class macro:
             # self.keyboard.tileWait(20)
             # self.keyboard.keyUp("d", False)
             # self.keyboard.keyUp("w", False)
+            self.setRobloxWindowInfo()
             self.keyboard.keyDown("d", False)
             self.keyboard.timeWait(0.53)
             self.keyboard.keyDown("w", False)
-            self.keyboard.timeWait(2.78)
+            self.keyboard.timeWait(2.8)
             self.keyboard.keyUp("d", False)
             self.keyboard.keyUp("w", False)
             for _ in range(3):
@@ -1478,7 +1479,7 @@ class macro:
     
     def blueTextImageSearch(self, text, threshold=0.7):
         target = self.adjustImage("./images/blue", text)
-        return locateImageOnScreen(target, self.mx+(self.mw*3/4), self.my+(self.mh*3/5), self.mw/4, self.mh-self.mh*3/5, threshold)
+        return locateImageOnScreen(target, self.robloxWindow.mx+(self.robloxWindow.mw*3/4), self.robloxWindow.my+(self.robloxWindow.mh*3/5), self.robloxWindow.mw/4, self.robloxWindow.mh-self.robloxWindow.mh*3/5, threshold)
     #background thread for gather
     #check if mobs have been killed and reset their timings
     #check if player died
@@ -1739,13 +1740,17 @@ class macro:
 
     #returns the coordinates of the keep old text
     def keepOldCheck(self):
-        region = (self.ww/3.15,self.wh/2.15,self.ww/2.7,self.wh/4.2)
-        res = ocr.customOCR(*region,0)
-        multi = 1
-        if self.display_type == "retina": multi = 2
-        for i in res:
-            if "keep" in i[1][0].lower() and "o" in i[1][0].lower():
-                return ((i[0][0][0]+region[0])//multi, (i[0][0][1]+region[1])//multi)
+        noImg = self.adjustImage("./images/menu", "no") #yes/no popup
+        x = self.robloxWindow.mx + self.robloxWindow.mw/2-300
+        y = self.robloxWindow.my
+        res = locateImageOnScreen(noImg, x, y, 650, self.robloxWindow.mh, 0.8)
+        if res:
+            return [j//self.robloxWindow.multi for j in res[1]]
+        # region = (self.ww/3.15,self.wh/2.15,self.ww/2.7,self.wh/4.2)
+        # res = ocr.customOCR(*region,0)
+        # for i in res:
+        #     if "keep" in i[1][0].lower() and "o" in i[1][0].lower():
+        #         return ((i[0][0][0]+region[0])//self.robloxWindow.multi, (i[0][0][1]+region[1])//self.robloxWindow.multi)
         
 
     def antChallenge(self):
@@ -1928,18 +1933,18 @@ class macro:
         #click egg
         time.sleep(2)
         eggPos = eggPosData[self.setdat["sticker_printer_egg"]]
-        mouse.moveTo(self.mx+(self.mw//2+eggPos), self.my+(4*self.mh//10-20))
+        mouse.moveTo(self.robloxWindow.mx+(self.robloxWindow.mw//2+eggPos), self.robloxWindow.my+(4*self.robloxWindow.mh//10-20))
         time.sleep(0.2)
         mouse.click()
         time.sleep(1)
         confirmImg = self.adjustImage("./images/menu", "confirm")
-        if not locateImageOnScreen(confirmImg, self.mx+(self.mw//2+150), self.my+(4*self.mh//10+160), 120, 60, 0.7):
+        if not locateImageOnScreen(confirmImg, self.robloxWindow.mx+(self.robloxWindow.mw//2+150), self.robloxWindow.my+(4*self.robloxWindow.mh//10+160), 120, 60, 0.7):
             self.logger.webhook(f"", "Sticker printer on cooldown", "dark brown", "screen")
             self.keyboard.press("e")
             self.saveTiming("sticker_printer")
             return
         #confirm
-        mouse.moveTo(self.mx+(self.mw//2+225), self.my+(4*self.mh//10+195))
+        mouse.moveTo(self.robloxWindow.mx+(self.robloxWindow.mw//2+225), self.robloxWindow.my+(4*self.robloxWindow.mh//10+195))
         time.sleep(0.1)
         mouse.click()
         time.sleep(0.2)
@@ -2062,7 +2067,7 @@ class macro:
                 time.sleep(2)
                 self.logger.webhook("", f"Solving: {displayName}", "dark brown", "screen")
                 self.canDetectNight = False
-                solveMemoryMatch(mmType, self.display_type)
+                self.memoryMatch.solveMemoryMatch(mmType)
                 self.canDetectNight = True
                 time.sleep(2)
                 self.logger.webhook("", f"Completed: {displayName}", "bright green", "blue")
@@ -2375,7 +2380,7 @@ class macro:
 
         def replace():
             replaceImg = self.adjustImage("./images/menu", "replace")
-            res = locateImageOnScreen(replaceImg, self.mx+(self.mw/3.15), self.my+(self.mh/2.15), self.mw/2.4, self.mh/4.2)
+            res = locateImageOnScreen(replaceImg, self.robloxWindow.mx+(self.robloxWindow.mw/3.15), self.robloxWindow.my+(self.robloxWindow.mh/2.15), self.robloxWindow.mw/2.4, self.robloxWindow.mh/4.2)
             if res is not None:
                 mouse.moveTo(*res[1])
                 mouse.click()
@@ -2545,7 +2550,7 @@ class macro:
                 time.sleep(0.1)
             #didnt detect the image, check for planter growth bar
             for _ in range(3):
-                screen = mssScreenshotNP(self.mx+(self.mw/2.14), self.my+(self.mh/2.9), self.mw/1.8-self.mw/2.14, self.mh/2.2-self.mh/2.9)
+                screen = mssScreenshotNP(self.robloxWindow.mx+(self.robloxWindow.mw/2.14), self.robloxWindow.my+(self.robloxWindow.mh/2.9), self.robloxWindow.mw/1.8-self.robloxWindow.mw/2.14, self.robloxWindow.mh/2.2-self.robloxWindow.mh/2.9)
                 screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
                 kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
                 if findColorObjectRGB(screen, (86, 120, 72), kernel=kernel, variance=2):
@@ -2585,7 +2590,7 @@ class macro:
     def moveToPlanter(self):
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(2,2))
         def getPlanterLocation():
-            screen = mssScreenshotNP(self.mx,self.my,self.mw,self.mh)
+            screen = mssScreenshotNP(self.robloxWindow.mx,self.robloxWindow.my,self.robloxWindow.mw,self.robloxWindow.mh)
             screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
             # #screen = cv2.cvtColor(screen, cv2.COLOR_BGR2HLS)
             #screen = cv2.imread("b.png")
@@ -2593,12 +2598,12 @@ class macro:
             if not point:
                 point = findColorObjectRGB(screen, (31, 231, 68), kernel=kernel, variance=2)
             
-            if point and self.display_type == "retina":
-                point = [x//2 for x in point] 
+            if point:
+                point = [x//self.robloxWindow.multi for x in point] 
             return point
 
-        winUp, winDown = self.mh/3.1, self.mh/2.9
-        winLeft, winRight = self.mw/2.14, self.mw/1.88
+        winUp, winDown = self.robloxWindow.mh/3.1, self.robloxWindow.mh/2.9
+        winLeft, winRight = self.robloxWindow.mw/2.14, self.robloxWindow.mw/1.88
 
         hmove, vmove = "", ""
         for _ in range(10):
@@ -2748,7 +2753,7 @@ class macro:
         return planterData
     
     def closeBlenderGUI(self):
-        mouse.moveTo(self.mx+(self.mw/2-250), self.my+(math.floor(self.mh*0.48))-200)
+        mouse.moveTo(self.robloxWindow.mx+(self.robloxWindow.mw/2-250), self.robloxWindow.my+(math.floor(self.robloxWindow.mh*0.48))-200)
         time.sleep(0.1)
         mouse.click()
         
@@ -2800,14 +2805,13 @@ class macro:
             updateHourlyTime()
             return
         
-        x = self.mw/3
-        y = self.mw/4
+        x = self.robloxWindow.mw/3
+        y = self.robloxWindow.mw/4
 
         def clickOnBlenderElement(cx, cy):
-            if self.display_type == "retina":
-                cx //= 2
-                cy //= 2
-            mouse.moveTo(self.mx+(cx+x), self.my+(cy+y))
+            cx //= self.robloxWindow.multi
+            cy //= self.robloxWindow.multi
+            mouse.moveTo(self.robloxWindow.mx+(cx+x), self.robloxWindow.my+(cy+y))
             time.sleep(0.1)
             mouse.click()
             mouse.moveBy(2,2)
@@ -2823,29 +2827,29 @@ class macro:
         time.sleep(1)
         #check if blender is done and click on end crafting
         doneImg = self.adjustImage("images/menu", "blenderdone")
-        res = locateImageOnScreen(doneImg, self.mx+(x), self.my+(y), 560, 480, 0.75)
+        res = locateImageOnScreen(doneImg, self.robloxWindow.mx+(x), self.robloxWindow.my+(y), 560, 480, 0.75)
         if res:
             print("done")
             clickOnBlenderElement(*res[1])
         
         #check for cancel button
         cancelImg = self.adjustImage("images/menu", "blendercancel")
-        res = locateImageOnScreen(cancelImg, self.mx+(x), self.my+(y), 560, 480, 0.75)
+        res = locateImageOnScreen(cancelImg, self.robloxWindow.mx+(x), self.robloxWindow.my+(y), 560, 480, 0.75)
         if res:
             print("cancel")
             clickOnBlenderElement(*res[1])
 
         #check if still crafting and get cd
         notDoneImg = self.adjustImage("images/menu", "blenderend")
-        res = locateImageOnScreen(notDoneImg, self.mx+(x), self.my+(y), 560, 480, 0.75)
+        res = locateImageOnScreen(notDoneImg, self.robloxWindow.mx+(x), self.robloxWindow.my+(y), 560, 480, 0.75)
 
         def cancelCraft():
             self.logger.webhook("", "Unable to detect remaining crafting time, ending craft", "dark brown", "screen")
-            #mouse.moveTo(self.mx+(self.mw/2-120), self.my+(math.floor(self.mh*0.48))+120)
+            #mouse.moveTo(self.robloxWindow.mx+(self.robloxWindow.mw/2-120), self.robloxWindow.my+(math.floor(self.robloxWindow.mh*0.48))+120)
             clickOnBlenderElement(*res[1])
 
         if res:
-            cdImg = mssScreenshot(self.mx+(self.mw/2-130),self.my+(math.floor(self.mh*0.48)-70), 400, 65)
+            cdImg = mssScreenshot(self.robloxWindow.mx+(self.robloxWindow.mw/2-130),self.robloxWindow.my+(math.floor(self.robloxWindow.mh*0.48)-70), 400, 65)
             cdRaw = ocr.ocrRead(cdImg)
             cdRaw = ''.join([x[1][0] for x in cdRaw])
             cd = self.cdTextToSecs(cdRaw, False, 3600) #1 hour cd
@@ -2869,20 +2873,20 @@ class macro:
         item = self.setdat[f"blender_item_{itemNo}"]
         #click to the item
         itemDisplay = item.title()
-        mouse.moveTo(self.mx+(self.mw/2+240), self.my+(math.floor(self.mh*0.48))+128)
+        mouse.moveTo(self.robloxWindow.mx+(self.robloxWindow.mw/2+240), self.robloxWindow.my+(math.floor(self.robloxWindow.mh*0.48))+128)
         for _ in range(blenderItems.index(item)):
             mouse.click()
             sleep(0.06)
         #check if the item can be crafted
         canMake = self.adjustImage("images/menu", "blendermake")
-        if not locateImageOnScreen(canMake, self.mx+(x), self.my+(y), 560, 480, 0.8):
+        if not locateImageOnScreen(canMake, self.robloxWindow.mx+(x), self.robloxWindow.my+(y), 560, 480, 0.8):
             self.logger.webhook("", f"Unable to craft {itemDisplay}", "dark brown", "screen")
         #open the crafting menu
-        mouse.moveTo(self.mx+(self.mw/2), self.my+(math.floor(self.mh*0.48))+130)
+        mouse.moveTo(self.robloxWindow.mx+(self.robloxWindow.mw/2), self.robloxWindow.my+(math.floor(self.robloxWindow.mh*0.48))+130)
         time.sleep(0.1)
         mouse.click()
         #set the quantity
-        mouse.moveTo(self.mx+(self.mw/2-60), self.my+(math.floor(self.mh*0.48))+140)
+        mouse.moveTo(self.robloxWindow.mx+(self.robloxWindow.mw/2-60), self.robloxWindow.my+(math.floor(self.robloxWindow.mh*0.48))+140)
         #check if max
         if self.setdat[f"blender_quantity_max_{itemNo}"]:
             #get a screenshot of the quantity
@@ -2891,7 +2895,7 @@ class macro:
             #if both screenshots are the same, break
 
             def quantityScreenshot(save = False):
-                return imagehash.average_hash(mssScreenshot(self.mx+(self.mw/2-60-140), self.my+(math.floor(self.mh*0.48)+140-20), 110, 20*2, save))
+                return imagehash.average_hash(mssScreenshot(self.robloxWindow.mx+(self.robloxWindow.mw/2-60-140), self.robloxWindow.my+(math.floor(self.robloxWindow.mh*0.48)+140-20), 110, 20*2, save))
             quantity1Img = quantityScreenshot()
             while True:
                 for _ in range(5): #add 5 quantity
@@ -2902,7 +2906,7 @@ class macro:
                     break
                 #update the quantity
                 quantity1Img = quantity2Img
-            quantity = ''.join([x[1][0] for x in ocr.ocrRead(mssScreenshot(self.mx+(self.mw/2-60-140), self.my+(math.floor(self.mh*0.48)+140-20), 110, 23*2))])
+            quantity = ''.join([x[1][0] for x in ocr.ocrRead(mssScreenshot(self.robloxWindow.mx+(self.robloxWindow.mw/2-60-140), self.robloxWindow.my+(math.floor(self.robloxWindow.mh*0.48)+140-20), 110, 23*2))])
             quantity = ''.join([x for x in quantity if x.isdigit()])
             if quantity:
                 quantity = int(quantity)
@@ -2916,7 +2920,7 @@ class macro:
                 mouse.click()
                 sleep(0.03)
         #confirm
-        mouse.moveTo(self.mx+(self.mw/2 + 70), self.my+(math.floor(self.mh*0.48))+130)
+        mouse.moveTo(self.robloxWindow.mx+(self.robloxWindow.mw/2 + 70), self.robloxWindow.my+(math.floor(self.robloxWindow.mh*0.48))+130)
         time.sleep(0.1)
         mouse.click()
         #go to next item
@@ -2936,11 +2940,11 @@ class macro:
         
     def claimStickerStack(self):
         time.sleep(1)
-        x = self.mw//2-275
-        y = 4*self.mh//10
+        x = self.robloxWindow.mw//2-275
+        y = 4*self.robloxWindow.mh//10
 
         #detect sticker stack boost time
-        screen = mssScreenshot(self.mx+(x+550/2),self.my+y,550/2,40)
+        screen = mssScreenshot(self.robloxWindow.mx+(x+550/2),self.robloxWindow.my+y,550/2,40)
         ocrRes = ''.join([x[1][0] for x in ocr.ocrRead(screen)])
         ocrRes = re.findall(r"\(.*?\)", ocrRes) #get text between brackets
         finalTime = None
@@ -2965,15 +2969,13 @@ class macro:
         if "sticker" in self.setdat["sticker_stack_item"]:
             regularSticker = self.adjustImage("images/sticker_stack", "regularsticker")
             hiveSticker = self.adjustImage("images/sticker_stack", "hivesticker")
-            stickerLoc = locateTransparentImageOnScreen(regularSticker, self.mx+(x), self.my+(y), 550, 220, 0.7)
+            stickerLoc = locateTransparentImageOnScreen(regularSticker, self.robloxWindow.mx+(x), self.robloxWindow.my+(y), 550, 220, 0.7)
             if self.setdat["hive_skin"] and stickerLoc is None: #cant find regular sticker, use hive skin
-                stickerLoc = locateTransparentImageOnScreen(hiveSticker, self.mx+(x), self.my+(y), 550, 220, 0.7)
+                stickerLoc = locateTransparentImageOnScreen(hiveSticker, self.robloxWindow.mx+(x), self.robloxWindow.my+(y), 550, 220, 0.7)
             if stickerLoc: #found a available sticker
-                xr, yr = stickerLoc[1]
-                if self.display_type == "retina":
-                    xr//= 2
-                    yr//= 2
-                mouse.moveTo(self.mx+(x+xr), self.my+(y+yr))
+                xr, yr = [j//self.robloxWindow.multi for j in stickerLoc[1]]
+
+                mouse.moveTo(self.robloxWindow.mx+(x+xr), self.robloxWindow.my+(y+yr))
                 time.sleep(0.1)
                 mouse.moveBy(3,-3)
                 time.sleep(0.2)
@@ -2985,7 +2987,7 @@ class macro:
                 self.keyboard.press("e")
                 return
         if "ticket" in self.setdat["sticker_stack_item"] and not stickerUsed:
-                mouse.moveTo(self.mx+(self.mw//2+105), self.my+(4*self.mh//10-78))
+                mouse.moveTo(self.robloxWindow.mx+(self.robloxWindow.mw//2+105), self.robloxWindow.my+(4*self.robloxWindow.mh//10-78))
                 time.sleep(0.1)
                 mouse.click()
                 time.sleep(0.1)
@@ -3032,25 +3034,17 @@ class macro:
     #click the "allow for one month" on the "terminal is requesting to bypass" popup
     def clickPermissionPopup(self):
         permissionPopup = self.adjustImage("./images/mac", "allow")
-        x = self.mw/4
-        y = self.mh/3
-        res = locateImageOnScreen(permissionPopup, self.mx+(x), self.my+(y), self.mw/2, self.mh/3, 0.8)
+        x = self.robloxWindow.mw/4
+        y = self.robloxWindow.mh/3
+        res = locateImageOnScreen(permissionPopup, self.robloxWindow.mx+(x), self.robloxWindow.my+(y), self.robloxWindow.mw/2, self.robloxWindow.mh/3, 0.8)
         if res:
             self.logger.webhook("", "Detected: Terminal permission popup", "orange")
-            x2, y2 = res[1]
-            if self.display_type == "retina":
-                x2 /= 2
-                y2 /= 2
-            mouse.moveTo(self.mx+(x+x2), self.my+(y+y2))
+            x2, y2 = [j//self.robloxWindow.multi for j in res[1]]
+            mouse.moveTo(self.robloxWindow.mx+(x+x2), self.robloxWindow.my+(y+y2))
             time.sleep(0.08)
             mouse.moveBy(1,1)
             time.sleep(0.1)
             mouse.click()
-
-    # def hasteCompensationThread(self):
-    #     hasteCompensation = HasteCompensation(self.display_type == "retina", self.setdat["movespeed"])
-    #     while True:
-    #       self.haste.value = hasteCompensation.getHaste(self.mx, self.my, self.mw)
 
     def backgroundOnce(self):
         with open("./data/user/hotbar_timings.txt", "r") as f:
@@ -3091,8 +3085,7 @@ class macro:
             time.sleep(1)
 
     def getHoney(self):
-        honeyY = 25 if self.newUI else 0
-        cap = mssScreenshot(self.mx+(self.mw//2-241), self.my+honeyY, 140, 36)
+        cap = mssScreenshot(self.robloxWindow.mx+(self.robloxWindow.mw//2-241), self.robloxWindow.my+self.robloxWindow.yOffset+5, 140, 36)
         ocrres = ocr.ocrFunc(cap)
         honey = ""
         try:
@@ -3234,13 +3227,13 @@ class macro:
 
     def toggleQuest(self):
         #click quest icon
-        mouse.moveTo(self.mx+(80), self.my+(113))
+        mouse.moveTo(self.robloxWindow.mx+(80), self.robloxWindow.my+(113))
         time.sleep(0.1)
         mouse.moveBy(0,3)
         time.sleep(0.1)
         mouse.click()
         time.sleep(0.3)
-        mouse.moveTo(self.mx+(312), self.my+(200))
+        mouse.moveTo(self.robloxWindow.mx+(312), self.robloxWindow.my+(200))
         mouse.click()
 
     def findQuest(self, questGiver):
@@ -3265,7 +3258,7 @@ class macro:
         
         def screenshotQuest(screenshotHeight, gray = True):
             #Take a screenshot of the quest page and 
-            screen = mssScreenshotNP(self.mx, self.my+170, 300, min(screenshotHeight, self.mh-(self.my+170)))
+            screen = mssScreenshotNP(self.robloxWindow.mx, self.robloxWindow.my+170, 300, min(screenshotHeight, self.robloxWindow.mh-(self.robloxWindow.my+170)))
             if gray:
                 screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
             return screen
@@ -3343,9 +3336,7 @@ class macro:
         #start searching for the start and end y points of the quest title
         #if it can't find the title bar in the first y pixels, stop the search
         #in some cases, the questTitleYPos already crops below the quest title
-        maxHeight = 20
-        if self.display_type == "retina":
-            maxHeight *= 2
+        maxHeight = 20*self.robloxWindow.multi
         for i, hasColor in enumerate(cropRows):
             if i > maxHeight and startIndex is None:
                 break
@@ -3366,21 +3357,16 @@ class macro:
         img = cv2.inRange(screenGray, 0, 50)
         img = cv2.GaussianBlur(img, (5, 5), 0)
         #dilute the image so that texts can be merged into chunks
-        kernelSize = 10 if self.display_type == "retina" else 7
+        kernelSize = 10 if self.robloxWindow.isRetina else 7
         kernel = np.ones((kernelSize, kernelSize), np.uint8) 
         img = cv2.dilate(img, kernel, iterations=1)
 
         contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         #filter out the contour sizes
-        minArea = 8000       #too small = noise
-        maxArea = 80000      #too big = background or large UI elements
-        maxHeight = 150       #cap height to filter out title bar
-
-        if self.display_type != "retina":
-            minArea //= 2
-            maxArea //= 2
-            maxHeight //= 2
+        minArea = 4000*self.robloxWindow.multi       #too small = noise
+        maxArea = 40000*self.robloxWindow.multi     #too big = background or large UI elements
+        maxHeight = 75*self.robloxWindow.multi       #cap height to filter out title bar
 
         completedObjectives = []
         incompleteObjectives = []
@@ -3457,12 +3443,12 @@ class macro:
 
     def clickdialog(self, mustFindDialog=False):
         dialogImg = self.adjustImage("./images/menu", "dialog")
-        x = self.mw/2
-        y = self.mh*2/3
-        a =  locateImageOnScreen(dialogImg, self.mx+(x), self.my+(y), 300, self.mh/3, 0.8 if mustFindDialog else 0.5)
+        x = self.robloxWindow.mw/2
+        y = self.robloxWindow.mh*2/3
+        a =  locateImageOnScreen(dialogImg, self.robloxWindow.mx+(x), self.robloxWindow.my+(y), 300, self.robloxWindow.mh/3, 0.8 if mustFindDialog else 0.5)
         if a:
             _, loc = a
-            xr, yr = [j//2 for j in loc] if self.display_type == "retina" else loc
+            xr, yr = [j//self.robloxWindow.multi for j in loc]
         else:
             xr = 0
             yr = 0
@@ -3470,10 +3456,10 @@ class macro:
             print("unable to locate dialog position")
 
         def screenshotDialog():
-            return imagehash.average_hash(mssScreenshot(self.mx+x+xr-40, self.my+y+yr-40, 40, 40))
+            return imagehash.average_hash(mssScreenshot(self.robloxWindow.mx+x+xr-40, self.robloxWindow.my+y+yr-40, 40, 40))
         
         dialogImg = screenshotDialog()
-        mouse.moveTo(self.mx+(self.mw/2), self.my+(y+yr-20))
+        mouse.moveTo(self.robloxWindow.mx+(self.robloxWindow.mw/2), self.robloxWindow.my+(y+yr-20))
         for _ in range(80):
             mouse.click()
             time.sleep(0.1)
@@ -3515,12 +3501,12 @@ class macro:
             self.keyboard.press("pagedown")
 
         for _ in range(2):
-            mouse.moveTo(self.mx+(x), self.my+(y))
+            mouse.moveTo(self.robloxWindow.mx+(x), self.robloxWindow.my+(y))
             time.sleep(0.3)
-            pag.dragTo(self.mw//2, self.mh//2-80, 0.6, button='left')
+            pag.dragTo(self.robloxWindow.mw//2, self.robloxWindow.mh//2-80, 0.6, button='left')
 
         #change quantity
-        mouse.moveTo(self.mx+((54*self.mw)//100-300+300), self.my+(45+(46*self.mh))//100-59+5)
+        mouse.moveTo(self.robloxWindow.mx+((54*self.robloxWindow.mw)//100-300+300), self.robloxWindow.my+(45+(46*self.robloxWindow.mh))//100-59+5)
         time.sleep(0.1)
         for _ in range(2):
             mouse.click()
@@ -3528,7 +3514,7 @@ class macro:
         self.keyboard.write(str(quantity))
 
         #click feed button
-        mouse.moveTo(self.mx+((54*self.mw)//100-300+140), self.my+(45+(46*self.mh))//100-59+5)
+        mouse.moveTo(self.robloxWindow.mx+((54*self.robloxWindow.mw)//100-300+140), self.robloxWindow.my+(45+(46*self.robloxWindow.mh))//100-59+5)
         time.sleep(0.1)
         for _ in range(2):
             mouse.click()
@@ -3754,7 +3740,7 @@ class macro:
             time.sleep(1)
             #check roblox scaling
             #this is done by checking if all pixels at the top of the screen are black
-            topScreen = mssScreenshot(0, 0, self.mw, 2)
+            topScreen = mssScreenshot(0, 0, self.robloxWindow.mw, 2)
             extrema = topScreen.convert("L").getextrema()
             #all are black
             if extrema == (0, 0):
@@ -3770,24 +3756,24 @@ class macro:
             #     #find the game mode button
             #     lightGameMode = self.adjustImage("./images/mac", "gamemodelight")
             #     darkGameMode = self.adjustImage("./images/mac", "gamemodedark")
-            #     x = self.mw/2.3
+            #     x = self.robloxWindow.mw/2.3
             #     time.sleep(1.2)
             #     #find light mode
-            #     res = locateImageOnScreen(lightGameMode, self.mx+(x), self.my+(0), self.mw-x, 60, 0.7)
+            #     res = locateImageOnScreen(lightGameMode, self.robloxWindow.mx+(x), self.robloxWindow.my+(0), self.robloxWindow.mw-x, 60, 0.7)
             #     if res is None: #cant find light, find dark
-            #         res = locateImageOnScreen(darkGameMode, self.mx+(x), self.my+(0), self.mw-x, 60, 0.7)
+            #         res = locateImageOnScreen(darkGameMode, self.robloxWindow.mx+(x), self.robloxWindow.my+(0), self.robloxWindow.mw-x, 60, 0.7)
             #     #found either light or dark
             #     if not res is None:
             #         gx, gy = res[1]
             #         if self.display_type == "retina":
             #             gx //= 2
             #             gy //= 2
-            #         mouse.moveTo(self.mx+(gx+x), self.my+(gy))
+            #         mouse.moveTo(self.robloxWindow.mx+(gx+x), self.robloxWindow.my+(gy))
             #         time.sleep(0.1)
             #         mouse.fastClick()
             #         time.sleep(0.5)
             #         #check if game mode is enabled
-            #         screen = mssScreenshot(x, 0, self.mw-x, 150)
+            #         screen = mssScreenshot(x, 0, self.robloxWindow.mw-x, 150)
             #         ocrRes = ocr.ocrRead(screen)
             #         for i in ocrRes:
             #             if "mode off" in i[1][0].lower():
@@ -3796,11 +3782,11 @@ class macro:
             #                 if self.display_type == "retina":
             #                     bX //= 2
             #                     bY //= 2
-            #                 mouse.moveTo(self.mx+(x+bX), self.my+(bY))
+            #                 mouse.moveTo(self.robloxWindow.mx+(x+bX), self.robloxWindow.my+(bY))
             #                 mouse.click()                        
             #                 break
             #         else: #game mode is already disabled/couldnt be found
-            #             mouse.moveTo(self.mx+(x+gx), self.my+(gy))
+            #             mouse.moveTo(self.robloxWindow.mx+(x+gx), self.robloxWindow.my+(gy))
             #             mouse.click()
             #     #fullscreen back roblox
             #     appManager.openApp("roblox")
@@ -3810,18 +3796,17 @@ class macro:
 
         #detect new/old ui and set 
         #also check for screen recording permission 
-        if self.getTop(0):
-            self.newUI = False
-            self.logger.webhook("","Detected: Old Roblox UI","light blue")
-        elif self.getTop(30):
-            self.newUI = True
-            self.logger.webhook("","Detected: New Roblox UI","light blue")
-        else:
-            self.logger.webhook("","Unable to detect Roblox UI","red", "screen")
-            self.newUI = True
-        if self.newUI:
-            ocr.newUI = True
-            logModule.newUI = True
+        # if self.getTop(0):
+        #     self.newUI = False
+        #     self.logger.webhook("","Detected: Old Roblox UI","light blue")
+        # elif self.getTop(30):
+        #     self.newUI = True
+        #     self.logger.webhook("","Detected: New Roblox UI","light blue")
+        # else:
+        #     self.logger.webhook("","Unable to detect Roblox UI","red", "screen")
+        self.newUI = True
+        ocr.newUI = True
+        logModule.newUI = True
 
         #check for accessibility
         #this is done by taking 2 different screenshots
@@ -3846,11 +3831,6 @@ class macro:
         
         if "share" in self.setdat["private_server_link"] and self.setdat["rejoin_method"] == "deeplink":
             messageBox.msgBox(text="You entered a 'share?code' private server link!\n\nTo fix this:\n1. Paste the link in your browser\n2. Wait for roblox to load in\n3. Copy the link from the top of your browser.  It should now be a 'privateServerLinkCode' link", title='Unsupported private server link')
-        
-        self.buffDetector = BuffDetector(True, self.display_type)
-        self.hourlyReport = HourlyReport(self.buffDetector)
-
-        self.buffDetector.setRobloxWindowBounds(self.mx, self.my, self.mw)
 
     def start(self):
         print("macro object started")
@@ -3862,13 +3842,14 @@ class macro:
             # if not self.isFullScreen():
             #     self.toggleFullScreen()
             self.startDetect()
+            self.setRobloxWindowInfo()
 
         #enable background threads
         self.nightDetectStreaks = 0
         self.hourlyReport.setSessionStats(self.getHoney(), time.time())
         self.prevMin = -1  
         self.prevSec = -1
-        self.multi = 2 if self.display_type == "retina" else 1
+        self.multi = self.robloxWindow.multi
         self.lastHourlyReport = 0
 
         if self.setdat["low_performance"]:

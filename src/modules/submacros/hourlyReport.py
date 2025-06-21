@@ -15,6 +15,7 @@ import pyautogui as pag
 from modules.screen.ocr import ocrRead, imToString
 import copy
 from datetime import datetime
+from modules.screen.robloxWindow import RobloxWindowBounds
 
 ww, wh = pag.size()
 
@@ -36,13 +37,12 @@ macVer = platform.mac_ver()[0]
 #         hti = None
 
 class BuffDetector():
-    def __init__(self, newUI, displayType):
-        self.y = 52 if newUI else 30
-        self.x = 0
+    def __init__(self, robloxWindow: RobloxWindowBounds):
 
-        self.displayType = displayType
+        self.robloxWindow = robloxWindow
+        self.y = 33
 
-        self.buffSize = 76 if displayType == "retina" else 39
+        self.buffSize = 76 if self.robloxWindow.isRetina else 39
 
         nectars = {
             "comforting": [[np.array([0, 150, 63]), np.array([20, 155, 70])], (-2,0)],
@@ -54,17 +54,8 @@ class BuffDetector():
         self.nectars = nectars.items()
         self.nectarKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
 
-        self.mx = 0
-        self.my = 0
-        self.mw = ww
-
     def screenshotBuffArea(self):
-        return mssScreenshotNP(self.mx+self.x, self.my+self.y, self.mw, 45)
-    
-    def setRobloxWindowBounds(self,x,y,w):
-        self.mx = x
-        self.my = y
-        self.mw = w
+        return mssScreenshotNP(self.robloxWindow.mx, self.robloxWindow.my+self.robloxWindow.yOffset+33, self.robloxWindow.mw, 45)
 
     def getBuffQuantityFromImg(self, bgrImg,transform, crop=True, buff=None, intOnly=False):
         #buff size is 76x76
@@ -123,10 +114,9 @@ class BuffDetector():
 
         for buff,v in buffs:
             templatePosition, transform, stackable = v
-            multi = 2 if self.displayType == "retina" else 1
 
             #find the buff
-            buffTemplate = adjustImage("./images/buffs", buff, self.displayType)
+            buffTemplate = adjustImage("./images/buffs", buff, self.robloxWindow.display_type)
             res = locateTransparentImage(buffTemplate, screen, threshold)
 
             if not res: 
@@ -207,7 +197,6 @@ class BuffDetector():
     
     def detectBuffColorInImage(self, screen, hex, minSize, x1=0, y1=0, x2=None, y2=None, variation=0, show=False, searchDirection=1, instances=1):
         
-        multi = 2 if self.displayType == "retina" else 1
         #convert hex to bgr and setup the color range
         r = (hex >> 16) & 0xFF
         g = (hex >> 8) & 0xFF
@@ -238,7 +227,7 @@ class BuffDetector():
             x, y, w, h = rect
 
             #filter area to avoid noise
-            if w > minSize[0]*multi and h > minSize[1]*multi:
+            if w > minSize[0]*self.robloxWindow.multi and h > minSize[1]*self.robloxWindow.multi:
                 coords.append((x + x1, y + y1, w, h))  # Offset by crop origin
 
         def sort_key(rect):
@@ -297,19 +286,18 @@ class BuffDetector():
         for buff, vals in self.nectars:
             col, offsetCoords = vals
             offsetX, offsetY = offsetCoords
-            multi = 2 if self.displayType == "retina" else 1
 
             #find the buff
-            buffTemplate = adjustImage("./images/buffs", buff, self.displayType)
+            buffTemplate = adjustImage("./images/buffs", buff, self.robloxWindow.display_type)
             res = locateTransparentImage(buffTemplate, screen, 0.5) #get the best match first. At high nectar levels, it becomes hard to detect the nectar icon
             if not res: 
                 nectarQuantity.append("0")
                 continue
             #get a screenshot of the buff
             rx, ry = res[1]
-            cropX = int(rx+offsetX*multi)
-            cropY = int(ry+offsetY*multi)
-            fullBuffImg = screen[cropY:cropY+40*multi, cropX:cropX+40*multi]
+            cropX = int(rx+offsetX*self.robloxWindow.multi)
+            cropY = int(ry+offsetY*self.robloxWindow.multi)
+            fullBuffImg = screen[cropY:cropY+40*self.robloxWindow.multi, cropX:cropX+40*self.robloxWindow.multi]
             h,w, *_ = fullBuffImg.shape
             #get the buff level
             fullBuffImg = cv2.cvtColor(fullBuffImg, cv2.COLOR_RGBA2BGR)

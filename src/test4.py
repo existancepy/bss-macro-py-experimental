@@ -1,58 +1,18 @@
-import time
-import Quartz
-from AppKit import NSWorkspace
-from ApplicationServices import AXUIElementCreateApplication, AXUIElementCopyAttributeValue, kAXChildrenAttribute, kAXTitleAttribute, kAXRoleAttribute
+from modules.misc.ColorProfile import DisplayColorProfile
 
-def get_pid_by_app_name(app_name):
-    workspace = NSWorkspace.sharedWorkspace()
-    apps = workspace.runningApplications()
-    for app in apps:
-        if app.localizedName() == app_name:
-            return app.processIdentifier()
-    return None
 
-def get_app_ax_element(pid):
-    return AXUIElementCreateApplication(pid)
+# Direct equivalent to the original Swift code
+def replicate_swift_behavior():
+    """Direct replication of the original Swift code behavior"""
+    profile_manager = DisplayColorProfile()
+    
+    # Equivalent to: ColorSyncDeviceSetCustomProfiles(DEVICE_CLASS, NSScreen.main!.cfUUID, RESET_PROFILE_DICT)
+    print("Resetting display profile...")
+    profile_manager.resetDisplayProfile()
+    
+    # Equivalent to: ColorSyncDeviceSetCustomProfiles(DEVICE_CLASS, NSScreen.main!.cfUUID, CUSTOM_PROFILE_DICT)
+    print("Setting custom profile...")
+    profile_manager.setCustomProfile("/System/Library/ColorSync/Profiles/sRGB Profile.icc")
 
-def get_children(element):
-    try:
-        children = AXUIElementCopyAttributeValue(element, kAXChildrenAttribute)
-        return children or []
-    except Exception:
-        return []
-
-def find_element_by_title(element, target_title):
-    children = get_children(element)
-    print(children)
-    for child in children:
-        try:
-            title = AXUIElementCopyAttributeValue(child, kAXTitleAttribute)
-            if title == target_title:
-                return child
-            found = find_element_by_title(child, target_title)
-            if found:
-                return found
-        except Exception:
-            continue
-    return None
-
-def perform_click(element):
-    try:
-        AXUIElementPerformAction(element, "AXPress")
-        print("Clicked!")
-    except Exception as e:
-        print("Click failed:", e)
-
-# --- Main logic ---
-pid = get_pid_by_app_name("Brave Browser")
-if not pid:
-    print("Roblox not running.")
-    exit()
-
-app = get_app_ax_element(pid)
-target = find_element_by_title(app, "Game Mode")  # Adjust if needed
-
-if target:
-    perform_click(target)
-else:
-    print("Game Mode button not found.")
+a = DisplayColorProfile()
+print(a.getCurrentColorProfile())

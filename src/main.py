@@ -1,4 +1,10 @@
 
+from modules.misc import messageBox
+#check if step 3 installing dependencies was ran
+try:
+    import requests
+except ModuleNotFoundError:
+    messageBox.msgBox(title="Dependencies not installed", text="It seems like you have not finished step 3 of the installation process. Refer to the discord for the instructions")
 from pynput import keyboard
 import multiprocessing
 import ctypes
@@ -8,12 +14,13 @@ import time
 import sys
 import ast
 import subprocess
-from modules.misc import messageBox
 import atexit
 from modules.misc.imageManipulation import adjustImage
 from modules.screen.imageSearch import locateImageOnScreen
 import pyautogui as pag
 from modules.misc.appManager import getWindowSize
+import traceback
+from modules.misc.ColorProfile import DisplayColorProfile
 mw, mh = pag.size()
 
 #controller for the macro
@@ -501,38 +508,41 @@ if __name__ == "__main__":
     #check color profile
     if sys.platform == "darwin":
         try:
-            cmd = """
-                osascript -e 'tell application "Image Events" to display profile of display 1' 
-                """
-            colorProfile = subprocess.check_output(cmd, shell=True).decode(sys.stdout.encoding)
-            colorProfile = colorProfile.strip()
-            if colorProfile == "missing value": colorProfile = "Color LCD"
-            if not "sRGB IEC61966" in colorProfile:
-                messageBox.msgBox(text = f"Your current color profile is {colorProfile}.The required one is sRGB IEC61966-2.1.\
-                \nThis is necessary for the macro to work\
-                \nTVisit step 6 of the macro installation guide in the discord for instructions", title="Wrong Color Profile")
-        except:
+            colorProfileManager = DisplayColorProfile()
+            currentProfileColor = colorProfileManager.getCurrentColorProfile()
+            if not "sRGB" in currentProfileColor:
+                try:
+                    if messageBox.msgBoxOkCancel(title="Incorrect Color Profile", text=f"You current display's color profile is {currentProfileColor} but sRGB is required for the macro.\nPress 'Ok' to change color profiles"):
+                        colorProfileManager.resetDisplayProfile()
+                        colorProfileManager.setCustomProfile("/System/Library/ColorSync/Profiles/sRGB Profile.icc")
+                        messageBox.msgBox(title="Color Profile Success", text="Successfully changed the current color profile to sRGB")
+
+                except Exception as e:
+                    messageBox.msgBox(title="Failed to change color profile", text=e)
+        except Exception as e:
             pass
     
-    #check screen recording permissions
-        cg = ctypes.cdll.LoadLibrary("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")
-        cg.CGRequestScreenCaptureAccess.restype = ctypes.c_bool
-        if not cg.CGRequestScreenCaptureAccess():
-            messageBox.msgBox(title="Screen Recording Permission", text='Terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal. After that, restart the macro')
-
-    #check full keyboard access
-    try:
-        result = subprocess.run(
-            ["defaults", "read", "com.apple.universalaccess", "KeyboardAccessEnabled"],
-            capture_output=True,
-            text=True
-        )
-        value = result.stdout.strip()
-        if value == "1":
-            messageBox.msgBox(text = f"Full Keyboard Access is enabled. The macro will not work properly\
-                \nTo disable it, go to System Settings -> Accessibility -> Keyboard -> uncheck 'Full Keyboard Access'")
-    except Exception as e:
-        print("Error reading Full Keyboard Access:", e)
+        #check screen recording permissions
+        try:
+            cg = ctypes.cdll.LoadLibrary("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")
+            cg.CGRequestScreenCaptureAccess.restype = ctypes.c_bool
+            if not cg.CGRequestScreenCaptureAccess():
+                messageBox.msgBox(title="Screen Recording Permission", text='Terminal does not have the screen recording permission. The macro will not work properly.\n\nTo fix it, go to System Settings -> Privacy and Security -> Screen Recording -> add and enable Terminal. After that, restart the macro')
+        except AttributeError:
+            pass
+        #check full keyboard access
+        try:
+            result = subprocess.run(
+                ["defaults", "read", "com.apple.universalaccess", "KeyboardAccessEnabled"],
+                capture_output=True,
+                text=True
+            )
+            value = result.stdout.strip()
+            if value == "1":
+                messageBox.msgBox(text = f"Full Keyboard Access is enabled. The macro will not work properly\
+                    \nTo disable it, go to System Settings -> Accessibility -> Keyboard -> uncheck 'Full Keyboard Access'")
+        except Exception as e:
+            print("Error reading Full Keyboard Access:", e)
 
     discordBotProc = None
     prevDiscordBotToken = None
@@ -584,6 +594,16 @@ if __name__ == "__main__":
                     messageBox.msgBox(text='Cloudflared is required for streaming but is not installed. Check the #guides channel for installation instructions', title='Cloudflared not installed')
 
             print("starting macro proc")
+            #check if user enabled field drift compensation but sprinkler is not supreme saturator
+            fieldSettings = settingsManager.loadFields()
+            sprinkler = setdat["sprinkler_type"]
+            for field in setdat["fields"]:
+                if fieldSettings[field]["field_drift_compensation"] and setdat["sprinkler_type"] != "saturator":
+                    messageBox.msgBox(title="Field Drift Compensation", text=f"You have Field Drift Compensation enabled for {field} field, \
+                                    but you do not have Supreme Saturator as your sprinkler type in configs.\n\
+				                    Field Drift Compensation requires you to own the Supreme Saturator.\n\
+                                    Kindly disable field drift compensation if you do not have the Supreme Saturator")
+                    break
             #macro proc
             macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, updateGUI), daemon=True)
             macroProc.start()
