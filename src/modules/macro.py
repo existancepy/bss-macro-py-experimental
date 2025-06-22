@@ -98,7 +98,7 @@ collectData = {
     #"night_memory_match": [["spend", "play"], "w", 8*60*60], #8hr
     "extreme_memory_match": [["spend", "play"], "w", 8*60*60], #8hr
     "winter_memory_match": [["spend", "play"], "a", 4*60*60], #4hr
-    "honeystorm": [["summon", "honeystorm"], "s", 4*60*60], #4hr
+    "honeystorm": [["sum", "honey", "mmon", "storm"], "s", 4*60*60], #4hr
 }
 
 #these collects are added seperately as they need to be handled seperately instead of being iterated through by the main loop
@@ -407,22 +407,6 @@ class macro:
 
     #get the size of the roblox window and update the relevant variables
     def setRobloxWindowInfo(self, setYOffset=True):
-        res = appManager.getWindowSize("roblox roblox")
-        if res:
-            wx,wy,ww,wh = res
-            self.robloxWindow.mw = ww
-            self.robloxWindow.mh = wh
-            self.robloxWindow.mx = wx
-            self.robloxWindow.my = wy
-            self.ww = ww
-            self.wh = wh
-            self.wx = wx
-            self.wy = wy
-            if self.robloxWindow.isRetina:
-                self.ww*=2
-                self.wh*=2
-                self.wx*=2
-                self.wy*=2
         self.robloxWindow.setRobloxWindowBounds(setYOffset=setYOffset)
         if setYOffset:
             self.logger.webhook("", f"Detect Y Offset: {self.robloxWindow.contentYOffset}", "dark brown")
@@ -938,7 +922,6 @@ class macro:
 
 
     def convert(self, bypass = False):
-        print("HELLO")
         self.location = "spawn"
         if not bypass:
             #use ebutton detection, faster detection but more prone to false positives (like detecting trades)
@@ -2805,13 +2788,13 @@ class macro:
             updateHourlyTime()
             return
         
-        x = self.robloxWindow.mw/3
-        y = self.robloxWindow.mw/4
+        x = self.robloxWindow.mx + self.robloxWindow.mw//2 - 280
+        y = self.robloxWindow.my + self.robloxWindow.mh//2 - 240
 
         def clickOnBlenderElement(cx, cy):
             cx //= self.robloxWindow.multi
             cy //= self.robloxWindow.multi
-            mouse.moveTo(self.robloxWindow.mx+(cx+x), self.robloxWindow.my+(cy+y))
+            mouse.moveTo(cx+x, cy+y)
             time.sleep(0.1)
             mouse.click()
             mouse.moveBy(2,2)
@@ -2827,21 +2810,21 @@ class macro:
         time.sleep(1)
         #check if blender is done and click on end crafting
         doneImg = self.adjustImage("images/menu", "blenderdone")
-        res = locateImageOnScreen(doneImg, self.robloxWindow.mx+(x), self.robloxWindow.my+(y), 560, 480, 0.75)
+        res = locateImageOnScreen(doneImg, x, self.robloxWindow.my+(y), 560, 480, 0.75)
         if res:
             print("done")
             clickOnBlenderElement(*res[1])
         
         #check for cancel button
         cancelImg = self.adjustImage("images/menu", "blendercancel")
-        res = locateImageOnScreen(cancelImg, self.robloxWindow.mx+(x), self.robloxWindow.my+(y), 560, 480, 0.75)
+        res = locateImageOnScreen(cancelImg, x, self.robloxWindow.my+(y), 560, 480, 0.75)
         if res:
             print("cancel")
             clickOnBlenderElement(*res[1])
 
         #check if still crafting and get cd
         notDoneImg = self.adjustImage("images/menu", "blenderend")
-        res = locateImageOnScreen(notDoneImg, self.robloxWindow.mx+(x), self.robloxWindow.my+(y), 560, 480, 0.75)
+        res = locateImageOnScreen(notDoneImg, x, self.robloxWindow.my+(y), 560, 480, 0.75)
 
         def cancelCraft():
             self.logger.webhook("", "Unable to detect remaining crafting time, ending craft", "dark brown", "screen")

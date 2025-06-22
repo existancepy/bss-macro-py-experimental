@@ -170,7 +170,6 @@ class keyboard:
             s, f, v = a()
             d += ((prev_v + v) / 2) * (f - s) 
         
-        print(time.time()-st)
     
     def tileWalk(self, key, tiles, applyHaste = True):
         if applyHaste:

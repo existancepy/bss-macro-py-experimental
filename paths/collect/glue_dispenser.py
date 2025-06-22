@@ -26,7 +26,7 @@ self.keyboard.walk("w", 1.7)
 #     self.logger.webhook("Notice","Could not detect gummy bee's location","red", "screen")
 #     foundGummyBee = False
 #     #self.keyboard.walk("w",2.48)
-self.keyboard.walk("w",1.2)
+self.keyboard.walk("w",1.02)
 if True:
     itemCoords = self.findItemInInventory("gumdrops")
     if itemCoords is not None:

@@ -237,10 +237,9 @@ def macro(status, logQueue, updateGUI):
                 #check all 3 slots to see if planters are ready to harvest
                 for i in range(3):
                     cycle = planterData["cycles"][i]
-                    if time.time() > planterData["harvestTimes"][i] and planterData["planters"][i]:
+                    if planterData["planters"][i] and time.time() > planterData["harvestTimes"][i]:
                         #Collect planter
                         planterData = runTask(macro.collectPlanter, args=(i, planterData))
-                        print(planterData)
                         #place them
                         # planterData = runTask(macro.placePlanterInCycle, args = (i, nextCycle, planterData),resetAfter=False)
                         # planterChanged = True
@@ -249,7 +248,7 @@ def macro(status, logQueue, updateGUI):
                 for i in range(3):
                     cycle = planterData["cycles"][i]
                     #check if planter slot is occupied
-                    if planterData["planters"]:
+                    if planterData["planters"][i]:
                         continue
                     #if that planter is currently placed down by a different slot, do not harvest and place
                     #this avoids overlapping the same planter
@@ -604,6 +603,15 @@ if __name__ == "__main__":
 				                    Field Drift Compensation requires you to own the Supreme Saturator.\n\
                                     Kindly disable field drift compensation if you do not have the Supreme Saturator")
                     break
+            #check if blender is enabled but there are no items to craft
+            validBlender = not setdat["blender_enable"] #valid blender set to false if blender is enabled, else its true since blender is disabled
+            for i in range(1,4):
+                if setdat[f"blender_item_{i}"] and (setdat[f"blender_repeat_{i}"] or setdat[f"blender_repeat_inf_{i}"]):
+                    validBlender = True
+            if not validBlender:
+                messageBox.msgBox(title="Blender", text=f"You have blender enabled, \
+                                    but there are no more items left to craft.\n\
+				                    Check the 'repeat' setting on your blender items and reset blender data.")
             #macro proc
             macroProc = multiprocessing.Process(target=macro, args=(status, logQueue, updateGUI), daemon=True)
             macroProc.start()
