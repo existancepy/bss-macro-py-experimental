@@ -1274,7 +1274,7 @@ class macro:
             signUpImage = self.adjustImage("./images/menu", "signup")
             robloxHomeImage = self.adjustImage("./images/menu", "robloxhome")
             rejoinSuccess = True
-            while not locateImageOnScreen(sprinklerImg, self.robloxWindow.mx, self.robloxWindow.my+(self.robloxWindow.mh*3/4), self.robloxWindow.mw, self.robloxWindow.mh*1/4, 0.75) and time.time() - loadStartTime < 80:
+            while not locateImageOnScreen(sprinklerImg, self.robloxWindow.mx, self.robloxWindow.my+(self.robloxWindow.mh*3/4), self.robloxWindow.mw, self.robloxWindow.mh*1/4, 0.75) and time.time() - loadStartTime < 120:
                 if self.setdat["rejoin_method"] == "deeplink":
                     #check if the user is stuck on the sign up screen
                     if locateImageOnScreen(signUpImage, self.robloxWindow.mx+(self.robloxWindow.mw/4), self.robloxWindow.my+(self.robloxWindow.mh/3), self.robloxWindow.mw/2, self.robloxWindow.mh*2/3, 0.7):
@@ -3194,6 +3194,7 @@ class macro:
 
                 if "gather_" in self.status.value:
                     self.hourlyReport.buffGatherIntervals[i] = 1
+                self.hourlyReport.saveHourlyReportData()
         except Exception:
             self.logger.webhook("Hourly Report Error", traceback.format_exc(), "red")
         
@@ -3817,19 +3818,12 @@ class macro:
 
     def start(self):
         print("macro object started")
-        #if roblox is not open, rejoin
-        if not appManager.openApp("roblox"):
-            self.rejoin()
-        else:
-            #toggle fullscreen
-            # if not self.isFullScreen():
-            #     self.toggleFullScreen()
-            self.startDetect()
-            self.setRobloxWindowInfo()
 
         #enable background threads
         self.nightDetectStreaks = 0
-        self.hourlyReport.setSessionStats(self.getHoney(), time.time())
+        self.hourlyReport.loadHourlyReportData()
+        if self.hourlyReport.hourlyReportStats["start_time"] == 0:
+            self.hourlyReport.setSessionStats(self.getHoney(), time.time())
         self.prevMin = -1  
         self.prevSec = -1
         self.multi = self.robloxWindow.multi
@@ -3845,12 +3839,16 @@ class macro:
             hourlyReportBackgroundThread = threading.Thread(target=self.hourlyReportBackground, daemon=True)
             hourlyReportBackgroundThread.start()
         
-        #haste compensation
-        # if self.setdat["haste_compensation"]:
-        #     hasteCompThread = threading.Thread(target=self.hasteCompensationThread)
-        #     hasteCompThread.daemon = True
-        #     hasteCompThread.start()
-
+        #if roblox is not open, rejoin
+        if not appManager.openApp("roblox"):
+            self.rejoin()
+        else:
+            #toggle fullscreen
+            # if not self.isFullScreen():
+            #     self.toggleFullScreen()
+            self.startDetect()
+            self.setRobloxWindowInfo()
+    
         if not benchmarkMSS():
             self.logger.webhook("", "MSS is too slow, switching to pillow", "dark brown")
         self.reset(convert=True)

@@ -21,6 +21,7 @@ import pyautogui as pag
 from modules.misc.appManager import getWindowSize
 import traceback
 from modules.misc.ColorProfile import DisplayColorProfile
+from modules.submacros.hourlyReport import HourlyReport
 mw, mh = pag.size()
 
 #controller for the macro
@@ -570,6 +571,9 @@ if __name__ == "__main__":
             stopThreads = False
             print("variables initalised")
 
+            #reset hourly report data
+            hourlyReport = HourlyReport()
+            hourlyReport.resetAllStats()
             #stream
             def waitForStreamURL():
                 #wait for up to 15 seconds for the public link
@@ -606,7 +610,7 @@ if __name__ == "__main__":
             #check if blender is enabled but there are no items to craft
             validBlender = not setdat["blender_enable"] #valid blender set to false if blender is enabled, else its true since blender is disabled
             for i in range(1,4):
-                if setdat[f"blender_item_{i}"] and (setdat[f"blender_repeat_{i}"] or setdat[f"blender_repeat_inf_{i}"]):
+                if setdat[f"blender_item_{i}"] != "none" and (setdat[f"blender_repeat_{i}"] or setdat[f"blender_repeat_inf_{i}"]):
                     validBlender = True
             if not validBlender:
                 messageBox.msgBox(title="Blender", text=f"You have blender enabled, \

@@ -16,6 +16,7 @@ from modules.screen.ocr import ocrRead, imToString
 import copy
 from datetime import datetime
 from modules.screen.robloxWindow import RobloxWindowBounds
+import pickle
 
 ww, wh = pag.size()
 
@@ -324,7 +325,7 @@ class BuffDetector():
 
 
 class HourlyReport():
-    def __init__(self, buffDetector: BuffDetector):
+    def __init__(self, buffDetector: BuffDetector = None):
         #key: name of buff
         #value: [template for template matching is the buff's top, bottom or middle, if buff image should be transformed, if buff is stackable]
         self.hourBuffs = {
@@ -361,11 +362,7 @@ class HourlyReport():
         self.hourlyReportDrawer = HourlyReportDrawer()
 
         #setup stats
-        self.hourlyReportStats = {
-            "start_honey": 0,
-            "start_time": 0
-        }
-        self.resetHourlyStats() #add the hourly stats
+        self.hourlyReportStats = {}
 
     def filterOutliers(self, values, threshold=3):
         nonZeroValues = [x for x in values if x]
@@ -456,16 +453,39 @@ class HourlyReport():
             self.uptimeBuffsValues[k] = [0]*600
         
         self.buffGatherIntervals = [0]*600
+
+        self.saveHourlyReportData()
+    
+    def resetAllStats(self):
+        self.hourlyReportStats["start_time"] = 0
+        self.hourlyReportStats["start_honey"] = 0
+        self.resetHourlyStats()
     
     def addHourlyStat(self, stat, value):
         if isinstance(self.hourlyReportStats[stat], list):
             self.hourlyReportStats[stat].append(value)
         else:
             self.hourlyReportStats[stat] += value
+        self.saveHourlyReportData()
     
     def setSessionStats(self, start_honey, start_time):
         self.hourlyReportStats["start_honey"] = start_honey
         self.hourlyReportStats["start_time"] = start_time
+    
+    def saveHourlyReportData(self):
+        with open("data/user/hourly_report_stats.pkl", "wb") as f:
+            pickle.dump({
+                "hourlyReportStats": self.hourlyReportStats,
+                "uptimeBuffsValues": self.uptimeBuffsValues,
+                "buffGatherIntervals": self.buffGatherIntervals,
+            }, f)
+    
+    def loadHourlyReportData(self):
+        with open("data/user/hourly_report_stats.pkl", "rb") as f:
+            data = pickle.load(f)
+            self.hourlyReportStats = data["hourlyReportStats"]
+            self.uptimeBuffsValues = data["uptimeBuffsValues"]
+            self.buffGatherIntervals = data["buffGatherIntervals"]
 
 
 class HourlyReportDrawer:
