@@ -20,7 +20,11 @@ from modules.screen.imageSearch import locateImageOnScreen
 import pyautogui as pag
 from modules.misc.appManager import getWindowSize
 import traceback
-from modules.misc.ColorProfile import DisplayColorProfile
+try:
+	from modules.misc.ColorProfile import DisplayColorProfile
+except ModuleNotFoundError:
+	messageBox.msgBox(title="Dependencies not installed", text="The new update requires new dependencies. Redo step 3 of the installation process and try the macro again.")
+	quit()
 from modules.submacros.hourlyReport import HourlyReport
 mw, mh = pag.size()
 
