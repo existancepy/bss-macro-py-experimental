@@ -3,6 +3,10 @@ import re
 import os
 import subprocess
 from modules.misc.appleScript import runAppleScript
+import pygetwindow as gw
+import pyautogui as pag
+mw,mh = pag.size()
+
 class WindowMgr:
     """Encapsulates some calls to the winapi for window management"""
 
@@ -72,6 +76,14 @@ def closeApp(app):
         #app += ".exe"
         os.system(f"START /wait taskkill /f /im {app}.exe")
 
+def getWindowSize(windowName):
+    windows = gw.getAllTitles()
+    for win in windows:
+        if windowName.lower() in win.lower():
+            x,y,w,h = gw.getWindowGeometry(win)
+            return x,y,w,h
+    #window not found, most likely also fullscreen (but unfocused)
+    return 0,0,mw,mh
 if sys.platform == "darwin":
     openApp = openAppMac
 else:
