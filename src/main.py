@@ -258,6 +258,9 @@ def macro(status, logQueue, updateGUI):
                     #if that planter is currently placed down by a different slot, do not harvest and place
                     #this avoids overlapping the same planter
                     nextCycle = goToNextCycle(cycle, i)
+                    if not nextCycle: #make sure the column (slot) isnt just empty
+                        continue
+
                     planterToPlace = macro.setdat[f"cycle{nextCycle}_{i+1}_planter"]
                     otherSlotPlanters = planterData["planters"][:i] + planterData["planters"][i+1:]
                     if planterToPlace in otherSlotPlanters:
