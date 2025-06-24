@@ -721,12 +721,12 @@ class macro:
     #if detectOnly is set to true, the macro will not click 
     def clickYes(self, detect = False, detectOnly = False, clickOnce=False):
         yesImg = self.adjustImage("./images/menu", "yes")
-        x = self.robloxWindow.mx+self.robloxWindow.mw/3.2
-        y = self.robloxWindow.my+self.robloxWindow.mh/2.3
+        x = self.robloxWindow.mx+self.robloxWindow.mw//2-270
+        y = self.robloxWindow.my+self.robloxWindow.mh//2-60
         time.sleep(0.4)
         threshold = 0
         if detect or detectOnly: threshold = 0.75
-        res = locateImageOnScreen(yesImg, x, y, self.robloxWindow.mw/2.5, self.robloxWindow.mh/3.4, threshold)
+        res = locateImageOnScreen(yesImg, x, y, 580, 265, threshold)
         if res is None: return False
         if detectOnly: return True
         bestX, bestY = [x//self.robloxWindow.multi for x in res[1]]
