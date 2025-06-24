@@ -3082,7 +3082,7 @@ class macro:
         except Exception as e:
             print(e)
             print(honey)
-        return honey
+        return honey if honey else 0
 
     def hourlyReportBackgroundOnce(self):
         try:
