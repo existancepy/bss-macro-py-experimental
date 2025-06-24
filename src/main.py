@@ -229,7 +229,7 @@ def macro(status, logQueue, updateGUI):
                 planterDataRaw = f.read()
             f.close()
             #no data, place planters
-            if not planterDataRaw:
+            if not planterDataRaw.strip():
                 runTask(macro.placeAllPlantersInCycle, args = (1,),resetAfter=False)
             #planter data does exist, check if its time to collect them
             else: 
