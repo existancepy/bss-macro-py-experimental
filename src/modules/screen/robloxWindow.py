@@ -34,7 +34,7 @@ class RobloxWindowBounds:
             screen = mssScreenshotPillowRGBA(self.mx,self.my,self.mw,self.mh//3)
             res = bitmap_matcher.find_bitmap_cython(screen, honeyImg, variance=5)
             if res:
-                self.contentYOffset = (res[1]//self.multi)-15-self.yOffset
+                self.contentYOffset = max((res[1]//self.multi)-15-self.yOffset, 0)
                 self.my+=self.contentYOffset
                 self.mh-=self.contentYOffset
             
