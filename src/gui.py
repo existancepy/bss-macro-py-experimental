@@ -73,6 +73,7 @@ eel.expose(settingsManager.saveGeneralSetting)
 def updateGUI():
     settings = settingsManager.loadAllSettings()
     eel.loadInputs(settings)
+    eel.loadTasks()
 
 def toggleStartStop():
     eel.toggleStartStop()

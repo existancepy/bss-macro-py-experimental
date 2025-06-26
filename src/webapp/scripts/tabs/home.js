@@ -44,6 +44,7 @@ function taskHTML(title, desc=""){
 */
 //load the tasks
 //also set max-height for logs
+eel.expose(loadTasks)
 async function loadTasks(){
     const setdat = await loadAllSettings()
     let out = ""
