@@ -1331,7 +1331,7 @@ class macro:
             rejoinSuccess = False
             availableSlots = [] #store hive slots that are claimable
             newHiveNumber = 0
-            hiveDistance = 1.28 #distance between hives (in seconds)
+            hiveDistance = 1.32 #distance between hives (in seconds)
         
             # self.keyboard.keyDown("d", False)
             # self.keyboard.tileWait(4)
@@ -1341,9 +1341,9 @@ class macro:
             # self.keyboard.keyUp("w", False)
             self.setRobloxWindowInfo()
             self.keyboard.keyDown("d", False)
-            self.keyboard.timeWait(0.53)
+            self.keyboard.timeWait(0.548)
             self.keyboard.keyDown("w", False)
-            self.keyboard.timeWait(2.8)
+            self.keyboard.timeWait(2.9)
             self.keyboard.keyUp("d", False)
             self.keyboard.keyUp("w", False)
             for _ in range(3):
@@ -1939,7 +1939,9 @@ class macro:
         if not self.clickYes(detect=True):
             egg = self.setdat["sticker_printer_egg"]
             self.logger.webhook("", f"No {egg} eggs left, Sticker Printer has been disabled", "red", "screen")
+            self.updateGUI.value = 1
             self.setdat["sticker_printer"] = False
+            settingsManager.saveProfileSetting(f"sticker_printer", False)
             self.keyboard.press("e")
             return
         #wait for sticker to generate
