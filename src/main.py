@@ -23,7 +23,7 @@ import traceback
 try:
 	from modules.misc.ColorProfile import DisplayColorProfile
 except ModuleNotFoundError:
-	messageBox.msgBox(title="Dependencies not installed", text="The new update requires new dependencies. Redo step 3 of the installation process and try the macro again.")
+	messageBox.msgBox(title="Dependencies not installed", text="The new update requires new dependencies. Refer to #3 | installing-dependencies channel in the discord.")
 	quit()
 from modules.submacros.hourlyReport import HourlyReport
 mw, mh = pag.size()
