@@ -124,7 +124,7 @@ class keyboard:
     
     def timeWait(self, duration):
 
-        baseSpeed = self.ws
+        baseSpeed = 28
         target_distance = baseSpeed * duration  # Total distance the player should travel
         traveledDistance = 0
         maxTime = baseSpeed/24*duration
