@@ -20,21 +20,22 @@ from modules.screen.imageSearch import locateImageOnScreen
 import pyautogui as pag
 from modules.misc.appManager import getWindowSize
 import traceback
+print("importing settings manager")
+import modules.misc.settingsManager as settingsManager
+print("importing macro module")
+import modules.macro as macroModule
+print("macro main process started")
+
 try:
 	from modules.misc.ColorProfile import DisplayColorProfile
 except ModuleNotFoundError:
-	messageBox.msgBox(title="Dependencies not installed", text="The new update requires new dependencies. Redo step 3 of the installation process and try the macro again.")
+	messageBox.msgBox(title="Dependencies not installed", text="The new update requires new dependencies. Refer to #3 | installing-dependencies channel in the discord.")
 	quit()
 from modules.submacros.hourlyReport import HourlyReport
 mw, mh = pag.size()
 
 #controller for the macro
 def macro(status, logQueue, updateGUI):
-    print("importing settings manager")
-    import modules.misc.settingsManager as settingsManager
-    print("importing macro module")
-    import modules.macro as macroModule
-    print("macro main process started")
     macro = macroModule.macro(status, logQueue, updateGUI)
     #invert the regularMobsInFields dict
     #instead of storing mobs in field, store the fields associated with each mob
