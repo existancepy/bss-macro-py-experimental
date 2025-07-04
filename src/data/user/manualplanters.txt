@@ -1,0 +1,1 @@
+{'cycles': [1, 1, 1], 'planters': ['candy', 'blue clay', 'red clay'], 'fields': ['mountain top', 'bamboo', 'mushroom'], 'gatherFields': '', 'harvestTimes': [1751551061.93558, 1751551093.972675, 1751551151.434208]}

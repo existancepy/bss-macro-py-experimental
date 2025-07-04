@@ -1,77 +1,41 @@
-print("Importing ocr module")
 import modules.screen.ocr as ocr
-print("Importing app manager")
 import modules.misc.appManager as appManager
-print("Importing settings manager")
 import modules.misc.settingsManager as settingsManager
-print("Importing time")
 import time
-print("Importing pyautogui")
 import pyautogui as pag
-print("Importing screenshot module")
 from modules.screen.screenshot import mssScreenshot, mssScreenshotNP, benchmarkMSS
-print("Importing keyboard module")
 from modules.controls.keyboard import keyboard
-print("Importing sleep module")
 from modules.controls.sleep import sleep
-print("Importing mouse module")
 import modules.controls.mouse as mouse
-print("Importing screen data module")
 from modules.screen.screenData import getScreenData
-print("Importing log module")
 import modules.logging.log as logModule
-print("Importing field drift compendation module")
 from modules.submacros.fieldDriftCompensation import fieldDriftCompensation as fieldDriftCompensationClass
-print("Importing roblox window")
 from modules.screen.robloxWindow import RobloxWindowBounds
 from operator import itemgetter
-print("Importing sys")
 import sys
-print("Importing platform")
 import platform
-print("Importing os")
 import os
-print("Importing numpy")
 import numpy as np
-print("Importing threading")
 import threading
-print("Importing backpack module")
 from modules.submacros.backpack import bpc
-print("Importing image search module")
 from modules.screen.imageSearch import *
-print("Importing webbrowser")
 import webbrowser
-print("Importing pynput keyboard")
 from pynput.keyboard import Key, Controller
-print("Importing cv2")
 import cv2
-print("Importing datetime")
 from datetime import timedelta, datetime
-print("Importing image manipulation module")
 from modules.misc.imageManipulation import *
-print("Importing pillow")
 from PIL import Image
-print("Importing message box module")
 from modules.misc import messageBox
-print("Importing memory match module")
 from modules.submacros.memoryMatch import MemoryMatch
-print("Importing math")
 import math
-print("Importing re")
 import re
-print("Importing ast")
 import ast
-print("Importing hourly report module")
 from modules.submacros.hourlyReport import HourlyReport, BuffDetector
 from difflib import SequenceMatcher
-print("Importing fuzzywuzzy")
 import fuzzywuzzy.process
 import fuzzywuzzy
-print("Importing traceback")
 import traceback
-print("Importing pygetwindow")
 import pygetwindow as gw
-print("Importing Haste Compensation")
 from modules.submacros.hasteCompensation import HasteCompensationRevamped
 
 pynputKeyboard = Controller()
@@ -924,7 +888,6 @@ class macro:
     def convert(self, bypass = False):
         self.location = "spawn"
         if not bypass:
-            #use ebutton detection, faster detection but more prone to false positives (like detecting trades)
             if not self.isBesideEImage("makehoney"): 
                 self.alreadyConverted = False
                 return False
@@ -1091,6 +1054,13 @@ class macro:
                 else:
                     pass
             print(f"checked performance stats: {time.time()-st}")
+
+            keepOld = self.keepOldCheck()
+            if keepOld is not None:
+                time.sleep(0.1)
+                mouse.moveTo(*keepOld)
+                time.sleep(0.2)
+                mouse.click()
 
             noImg = self.adjustImage("./images/menu", "no") #yes/no popup
             x = self.robloxWindow.mx + self.robloxWindow.mw/2-300
@@ -1723,12 +1693,13 @@ class macro:
 
     #returns the coordinates of the keep old text
     def keepOldCheck(self):
-        noImg = self.adjustImage("./images/menu", "no") #yes/no popup
+        noImg = self.adjustImage("./images/menu", "keep") #yes/no popup
         x = self.robloxWindow.mx + self.robloxWindow.mw/2-300
         y = self.robloxWindow.my
         res = locateImageOnScreen(noImg, x, y, 650, self.robloxWindow.mh, 0.8)
         if res:
-            return [j//self.robloxWindow.multi for j in res[1]]
+            ix, iy = [j//self.robloxWindow.multi for j in res[1]]
+            return x+ix+5, y+iy+5
         # region = (self.ww/3.15,self.wh/2.15,self.ww/2.7,self.wh/4.2)
         # res = ocr.customOCR(*region,0)
         # for i in res:
@@ -2302,8 +2273,10 @@ class macro:
             return
         
         #kill vic
-        def goToVicField():
+        def goToVicField(wait=False):
             self.reset(convert=False)
+            if wait:
+                time.sleep(10)
             self.logger.webhook("",f"Travelling to {self.vicField} (vicious bee)","dark brown")
             self.cannon()
             self.goToField(currField, "south")
@@ -2329,7 +2302,7 @@ class macro:
                 break
             elif self.died:
                 self.logger.webhook("","Player Died","dark brown", "screen")
-                goToVicField()
+                goToVicField(wait=True)
                 self.died = False
             elif time.time()-st > 180: #max 3 mins to kill vic
                 self.logger.webhook("","Took too long to kill Vicious Bee","red", "screen")
@@ -2657,9 +2630,7 @@ class macro:
                     return
             i += 1
             
-    def collectPlanter(self, slot, planterData):
-        planter = planterData["planters"][slot]
-        field = planterData["fields"][slot]
+    def collectPlanter(self, planter, field):
         st = time.time()
         def updateHourlyTime():
             self.hourlyReport.addHourlyStat("misc_time", time.time()-st)
@@ -2672,7 +2643,8 @@ class macro:
             self.reset()
         else:
             updateHourlyTime()
-            return planterData
+            return False
+        
         self.keyboard.press("e")
         self.clickYes()
         self.logger.webhook("",f"Looting: {planter.title()} planter","bright green", "screen")
@@ -2680,62 +2652,32 @@ class macro:
         self.nmLoot(9, 5, "a")
         self.setMobTimer(field)
         updateHourlyTime()
-
-        planterData["harvestTimes"][slot] = ""
-        planterData["planters"][slot] = ""
-        planterData["fields"][slot] = ""
-        
-        with open("./data/user/manualplanters.txt", "w") as f:
-            f.write(str(planterData))
-        f.close()
-        return planterData
-
-    #plant all 3 planters in one cycle
-    def placeAllPlantersInCycle(self, cycle):
-        planterData = { #planter data to be stored in a file
-            "cycles": [1,1,1],
-            "planters": ["","",""],
-            "fields": ["","",""],
-            "gatherFields": ["","",""],
-            "harvestTimes": [0,0,0]
-        }
-        for i in range(3):
-            if self.setdat[f"cycle{cycle}_{i+1}_planter"] == "none" or self.setdat[f"cycle{cycle}_{i+1}_field"] == "none":
-                continue
-            planterData = self.placePlanterInCycle(i, cycle, planterData)
-
+        return True
         
     
-    def placePlanterInCycle(self, slot, cycle, planterData):
+    def placePlanterInCycle(self, slot, cycle):
+        '''
+        Returns planter, field, time planter is finish, if gather in field
+        Returns none if placing it failed
+        '''
         planter = self.setdat[f"cycle{cycle}_{slot+1}_planter"]
         field = self.setdat[f"cycle{cycle}_{slot+1}_field"]
-
         glitter = self.setdat[f"cycle{cycle}_{slot+1}_glitter"]
+        gather = self.setdat[f"cycle{cycle}_{slot+1}_gather"]
         #set the cooldown for planters and place them
         planterGrowthTime = self.placePlanter(planter,field, self.setdat["manual_planters_collect_full"], glitter)
         if planterGrowthTime is None: #make sure the planter was placed
             self.reset()
-            return planterData
-        
-        planterData["cycles"][slot] = cycle
-        planterData["planters"][slot] = planter
-        planterData["fields"][slot] = field
-        planterData["harvestTimes"][slot] = time.time() + planterGrowthTime
-        #set which fields to gather in
-        if self.setdat[f"cycle{cycle}_{slot+1}_gather"]: 
-            planterData["gatherFields"][slot] = field
-        else:
-            planterData["gatherFields"][slot] = ""
+            return
         
         planterReady = time.strftime("%H:%M:%S", time.gmtime(planterGrowthTime))
         self.logger.webhook("", f"Planter will be ready in: {planterReady}", "light blue")
 
+        planterCompleteTime = time.time() + planterGrowthTime
+
         self.reset()
 
-        with open("./data/user/manualplanters.txt", "w") as f:
-            f.write(str(planterData))
-        f.close()
-        return planterData
+        return (planter, field, planterCompleteTime, gather)
     
     def closeBlenderGUI(self):
         mouse.moveTo(self.robloxWindow.mx+(self.robloxWindow.mw/2-250), self.robloxWindow.my+(math.floor(self.robloxWindow.mh*0.48))-200)
@@ -3731,53 +3673,51 @@ class macro:
             #all are black
             if extrema == (0, 0):
                 messageBox.msgBox(text='It seems like you have not enabled roblox scaling. The macro will not work properly.\n1. Close Roblox\n2. Go to finder -> applications -> right click roblox -> get info -> enable "scale to fit below built-in camera"', title='Roblox scaling')
-            #make sure game mode is a feature (macOS 14.0 and above and apple chips)
-            # macVersion, _, _ = platform.mac_ver()
-            # macVersion = float('.'.join(macVersion.split('.')[:2]))
-            # if macVersion >= 14 and platform.processor() == "arm":
-            #     self.logger.webhook("","Detecting and disabling game mode","dark brown")
-            #     #make sure roblox is not fullscreen
-            #     self.toggleFullScreen()
-                    
-            #     #find the game mode button
-            #     lightGameMode = self.adjustImage("./images/mac", "gamemodelight")
-            #     darkGameMode = self.adjustImage("./images/mac", "gamemodedark")
-            #     x = self.robloxWindow.mw/2.3
-            #     time.sleep(1.2)
-            #     #find light mode
-            #     res = locateImageOnScreen(lightGameMode, self.robloxWindow.mx+(x), self.robloxWindow.my+(0), self.robloxWindow.mw-x, 60, 0.7)
-            #     if res is None: #cant find light, find dark
-            #         res = locateImageOnScreen(darkGameMode, self.robloxWindow.mx+(x), self.robloxWindow.my+(0), self.robloxWindow.mw-x, 60, 0.7)
-            #     #found either light or dark
-            #     if not res is None:
-            #         gx, gy = res[1]
-            #         if self.display_type == "retina":
-            #             gx //= 2
-            #             gy //= 2
-            #         mouse.moveTo(self.robloxWindow.mx+(gx+x), self.robloxWindow.my+(gy))
-            #         time.sleep(0.1)
-            #         mouse.fastClick()
-            #         time.sleep(0.5)
-            #         #check if game mode is enabled
-            #         screen = mssScreenshot(x, 0, self.robloxWindow.mw-x, 150)
-            #         ocrRes = ocr.ocrRead(screen)
-            #         for i in ocrRes:
-            #             if "mode off" in i[1][0].lower():
-            #                 #disable game mode
-            #                 bX, bY = ocr.getCenter(i[0])
-            #                 if self.display_type == "retina":
-            #                     bX //= 2
-            #                     bY //= 2
-            #                 mouse.moveTo(self.robloxWindow.mx+(x+bX), self.robloxWindow.my+(bY))
-            #                 mouse.click()                        
-            #                 break
-            #         else: #game mode is already disabled/couldnt be found
-            #             mouse.moveTo(self.robloxWindow.mx+(x+gx), self.robloxWindow.my+(gy))
-            #             mouse.click()
-            #     #fullscreen back roblox
-            #     appManager.openApp("roblox")
-            #     self.toggleFullScreen()
-            # time.sleep(1)
+            #make sure game mode is disabled (macOS 14.0 and above and apple chips)
+            macVersion, _, _ = platform.mac_ver()
+            macVersion = float('.'.join(macVersion.split('.')[:2]))
+
+            if 14 <= macVersion <= 15 and platform.processor() == "arm" and self.isFullScreen():
+                self.logger.webhook("","Detecting and disabling game mode","dark brown")
+                #make sure roblox is not fullscreen
+                self.toggleFullScreen()
+
+                #find the game mode button
+                lightGameMode = self.adjustImage("./images/mac", "gamemodelight")
+                darkGameMode = self.adjustImage("./images/mac", "gamemodedark")
+                x = self.robloxWindow.mw/2.3
+                time.sleep(1.2)
+                #find light mode
+                res = locateImageOnScreen(lightGameMode, self.robloxWindow.mx+(x), self.robloxWindow.my+(0), self.robloxWindow.mw-x, 60, 0.7)
+                if res is None: #cant find light, find dark
+                    res = locateImageOnScreen(darkGameMode, self.robloxWindow.mx+(x), self.robloxWindow.my+(0), self.robloxWindow.mw-x, 60, 0.7)
+                #found either light or dark
+                if not res is None:
+                    gx, gy = [x//self.robloxWindow.multi for x in res[1]]
+                    mouse.moveTo(self.robloxWindow.mx+(gx+x), self.robloxWindow.my+(gy))
+                    time.sleep(0.1)
+                    mouse.fastClick()
+                    time.sleep(0.5)
+                    #check if game mode is enabled
+                    screen = mssScreenshot(x, 0, self.robloxWindow.mw-x, 150)
+                    ocrRes = ocr.ocrRead(screen)
+                    for i in ocrRes:
+                        if "mode off" in i[1][0].lower():
+                            #disable game mode
+                            bX, bY = ocr.getCenter(i[0])
+                            if self.display_type == "retina":
+                                bX //= 2
+                                bY //= 2
+                            mouse.moveTo(self.robloxWindow.mx+(x+bX), self.robloxWindow.my+(bY))
+                            mouse.click()                        
+                            break
+                    else: #game mode is already disabled/couldnt be found
+                        mouse.moveTo(self.robloxWindow.mx+(x+gx), self.robloxWindow.my+(gy))
+                        mouse.click()
+                #fullscreen back roblox
+                appManager.openApp("roblox")
+                self.toggleFullScreen()
+            time.sleep(1)
             self.moveMouseToDefault()
 
         #detect new/old ui and set 
@@ -3824,8 +3764,6 @@ class macro:
         #enable background threads
         self.nightDetectStreaks = 0
         self.hourlyReport.loadHourlyReportData()
-        if self.hourlyReport.hourlyReportStats["start_time"] == 0:
-            self.hourlyReport.setSessionStats(self.getHoney(), time.time())
         self.prevMin = -1  
         self.prevSec = -1
         self.multi = self.robloxWindow.multi
@@ -3853,5 +3791,9 @@ class macro:
     
         if not benchmarkMSS():
             self.logger.webhook("", "MSS is too slow, switching to pillow", "dark brown")
+        
+        if not self.hourlyReport.hourlyReportStats["start_time"] or not self.hourlyReport.hourlyReportStats["start_honey"]:
+            self.hourlyReport.setSessionStats(self.getHoney(), time.time())
+
         self.reset(convert=True)
         self.saveTiming("rejoin_every")

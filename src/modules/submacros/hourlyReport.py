@@ -471,6 +471,7 @@ class HourlyReport():
     def setSessionStats(self, start_honey, start_time):
         self.hourlyReportStats["start_honey"] = start_honey
         self.hourlyReportStats["start_time"] = start_time
+        self.saveHourlyReportData()
     
     def saveHourlyReportData(self):
         with open("data/user/hourly_report_stats.pkl", "wb") as f:
@@ -944,7 +945,7 @@ class HourlyReportDrawer:
             imageWidth = int(width*(imageHeight/height))
             img = img.resize((imageWidth, imageHeight))
 
-            timeText = self.displayTime(planterTimes[i], ["m", "s"])
+            timeText = self.displayTime(planterTimes[i], ["h", "m"]) if planterTimes[i] > 0 else "Ready!"
             bbox = self.draw.textbbox((0, 0), timeText, font=timeFont)
             timeTextWidth = bbox[2] - bbox[0]
 
