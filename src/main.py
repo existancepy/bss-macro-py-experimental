@@ -248,25 +248,25 @@ def macro(status, logQueue, updateGUI):
                         planterData["fields"][i] = planter[1]
                         planterData["harvestTimes"][i] = planter[2]
                         planterData["gatherFields"][i] = planter[1] if planter[3] else ""
-
-                with open("./data/user/manualplanters.txt", "w") as f:
-                    f.write(str(planterData))
-                f.close()
+                        with open("./data/user/manualplanters.txt", "w") as f:
+                            f.write(str(planterData))
+                        f.close()
 
             #planter data does exist, check if its time to collect them
             else: 
                 planterData = ast.literal_eval(planterDataRaw)
-                planterDataChanged = False
                 #check all 3 slots to see if planters are ready to harvest
                 for i in range(3):
                     cycle = planterData["cycles"][i]
                     if planterData["planters"][i] and time.time() > planterData["harvestTimes"][i]:
                         #Collect planter
                         if runTask(macro.collectPlanter, args=(planterData["planters"][i], planterData["fields"][i])):
-                            planterDataChanged = True
                             planterData["harvestTimes"][i] = ""
                             planterData["planters"][i] = ""
                             planterData["fields"][i] = ""
+                            with open("./data/user/manualplanters.txt", "w") as f:
+                                f.write(str(planterData))
+                            f.close()
 
                 #check for planters to place
                 for i in range(3):
@@ -299,12 +299,9 @@ def macro(status, logQueue, updateGUI):
                         planterData["fields"][i] = planter[1]
                         planterData["harvestTimes"][i] = planter[2]
                         planterData["gatherFields"][i] = planter[1] if planter[3] else ""
-                    planterDataChanged = True
-
-                if planterDataChanged:
-                    with open("./data/user/manualplanters.txt", "w") as f:
-                        f.write(str(planterData))
-                    f.close()
+                        with open("./data/user/manualplanters.txt", "w") as f:
+                            f.write(str(planterData))
+                        f.close()
                     
                  
         #mob run
