@@ -20,11 +20,8 @@ from modules.screen.imageSearch import locateImageOnScreen
 import pyautogui as pag
 from modules.misc.appManager import getWindowSize
 import traceback
-print("importing settings manager")
 import modules.misc.settingsManager as settingsManager
-print("importing macro module")
 import modules.macro as macroModule
-print("macro main process started")
 
 try:
 	from modules.misc.ColorProfile import DisplayColorProfile
@@ -235,20 +232,41 @@ def macro(status, logQueue, updateGUI):
             f.close()
             #no data, place planters
             if not planterDataRaw.strip():
-                runTask(macro.placeAllPlantersInCycle, args = (1,),resetAfter=False)
+                planterData = { #planter data to be stored in a file
+                    "cycles": [1,1,1],
+                    "planters": ["","",""],
+                    "fields": ["","",""],
+                    "gatherFields": ["","",""],
+                    "harvestTimes": [0,0,0]
+                }
+                for i in range(3):
+                    if macro.setdat[f"cycle1_{i+1}_planter"] == "none" or macro.setdat[f"cycle1_{i+1}_field"] == "none":
+                        continue
+                    planter = runTask(macro.placePlanterInCycle, args = (i, 1),resetAfter=False)
+                    if planter:
+                        planterData["planters"][i] = planter[0]
+                        planterData["fields"][i] = planter[1]
+                        planterData["harvestTimes"][i] = planter[2]
+                        planterData["gatherFields"][i] = planter[1] if planter[3] else ""
+                        with open("./data/user/manualplanters.txt", "w") as f:
+                            f.write(str(planterData))
+                        f.close()
+
             #planter data does exist, check if its time to collect them
             else: 
                 planterData = ast.literal_eval(planterDataRaw)
-                planterChanged = False
                 #check all 3 slots to see if planters are ready to harvest
                 for i in range(3):
                     cycle = planterData["cycles"][i]
                     if planterData["planters"][i] and time.time() > planterData["harvestTimes"][i]:
                         #Collect planter
-                        planterData = runTask(macro.collectPlanter, args=(i, planterData))
-                        #place them
-                        # planterData = runTask(macro.placePlanterInCycle, args = (i, nextCycle, planterData),resetAfter=False)
-                        # planterChanged = True
+                        if runTask(macro.collectPlanter, args=(planterData["planters"][i], planterData["fields"][i])):
+                            planterData["harvestTimes"][i] = ""
+                            planterData["planters"][i] = ""
+                            planterData["fields"][i] = ""
+                            with open("./data/user/manualplanters.txt", "w") as f:
+                                f.write(str(planterData))
+                            f.close()
 
                 #check for planters to place
                 for i in range(3):
@@ -266,16 +284,25 @@ def macro(status, logQueue, updateGUI):
                     otherSlotPlanters = planterData["planters"][:i] + planterData["planters"][i+1:]
                     if planterToPlace in otherSlotPlanters:
                         continue
+
+                    #also check for fields
+                    fieldToPlace = macro.setdat[f"cycle{nextCycle}_{i+1}_field"]
+                    otherSlotFields = planterData["fields"][:i] + planterData["fields"][i+1:]
+                    if fieldToPlace in otherSlotFields:
+                        continue
                     
                     #place planter
-                    planterData = runTask(macro.placePlanterInCycle, args = (i, nextCycle, planterData),resetAfter=False)
-
-                if planterChanged:
-                    #save the planter data
-                    # with open("./data/user/manualplanters.txt", "w") as f:
-                    #     f.write(str(planterData))
-                    # f.close()
-                    pass
+                    planter = runTask(macro.placePlanterInCycle, args = (i, nextCycle),resetAfter=False)
+                    if planter:
+                        planterData["cycles"][i] = nextCycle
+                        planterData["planters"][i] = planter[0]
+                        planterData["fields"][i] = planter[1]
+                        planterData["harvestTimes"][i] = planter[2]
+                        planterData["gatherFields"][i] = planter[1] if planter[3] else ""
+                        with open("./data/user/manualplanters.txt", "w") as f:
+                            f.write(str(planterData))
+                        f.close()
+                    
                  
         #mob run
         for mob, fields in regularMobData.items():
