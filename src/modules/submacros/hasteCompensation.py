@@ -480,7 +480,7 @@ class HasteCompensationRevamped():
         end_time = time.time()
 
         #search for haste+
-        if bitmap_matcher.find_bitmap_cython(screen, self.hastePlus, variance=20):
+        if bitmap_matcher.find_bitmap_cython(screen, self.hastePlus, variance=20 if self.robloxWindow.isRetina else 2):
             haste += 10
             
         #print(end_time-start_time)
