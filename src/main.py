@@ -22,6 +22,7 @@ from modules.misc.appManager import getWindowSize
 import traceback
 import modules.misc.settingsManager as settingsManager
 import modules.macro as macroModule
+import modules.controls.mouse as mouse
 
 try:
 	from modules.misc.ColorProfile import DisplayColorProfile
@@ -479,7 +480,6 @@ if __name__ == "__main__":
     import modules.screen.screenData as screenData
     from modules.controls.keyboard import keyboard as keyboardModule
     import modules.logging.log as logModule
-    import modules.controls.mouse as mouse
     import modules.misc.appManager as appManager
     import modules.misc.settingsManager as settingsManager
     from modules.discord_bot.discordBot import discordBot
