@@ -49,13 +49,22 @@ def macro(status, logQueue, updateGUI):
     if "share" in macro.setdat["private_server_link"] and macro.setdat["rejoin_method"] == "deeplink":
                 messageBox.msgBox(text="You entered a 'share?code' link!\n\nTo fix this:\n1. Paste the link in your browser\n2. Wait for roblox to load in\n3. Copy the link from the top of your browser.  It should now be a 'privateServerLinkCode' link", title='Unsupported private server link')
                 return
+
+    taskCompleted = True
+    questCache = {}
+    
     macro.start()
     #macro.useItemInInventory("blueclayplanter")
     #function to run a task
     #makes it easy to do any checks after a task is complete (like stinger hunt, rejoin every, etc)
     def runTask(func = None, args = (), resetAfter = True, convertAfter = True):
+        nonlocal taskCompleted
         #execute the task
-        returnVal = func(*args) if func else None
+        if func:
+            returnVal = func(*args) 
+            taskCompleted = True
+        else:
+            returnVal = None
         #task done
         if resetAfter: 
             macro.reset(convert=convertAfter)
@@ -79,6 +88,8 @@ def macro(status, logQueue, updateGUI):
         return returnVal
     
     def handleQuest(questGiver):
+        nonlocal questCache, taskCompleted
+        
         gatherFieldsList = []
         gumdropGatherFieldsList = []
         requireRedField = False
@@ -89,6 +100,12 @@ def macro(status, logQueue, updateGUI):
         feedBees = []
         setdatEnable = []
 
+        #if the macro has completed a task in the last cycle
+        # if taskCompleted or not questGiver in questCache:
+        #     questObjective = macro.findQuest(questGiver)
+        #     questCache[questGiver] = questObjective
+        # else:
+        #     questObjective = questCache[questGiver]
         questObjective = macro.findQuest(questGiver)
 
         if questObjective is None:  # Quest does not exist
@@ -190,10 +207,14 @@ def macro(status, logQueue, updateGUI):
                 blueGumdropFieldNeeded = blueGumdropFieldNeeded or needsBlueGumdrop
                 fieldNeeded = fieldNeeded or needsField
         
+                    
+        taskCompleted = False 
+
         #feed bees for quest
         for item, quantity in itemsToFeedBees:
             macro.feedBee(item, quantity)
-                    
+            taskCompleted = True
+
         #collect
         for k, _ in macroModule.collectData.items():
             #check if the cooldown is up
@@ -428,6 +449,8 @@ def macro(status, logQueue, updateGUI):
         
         if fieldNeeded and not allGatheredFields:
             runTask(macro.gather, args=("pine tree",), resetAfter=False)
+        
+        mouse.click()
         
         
 

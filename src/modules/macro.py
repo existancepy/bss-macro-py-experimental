@@ -1289,7 +1289,7 @@ class macro:
             
             self.startDetect()
             #find hive
-            time.sleep(2)
+            time.sleep(7) #wait for the joined friend popup to disappear
             mouse.click()
             # self.keyboard.press("space")
             # time.sleep(0.5)
@@ -1311,9 +1311,9 @@ class macro:
             # self.keyboard.keyUp("w", False)
             self.setRobloxWindowInfo()
             self.keyboard.keyDown("d", False)
-            self.keyboard.timeWait(0.548)
+            self.keyboard.timeWaitNoHasteCompensation(0.548)
             self.keyboard.keyDown("w", False)
-            self.keyboard.timeWait(2.9)
+            self.keyboard.timeWaitNoHasteCompensation(2.9)
             self.keyboard.keyUp("d", False)
             self.keyboard.keyUp("w", False)
             for _ in range(3):
@@ -1475,9 +1475,9 @@ class macro:
             startLocation = fieldSetting["start_location"]
             moveSpeedFactor = 18/self.setdat["movespeed"]
             flen, fwid = [x*fieldSetting["distance"]/10 for x in startLocationDimensions[field]]
-            if "upper" in startLocation:
+            if "upper" in startLocation or "top" in startLocation:
                 self.sleepMSMove("w", flen*moveSpeedFactor)
-            elif "lower" in startLocation:
+            elif "lower" in startLocation or "bottom" in startLocation:
                  self.sleepMSMove("s", flen*moveSpeedFactor)
 
             if "left" in startLocation:
@@ -3235,6 +3235,7 @@ class macro:
         if questTitle is None:
             self.logger.webhook("", f"Could not find {questGiver} quest", "dark brown")
             self.toggleQuest()
+            self.moveMouseToDefault()
             return None
         
         #quest title found, now find the objectives
@@ -3348,6 +3349,7 @@ class macro:
                                 '\n'.join(incompleteObjectives) if incompleteObjectives else "None"), 
                             "light blue", imagePath=questImgPath)
         self.toggleQuest()
+        self.moveMouseToDefault()
         return incompleteObjectives
 
     def goToQuestGiver(self, questGiver, reason):
@@ -3431,10 +3433,22 @@ class macro:
         for _ in range(2):
             mouse.moveTo(self.robloxWindow.mx+(x), self.robloxWindow.my+(y))
             time.sleep(0.3)
-            pag.dragTo(self.robloxWindow.mw//2, self.robloxWindow.mh//2-80, 0.6, button='left')
+            pag.dragTo(self.robloxWindow.mx + self.robloxWindow.mw//2, self.robloxWindow.my + self.robloxWindow.mh//2-80, 0.6, button='left')
+
+        #interact with feed menu
+        time.sleep(1)
+        feedButtonImg = self.adjustImage("./images/menu", "feed")
+        fx = self.robloxWindow.mx + (54*self.robloxWindow.mw)//100-300
+        fy = self.robloxWindow.my + self.robloxWindow.yOffset + (46*self.robloxWindow.mh)//100-59
+        fres = locateImageOnScreen(feedButtonImg, fx, fy, 300, 120, 0.75)
+        if not fres:         
+            self.moveMouseToDefault()
+            return
+
+        frx, fry = [x//self.robloxWindow.multi for x in fres[1]]
 
         #change quantity
-        mouse.moveTo(self.robloxWindow.mx+((54*self.robloxWindow.mw)//100-300+300), self.robloxWindow.my+(45+(46*self.robloxWindow.mh))//100-59+5)
+        mouse.moveTo(fx+frx+150, fy+fry+8)
         time.sleep(0.1)
         for _ in range(2):
             mouse.click()
@@ -3442,13 +3456,15 @@ class macro:
         self.keyboard.write(str(quantity))
 
         #click feed button
-        mouse.moveTo(self.robloxWindow.mx+((54*self.robloxWindow.mw)//100-300+140), self.robloxWindow.my+(45+(46*self.robloxWindow.mh))//100-59+5)
+        mouse.moveTo(fx+frx, fy+fry)
         time.sleep(0.1)
         for _ in range(2):
             mouse.click()
             time.sleep(0.02)
         
         self.logger.webhook("",f"Fed {quantity} {item}", "bright green")
+
+        self.moveMouseToDefault()
 
     def saveAFB(self, name):
         return settingsManager.saveSettingFile(name, time.time(), "./data/user/AFB.txt")

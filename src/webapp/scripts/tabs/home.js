@@ -91,7 +91,7 @@ async function loadTasks(){
         out += taskHTML("Collect Buff", toImgArray(stickerStackIcon).join("<br>"))
     }
     //load the gather
-    for(let i = setdat.fields_enabled.length-1; i >= 0; i--){
+    for(let i = 0; i <= setdat.fields_enabled.length; i++){
         if (!setdat.fields_enabled[i]) continue
         const field = setdat.fields[i]
         out += taskHTML(`Gather ${i+1}`,`${fieldEmojis[field.replaceAll(" ","_")]} ${field}`)
