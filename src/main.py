@@ -525,21 +525,27 @@ if __name__ == "__main__":
         with open(f"../settings/patterns/{pattern}", "r") as f:
             ahk = f.read()
         f.close()
-        python = ahkPatternToPython(ahk)
-        print(f"Converted: {pattern}")
-        patternName = pattern.rsplit(".", 1)[0].lower()
-        with open(f"../settings/patterns/{patternName}.py", "w") as f:
-            f.write(python)
-        f.close()
+        try:
+            python = ahkPatternToPython(ahk)
+            print(f"Converted: {pattern}")
+            patternName = pattern.rsplit(".", 1)[0].lower()
+            with open(f"../settings/patterns/{patternName}.py", "w") as f:
+                f.write(python)
+            f.close()
+        except:
+            messageBox.msgBox(title="Failed to convert pattern", text=f"There was an error converting {pattern}. The pattern will not be used.")
     
     #setup stream class
     stream = cloudflaredStream()
 
     def onExit():
         stopApp()
-        if discordBotProc and discordBotProc.is_alive():
-            discordBotProc.terminate()
-            discordBotProc.join()
+        try:
+            if discordBotProc and discordBotProc.is_alive():
+                discordBotProc.terminate()
+                discordBotProc.join()
+        except NameError:
+            pass
         
     def stopApp(page= None, sockets = None):
         global stopThreads

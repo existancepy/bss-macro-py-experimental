@@ -96,7 +96,6 @@ def load_bitmap_matcher():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     
-    print(f"Loaded bitmap_matcher from: {so_path}")
     return module
 
 # Auto-load the module and expose its contents
