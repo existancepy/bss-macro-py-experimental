@@ -915,16 +915,15 @@ class macro:
             self.keyboard.press(",")
         
         while True: 
-            if self.isBesideE(["pollen", "flower", "field"]):
-                break
             #check if the macro is done converting/not converting
             text = self.getTextBesideE()
             #done converting
             doneConverting = False
-            for i in ["pollen", "flower", "field"]:
-                if i in text:
-                    doneConverting = True
-                    break
+            if not "stop" in text and not "making" in text:
+                for i in ["pollen", "flower", "field"]:
+                    if i in text:
+                        doneConverting = True
+                        break
             if doneConverting: 
                 break
             #not converting
