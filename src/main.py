@@ -102,12 +102,11 @@ def macro(status, logQueue, updateGUI):
         setdatEnable = []
 
         #if the macro has completed a task in the last cycle
-        # if taskCompleted or not questGiver in questCache:
-        #     questObjective = macro.findQuest(questGiver)
-        #     questCache[questGiver] = questObjective
-        # else:
-        #     questObjective = questCache[questGiver]
-        questObjective = macro.findQuest(questGiver)
+        if taskCompleted or not questGiver in questCache:
+            questObjective = macro.findQuest(questGiver)
+            questCache[questGiver] = questObjective
+        else:
+            questObjective = questCache[questGiver]
 
         if questObjective is None:  # Quest does not exist
             questObjective = macro.getNewQuest(questGiver, False)
@@ -194,7 +193,8 @@ def macro(status, logQueue, updateGUI):
             ("honey bee", "honey_bee_quest"),
             ("bucko bee", "bucko_bee_quest"),
             ("riley bee", "riley_bee_quest")
-        ]:
+            ]:
+
             if macro.setdat.get(enabledKey):
                 setdatEnable, gatherFields, gumdropFields, needsRed, needsBlue, feedBees, needsRedGumdrop, needsBlueGumdrop, needsField = handleQuest(questName)
                 for k in setdatEnable:
