@@ -292,13 +292,16 @@ class BuffDetector():
             buffTemplate = adjustImage("./images/buffs", buff, self.robloxWindow.display_type)
             res = locateTransparentImage(buffTemplate, screen, 0.5) #get the best match first. At high nectar levels, it becomes hard to detect the nectar icon
             if not res: 
-                nectarQuantity.append("0")
+                nectarQuantity.append(0)
                 continue
             #get a screenshot of the buff
             rx, ry = res[1]
-            cropX = int(rx+offsetX*self.robloxWindow.multi)
-            cropY = int(ry+offsetY*self.robloxWindow.multi)
-            fullBuffImg = screen[cropY:cropY+40*self.robloxWindow.multi, cropX:cropX+40*self.robloxWindow.multi]
+            screenH, screenW, *_ = screen.shape
+            cropX = max(0, int(rx+offsetX*self.robloxWindow.multi))
+            cropY = max(0, int(ry+offsetY*self.robloxWindow.multi))
+            cropX2 = min(screenW, cropX+40*self.robloxWindow.multi)
+            cropY2 = min(screenH, cropY+40*self.robloxWindow.multi)
+            fullBuffImg = screen[cropY:cropY2, cropX:cropX2]
             h,w, *_ = fullBuffImg.shape
             #get the buff level
             fullBuffImg = cv2.cvtColor(fullBuffImg, cv2.COLOR_RGBA2BGR)
