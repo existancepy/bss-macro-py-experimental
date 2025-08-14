@@ -179,6 +179,8 @@ def macro(status, logQueue, updateGUI):
         #this is in case no other settings are selected 
         runTask(resetAfter=False)
 
+        updateGUI.value = 1
+
         #handle quests
         questGatherFields = []
         questGumdropGatherFields = []

@@ -9,6 +9,7 @@ import platform
 import zipfile
 import requests
 from io import BytesIO
+import ast
 import json
 
 eel.init('webapp')
@@ -34,6 +35,20 @@ def getPatterns():
 @eel.expose
 def clearManualPlanters():
     settingsManager.clearFile("./data/user/manualplanters.txt")
+
+@eel.expose
+def getManualPlanterData():
+    with open("./data/user/manualplanters.txt", "r") as f:
+        planterDataRaw = f.read()
+    if planterDataRaw.strip():
+        return ast.literal_eval(planterDataRaw)
+    else: 
+        return ""
+    
+@eel.expose
+def getAutoPlanterData():
+    with open("./data/user/auto_planters.json", "r") as f:
+        return json.load(f)
 
 @eel.expose
 def clearAutoPlanters():
