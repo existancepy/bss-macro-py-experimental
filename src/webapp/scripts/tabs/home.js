@@ -98,6 +98,8 @@ async function loadTasks(){
     }
     //display the tasks
     document.getElementById("task-list").innerHTML = out
+
+    //show planter timers
 }
 
 eel.expose(closeWindow)

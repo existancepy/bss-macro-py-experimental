@@ -345,7 +345,9 @@ def macro(status, logQueue, updateGUI):
             
             def getCurrentNectarPercent(nectar):
                 #get the current nectar from the buffs area
-                return macro.buffDetector.getNectar(nectar)
+                res = macro.buffDetector.getNectar(nectar)
+                print(f"Current {nectar} Nectar: {res}%")
+                return res
             
             def getEstimateNectarPercent(nectar):
                 #get the estimate nectar from growing planters
@@ -364,7 +366,7 @@ def macro(status, logQueue, updateGUI):
                 availableFields = []
                 occupiedFields = [planter["field"] for planter in planterData]
                 for field in macroModule.nectarFields[nectar]:
-                    if macro.setdat[f"auto_field_{field}"] and not field in occupiedFields:
+                    if macro.setdat[f"auto_field_{field.replace(' ','_')}"] and not field in occupiedFields:
                         availableFields.append(field)
                 if not availableFields:
                     return None
@@ -387,7 +389,7 @@ def macro(status, logQueue, updateGUI):
                     settingPlanter = planter.replace(" ", "_")
                     if not planter in occupiedPlanters and macro.setdat[f"auto_planter_{settingPlanter}"]:
                         bestPlanterObj = planterObj
-                return bestPlanterObj
+                        return bestPlanterObj
             
             def savePlacedPlanter(slot, field, planter, nectar):
                 nonlocal planterData, nectarLastFields
@@ -398,7 +400,7 @@ def macro(status, logQueue, updateGUI):
                         minPercent = max(macro.setdat[f"auto_priority_{i}_min"], estimatedNectarPercent)
                         break
                 
-                if setdat["auto_planters_collect_auto"]:
+                if macro.setdat["auto_planters_collect_auto"]:
                     totalBonus = planter["nectar_bonus"] * planter["grow_bonus"]
                     #time to get 100% nectar
                     timeToCap = max(0.25, ((max(0, (100 - estimatedNectarPercent) / planter["nectar_bonus"]) * 0.24) / planter["grow_bonus"]))
@@ -417,11 +419,11 @@ def macro(status, logQueue, updateGUI):
 
                     finalGrowTime = min(planter["grow_time"], (growTime + growTime/totalBonus), timeToCap + timeToCap/totalBonus)*60*60
                     planterHarvestTime = time.time() + finalGrowTime
-                elif setdat["auto_planters_collect_full"]:
+                elif macro.setdat["auto_planters_collect_full"]:
                     finalGrowTime = planter["grow_time"]*60*60
                     planterHarvestTime = time.time() + finalGrowTime
                 else:
-                    finalGrowTime = min(planter["grow_time"], setdat["auto_planters_collect_every"])*60*60
+                    finalGrowTime = min(planter["grow_time"], macro.setdat["auto_planters_collect_every"])*60*60
                     lowestHarvestTime = time.time() + finalGrowTime
                     #sync harvest times with planters that are currently growing
                     for i in range(3):
@@ -441,6 +443,9 @@ def macro(status, logQueue, updateGUI):
                     "harvest_time": planterHarvestTime,
                     "nectar_est_percent": planterEstPerc
                 }
+                planterReady = time.strftime("%H:%M:%S", time.gmtime(finalGrowTime))
+                macro.logger.webhook("", f"Planter will be ready in: {planterReady}", "light blue")
+                nectarLastFields[nectar] = field
                 saveAutoPlanterData()
 
 
@@ -454,7 +459,7 @@ def macro(status, logQueue, updateGUI):
                 currentNectarPerc = getCurrentNectarPercent(nectar)
                 estimateNectarPerc = getEstimateNectarPercent(nectar) 
                 #collect all planters that will overfill nectar
-                if (not setdat["auto_planters_collect_full"] and (
+                if (macro.setdat["auto_planters_collect_auto"] and (
                     (currentNectarPerc > 99) or
                     (currentNectarPerc > 90 and currentNectarPerc + estimateNectarPerc > 110) or
                     (currentNectarPerc + estimateNectarPerc > 120)
@@ -465,7 +470,8 @@ def macro(status, logQueue, updateGUI):
             
             #check if planters should be collected (based on harvest time)
             for i in range(3):
-                if time.time() > planterData[i]["harvest_time"]:
+                planter = planterData[i]
+                if planter["planter"] and time.time() > planter["harvest_time"]:
                     planterSlotsToHarvest.append(i)
             
             #harvest planters
@@ -487,13 +493,18 @@ def macro(status, logQueue, updateGUI):
             maxAllowedPlanters = 0
             for x in macroModule.allPlanters:
                 x = x.replace(" ","_")
-                if setdat[f"auto_planter_{x}"]:
+                if macro.setdat[f"auto_planter_{x}"]:
                     maxAllowedPlanters += 1
             maxAllowedPlanters = min(maxAllowedPlanters, macro.setdat["auto_max_planters"])
 
+            #determine how many planters are currently placed
+            plantersPlaced = sum(bool(p["planter"]) for p in planterData)
+
             #1. place planters to meet nectar priority
             for i in range(5):
-                nectar = setdat[f"auto_priority_{i}_nectar"]
+                if plantersPlaced >= maxAllowedPlanters:
+                    break
+                nectar = macro.setdat[f"auto_priority_{i}_nectar"]
                 #place planters until all slots are maxed or nectar priority is met
                 for j in range(3):
                     planter = planterData[j]
@@ -504,7 +515,7 @@ def macro(status, logQueue, updateGUI):
                     if nextField is None:
                         break
 
-                    minPerc = setdat[f"auto_priority_{i}_min"]
+                    minPerc = macro.setdat[f"auto_priority_{i}_min"]
                     totalNectarPercent = getTotalNectarPercent(nectar)
                     if totalNectarPercent > minPerc:
                         break
@@ -513,9 +524,58 @@ def macro(status, logQueue, updateGUI):
                     planterToPlace = getBestPlanter(nextField)
                     if runTask(macro.placePlanter, args=(planterToPlace["name"], nextField, False, False)):
                         savePlacedPlanter(j, nextField, planterToPlace, nectar)
+                        plantersPlaced += 1
             
             #2. leftover planters, prioritise lowest nectar percentage
+            if plantersPlaced < maxAllowedPlanters:
+                nectarPercentages = []
+                for nectar in macroModule.nectarFields:
+                    nectarPercentages.append((nectar, getTotalNectarPercent(nectar)))
+                nectarPercentages.sort(key=lambda x: x[1])
 
+                for nectar, totalNectarPercent in nectarPercentages:
+                    if plantersPlaced >= maxAllowedPlanters:
+                        break
+                    #place planters until all slots are maxed or nectar is maxed
+                    for j in range(3):
+                        planter = planterData[j]
+                        if planter["planter"]:
+                            continue
+
+                        nextField = getNextField(nectar)
+                        if nextField is None:
+                            break
+
+                        if totalNectarPercent > 110:
+                            break
+
+                        #place planter
+                        planterToPlace = getBestPlanter(nextField)
+                        if runTask(macro.placePlanter, args=(planterToPlace["name"], nextField, False, False)):
+                            savePlacedPlanter(j, nextField, planterToPlace, nectar)
+                            plantersPlaced += 1
+            
+            #3. all nectars are maxed, just place in priority
+            if plantersPlaced < maxAllowedPlanters:
+                for i in range(5):
+                    if plantersPlaced >= maxAllowedPlanters:
+                        break
+                    nectar = macro.setdat[f"auto_priority_{i}_nectar"]
+                    #place planters until all slots are maxed or nectar priority is met
+                    for j in range(3):
+                        planter = planterData[j]
+                        if planter["planter"]:
+                            continue
+
+                        nextField = getNextField(nectar)
+                        if nextField is None:
+                            break
+
+                        #place planter
+                        planterToPlace = getBestPlanter(nextField)
+                        if runTask(macro.placePlanter, args=(planterToPlace["name"], nextField, False, False)):
+                            savePlacedPlanter(j, nextField, planterToPlace, nectar)
+                            plantersPlaced += 1
 
 
 

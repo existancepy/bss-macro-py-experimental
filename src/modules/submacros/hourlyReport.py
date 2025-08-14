@@ -17,6 +17,7 @@ import copy
 from datetime import datetime
 from modules.screen.robloxWindow import RobloxWindowBounds
 import pickle
+import json
 
 ww, wh = pag.size()
 
@@ -322,7 +323,7 @@ class BuffDetector():
     def getNectars(self):
         nectarQuantity = []
         for nectar in self.nectars:
-            nectarQuantity.append(nectar)
+            nectarQuantity.append(self.getNectar(nectar))
         return nectarQuantity
 
 
@@ -384,20 +385,34 @@ class HourlyReport():
         
         return filtered_values
 
-    def generateHourlyReport(self):
+    def generateHourlyReport(self, setdat):
         buffQuantity = self.buffDetector.getBuffsWithImage(self.hourBuffs)
         nectarQuantity = self.buffDetector.getNectars()
         #mssScreenshot(save=True)
 
         #get the hourly report data
 
+        planterData = ""
         #get planter data
-        with open("./data/user/manualplanters.txt", "r") as f:
-            planterData = f.read()
-        f.close()
+        if setdat["planters_mode"] == 1:
+            with open("./data/user/manualplanters.txt", "r") as f:
+                planterData = f.read()
+            f.close()
 
-        if planterData:
-            planterData = ast.literal_eval(planterData)
+            if planterData:
+                planterData = ast.literal_eval(planterData)
+        elif setdat["planters_mode"] == 2:
+            with open("./data/user/auto_planters.json", "r") as f:
+                planterData = json.load(f)["planters"]
+            f.close()
+            planterData = {
+                "planters": [p["planter"] for p in planterData],
+                "harvestTimes": [p["harvest_time"] for p in planterData],
+                "fields": [p["field"] for p in planterData],
+            }
+            if all(not p for p in planterData["planters"]):
+                planterData = ""
+
 
         #get history
         with open("data/user/hourly_report_history.txt", "r") as f:
@@ -494,7 +509,7 @@ class HourlyReport():
 class HourlyReportDrawer:
     def __init__(self):
         self.backgroundColor = "#0E0F13"
-        self.canvasSize = (5900, 9000)
+        self.canvasSize = (6400, 8000)
         self.sidebarWidth = 1900
         self.leftPadding = 150
         self.availableSpace = self.canvasSize[0] - self.sidebarWidth - self.leftPadding*2
