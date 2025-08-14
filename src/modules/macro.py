@@ -38,6 +38,7 @@ import traceback
 import pygetwindow as gw
 from modules.submacros.hasteCompensation import HasteCompensationRevamped
 from modules import bitmap_matcher
+import json
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -315,6 +316,19 @@ for line in qdata:
     else:  #quest objectives
         quest_info.append(line)
 quest_data[quest_bear][quest_title] = quest_info 
+
+#planter-related info
+nectarNames=["comforting", "refreshing", "satisfying", "motivating", "invigorating"]
+nectarFields = {
+  "comforting": ["dandelion", "bamboo", "pine tree"],
+  "refreshing": ["coconut", "strawberry", "blue flower"],
+  "satisfying": ["pineapple", "sunflower", "pumpkin"],
+  "motivating": ["stump", "spider", "mushroom", "rose"],
+  "invigorating": ["pepper", "mountain top", "clover", "cactus"]
+}
+allPlanters = ["paper", "ticket", "festive", "sticker", "plastic", "candy", "red_clay", "blue_clay", "tacky", "pesticide", "heat-treated", "hydroponic", "petal", "planter_of_plenty"]
+with open("./data/bss/auto_planter_ranking.json", "r") as f:
+    autoPlanterRankings = json.load(f) 
 
 class macro:
     def __init__(self, status, logQueue, updateGUI):

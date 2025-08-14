@@ -9,6 +9,7 @@ import platform
 import zipfile
 import requests
 from io import BytesIO
+import json
 
 eel.init('webapp')
 run = None
@@ -33,6 +34,43 @@ def getPatterns():
 @eel.expose
 def clearManualPlanters():
     settingsManager.clearFile("./data/user/manualplanters.txt")
+
+@eel.expose
+def clearAutoPlanters():
+    data = {
+        "planters": [
+            {
+                "planter": "",
+                "nectar": "",
+                "field": "",
+                "harvest_time": 0,
+                "nectar_est_percent": 0
+            },
+            {
+                "planter": "",
+                "nectar": "",
+                "field": "",
+                "harvest_time": 0,
+                "nectar_est_percent": 0
+            },
+            {
+                "planter": "",
+                "nectar": "",
+                "field": "",
+                "harvest_time": 0,
+                "nectar_est_percent": 0
+            }
+        ],
+        "nectar_last_field": {
+            "comforting": "",
+            "refreshing": "",
+            "satisfying": "",
+            "motivating": "",
+            "invigorating": ""
+        }
+    }
+    with open("./data/user/auto_planters.json", "w") as f:
+        json.dump(data, f, indent=3)
     
 @eel.expose
 def clearBlender():

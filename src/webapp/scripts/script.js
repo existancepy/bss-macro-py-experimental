@@ -48,6 +48,15 @@ async function loadAllSettings(){
 //element
 //type: setting type, eg: profile, general
 function saveSetting(ele, type){
+    //apply element binding (only for checkboxes)
+    const bindTargetId = ele.dataset.inputBind
+    if (bindTargetId){
+        const bindTarget = document.getElementById(bindTargetId)
+        if (ele.checked){
+            bindTarget.checked = false
+            eel.saveProfileSetting(bindTargetId, false)
+        }
+    }
     const id = ele.id
     const value = getInputValue(id)
     if (type == "profile"){

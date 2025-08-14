@@ -182,7 +182,7 @@ function clearManualPlantersData(){
 function clearAutoPlantersData(){
     const btn = document.getElementById("auto-planters-reset-btn")
     if (btn.classList.contains("active")) return
-    eel.clearManualPlanters()
+    eel.clearAutoPlanters()
     btn.classList.add("active")
     setTimeout(() => {
         btn.classList.remove("active")
