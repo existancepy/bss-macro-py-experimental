@@ -53,7 +53,7 @@ def locateImageWithMaskOnScreen(image, mask, x,y,w,h, threshold=0):
 
 def findColorObjectHSL(img, hslRange, kernel=None, mode="point", best=1, draw=False):
     """
-    Quickly find objects of a specific color in the HSL range.
+    Find objects of a specific color in the HSL range.
 
     Args:
         img (numpy.ndarray): Input image in BGR format.
@@ -66,11 +66,9 @@ def findColorObjectHSL(img, hslRange, kernel=None, mode="point", best=1, draw=Fa
     Returns:
         tuple or list: Coordinates of the center or bounding boxes.
     """
-    # Convert HSL range to OpenCV's HLS format
     hLow, sLow, lLow = hslRange[0][0] / 2, hslRange[0][1] / 100 * 255, hslRange[0][2] / 100 * 255
     hHigh, sHigh, lHigh = hslRange[1][0] / 2, hslRange[1][1] / 100 * 255, hslRange[1][2] / 100 * 255
 
-    # Fast conversion to HLS and thresholding
     binary_mask = cv2.inRange(
         cv2.cvtColor(img, cv2.COLOR_BGR2HLS),
         np.array([hLow, lLow, sLow], dtype=np.uint8),

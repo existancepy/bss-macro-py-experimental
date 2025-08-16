@@ -500,3 +500,32 @@ label img{
 #auto-allowed-fields img{
     margin-left: 0.5rem;
 }
+
+.planter-timers{
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.planter-timers .planter{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.3rem;
+}
+
+.planter-timers .planter img{
+    width: 40%;
+    margin-bottom: 0.5rem;
+}
+
+.planter-timers .planter span{
+    text-align: center;
+    font-size: 0.9rem; 
+    color: #ADB5BD;
+}
+
+.planter-timers .planter span.ready{
+    color: #4CAF50;
+}

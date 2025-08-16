@@ -3,7 +3,7 @@ import modules.misc.appManager as appManager
 import modules.misc.settingsManager as settingsManager
 import time
 import pyautogui as pag
-from modules.screen.screenshot import mssScreenshot, mssScreenshotNP, benchmarkMSS
+from modules.screen.screenshot import mssScreenshot, mssScreenshotNP, benchmarkMSS, mssScreenshotPillowRGBA
 from modules.controls.keyboard import keyboard
 from modules.controls.sleep import sleep
 import modules.controls.mouse as mouse
@@ -37,6 +37,8 @@ import fuzzywuzzy
 import traceback
 import pygetwindow as gw
 from modules.submacros.hasteCompensation import HasteCompensationRevamped
+from modules import bitmap_matcher
+import json
 
 pynputKeyboard = Controller()
 #data for collectable objectives
@@ -314,6 +316,19 @@ for line in qdata:
     else:  #quest objectives
         quest_info.append(line)
 quest_data[quest_bear][quest_title] = quest_info 
+
+#planter-related info
+nectarNames=["comforting", "refreshing", "satisfying", "motivating", "invigorating"]
+nectarFields = {
+  "comforting": ["dandelion", "bamboo", "pine tree"],
+  "refreshing": ["coconut", "strawberry", "blue flower"],
+  "satisfying": ["pineapple", "sunflower", "pumpkin"],
+  "motivating": ["stump", "spider", "mushroom", "rose"],
+  "invigorating": ["pepper", "mountain top", "clover", "cactus"]
+}
+allPlanters = ["paper", "ticket", "festive", "sticker", "plastic", "candy", "red_clay", "blue_clay", "tacky", "pesticide", "heat-treated", "hydroponic", "petal", "planter_of_plenty"]
+with open("./data/bss/auto_planter_ranking.json", "r") as f:
+    autoPlanterRankings = json.load(f) 
 
 class macro:
     def __init__(self, status, logQueue, updateGUI):
@@ -703,10 +718,9 @@ class macro:
         return True
     
     def toggleInventory(self, mode):
-        invOpenImg = self.adjustImage("./images/menu", "inventoryopen")
-        open = False
-        if locateImageOnScreen(invOpenImg, self.robloxWindow.mx, self.robloxWindow.my+10, 100, 180, 0.8):
-            open = True
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+        screen = mssScreenshotNP(self.robloxWindow.mx+4, self.robloxWindow.my+100, 50, 60)
+        open = findColorObjectHSL(screen, [(115, 95, 95), (125, 105, 105)], kernel=kernel)
         
         def clickInv():
             mouse.moveTo(self.robloxWindow.mx+30, self.robloxWindow.my+113)
@@ -915,16 +929,15 @@ class macro:
             self.keyboard.press(",")
         
         while True: 
-            if self.isBesideE(["pollen", "flower", "field"]):
-                break
             #check if the macro is done converting/not converting
             text = self.getTextBesideE()
             #done converting
             doneConverting = False
-            for i in ["pollen", "flower", "field"]:
-                if i in text:
-                    doneConverting = True
-                    break
+            if not "stop" in text and not "making" in text:
+                for i in ["pollen", "flower", "field"]:
+                    if i in text:
+                        doneConverting = True
+                        break
             if doneConverting: 
                 break
             #not converting
@@ -3035,7 +3048,7 @@ class macro:
 
             #check if its time to send hourly report
             if currMin == 0 and time.time() - self.lastHourlyReport > 120:
-                hourlyReportData = self.hourlyReport.generateHourlyReport()
+                hourlyReportData = self.hourlyReport.generateHourlyReport(self.setdat)
                 self.logger.hourlyReport("Hourly Report", "", "purple")
 
                 #add to history
@@ -3184,10 +3197,15 @@ class macro:
         if not questGiver in questGiverShort:
             raise Exception(f"Unknown Quest Giver: {questGiver}")
         
-        def screenshotQuest(screenshotHeight, gray = True):
-            #Take a screenshot of the quest page and 
-            screen = mssScreenshotNP(self.robloxWindow.mx, self.robloxWindow.my+170, 300, min(screenshotHeight, self.robloxWindow.mh-(self.robloxWindow.my+170)))
-            if gray:
+        def screenshotQuest(screenshotHeight, mode = "gray"):
+            #Take a screenshot of the quest page
+            mode = mode.lower()
+            if mode == "rgba":
+                screenshotFunction = mssScreenshotPillowRGBA
+            else:
+                screenshotFunction = mssScreenshotNP
+            screen = screenshotFunction(self.robloxWindow.mx, self.robloxWindow.my+150, 300, min(screenshotHeight, self.robloxWindow.mh-(self.robloxWindow.my+150)))
+            if mode == "gray":
                 screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
             return screen
         
@@ -3205,32 +3223,43 @@ class macro:
                 break
             prevHash = hash
         #scroll down, note the best match
-        sleep(0.3)
+        sleep(0.4)
         questTitle = None
         questTitleYPos = None
 
+        questGiverImg = Image.open(f"./images/quest/{questGiver}-{self.robloxWindow.display_type}.png").convert('RGBA')
+        prevHash = None
+        for i in range(150):
+            screen = screenshotQuest(800, mode="RGBA")
 
-        for i in range(80):
-            screen = screenshotQuest(200)
-            img = cv2.threshold(screen, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-            img = cv2.GaussianBlur(img, (5, 5), 0)
-            img = Image.fromarray(img)
-            for x in ocr.ocrRead(img):
-                text = self.convertCyrillic(x[1][0].strip().lower())
-                if questGiverShort[questGiver] in text:
-                    for word in questTitleBlacklistedPhrases.get(questGiver, []):
-                        if word in text: break
-                    else:
-                        #match text with the closest known quest title
-                        questTitleYPos = x[0][0][1] #get the top Y coordinate
-                        questTitle, _ = fuzzywuzzy.process.extractOne(text, quest_data[questGiver].keys())
-                        self.logger.webhook("", f"Quest Title: {questTitle}", "dark brown")
-                        break
+            res = bitmap_matcher.find_bitmap_cython(screen, questGiverImg, variance=5, h=250)
+            if res:
+                rx, ry = res
+                rw, rh = questGiverImg.size
+                img = cv2.cvtColor(np.array(screen), cv2.COLOR_RGBA2GRAY)
+                img = img[ry-10:ry+rh+20, rx-5:]
+                img = cv2.threshold(img, 150, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+                img = cv2.GaussianBlur(img, (5, 5), 0)
+                img = Image.fromarray(img)
                 
-            if questTitle:
+                ocrRes = ocr.ocrRead(img)
+                text = self.convertCyrillic(''.join([x[1][0].strip().lower() for x in ocrRes]))
+                for word in questTitleBlacklistedPhrases.get(questGiver, []):
+                    if word in text: 
+                        break
+                else:
+                    #match text with the closest known quest title
+                    questTitleYPos = ry
+                    print(questTitleYPos)
+                    questTitle, _ = fuzzywuzzy.process.extractOne(text, quest_data[questGiver].keys())
+                    self.logger.webhook("", f"Quest Title: {questTitle}", "dark brown")
+                    break
+                
+            mouse.scroll(-1, True)
+            time.sleep(0.06)
+            hash = imagehash.average_hash(Image.fromarray(screenshotQuest(100)))
+            if not prevHash is None and prevHash == hash:
                 break
-            mouse.scroll(-3, True)
-            time.sleep(0.08)
 
         if questTitle is None:
             self.logger.webhook("", f"Could not find {questGiver} quest", "dark brown")
@@ -3239,12 +3268,11 @@ class macro:
             return None
         
         #quest title found, now find the objectives
-        print(questTitle)
         objectives = quest_data[questGiver][questTitle]
 
         #merge the texts into chunks. Using those chunks, compare it with the known objectives
         #assume that the merging is done properly, so 1st chunk = 1st objective
-        screen = cv2.cvtColor(screenshotQuest(650, gray=False), cv2.COLOR_BGRA2BGR)
+        screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGBA2BGR)
         #crop it just above the quest title
         screen = screen[questTitleYPos: , : ]
         screenOriginal = np.copy(screen)
@@ -3260,7 +3288,7 @@ class macro:
         cropMask = cv2.inRange(screen, lower, upper)
         cropRows = np.any(cropMask > 0, axis=1)
         startIndex = None
-        endIndex = None
+        endIndex = 0
 
         #start searching for the start and end y points of the quest title
         #if it can't find the title bar in the first y pixels, stop the search
@@ -3278,7 +3306,7 @@ class macro:
                 break
         
         #crop
-        if endIndex is not None:
+        if endIndex:
             screen = screen[endIndex:, :]
 
         #convert to grayscale
@@ -3317,9 +3345,20 @@ class macro:
             #detect amount of items to feed
             objectiveData = objectives[i].split("_")
             if objectiveData[0] == "feed":
-                amount = ''.join([x for x in textChunk if x.isdigit()])
+                amount = 0
+                #start by trying to get the text from the progression, ie 0/x
+                if "/" in textChunk: 
+                    split = textChunk.split("/")[1].replace(",","").replace(".", "")
+                    amount = int(split) if split.isdigit() else 0
+                #find it via words, ie feed x bluberries
+                if not amount:
+                    words = textChunk.split(" ")
+                    for x in words:
+                        if x.isdigit():
+                            amount = int(x)
+                            break
                 if amount:
-                    objectiveData[1] = str(min(int(amount), 100))
+                    objectiveData[1] = str(min(int(amount), 50))
                     objectives[i] = "_".join(objectiveData)
 
             if "complete" in textChunk:
@@ -3330,8 +3369,9 @@ class macro:
                 color = (0, 0, 255)  #red
             
             #draw bounding boxes and add the quest text
-            cv2.rectangle(screen, (x, y), (x+w, y+h), color, 2)
-            cv2.putText(screen, objectives[i], (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+            drawY = y+endIndex
+            cv2.rectangle(screenOriginal, (x, drawY), (x+w, drawY+h), color, 2)
+            cv2.putText(screenOriginal, objectives[i], (x, drawY-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
             i += 1
 
