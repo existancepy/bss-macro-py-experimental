@@ -292,6 +292,7 @@ def macro(status, logQueue, updateGUI):
                             with open("./data/user/manualplanters.txt", "w") as f:
                                 f.write(str(planterData))
                             f.close()
+                            updateGUI.value = 1
 
                 #check for planters to place
                 for i in range(3):
@@ -327,6 +328,7 @@ def macro(status, logQueue, updateGUI):
                         with open("./data/user/manualplanters.txt", "w") as f:
                             f.write(str(planterData))
                         f.close()
+                        updateGUI.value = 1
 
         #auto planters
         elif macro.setdat["planters_mode"] == 2:
@@ -344,6 +346,7 @@ def macro(status, logQueue, updateGUI):
                 with open("./data/user/auto_planters.json", "w") as f:
                     json.dump(data, f, indent=3)
                 f.close()
+                updateGUI.value = 1
             
             def getCurrentNectarPercent(nectar):
                 #get the current nectar from the buffs area

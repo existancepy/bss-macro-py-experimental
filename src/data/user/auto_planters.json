@@ -1,32 +1,32 @@
 {
    "planters": [
       {
-         "planter": "tacky",
-         "nectar": "satisfying",
-         "field": "sunflower",
-         "harvest_time": 1755176147.1621451,
-         "nectar_est_percent": 27.8
+         "planter": "",
+         "nectar": "",
+         "field": "",
+         "harvest_time": 0,
+         "nectar_est_percent": 0
       },
       {
-         "planter": "candy",
-         "nectar": "motivating",
-         "field": "spider",
-         "harvest_time": 1755183290.760868,
-         "nectar_est_percent": 20.0
+         "planter": "",
+         "nectar": "",
+         "field": "",
+         "harvest_time": 0,
+         "nectar_est_percent": 0
       },
       {
-         "planter": "pesticide",
-         "nectar": "motivating",
-         "field": "rose",
-         "harvest_time": 1755174679.436857,
-         "nectar_est_percent": 54.2
+         "planter": "",
+         "nectar": "",
+         "field": "",
+         "harvest_time": 0,
+         "nectar_est_percent": 0
       }
    ],
    "nectar_last_field": {
-      "comforting": "dandelion",
+      "comforting": "",
       "refreshing": "",
-      "satisfying": "sunflower",
-      "motivating": "spider",
+      "satisfying": "",
+      "motivating": "",
       "invigorating": ""
    }
 }

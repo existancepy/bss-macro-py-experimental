@@ -718,10 +718,9 @@ class macro:
         return True
     
     def toggleInventory(self, mode):
-        invOpenImg = self.adjustImage("./images/menu", "inventoryopen")
-        open = False
-        if locateImageOnScreen(invOpenImg, self.robloxWindow.mx, self.robloxWindow.my+10, 100, 180, 0.8):
-            open = True
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+        screen = mssScreenshotNP(self.robloxWindow.mx+4, self.robloxWindow.my+100, 50, 60)
+        open = findColorObjectHSL(screen, [(115, 95, 95), (125, 105, 105)], kernel=kernel)
         
         def clickInv():
             mouse.moveTo(self.robloxWindow.mx+30, self.robloxWindow.my+113)
