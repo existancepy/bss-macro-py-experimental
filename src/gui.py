@@ -126,6 +126,7 @@ eel.expose(settingsManager.loadSettings)
 eel.expose(settingsManager.loadAllSettings)
 eel.expose(settingsManager.saveProfileSetting)
 eel.expose(settingsManager.saveGeneralSetting)
+eel.expose(settingsManager.saveDictProfileSettings)
 
 def updateGUI():
     settings = settingsManager.loadAllSettings()

@@ -184,6 +184,7 @@ auto_planters_collect_every=2
 auto_planters_collect_full=False
 auto_planters_collect_auto=False
 auto_max_planters=3
+auto_preset=blue
 auto_priority_0_nectar=comforting
 auto_priority_1_nectar=motivating
 auto_priority_2_nectar=satisfying
