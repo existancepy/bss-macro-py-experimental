@@ -3353,9 +3353,9 @@ class macro:
                 #find it via words, ie feed x bluberries
                 if not amount:
                     words = textChunk.split(" ")
-                    for x in words:
-                        if x.isdigit():
-                            amount = int(x)
+                    for word in words:
+                        if word.isdigit():
+                            amount = int(word)
                             break
                 if amount:
                     objectiveData[1] = str(min(int(amount), 50))
