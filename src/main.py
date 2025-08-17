@@ -527,7 +527,7 @@ def macro(status, logQueue, updateGUI):
 
                     #place planter
                     planterToPlace = getBestPlanter(nextField)
-                    if runTask(macro.placePlanter, args=(planterToPlace["name"], nextField)):
+                    if runTask(macro.placePlanter, args=(planterToPlace["name"], nextField, False, False)):
                         savePlacedPlanter(j, nextField, planterToPlace, nectar)
                         plantersPlaced += 1
             
