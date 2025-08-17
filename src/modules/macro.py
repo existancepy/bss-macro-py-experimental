@@ -808,10 +808,10 @@ class macro:
             max_val, max_loc = locateImageOnScreen(itemImg, self.robloxWindow.mx, self.robloxWindow.my+90, 100, self.robloxWindow.mh-180)
             data = (max_val, max_loc, i)
             #most likely the correct item, stop searching
-            if max_val > 0.6:
+            if max_val > 0.7:
                 itemScreenshot = mssScreenshot(self.robloxWindow.mx+90, self.robloxWindow.my+(max_loc[1]//self.robloxWindow.multi)+60, 220, 60)
                 itemOCRText = ''.join([x[1][0] for x in ocr.ocrRead(itemScreenshot)]).replace(" ","").replace("-","").lower()
-                if itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.8:
+                if itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.7:
                     print(itemOCRText)
                     bestY = max_loc[1]
                     foundEarly = True
@@ -824,7 +824,7 @@ class macro:
                 if len(bestResults) > 5: 
                     bestResults.pop()
                     
-            mouse.scroll(-3, True)
+            mouse.scroll(-2, True)
             time.sleep(0.06)
 
             screen = cv2.cvtColor(mssScreenshotNP(self.robloxWindow.mx, self.robloxWindow.my+100, 100, 200), cv2.COLOR_BGRA2RGB)
@@ -2514,11 +2514,11 @@ class macro:
             #check if planter is placed
             time.sleep(0.5)
             placedPlanter = False
-            for _ in range(20):
+            for _ in range(15):
                 if self.blueTextImageSearch("planter"):
                     placedPlanter = True
                     break
-                time.sleep(0.1)
+                time.sleep(0.3)
             #didnt detect the image, check for planter growth bar
             for _ in range(3):
                 screen = mssScreenshotNP(self.robloxWindow.mx+(self.robloxWindow.mw/2.14), self.robloxWindow.my+(self.robloxWindow.mh/2.9), self.robloxWindow.mw/1.8-self.robloxWindow.mw/2.14, self.robloxWindow.mh/2.2-self.robloxWindow.mh/2.9)
