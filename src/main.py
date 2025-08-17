@@ -483,7 +483,7 @@ def macro(status, logQueue, updateGUI):
             planterSlotsToHarvest = list(set(planterSlotsToHarvest))
             for slot in planterSlotsToHarvest:
                 planter = planterData[slot]
-                if runTask(macro.collectPlanter, args = (planter["planter"], planter["field"]), resetAfter=False):
+                if runTask(macro.collectPlanter, args = (planter["planter"], planter["field"])):
                     planterData[slot] = {
                         "planter": "",
                         "nectar": "",
@@ -527,7 +527,7 @@ def macro(status, logQueue, updateGUI):
 
                     #place planter
                     planterToPlace = getBestPlanter(nextField)
-                    if runTask(macro.placePlanter, args=(planterToPlace["name"], nextField, False, False)):
+                    if runTask(macro.placePlanter, args=(planterToPlace["name"], nextField)):
                         savePlacedPlanter(j, nextField, planterToPlace, nectar)
                         plantersPlaced += 1
             
