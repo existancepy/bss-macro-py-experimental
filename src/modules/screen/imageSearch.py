@@ -94,6 +94,7 @@ def findColorObjectHSL(img, hslRange, kernel=None, mode="point", best=1, draw=Fa
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     if draw:
+        cv2.imwrite(f"{time.time()}.png", img)
         cv2.imshow("Result", img)
         cv2.waitKey(0)
 
