@@ -720,7 +720,7 @@ class macro:
     def toggleInventory(self, mode):
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
         screen = mssScreenshotNP(self.robloxWindow.mx+4, self.robloxWindow.my+100, 50, 60)
-        open = findColorObjectHSL(screen, [(115, 95, 95), (125, 105, 105)], kernel=kernel)
+        open = findColorObjectRGB(screen, (254, 254, 254), kernel=kernel, variance=3)
         
         def clickInv():
             mouse.moveTo(self.robloxWindow.mx+30, self.robloxWindow.my+113)
@@ -801,7 +801,7 @@ class macro:
 
         prevHash = None
         time.sleep(0.3)
-        for i in range(120):
+        for i in range(180):
             #screen = cv2.cvtColor(mssScreenshotNP(90, 90, 300-90, self.robloxWindow.mh-180), cv2.COLOR_RGBA2GRAY)
             #max_loc = fastFeatureMatching(screen, itemImg)
             #max_val = 1 if max_loc else 0
@@ -867,7 +867,7 @@ class macro:
         if not (itemOCRName in itemOCRText or self.getStringSimilarity(itemOCRName, itemOCRText) > 0.6):
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
             return None
-        '''          
+        ''' 
         if not bestY:   
             self.logger.webhook("", f"Could not find {itemName} in inventory", "dark brown")
             return
@@ -2484,6 +2484,7 @@ class macro:
             if res:
                 self.planterCoords = res
                 return
+            time.sleep(1)
             
     #place the planter and return the time it would take for the planter to grow (in secs)
     def placePlanter(self, planter, field, harvestFull, glitter):
