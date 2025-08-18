@@ -953,7 +953,7 @@ if __name__ == "__main__":
             gui.toggleStartStop()
         elif run.value == 0:
             if macroProc:
-                logger.webhook("Macro Stopped", "exih macro", "red")
+                logger.webhook("Macro Stopped", "Existance Macro", "red")
                 run.value = 3
                 gui.toggleStartStop()
                 stopApp()
