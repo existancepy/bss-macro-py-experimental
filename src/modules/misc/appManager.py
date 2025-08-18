@@ -38,14 +38,24 @@ class WindowMgr:
         win32gui.ShowWindow(self._handle, win32con.SW_MAXIMIZE)
     
 
+def isAppOpenMac(app="roblox"):
+    tmp = os.popen("ps -Af").read()
+    return app in tmp[:]
 
 def openAppMac(app="roblox"):
-    tmp = os.popen("ps -Af").read()
-    if not app in tmp[:]: return False
+    if not isAppOpenMac(app): return False
     runAppleScript('activate application "{}"'.format(app))
     os.system(f"open -a {app}")
     return True
 
+def isAppOpenWindows(name):
+    w = WindowMgr()
+    w.find_window(None, "Roblox")
+    try:
+        return True
+    except:
+        return False
+    
 def openAppWindows(name):
     w = WindowMgr()
     w.find_window(None, "Roblox")
@@ -88,6 +98,8 @@ def getWindowSize(windowName):
 
 if sys.platform == "darwin":
     openApp = openAppMac
+    isAppOpen = isAppOpenMac
 else:
     import win32gui, win32con,  win32com.client
     openApp = openAppWindows
+    isAppOpen = isAppOpenWindows
