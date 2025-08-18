@@ -1265,10 +1265,15 @@ class macro:
                         self.setdat["rejoin_method"] = "new tab"
                         continue
                     #check if home page is opened instead of the app
-                    if locateImageOnScreen(robloxHomeImage, self.robloxWindow.mx, self.robloxWindow.my, self.robloxWindow.mw/10, self.robloxWindow.mh/6, 0.7) and time.time() - loadStartTime > 10:
-                        self.logger.webhook("","Roblox Home Page is open","brown","screen")
-                        rejoinSuccess = False
-                        break
+                    # if locateImageOnScreen(robloxHomeImage, self.robloxWindow.mx, self.robloxWindow.my, self.robloxWindow.mw/10, self.robloxWindow.mh/6, 0.7) and time.time() - loadStartTime > 10:
+                    if appManager.openApp():
+                        robloxScreen = mssScreenshot(self.robloxWindow.mx, self.robloxWindow.my, self.robloxWindow.mw/2, self.robloxWindow.mh/2.5)
+                        robloxScreenText = '\n'.join([x[1][0].lower() for x in ocr.ocrRead(robloxScreen)])
+                        print(robloxScreenText)
+                        if appManager.isAppOpen("roblox"):
+                            self.logger.webhook("","Roblox Home Page is open","brown","screen")
+                            rejoinSuccess = False
+                            break
 
                     self.setRobloxWindowInfo(setYOffset=False)
 

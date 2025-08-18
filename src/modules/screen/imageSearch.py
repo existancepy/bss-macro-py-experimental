@@ -4,7 +4,18 @@ import numpy as np
 import imagehash
 import time
 
+class TemplateTooLargeError(Exception):
+    def __init__(self, template_size, image_size):
+        self.template_size = template_size
+        self.image_size = image_size
+        super().__init__(f"Template size {template_size} is larger than image size {image_size}")
+
 def templateMatch(smallImg, bigImg):
+    if smallImg.shape[0] > bigImg.shape[0] or smallImg.shape[1] > bigImg.shape[1]:
+        raise TemplateTooLargeError(
+            template_size=(smallImg.shape[1], smallImg.shape[0]),  # (width, height)
+            image_size=(bigImg.shape[1], bigImg.shape[0])          # (width, height)
+        )
     res = cv2.matchTemplate(bigImg, smallImg, cv2.TM_CCOEFF_NORMED)
     return cv2.minMaxLoc(res)
 
