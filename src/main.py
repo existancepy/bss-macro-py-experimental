@@ -414,11 +414,14 @@ def macro(status, logQueue, updateGUI):
                         growTime = min(timeToCap, 0.5)
                     #haven't reached min percent and current nectar is a low amount
                     elif minPercent > estimatedNectarPercent and estimatedNectarPercent <=90:
-                        if estimatedNectarPercent > 0:
+                        if estimatedNectarPercent > 20:
                             bonusTime = (100/estimatedNectarPercent)*totalBonus
                             growTime = (((minPercent - estimatedNectarPercent + bonusTime) / planter["nectar_bonus"]) * 0.24) / planter["grow_bonus"]
-                        else: #no nectar
-                            growTime = planter["grow_time"]
+                        #build nectar
+                        elif estimatedNectarPercent > 10:
+                            growTime = min(planter["grow_time"], 4)
+                        else:
+                            growTime = min(planter["grow_time"], 2)
                     else: #already met minimum percent
                         growTime = timeToCap
 
