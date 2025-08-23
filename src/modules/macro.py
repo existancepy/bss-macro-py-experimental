@@ -1274,10 +1274,11 @@ class macro:
                     if robloxOpenTime and time.time() - robloxOpenTime > 5:
                         robloxScreen = mssScreenshot(self.robloxWindow.mx, self.robloxWindow.my, self.robloxWindow.mw/2, self.robloxWindow.mh/2.5)
                         robloxScreenText = '\n'.join([x[1][0].lower() for x in ocr.ocrRead(robloxScreen)])
-                        print(robloxScreenText)
-                        self.logger.webhook("","Roblox Home Page is open","brown","screen")
-                        rejoinSuccess = False
-                        break
+                        if "connect" in robloxScreenText:
+                            print(robloxScreenText)
+                            self.logger.webhook("","Roblox Home Page is open","brown","screen")
+                            rejoinSuccess = False
+                            break
 
                     self.setRobloxWindowInfo(setYOffset=False)
 
