@@ -342,7 +342,7 @@ class macro:
         self.hasteCompensation = HasteCompensationRevamped(self.robloxWindow, self.setdat["movespeed"])
         self.fieldDriftCompensation = fieldDriftCompensationClass(self.robloxWindow)
         self.keyboard = keyboard(self.setdat["movespeed"], self.setdat["haste_compensation"], self.hasteCompensation)
-        self.logger = logModule.log(logQueue, self.setdat["enable_webhook"], self.setdat["webhook_link"], blocking=self.setdat["low_performance"], hourlyReportOnly=self.setdat["only_send_hourly_report"], robloxWindow=self.robloxWindow)
+        self.logger = logModule.log(logQueue, self.setdat["enable_webhook"], self.setdat["webhook_link"], self.setdat["send_screenshot"], blocking=self.setdat["low_performance"], hourlyReportOnly=self.setdat["only_send_hourly_report"], robloxWindow=self.robloxWindow)
         self.buffDetector = BuffDetector(self.robloxWindow)
         self.hourlyReport = HourlyReport(self.buffDetector)
         self.memoryMatch = MemoryMatch(self.robloxWindow)
@@ -371,6 +371,7 @@ class macro:
         self.isGathering = False
         self.converting = False
         self.alreadyConverted = False
+        self.cannonHive = self.setdat["hive_number"]
 
         #auto field boost
         self.failed = False
@@ -380,6 +381,8 @@ class macro:
         self.cAFBDice = False
         self.afb = False
         self.stop = False
+
+        self.hiveDistance = 1.32 #distance between hives (in seconds)
 
 
         self.setRobloxWindowInfo(setYOffset=False)
@@ -1159,6 +1162,7 @@ class macro:
             self.canDetectNight = True
             self.location = "spawn"
             #detect if player is at hive. Spin a max of 4 times
+            atHive = False
             for i in range(4):
                 screen = pillowToCv2(mssScreenshot(self.robloxWindow.mx+(self.robloxWindow.mw//2-100), self.robloxWindow.my+(self.robloxWindow.mh-10), 200, 10))
                 # Convert the image from BGR to HLS color space
@@ -1172,24 +1176,43 @@ class macro:
                 contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 print(f"spin {i+1}: {time.time()-st}")
                 if contours:
-                    for _ in range(8):
-                        self.keyboard.press("o")
-                    if convert: self.convert()
-                    return True
+                    atHive = True
+                    break
                 #failed to detect, spin
                 for _ in range(4):
                     self.keyboard.press(".")
                 time.sleep(0.1)
+
+            for _ in range(8):
+                self.keyboard.press("o")
+            self.cannonHive = self.setdat["hive_number"]
+            if atHive:
+                self.cannonHive = self.setdat["hive_number"]
+                if convert: 
+                    self.convert()
+            else:
+                self.keyboard.walk("w", 5)
+                if convert:
+                    self.keyboard.walk("s", 0.55)
+                    if self.setdat["hive_number"] < 3:
+                        dir = "d"
+                    else:
+                        dir = "a"
+                    self.keyboard.walk(dir, self.hiveDistance*abs(self.setdat["hive_number"]-3))
+                    self.convert()
+                else:
+                    self.cannonHive = 3
+            return True
+        
         else:
             self.logger.webhook("", "Unable to detect that player respawned at hive", "dark brown", "screen")
-            return False
 
     def cannon(self, fast = False):
         for i in range(3):
             #Move to canon:
             self.keyboard.walk("w",0.8)
             fieldDist = 0.9
-            self.keyboard.walk("d",1.2*(self.setdat["hive_number"])+i)
+            self.keyboard.walk("d",1.2*self.cannonHive+i)
             self.keyboard.keyDown("d")
             time.sleep(0.5)
             self.keyboard.slowPress("space")
@@ -1336,7 +1359,6 @@ class macro:
             rejoinSuccess = False
             availableSlots = [] #store hive slots that are claimable
             newHiveNumber = 0
-            hiveDistance = 1.32 #distance between hives (in seconds)
         
             # self.keyboard.keyDown("d", False)
             # self.keyboard.tileWait(4)
@@ -1365,7 +1387,7 @@ class macro:
             for j in range(1, hiveNumber+1):
                 if j > 1:
                     #self.keyboard.tileWalk("a", 9.2)
-                    self.keyboard.walk("a", hiveDistance)
+                    self.keyboard.walk("a", self.hiveDistance)
                 time.sleep(0.4)
                 if isHiveAvailable():
                     availableSlots.append(j)
@@ -1381,7 +1403,7 @@ class macro:
                 if availableSlots:
                     targetSlot = min(availableSlots)
                     #self.keyboard.tileWalk("d", 9.2*(hiveNumber - targetSlot))
-                    self.keyboard.walk("d", hiveDistance*(hiveNumber - targetSlot))
+                    self.keyboard.walk("d", self.hiveDistance*(hiveNumber - targetSlot))
                     time.sleep(0.4)
                     if isHiveAvailable():
                         newHiveNumber = targetSlot
@@ -1390,7 +1412,7 @@ class macro:
                 #no available hive slots found previously, continue finding new ones ahead
                 else:
                     for j in range(hiveNumber+1, 7):
-                        self.keyboard.walk("a", hiveDistance)
+                        self.keyboard.walk("a", self.hiveDistance)
                         time.sleep(0.4)
                         if isHiveAvailable():
                             newHiveNumber = j

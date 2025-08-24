@@ -772,7 +772,7 @@ if __name__ == "__main__":
     status = manager.Value(ctypes.c_wchar_p, "none")
     logQueue = manager.Queue()
     watch_for_hotkeys(run)
-    logger = logModule.log(logQueue, False, None, blocking=True)
+    logger = logModule.log(logQueue, False, None, False, blocking=True)
 
     disconnectCooldownUntil = 0 #only for running disconnect check on low performance
 
@@ -898,6 +898,7 @@ if __name__ == "__main__":
             #create and set webhook obj for the logger
             logger.enableWebhook = setdat["enable_webhook"]
             logger.webhookURL = setdat["webhook_link"]
+            logger.sendScreenshots = setdat["send_screenshot"]
             print("Setting stop threads")
             stopThreads = False
             print("variables initalised")
