@@ -123,7 +123,7 @@ async function loadTasks(){
 
     const planterTimerContainer = document.getElementById("planter-timers-container")
     if (setdat["planters_mode"]){
-        planterTimerContainer.style.display = "flex"
+        planterTimerContainer.classList.add("show")
         let planterData
         const planterContainer = planterTimerContainer.querySelector(".planter-timers")
         let planterTimersOut = ""
@@ -146,7 +146,7 @@ async function loadTasks(){
         planterContainer.innerHTML = planterTimersOut
     }
     else{
-        planterTimerContainer.style.display = "none"
+        planterTimerContainer.classList.remove("show")
     }
 }
 

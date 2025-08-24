@@ -501,6 +501,26 @@ label img{
     margin-left: 0.5rem;
 }
 
+#planter-timers-container{
+    display: none;
+}
+
+#planter-timers-container{
+    display: none;
+}
+
+#planter-timers-container.show{
+    display: flex;
+}
+
+#credits-container{
+    margin-top: auto;
+}
+
+div:has(#planter-timers-container.show) #credits-container{
+    margin-top: 1rem;
+}
+
 .planter-timers {
     display: grid;
     grid-template-columns: repeat(3, 1fr); /* 3 equal columns */
