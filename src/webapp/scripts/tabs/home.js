@@ -105,11 +105,26 @@ async function loadTasks(){
     document.getElementById("task-list").innerHTML = out
 
     //planter timers
+
+    function getPlanterHTML(planter, field, harvestTime){
+        const currTime = Date.now() / 1000
+        const timeRemaining = secondsToMinsAndHours(harvestTime - currTime)
+        return `
+            <div class="planter">
+                <img class="planter-img" src="./assets/icons/${planter.replaceAll(" ", "_")}_planter.png">
+                <div class="field-row">
+                    <span>${toTitleCase(field)}</span>
+                    <img src="./assets/icons/${fieldNectarIcons[field.toLowerCase().replaceAll(" ","_")]}.png">
+                </div>
+                <span class="time ${timeRemaining == "Ready!" ? 'ready' : ''}">${timeRemaining}</span> 
+            </div> 
+        `
+    }
+
     const planterTimerContainer = document.getElementById("planter-timers-container")
     if (setdat["planters_mode"]){
         planterTimerContainer.style.display = "flex"
-        let planterData;
-        const currTime = Date.now() / 1000;
+        let planterData
         const planterContainer = planterTimerContainer.querySelector(".planter-timers")
         let planterTimersOut = ""
 
@@ -117,26 +132,14 @@ async function loadTasks(){
             planterData = await eel.getManualPlanterData()()
             for(let i = 0; i< planterData.planters.length; i++){
                 if (planterData.planters[i]){
-                    const timeRemaining = secondsToMinsAndHours(planterData.harvestTimes[i] - currTime)
-                    planterTimersOut += `
-                        <div class="planter">
-                            <img src="./assets/icons/${planterData.planters[i].replaceAll(" ", "_")}_planter.png">
-                            <span class="${timeRemaining == "Ready!" ? 'ready' : ''}">${timeRemaining}</span> 
-                        </div> 
-                    `
+                    planterTimersOut += getPlanterHTML(planterData.planters[i], planterData.fields[i], planterData.harvestTimes[i])
                 }
             }
         }else if(setdat["planters_mode"] == 2){
             planterData = (await eel.getAutoPlanterData()()).planters
             for (const planter of planterData) {
                 if (planter.planter){
-                    const timeRemaining = secondsToMinsAndHours(planter.harvest_time - currTime)
-                    planterTimersOut += `
-                        <div class="planter">
-                            <img src="./assets/icons/${planter.planter.replaceAll(" ", "_")}_planter.png">
-                            <span class="${timeRemaining == "Ready!" ? 'ready' : ''}">${timeRemaining}</span> 
-                        </div> 
-                    `
+                    planterTimersOut += getPlanterHTML(planter.planter, planter.field, planter.harvest_time)
                 }
             }
         }

@@ -501,10 +501,12 @@ label img{
     margin-left: 0.5rem;
 }
 
-.planter-timers{
-    display: flex;
-    justify-content: space-between;
+.planter-timers {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 equal columns */
+    gap: 1rem; /* optional spacing between columns */
     width: 100%;
+    margin-top: 1rem;
 }
 
 .planter-timers .planter{
@@ -512,10 +514,9 @@ label img{
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin-top: 0.3rem;
 }
 
-.planter-timers .planter img{
+.planter-timers .planter-img{
     width: 40%;
     margin-bottom: 0.5rem;
 }
@@ -523,9 +524,23 @@ label img{
 .planter-timers .planter span{
     text-align: center;
     font-size: 0.9rem; 
+}
+
+.planter-timers .planter .time{
     color: #ADB5BD;
 }
 
 .planter-timers .planter span.ready{
     color: #4CAF50;
+}
+
+.planter-timers .field-row{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.planter-timers .field-row img{
+    height: 0.9rem;
+    object-fit: contain;
 }

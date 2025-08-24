@@ -1260,7 +1260,7 @@ class macro:
             robloxHomeImage = self.adjustImage("./images/menu", "robloxhome")
             rejoinSuccess = True
             robloxOpenTime = 0
-            while not locateImageOnScreen(sprinklerImg, self.robloxWindow.mx, self.robloxWindow.my+(self.robloxWindow.mh*3/4), self.robloxWindow.mw, self.robloxWindow.mh*1/4, 0.75) and time.time() - loadStartTime < 120:
+            while not locateImageOnScreen(sprinklerImg, self.robloxWindow.mx, self.robloxWindow.my+(self.robloxWindow.mh*3/4), self.robloxWindow.mw, self.robloxWindow.mh*1/4, 0.75) and time.time() - loadStartTime < 240:
                 if appManager.isAppOpen("roblox"):
                     robloxOpenTime = time.time()
                 if self.setdat["rejoin_method"] == "deeplink":
@@ -1274,10 +1274,11 @@ class macro:
                     if robloxOpenTime and time.time() - robloxOpenTime > 5:
                         robloxScreen = mssScreenshot(self.robloxWindow.mx, self.robloxWindow.my, self.robloxWindow.mw/2, self.robloxWindow.mh/2.5)
                         robloxScreenText = '\n'.join([x[1][0].lower() for x in ocr.ocrRead(robloxScreen)])
-                        print(robloxScreenText)
-                        self.logger.webhook("","Roblox Home Page is open","brown","screen")
-                        rejoinSuccess = False
-                        break
+                        if "connect" in robloxScreenText:
+                            print(robloxScreenText)
+                            self.logger.webhook("","Roblox Home Page is open","brown","screen")
+                            rejoinSuccess = False
+                            break
 
                     self.setRobloxWindowInfo(setYOffset=False)
 
@@ -2523,27 +2524,12 @@ class macro:
             
             #check if planter is placed
             time.sleep(0.5)
-            placedPlanter = False
+            placedPlanter = True
             for _ in range(15):
-                if self.blueTextImageSearch("planter"):
-                    placedPlanter = True
+                if self.blueTextImageSearch("notinfield") or self.blueTextImageSearch("maxplanters"):
+                    placedPlanter = False
                     break
                 time.sleep(0.3)
-            #didnt detect the image, check for planter growth bar
-            for _ in range(3):
-                screen = mssScreenshotNP(self.robloxWindow.mx+(self.robloxWindow.mw/2.14), self.robloxWindow.my+(self.robloxWindow.mh/2.9), self.robloxWindow.mw/1.8-self.robloxWindow.mw/2.14, self.robloxWindow.mh/2.2-self.robloxWindow.mh/2.9)
-                screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
-                kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
-                if findColorObjectRGB(screen, (86, 120, 72), kernel=kernel, variance=2):
-                    placedPlanter = True
-                    break
-                for _ in range(2):
-                    self.keyboard.press(",")
-                time.sleep(2)
-                
-            # time.sleep(1)
-            # if self.isBesideE(["harvest", "planter"], []):
-            #     placedPlanter = True
                 
             if placedPlanter: 
                 self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")          
