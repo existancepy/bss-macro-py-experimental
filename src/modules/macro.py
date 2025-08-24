@@ -695,6 +695,18 @@ class macro:
             self.keyboard.keyUp("space")
         return True
     
+    def waitForBees(self):
+        if self.alreadyConverted:
+            return
+        bees = self.setdat["bees"]
+        if bees > 45:
+            time.sleep(4)
+        elif bees > 40:
+            time.sleep(8)
+        elif bees > 35:
+            time.sleep(13)
+        else:
+            time.sleep(20)
     #click the yes popup
     #if detect is set to true, the macro will check if the yes button is there
     #if detectOnly is set to true, the macro will not click 
@@ -1488,8 +1500,7 @@ class macro:
     def gather(self, field, settingsOverride = {}, questGumdrops=False):
         fieldSetting = {**self.fieldSettings[field], **settingsOverride}
         for i in range(3):
-            #wait for bees to wake up
-            if not self.alreadyConverted: time.sleep(6)
+            self.waitForBees()
             #go to field
             self.cannon()
             self.logger.webhook("",f"Travelling: {field.title()}, Attempt {i+1}", "dark brown")
@@ -2123,6 +2134,13 @@ class macro:
     #time limit of 20s
     def mobRunAttackingBackground(self):
         st = time.time()
+        if self.setdat["bees"] > 40:
+            timeout = 20
+        elif self.setdat["bees"] > 30:
+            timeout = 30
+        else:
+            timeout = 40
+
         while True:
             if self.blueTextImageSearch("died"):
                 self.mobRunStatus = "dead"
@@ -2130,7 +2148,7 @@ class macro:
             elif self.blueTextImageSearch("defeated"):
                 self.mobRunStatus = "looting"
                 break
-            elif time.time() - st > 20:
+            elif time.time() - st > timeout:
                 self.mobRunStatus = "timeout"
                 break
     #background thread to check if token link is collected or the macro runs out of time (max 15s)
@@ -2152,8 +2170,7 @@ class macro:
         attackThread = threading.Thread(target=self.mobRunAttackingBackground)
         attackThread.daemon = True
         if walkPath is None:
-            #wait for bees to respawn
-            time.sleep(10)
+            self.waitForBees()
             self.cannon()
             self.goToField(field, "north")
             #attack the mob
