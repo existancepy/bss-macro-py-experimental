@@ -414,11 +414,14 @@ def macro(status, logQueue, updateGUI):
                         growTime = min(timeToCap, 0.5)
                     #haven't reached min percent and current nectar is a low amount
                     elif minPercent > estimatedNectarPercent and estimatedNectarPercent <=90:
-                        if estimatedNectarPercent > 0:
+                        if estimatedNectarPercent > 20:
                             bonusTime = (100/estimatedNectarPercent)*totalBonus
                             growTime = (((minPercent - estimatedNectarPercent + bonusTime) / planter["nectar_bonus"]) * 0.24) / planter["grow_bonus"]
-                        else: #no nectar
-                            growTime = planter["grow_time"]
+                        #build nectar
+                        elif estimatedNectarPercent > 10:
+                            growTime = min(planter["grow_time"], 4)
+                        else:
+                            growTime = min(planter["grow_time"], 2)
                     else: #already met minimum percent
                         growTime = timeToCap
 
@@ -769,7 +772,7 @@ if __name__ == "__main__":
     status = manager.Value(ctypes.c_wchar_p, "none")
     logQueue = manager.Queue()
     watch_for_hotkeys(run)
-    logger = logModule.log(logQueue, False, None, blocking=True)
+    logger = logModule.log(logQueue, False, None, False, blocking=True)
 
     disconnectCooldownUntil = 0 #only for running disconnect check on low performance
 
@@ -895,6 +898,7 @@ if __name__ == "__main__":
             #create and set webhook obj for the logger
             logger.enableWebhook = setdat["enable_webhook"]
             logger.webhookURL = setdat["webhook_link"]
+            logger.sendScreenshots = setdat["send_screenshot"]
             print("Setting stop threads")
             stopThreads = False
             print("variables initalised")

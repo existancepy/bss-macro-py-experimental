@@ -342,7 +342,7 @@ class macro:
         self.hasteCompensation = HasteCompensationRevamped(self.robloxWindow, self.setdat["movespeed"])
         self.fieldDriftCompensation = fieldDriftCompensationClass(self.robloxWindow)
         self.keyboard = keyboard(self.setdat["movespeed"], self.setdat["haste_compensation"], self.hasteCompensation)
-        self.logger = logModule.log(logQueue, self.setdat["enable_webhook"], self.setdat["webhook_link"], blocking=self.setdat["low_performance"], hourlyReportOnly=self.setdat["only_send_hourly_report"], robloxWindow=self.robloxWindow)
+        self.logger = logModule.log(logQueue, self.setdat["enable_webhook"], self.setdat["webhook_link"], self.setdat["send_screenshot"], blocking=self.setdat["low_performance"], hourlyReportOnly=self.setdat["only_send_hourly_report"], robloxWindow=self.robloxWindow)
         self.buffDetector = BuffDetector(self.robloxWindow)
         self.hourlyReport = HourlyReport(self.buffDetector)
         self.memoryMatch = MemoryMatch(self.robloxWindow)
@@ -371,6 +371,7 @@ class macro:
         self.isGathering = False
         self.converting = False
         self.alreadyConverted = False
+        self.cannonHive = self.setdat["hive_number"]
 
         #auto field boost
         self.failed = False
@@ -380,6 +381,8 @@ class macro:
         self.cAFBDice = False
         self.afb = False
         self.stop = False
+
+        self.hiveDistance = 1.32 #distance between hives (in seconds)
 
 
         self.setRobloxWindowInfo(setYOffset=False)
@@ -695,6 +698,18 @@ class macro:
             self.keyboard.keyUp("space")
         return True
     
+    def waitForBees(self):
+        if self.alreadyConverted:
+            return
+        bees = self.setdat["bees"]
+        if bees > 45:
+            time.sleep(4)
+        elif bees > 40:
+            time.sleep(8)
+        elif bees > 35:
+            time.sleep(13)
+        else:
+            time.sleep(20)
     #click the yes popup
     #if detect is set to true, the macro will check if the yes button is there
     #if detectOnly is set to true, the macro will not click 
@@ -1147,6 +1162,7 @@ class macro:
             self.canDetectNight = True
             self.location = "spawn"
             #detect if player is at hive. Spin a max of 4 times
+            atHive = False
             for i in range(4):
                 screen = pillowToCv2(mssScreenshot(self.robloxWindow.mx+(self.robloxWindow.mw//2-100), self.robloxWindow.my+(self.robloxWindow.mh-10), 200, 10))
                 # Convert the image from BGR to HLS color space
@@ -1160,24 +1176,43 @@ class macro:
                 contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 print(f"spin {i+1}: {time.time()-st}")
                 if contours:
-                    for _ in range(8):
-                        self.keyboard.press("o")
-                    if convert: self.convert()
-                    return True
+                    atHive = True
+                    break
                 #failed to detect, spin
                 for _ in range(4):
                     self.keyboard.press(".")
                 time.sleep(0.1)
+
+            for _ in range(8):
+                self.keyboard.press("o")
+            self.cannonHive = self.setdat["hive_number"]
+            if atHive:
+                self.cannonHive = self.setdat["hive_number"]
+                if convert: 
+                    self.convert()
+            else:
+                self.keyboard.walk("w", 5)
+                if convert:
+                    self.keyboard.walk("s", 0.55)
+                    if self.setdat["hive_number"] < 3:
+                        dir = "d"
+                    else:
+                        dir = "a"
+                    self.keyboard.walk(dir, self.hiveDistance*abs(self.setdat["hive_number"]-3))
+                    self.convert()
+                else:
+                    self.cannonHive = 3
+            return True
+        
         else:
             self.logger.webhook("", "Unable to detect that player respawned at hive", "dark brown", "screen")
-            return False
 
     def cannon(self, fast = False):
         for i in range(3):
             #Move to canon:
             self.keyboard.walk("w",0.8)
             fieldDist = 0.9
-            self.keyboard.walk("d",1.2*(self.setdat["hive_number"])+i)
+            self.keyboard.walk("d",1.2*self.cannonHive+i)
             self.keyboard.keyDown("d")
             time.sleep(0.5)
             self.keyboard.slowPress("space")
@@ -1260,7 +1295,7 @@ class macro:
             robloxHomeImage = self.adjustImage("./images/menu", "robloxhome")
             rejoinSuccess = True
             robloxOpenTime = 0
-            while not locateImageOnScreen(sprinklerImg, self.robloxWindow.mx, self.robloxWindow.my+(self.robloxWindow.mh*3/4), self.robloxWindow.mw, self.robloxWindow.mh*1/4, 0.75) and time.time() - loadStartTime < 120:
+            while not locateImageOnScreen(sprinklerImg, self.robloxWindow.mx, self.robloxWindow.my+(self.robloxWindow.mh*3/4), self.robloxWindow.mw, self.robloxWindow.mh*1/4, 0.75) and time.time() - loadStartTime < 240:
                 if appManager.isAppOpen("roblox"):
                     robloxOpenTime = time.time()
                 if self.setdat["rejoin_method"] == "deeplink":
@@ -1324,7 +1359,6 @@ class macro:
             rejoinSuccess = False
             availableSlots = [] #store hive slots that are claimable
             newHiveNumber = 0
-            hiveDistance = 1.32 #distance between hives (in seconds)
         
             # self.keyboard.keyDown("d", False)
             # self.keyboard.tileWait(4)
@@ -1353,7 +1387,7 @@ class macro:
             for j in range(1, hiveNumber+1):
                 if j > 1:
                     #self.keyboard.tileWalk("a", 9.2)
-                    self.keyboard.walk("a", hiveDistance)
+                    self.keyboard.walk("a", self.hiveDistance)
                 time.sleep(0.4)
                 if isHiveAvailable():
                     availableSlots.append(j)
@@ -1369,7 +1403,7 @@ class macro:
                 if availableSlots:
                     targetSlot = min(availableSlots)
                     #self.keyboard.tileWalk("d", 9.2*(hiveNumber - targetSlot))
-                    self.keyboard.walk("d", hiveDistance*(hiveNumber - targetSlot))
+                    self.keyboard.walk("d", self.hiveDistance*(hiveNumber - targetSlot))
                     time.sleep(0.4)
                     if isHiveAvailable():
                         newHiveNumber = targetSlot
@@ -1378,7 +1412,7 @@ class macro:
                 #no available hive slots found previously, continue finding new ones ahead
                 else:
                     for j in range(hiveNumber+1, 7):
-                        self.keyboard.walk("a", hiveDistance)
+                        self.keyboard.walk("a", self.hiveDistance)
                         time.sleep(0.4)
                         if isHiveAvailable():
                             newHiveNumber = j
@@ -1488,8 +1522,7 @@ class macro:
     def gather(self, field, settingsOverride = {}, questGumdrops=False):
         fieldSetting = {**self.fieldSettings[field], **settingsOverride}
         for i in range(3):
-            #wait for bees to wake up
-            if not self.alreadyConverted: time.sleep(6)
+            self.waitForBees()
             #go to field
             self.cannon()
             self.logger.webhook("",f"Travelling: {field.title()}, Attempt {i+1}", "dark brown")
@@ -2123,6 +2156,13 @@ class macro:
     #time limit of 20s
     def mobRunAttackingBackground(self):
         st = time.time()
+        if self.setdat["bees"] > 40:
+            timeout = 20
+        elif self.setdat["bees"] > 30:
+            timeout = 30
+        else:
+            timeout = 40
+
         while True:
             if self.blueTextImageSearch("died"):
                 self.mobRunStatus = "dead"
@@ -2130,7 +2170,7 @@ class macro:
             elif self.blueTextImageSearch("defeated"):
                 self.mobRunStatus = "looting"
                 break
-            elif time.time() - st > 20:
+            elif time.time() - st > timeout:
                 self.mobRunStatus = "timeout"
                 break
     #background thread to check if token link is collected or the macro runs out of time (max 15s)
@@ -2152,8 +2192,7 @@ class macro:
         attackThread = threading.Thread(target=self.mobRunAttackingBackground)
         attackThread.daemon = True
         if walkPath is None:
-            #wait for bees to respawn
-            time.sleep(10)
+            self.waitForBees()
             self.cannon()
             self.goToField(field, "north")
             #attack the mob
@@ -2524,27 +2563,12 @@ class macro:
             
             #check if planter is placed
             time.sleep(0.5)
-            placedPlanter = False
+            placedPlanter = True
             for _ in range(15):
-                if self.blueTextImageSearch("planter"):
-                    placedPlanter = True
+                if self.blueTextImageSearch("notinfield") or self.blueTextImageSearch("maxplanters"):
+                    placedPlanter = False
                     break
                 time.sleep(0.3)
-            #didnt detect the image, check for planter growth bar
-            for _ in range(3):
-                screen = mssScreenshotNP(self.robloxWindow.mx+(self.robloxWindow.mw/2.14), self.robloxWindow.my+(self.robloxWindow.mh/2.9), self.robloxWindow.mw/1.8-self.robloxWindow.mw/2.14, self.robloxWindow.mh/2.2-self.robloxWindow.mh/2.9)
-                screen = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
-                kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
-                if findColorObjectRGB(screen, (86, 120, 72), kernel=kernel, variance=2):
-                    placedPlanter = True
-                    break
-                for _ in range(2):
-                    self.keyboard.press(",")
-                time.sleep(2)
-                
-            # time.sleep(1)
-            # if self.isBesideE(["harvest", "planter"], []):
-            #     placedPlanter = True
                 
             if placedPlanter: 
                 self.logger.webhook("",f"Placed Planter: {planter.title()}", "dark brown", "screen")          
