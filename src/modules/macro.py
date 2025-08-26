@@ -371,7 +371,7 @@ class macro:
         self.isGathering = False
         self.converting = False
         self.alreadyConverted = False
-        self.cannonHive = self.setdat["hive_number"]
+        self.cannonFromHive = False
 
         #auto field boost
         self.failed = False
@@ -1185,14 +1185,14 @@ class macro:
 
             for _ in range(8):
                 self.keyboard.press("o")
-            self.cannonHive = self.setdat["hive_number"]
             if atHive:
-                self.cannonHive = self.setdat["hive_number"]
+                self.cannonFromHive = True
                 if convert: 
                     self.convert()
             else:
                 self.keyboard.walk("w", 5)
                 if convert:
+                    self.cannonFromHive = True
                     self.keyboard.walk("s", 0.55)
                     if self.setdat["hive_number"] < 3:
                         dir = "d"
@@ -1201,7 +1201,8 @@ class macro:
                     self.keyboard.walk(dir, self.hiveDistance*abs(self.setdat["hive_number"]-3))
                     self.convert()
                 else:
-                    self.cannonHive = 3
+                    self.keyboard.walk("s", 0.15)
+                    self.cannonFromHive = False
             return True
         
         else:
@@ -1210,9 +1211,13 @@ class macro:
     def cannon(self, fast = False):
         for i in range(3):
             #Move to canon:
-            self.keyboard.walk("w",0.8)
             fieldDist = 0.9
-            self.keyboard.walk("d",1.2*self.cannonHive+i)
+            if self.cannonFromHive:
+                self.keyboard.walk("w",0.8)
+                hiveNumber = self.setdat["hive_number"]
+            else:
+                hiveNumber = 3
+            self.keyboard.walk("d",1.2*hiveNumber+i)
             self.keyboard.keyDown("d")
             time.sleep(0.5)
             self.keyboard.slowPress("space")
