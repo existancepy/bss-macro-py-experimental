@@ -1189,21 +1189,22 @@ class macro:
                 self.cannonFromHive = True
                 if convert: 
                     self.convert()
-            else:
-                self.keyboard.walk("w", 5)
-                if convert:
-                    self.cannonFromHive = True
-                    self.keyboard.walk("s", 0.55)
-                    if self.setdat["hive_number"] < 3:
-                        dir = "d"
-                    else:
-                        dir = "a"
-                    self.keyboard.walk(dir, self.hiveDistance*abs(self.setdat["hive_number"]-3))
-                    self.convert()
-                else:
-                    self.keyboard.walk("s", 0.15)
-                    self.cannonFromHive = False
-            return True
+                return True
+            # else:
+            #     self.keyboard.walk("w", 5)
+            #     if convert:
+            #         self.cannonFromHive = True
+            #         self.keyboard.walk("s", 0.55)
+            #         if self.setdat["hive_number"] < 3:
+            #             dir = "d"
+            #         else:
+            #             dir = "a"
+            #         self.keyboard.walk(dir, self.hiveDistance*abs(self.setdat["hive_number"]-3))
+            #         self.convert()
+            #     else:
+            #         self.keyboard.walk("s", 0.15)
+            #         self.cannonFromHive = False
+            # return True
         
         else:
             self.logger.webhook("", "Unable to detect that player respawned at hive", "dark brown", "screen")
