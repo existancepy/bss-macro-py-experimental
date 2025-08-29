@@ -745,11 +745,15 @@ class macro:
             mouse.click()
             time.sleep(0.1)
 
-        if mode == "open" and open: #already open
-            #close and reopen
-            for _ in range(2):
-                clickInv()
-                time.sleep(0.1)
+        if mode == "open": #already open
+            #click the system settings
+            mouse.moveTo(self.robloxWindow.mx+245, self.robloxWindow.my+113)
+            time.sleep(0.1)
+            mouse.moveBy(0,3)
+            time.sleep(0.1)
+            mouse.click()
+            clickInv()
+            time.sleep(0.1)
         else:
             clickInv()
         self.moveMouseToDefault()
@@ -1117,15 +1121,17 @@ class macro:
                 mouse.click()
             print(f"checked sticker book popup: {time.time()-st}")
 
-            self.moveMouseToDefault()
+            mouse.moveTo(37, 34)
             time.sleep(0.1)
-            self.keyboard.press('esc')
-            time.sleep(0.2)
+            #self.keyboard.press('esc')
+            mouse.click()
+            time.sleep(0.3)
             self.keyboard.press('r')
             time.sleep(0.25)
             self.keyboard.press('w')
             time.sleep(0.25)
             self.keyboard.press('enter')
+            self.moveMouseToDefault()
             print(f"pressed reset keys: {time.time()-st}")
             
             if self.newUI:
@@ -1189,6 +1195,7 @@ class macro:
                 self.cannonFromHive = True
                 if convert: 
                     self.convert()
+                return True
             else:
                 self.keyboard.walk("w", 5)
                 if convert:
@@ -1218,6 +1225,8 @@ class macro:
             else:
                 hiveNumber = 3
             self.keyboard.walk("d",1.2*hiveNumber+i)
+            if not self.cannonFromHive:
+                self.keyboard.walk("w", 0.2)
             self.keyboard.keyDown("d")
             time.sleep(0.5)
             self.keyboard.slowPress("space")
@@ -2296,7 +2305,7 @@ class macro:
             #detect which field the vic is in
             if self.vicField is None:
                 for field in self.vicFields:
-                    if self.blueTextImageSearch(f"vic{field}"):
+                    if self.blueTextImageSearch(f"vic{field}", 0.75):
                         self.vicField = field
                         break
             else:
@@ -2306,6 +2315,15 @@ class macro:
                 self.vicStatus = "defeated"
                 
     def stingerHunt(self):
+
+        class VicStopPathException(Exception):
+            pass
+
+        def vicSearchWalk(key, t):
+            if self.vicField and currField != self.vicField:
+                raise VicStopPathException()
+            self.keyboard.walk(key, t)
+
         self.vicStatus = None
         self.vicField = None
         self.stopVic = False
@@ -2322,10 +2340,13 @@ class macro:
         for currField in self.vicFields:
             #go to field
             self.cannon()
-            self.logger.webhook("",f"Travelling to {currField} (vicious bee)","dark brown")
+            self.logger.webhook("",f"Travelling to {currField} (stinger hunt)","dark brown")
             self.goToField(currField, "south")
             time.sleep(0.8)
-            self.runPath(f"vic/find_vic/{currField}")
+            try:
+                exec(open(f"../paths/vic/find_vic/{currField}.py").read())
+            except VicStopPathException:
+                pass
             if self.vicField:
                 self.logger.webhook("",f"Vicious Bee detected ({self.vicField})", "light blue", "screen") 
                 break
@@ -2346,7 +2367,7 @@ class macro:
                 time.sleep(10)
             self.logger.webhook("",f"Travelling to {self.vicField} (vicious bee)","dark brown")
             self.cannon()
-            self.goToField(currField, "south")
+            self.goToField(self.vicField, "south")
 
         #first, check if vic is found in the same field as the player
         if currField != self.vicField: 
@@ -3250,7 +3271,7 @@ class macro:
             return screen
         
         #open inventory to ensure quest page is closed
-        self.toggleInventory("open")
+        self.toggleInventory("close")
         self.toggleQuest()
         #scroll to top
         #stop scrolling when the quest page remains unchanged
@@ -3811,7 +3832,7 @@ class macro:
                         mouse.moveTo(self.robloxWindow.mx+(x+gx), self.robloxWindow.my+(gy))
                         mouse.click()
                 #fullscreen back roblox
-                appManager.openApp("roblox")
+                appManager.openApp("Roblox")
                 self.toggleFullScreen()
             time.sleep(1)
             self.moveMouseToDefault()
@@ -3876,7 +3897,7 @@ class macro:
             hourlyReportBackgroundThread.start()
         
         #if roblox is not open, rejoin
-        if not appManager.openApp("roblox"):
+        if not appManager.openApp("Roblox"):
             self.rejoin()
         else:
             #toggle fullscreen
