@@ -42,10 +42,15 @@ def isAppOpenMac(app="roblox"):
     tmp = os.popen("ps -Af").read()
     return app in tmp[:]
 
-def openAppMac(app="roblox"):
+def openAppMac(app="Roblox"):
     if not isAppOpenMac(app): return False
     runAppleScript('activate application "{}"'.format(app))
-    os.system(f"open -a {app}")
+    subprocess.run(["open", "-a", app])
+    workspace = NSWorkspace.sharedWorkspace()
+    for runningApp in workspace.runningApplications():
+        if runningApp.localizedName() == app:
+            runningApp.activateWithOptions_(1 << 1)
+            break
     return True
 
 def isAppOpenWindows(name):
@@ -97,6 +102,7 @@ def getWindowSize(windowName):
     return 0,0,mw,mh
 
 if sys.platform == "darwin":
+    from AppKit import NSWorkspace
     openApp = openAppMac
     isAppOpen = isAppOpenMac
 else:
