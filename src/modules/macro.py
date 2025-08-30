@@ -2429,9 +2429,11 @@ class macro:
 
         def replace():
             replaceImg = self.adjustImage("./images/menu", "replace")
-            res = locateImageOnScreen(replaceImg, self.robloxWindow.mx+(self.robloxWindow.mw/3.15), self.robloxWindow.my+(self.robloxWindow.mh/2.15), self.robloxWindow.mw/2.4, self.robloxWindow.mh/4.2)
+            x = self.robloxWindow.mx + self.robloxWindow.mw/2-300
+            y = self.robloxWindow.my
+            res = locateImageOnScreen(replaceImg, x, y, 650, self.robloxWindow.mh, 0.8)
             if res is not None:
-                mouse.moveTo(*res[1])
+                mouse.moveTo(*[j//self.robloxWindow.multi for j in res[1]])
                 mouse.click()
         amulet = self.setdat["stump_snail_amulet"]
         if amulet == "keep":
