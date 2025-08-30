@@ -1,3 +1,7 @@
-from modules.misc import appManager
+from modules.screen.imageSearch import templateMatch
+import cv2
 
-appManager.openApp("Roblox")
+screen = cv2.imread("setting.png")
+template =  cv2.imread("./images/menu/robloxmenu-retina.png")
+
+print(templateMatch(template, screen))
