@@ -1122,7 +1122,7 @@ class macro:
             print(f"checked sticker book popup: {time.time()-st}")
 
             robloxMenu = self.adjustImage("./images/menu", "robloxmenu")
-            if not locateImageOnScreen(robloxMenu, self.robloxWindow.mx, self.robloxWindow.my, 75, 60):
+            if not locateImageOnScreen(robloxMenu, self.robloxWindow.mx, self.robloxWindow.my, 75, 60, 0.8):
                 self.keyboard.press('esc')
                 time.sleep(0.5)
             mouse.moveTo(self.robloxWindow.mx+37, self.robloxWindow.my+34)
