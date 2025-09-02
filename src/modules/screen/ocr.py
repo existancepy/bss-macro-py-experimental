@@ -23,6 +23,7 @@ except:
         ocrLib = "paddleocr"
     except:
         import easyocr
+        print("Imported easyocr")
         easyocrReader = easyocr.Reader(['en'])
         ocrLib = "easyocr"
 
