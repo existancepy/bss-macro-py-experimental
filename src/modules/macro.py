@@ -960,9 +960,9 @@ class macro:
             if doneConverting: 
                 break
             #not converting
-            if "make" in text:
+            if "make" in text and not "stop" in text:
                 self.keyboard.press("e")
-                time.sleep(0.5)
+                time.sleep(2)
 
             mouse.click()
 
