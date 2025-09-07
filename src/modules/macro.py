@@ -3439,8 +3439,8 @@ class macro:
             
             #draw bounding boxes and add the quest text
             drawY = y+endIndex
-            cv2.rectangle(screenOriginal, (x, drawY), (x+w, drawY+h), color, 2)
-            cv2.putText(screenOriginal, objectives[i], (x, drawY-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+            #cv2.rectangle(screenOriginal, (x, drawY), (x+w, drawY+h), color, 2)
+            #cv2.putText(screenOriginal, objectives[i], (x, drawY-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
             i += 1
 
