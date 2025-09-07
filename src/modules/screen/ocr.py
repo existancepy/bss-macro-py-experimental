@@ -23,6 +23,8 @@ except:
         ocrLib = "paddleocr"
     except:
         import easyocr
+        import ssl
+        ssl._create_default_https_context = ssl._create_unverified_context
         print("Imported easyocr")
         easyocrReader = easyocr.Reader(['en'])
         ocrLib = "easyocr"
