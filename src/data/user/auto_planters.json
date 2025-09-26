@@ -1,11 +1,11 @@
 {
    "planters": [
       {
-         "planter": "",
-         "nectar": "",
-         "field": "",
-         "harvest_time": 0,
-         "nectar_est_percent": 0
+         "planter": "blue clay",
+         "nectar": "comforting",
+         "field": "pine tree",
+         "harvest_time": 1758859642.827465,
+         "nectar_est_percent": 10.0
       },
       {
          "planter": "",
@@ -15,15 +15,15 @@
          "nectar_est_percent": 0
       },
       {
-         "planter": "",
-         "nectar": "",
-         "field": "",
-         "harvest_time": 0,
-         "nectar_est_percent": 0
+         "planter": "tacky",
+         "nectar": "comforting",
+         "field": "dandelion",
+         "harvest_time": 1758859642.827465,
+         "nectar_est_percent": 9.9
       }
    ],
    "nectar_last_field": {
-      "comforting": "",
+      "comforting": "dandelion",
       "refreshing": "",
       "satisfying": "",
       "motivating": "",
