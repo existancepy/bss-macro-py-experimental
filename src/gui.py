@@ -179,5 +179,6 @@ def launch():
         eel.start('index.html',app_mode = True,block = False, cmdline_args=["--incognito", "--new-window"])
     except:
         print("Chrome/Chromium could not be found. You can access the macro at: http://localhost:8000/")
-        eel.start('index.html', block=False)
+        eel.start('index.html', block=False, mode=None)
+
 
