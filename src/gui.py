@@ -181,9 +181,10 @@ def launch():
         eel.start('index.html',app_mode = True,block = False, cmdline_args=["--incognito", "--new-window"])
     except EnvironmentError:
         print("Chrome/Chromium could not be found. You can access the macro at: http://localhost:8000/")
-        time.sleep(1)
         eel.start('index.html', block=False, mode=None)
+        time.sleep(1)
         webbrowser.open("http://localhost:8000/", new=2)
+
 
 
 
